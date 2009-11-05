@@ -1,0 +1,13 @@
+Compressions = 0, 0, 0, 0, C
+DataBuffer = 0, 0, 0, 0, C
+SystemTray = 0, 0, 0, 0, C
+Declares = 132, 174, 954, 697, 
+FileIO = 111, 149, 933, 672, 
+frmMain = 22, 29, 844, 552, , 44, 58, 866, 581, C
+GameLogic = 22, 29, 844, 552, 
+General = 154, 203, 976, 726, 
+Skills = 176, 232, 998, 755, 
+TCP = 66, 87, 888, 610, 
+UserStats = 0, 0, 0, 0, C
+NPCs = 88, 116, 910, 639, Z
+Encryptions = 88, 116, 910, 639, 

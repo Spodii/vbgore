@@ -1,0 +1,6 @@
+[INIT]
+NumLines=4
+Line1=Move: A/S/D/W or Arrow Keys   Attack: Ctrl   Get Item: Alt
+Line2=Map Edit: /devmode   Cast Spell: F1~F12    Emoticon: 0~9
+Line3=Communication: Shout (/sh) Emote (/em) Whisper (/tell)
+Line4=For more information, please visit http://spodi.zidev.com  :)

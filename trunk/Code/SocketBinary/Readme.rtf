@@ -1,0 +1,330 @@
+{\rtf1\ansi\ansicpg1252\deff0\deflang7177{\fonttbl{\f0\fswiss\fprq2\fcharset0 Arial;}}
+\viewkind4\uc1\pard\nowidctlpar\ul\b\f0\fs24 Getting Started\ulnone\b0\fs20\par
+\par
+\ul\b In the begining ...\ulnone\b0\par
+\par
+Welcome to Sox! The ULTIMATE WinSock OCX conversion!\par
+This project started as most of this nature, I didn't like the idea of using the origional OCX when learning the WinSock API was a more powerful and flexible option! I also didn't like all the talk about memory leaks in the OCX and couldn't bring myself to use a buggy control! So this humble idea started as a project to religiously convert all the OCX commands to a new Class module using API commands (meaning I wanted an exact replica with the power to control!). What happened to the idea of creating an 'exact replica'? It CANNOT be done in pure VB even with API calls, the origional OCX was developed in C/C++. To give you a simple example, everyone who has done this has had to change the name of the origional WinSock OCX 'Close' statement because it is a reserved word in VB (Sox calls it 'Shut'). So we already have a difference. As far as possible, I have tried to use the naming conventions of the OCX with as few modifications as possible! The one difference that stands out, is that most commands accept an inSox parameter, this is because Sox can handle all 32,768 Socket connections that the WinSock API can, and more if the API supported it! Normally, to have multiple Socket connections with the OCX, you would have to place a few controls on your form, or create a Control Array. This immediately has the potential of causing memory leaks! Sox handles all the socket communication for you (Like most of the WinSock OCX conversion projects! One big difference is that they create a new instance of their Control or Class module and store it in a collection ... too damn slow! Sox stores them in a 'memory and speed efficient' array)! What happened to the idea of creating a class module? I kinda hit a snag, in that when I move the Server form around, the Server would pause :( This also happens if I have a MsgBox open on the Server! So, I thought that I would try and see if creating an 'Event Driven' OCX would solve my problem, well it didn't :( only at the end did I find that this is the case with an OCX as well :( but I vowed to complete my OCX to prove that Sox is THE greatest OCX conversion project yet!!! Where to from here? A multithreaded DLL :) NB: Sox does not currently support the UDP protocol! But this would be fairly simple to implement and would require very little modification to Sox!\par
+\par
+\ul\b What do I need, to begin?\ulnone\b0\par
+\par
+This project is designed to be as easy to implement as possible, into ANY and ALL VB projects requiring WinSock API functionality. Knowing the structure of the code will allow you to perfectly tune and customize it, but is not a requirement for general use. The Sox Control (in the SoxOCX.vbp project) is the heart of the code. The Module (modSox) is also (absolutely) necessary but needs no modification and is only there because the freaking AddressOf command can only access code in 'public' normal modules).\par
+\par
+\ul\b What makes Sox so great?\ulnone\b0\par
+\par
+THE NEED FOR SPEED :)))\par
+Efficiency ... Internal array structure more memory efficient and faster than using an array of WinSock OCX's\par
+Customizability ... can completely customize it, removing features not needed or add new features/events/properties\par
+Enhanced / Customizable Error trapping and messaging ... create your own error messages\par
+No licensing issues as Sox is free ... (I'd love to know how and where you R using it though :)))\par
+Newer Code ... You can set the version of WinSock you want the client to use / Support of the latest XP version of WinSock API\par
+Can add data encription directly into Sox before the data get transmitted (Super Easy, could even create random encryption key everytime the server starts)\par
+If, for example, you will be using only one type of data eg. Array of bytes, then you can speed up processing by eliminating some variable checks etc.\par
+Increased speed and efficiency of accepting new connections\par
+Optimize the code to automate selected tasks more efficiently\par
+Foundation to build a WinSock broadcast Server, OCX cannot Broadcast ... or can it ???\par
+Flexibility\par
+Multiple listening Sockets. Use: One listening socket can cache only 5 incomming connection requests, we may need more. Could allow company users to connect to one socket and they go through another Logon procedure as outsiders, could block the one port on a Firewall. Also the outsiders could get different options set. Or use different protocols to listen on different sockets\par
+\par
+\ul\b\fs24 Whats the Diffs?\ulnone\b0\fs20\par
+\par
+\ul\b Purpose\ulnone\b0\par
+\par
+For those familiar with the OCX, that would like to know what the equivalent commands are, which ones have fallen away and why, and what are the new features in Sox\par
+\par
+\pard\nowidctlpar\tx5396\b Old OCX\tab Sox OCX\b0\par
+\tab\par
+Properties\tab Properties\par
+\tab\par
+BytesReceived\tab BytesReceived(inSox as Long)\par
+\tab BytesSent(inSox as Long)\par
+Index\tab Sox should NOT be used in a Control Array! (Neither should the origional :)\par
+LocalHostName\tab LocalHostName\par
+LocalIP\tab\par
+LocalPort\tab\par
+Name\tab\par
+Object\tab\par
+Parent\tab\par
+Protocol\tab - Currently only TCP is supported\par
+RemoteHost\tab - None\par
+RemoteHostIP\tab - None\par
+RemotePort\tab - None\par
+SocketHandle\tab SocketHandle(inSox As Long)\par
+State\tab State(inSox As Long)\par
+Tag\tab\par
+\tab\par
+Methods\tab Methods\par
+\tab\par
+Accept(requestID as Long)\tab - Automatically handled internally\par
+\tab\tab (My OnConnection Event indicates a new \par
+\tab\tab connection, this can be used to immediately\par
+\tab\tab send the client app some info)\par
+Bind([LocalPort],[LocalIP])\tab Bind(LocalIP As String, LocalPort As Integer)\par
+\tab\tab - Returns a Sox \tab number\par
+\tab\tab - Basically this can be used to block ports,\par
+\tab\tab but the Sox number is NOT used by Listen anymore!\par
+Close\tab Shut(inSox As Long)\par
+\tab\tab - I would have loved to use 'Close', it's reserved in VB :(\par
+\tab\tab - I chose Shut because it sounds similar to ShutDown\par
+\tab ShutDown() - This command closes ALL connections!\par
+\tab\tab If ShutDown fails, this usually means that a client has\par
+\tab\tab not successfully sent a close indication!\par
+\tab\tab ShutDown should be retried!\par
+Connect([RemoteHost],[RemotePort])\tab Connect(RemoteHost As String, RemotePort As Integer)\par
+\tab\tab - RemoteHost and RemotePort are currently NOT optional!\par
+\tab\tab (The old method you could use bind with the Host and port,\par
+\tab\tab then you could use Connect without options!)\par
+GetData(data,[type],[maxLen])\tab - Automatically handled internally\par
+\tab\tab (The OnDataArrival Event has changed slightly\par
+\tab\tab so that it now returns the data to you completely,\par
+\tab\tab unlike the old OCX which fragmented the data\par
+\tab\tab and you had to devise a method to group this\par
+\tab\tab together! This Event only fires when all the data has\par
+\tab\tab been returned!)\par
+Listen\tab Listen(inAddress As String, inPort As Integer)\par
+\tab\tab - This Method currently needs an address and port to\par
+\tab\tab listen on :(\par
+\tab\tab - It returns a Sox number that is currently listening!\par
+\tab\tab - This Method can be called as many times as you want,\par
+\tab\tab creating a new listening socket each time!\par
+PeekData(data,[type],[maxLen])\tab - Unsupported and NOT recommended by Microsoft!\par
+\tab\tab - Sox handles all incomming data for you\par
+\tab\tab as soon as WinSock API knows about it!\par
+\tab\tab - This method is strongly NOT recommended by\par
+\tab\tab microsoft as it creates a performance hit and is\par
+\tab\tab potentially misleading!\par
+SendData (Data)\tab SendData(inSox As Long, inData As Variant)\par
+\tab\tab - All data sent, basically gets converted to a\par
+\tab\tab Byte Array by WinSock API\par
+\tab\tab - Therefore this is the fastest way to send data!\par
+\tab\tab - If you will only be using Byte Arrays to send data,\par
+\tab\tab like me, you can improve Send speed substantially\par
+\tab\tab by optimizing Sox! If you want/need help, mail me!\par
+\tab\par
+Events\tab Events\par
+\tab\par
+Close()\tab OnClose(inSox As Long)\par
+\tab\tab - inSox is the connection that closed\par
+\tab\tab - No more data can/will be sent/received\par
+Connect()\tab OnConnect(inSox As Long)\par
+\tab\tab - Our Connect() command succeeded\par
+\tab OnConnection(inSox As Long)\par
+\tab\tab - Indicates that a new Sox connection has arrived\par
+\tab\tab nothing further needs to be done, because the\par
+\tab\tab call to Accept is handled internally!\par
+ConnectionRequest(ByVal requestID As Long)\tab - Automatically handled internally\par
+\tab\tab - This is similar to my OnConnection Event,\par
+\tab\tab except the socket has already been accepted!\par
+\tab\tab - This old Event was used because WinSock OCX\par
+\tab\tab didn't know if you wanted to accept the connection on\par
+\tab\tab the local Control, or if you were going to create a\par
+\tab\tab Control array and Accept it on another Control!\par
+DataArrival(ByVal bytesTotal As Long)\tab OnDataArrival(inSox As Long, inData() As Byte)\par
+\tab\tab - This Event has changed a little, it tells you which\par
+\tab\tab Sox connection received Data and it gives you the\par
+\tab\tab data in the form of a Byte Array! Use UBound(inData)\par
+\tab\tab to get the Size! My Event is FAR more efficient because\par
+\tab\tab it doesn't use the MSG_PEEK flag like the old OCX ...\par
+\tab\tab long story :)))\par
+Error(Too many Parameters!)\tab OnError(inSox As Long, inError As Long, inDescription As String, inSource As String, inSnipet As String)\par
+\tab\tab - Kinda refined this to display relevant info for me!\par
+SendComplete()\tab OnSendComplete(inSox As Long)\par
+SendProgress(ByVal bytesSent As Long, ByVal bytesRemaining As Long)\par
+\tab OnSendProgress(inSox As Long, bytesSent As Long, bytesRemaining As Long)\par
+\tab OnRecvProgress(inSox As Long, bytesRecv As Long, bytesRemaining As Long)\par
+\tab\tab - How freeking slack of them not to include this\par
+\tab\tab Event in the old OCX!!!\par
+\tab OnState(inSox As Long, inState As enmSoxState)\par
+\tab\tab - Notification of a Sox State Change\par
+\tab\tab - If you wanted to cause some event to happen on\par
+\tab\tab changing of states, this could be useful!\par
+\tab OnStatus(inSox As Long, inSource As String, inStatus As String) \par
+\tab\tab - This is kinda like using Debug.Print :)\par
+\tab\tab - I used it cause my Project had to be compiled\par
+\tab\tab to prevent debug/IDE crashes and Debug.Print\par
+\tab\tab is removed from compiled code!\par
+\pard\nowidctlpar\par
+\par
+\par
+\ul\b\fs24 Sox Structure\ulnone\b0\fs20\par
+\par
+\ul\b Purpose\ulnone\b0\par
+\par
+To take an in-depth look at the structure of the Sox project. This will explain in detail EVERY function and procedure, it's purpose, uses and areas you may be interested in improving/customizing. The areas of improvement will most likely come from the removal of unwanted/unused features depending on your needs. The areas of customization will come in if your project has special requirements not being met by Sox.\par
+\par
+\ul\b Conventions\ulnone\b0\par
+\par
+api___ = A call to an API Function :) I like this cause you can tell the diffs if I'm calling an API or internal function/sub\par
+typ___ = A type structure\par
+enm___ = Enumeration\par
+in___ = A parameter in an Event/Function/Sub\par
+tmp___ = Used when I declare 'temporary' variables in a function/sub\par
+CAPS = All constants are in Caps\par
+sox___ = Typically used inside an Enumeration to define each value\par
+on___ = Sox Event\par
+\par
+\ul\b\fs24 Feature Review\ulnone\b0\fs20\par
+\par
+\ul\b Purpose\ulnone\b0\par
+\par
+To show the advantages of using Sox in your code over the OCX or any other similar project.\par
+\par
+\par
+\ul\b\fs24 FAQ\ulnone\b0\fs20\par
+\par
+Q - Why does Close NOT work as a valid command ???\par
+A - It's an internal VB command used for closing file handles ???\par
+\par
+\ul\b\fs24 API\ulnone\b0\fs20\par
+\par
+WSAStartup\par
+\par
+Basics: Tells WinSock API that your app wants to use it, WinSock API creates a memory space internally for your apps use.\par
+Intermediate: MUST be the first WinSock API function called before ANY other and should preferably be ONLY called once!\par
+Advanced: It allows an application or DLL to specify the version of Windows Sockets required and to retrieve details of the specific Windows Sockets implementation\par
+\par
+WSACleanup\par
+\par
+Basics: Tells WinSock API that your app is terminating.\par
+\par
+CloseSocket\par
+\par
+Basics: This is what the WinSock OCX Close command does, it closes a socket :)\par
+\par
+WSAAsyncSelect\par
+\par
+Basics: When data is sent to our computer via the network, how do you think WinSock API is gonna notify us that we have this incomming data? Enter WSAAsyncSelect.\par
+Intermediate: The WinSock API is basically event driven, similar to the OCX. When data arrives for us, the WinSock API needs to notify us of this 'event'. The way it does it is message driven. The same as when a mouse moves over a form, windows sends a mouse move/position message to the form so it knows where the mouse is via x,y co-ords. Windows sends this message to the forms handle (hWnd value). So too, this API call tells WinSock API where we want it to send the messages for our app, this is typically a form. This is a per socket function. So we can tell it that for socket 1, we want to receive only incomming connections eg. FD_ACCEPT, or we want it to only receive incomming data, eg. FD_READ, FD_WRITE is a message that WinSock API sends us when the Socket is ready to send data again. FD_CLOSE tells us that the remote computer has closed it's connection.\par
+Advanced: This API is a component of our message hooking/SubClassing process to get WinSock API to talk to our app. Once we know where we want to tell WinSock API where to post messages (usually by choosing a form to communicate in and out of to the API), we use this to tell WinSock what messages to send for which Socket to what handle (hWnd). eg. We create a socket to listen on. Once all the other API work is done, we use WSAAsyncSelect with our socket name, the form handle it must post messages to, and the message notification types we want to receive, in this case we only need notification of FD_ACCEPT. NB - Once a connection has been accepted on our listening socket, the new one will inherit the parents WSAAsyncSelect values, in this case the incomming connection will only receive FD_ACCEPT, but it's a client connection so we need to change this to FD_READ or FD_WRITE or FD_CLOSE, the or is bitwise.\par
+\par
+HToNL\par
+\par
+Basics: Different Protocols have different ways of representing addresses in bytes. eg an IP of 127.0.0.1 = 10011010011011101110010010011001 in binary (dummy values) but the configuration of the bits could be different for different protocols. Host to Network Long sets the bits/bytes for our IP in the right order. Not 100% familiar with this API call but it is necessary for proper WinSock API functionality!\par
+\par
+HToNS\par
+\par
+Basics: Similar to HToNL except for Short (C/C++ data type) / Integer values. Not 100% familiar with this API call but it is necessary for proper WinSock API functionality!\par
+\par
+NToHL\par
+\par
+Basics: The inverse of HToNL\par
+\par
+NToHS\par
+\line Basics: The inverse of HToNS\par
+\par
+Socket\par
+\par
+Basics: Tells WinSock API to give us a free, unused, unassigned, random socket number so we can use it for our purposes.\par
+Intermediate: Every call to this function, must be met with a CloseSocket call, even if we don't use the Socket for anything, once we call this we MUST call CloseSocket.\par
+\par
+Listen\par
+\par
+Basics: The function that tells WinSock API to listen on a specific socket.\par
+Intermediate: A listening socket will cache a max of 5 incomming connections, I have seen no evidence to support any more than 5. Many things must be taken into account for this to operate properly. eg. we MUST process FD_ACCEPT message ASAP, because anyone connecting over the 5 limit will be lost. We can however have multiple listening sockets if more than 5 connections are required. Also, any incomming connections inherit our Listening socket's options/properties eg. Send/Receive Buffers, messages eg. FD_ACCEPT, protocol etc.\par
+\par
+Bind\par
+\par
+Basics: The irritating and confusing process of Binding a port and network adapter to a socket before initializing Listen is necessary.\par
+Intermediate: This is used so that no other apps can use our port and network card.\par
+\par
+Accept\par
+\par
+Basics: Accepts an incomming connection on a listening Socket.\par
+Intermediate: Used after our listening socket received an FD_ACCEPT message.\par
+\par
+Recv\par
+\par
+Basics: Used to receive incomming data on a socket\par
+Intermediate: Used after a socket received a FD_READ message.\par
+Advanced: \par
+\par
+Private Declare Function apiGetSockOpt Lib "WSock32" Alias "getsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long\par
+Private Declare Function apiSetSockOpt Lib "WSock32" Alias "setsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long\par
+Private Declare Function apiIPToNL Lib "WSock32" Alias "inet_addr" (ByVal cp As String) As Long\par
+Private Declare Function apiNLToIP Lib "WSock32" Alias "inet_ntoa" (ByVal inn As Long) As Long\par
+Private Declare Function apiConnect Lib "WSock32" Alias "connect" (ByVal S As Long, name As typSocketAddr, ByVal namelen As Long) As Long\par
+Private Declare Function apiSend Lib "WSock32" Alias "send" (ByVal S As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long\par
+\par
+Private Declare Function apiCreateWindowEx Lib "User32" Alias "CreateWindowExA" (ByVal dwExStyle As Long, ByVal lpClassName As String, ByVal lpWindowName As String, ByVal dwStyle As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, lpParam As Any) As Long\par
+Private Declare Function apiDestroyWindow Lib "User32" Alias "DestroyWindow" (ByVal hWnd As Long) As Long\par
+Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long\par
+Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long\par
+\par
+Private Declare Function apiLStrLen Lib "Kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long\par
+Private Declare Function apiLstrCpy Lib "Kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long\par
+Private Declare Sub apiCopyMemory Lib "Kernel32" Alias "RtlMoveMemory" (pDst As Any, pSrc As Any, ByVal ByteLen As Long)\par
+\par
+\par
+\par
+\par
+\ul\b\fs24 Credit List\ulnone\b0\fs20\par
+\par
+\ul\b Purpose\ulnone\b0\par
+\par
+To list those responsible for this endeavour. This includes a list of my 2 most used examples of OCX conversions.\par
+\par
+AllApi.Net\par
+\par
+I used an aplication they developed called API-Guide 3.7, which lists 925 API functions, their uses, inputs, outputs and gives examples. I also studied a demo program they wrote that shows basic Client/Server functionality. This code seems to have a basis for many of the WinSock API based projects I've seen. I have used many API declarations, constants and ideas from them (so have many other people). Thanks to the AllApi network, much of the foundation was laid for me to begin hard core development on Sox. My WinSockEvent and WinSockError functions are based on their WSAGetSelectEvent and WSAGetAsyncError functions for example. However this project was too small for me. They also have a Download file project, but it is too bugy and small to be of much interest. Other projects included Hooking / Unhooking forms, copying memory, Pinging, Creating Windows, etc. many ideas/concepts of these appear in my code!\par
+\par
+MSDN\par
+\par
+I have read EVERY single article on every WinSock OCX AND API command here, most of them I have read over and over again. I read every Error message, what it means, what causes it and what can be done to prevent it on MSDN. I have read the ENTIRE API header file, which is what all the constants, types etc. are based on. Unfortunately MSDN doesn't give ANY example code in VB, and the examples of C code are very small/useless anyway.\par
+\par
+HTTPWin (PSC)\par
+\par
+A project to download a website or file. Poorly written with old WinSock 1.1 API's eg. WSAIsBlocking (and the guy probably doesn't even know it).\par
+\par
+Ronny R. Germany Berlin (PSC) - API Downloading code\par
+\par
+His module made by Master Yoda had one thing I used. Otherwise the actual code is terrible\par
+\par
+Brian Molidor's 'Tutorial'\par
+\par
+Cons: Another example of someone who used the old AllApi.Net modules and forgot to clean up :)\par
+Pros: Can't really think of any ... quite a boring project if you ask me\par
+\par
+Socks II (PSC) - The first of the real challengers\par
+\par
+Cons: Excessive use of Exit Function. Copied an AllApi.Net Module with '96 code in that includes functions for windows 3.x without any modification or cleanup\par
+Pros: Fairly well structured (compared to some of the other projects). An example that I began with, so it couldn't have been that bad :) I read his code many times!\par
+\par
+\par
+TTOSocket - An ActiveX VB OCX replica of the WinSock OCX\par
+\par
+Cons: I don't think this guy is alive anymore or something. Creates an instance of the Control for each connection, these are stored in a Collection. Now imagine we have 32,000 of these things ... man the server is gonna DIE! Very confusing to read, I don't know half the time if he's referancing a variable or function or where the darn thing is, I spend half my time looking to see what he's referancing! I think his WindowProc function needs to be MUCH faster to cope with high demands! Everytime the function is called, it must make a new instance of his control even if it isn't gonna use it ... too slow!\par
+Pros: A very good effort, lots of hard work obviously went into it, and MANY people contributed to his code! I read this code again and again, there is much to be learned for anyone interested in creating another OCX replacement, or just if you want different ways of doing things! Many ideas came from this code and much credit is due to those responsible for this fine effort! This is THE OCX replacement!\par
+\par
+CSocket - My primary competition (But no match I say :))) - Oleg Gdalevich (http://www.vbip.com)\par
+\par
+Cons: AGAIN, the excessive use of Collections and use of Exit Function/Sub. I have found a few 'Critical' bugs in this code which I will notify the author about soon! Creates multiple instances of the Class module to produce an event driven project. Long and irritating variable names !!! I can hardly tell what are variable, functions or API calls!\par
+Pros: This code is modified on an ongoing basis, and has many followers. Replicating the OCX command as well as could be expected! WELL commented and structured! This code has been an inspiration to me, it has taught me much and deserves as much recognition and appreciation as I could give! It has all in all, helped me more than anything else to grasp the procedures necessary for proper WinSock API functionality, And even though I don't agree with his methology, it is the finest effort second only to Sox! This project is the benchmark I test the performance of Sox against (Sox Kicks Ass)\par
+\par
+John Galanopoulos\par
+\par
+Taught me a thing or two about SubClassing! Because of him, I could understand one of the most essential concepts in Sox design! Thanx John!\par
+\par
+Manolo Botellero\par
+\par
+For sending me an old mod, designed in \rquote 97 for VB 4 that had some very saught after constants and data structures I struggled to find and not found in any other project!\par
+\par
+\ul\b\fs24 OLD\ulnone\b0\fs20\par
+\par
+\par
+\par
+'Limitation - On initialization of Class modules (through Class_Initialize event), absolutely NO events will be raised\par
+            'until Class_Initialize has completely completed, this includes any functions that Class_Initialize calls\par
+'Solution - Allow initialization of Class module through an Initialize function ONLY, it will raise any necessary events of possible fails\par
+'INFO - General Order = Socket -> Bind -> Listen -> Accept ... read the description in Listen call in MSDN for this\par
+\par
+'Limitation - NO events can be fired from the Class Module while processing WindowProc ... events are only fired on complete termination\par
+'Solution - Hardcode what the fired event would do outside the class, by writing a Procedure/Function within the class to handle / simulate the 'event'\par
+            'Unfortunately this does not make the Class Module very encapsulated or portable (You may have to change many things if you use it in another project)\par
+'Limitation - The class only supports one connection to a Server, so, we connot make multiple connections to different Servers\par
+'Solution - Create an array of connections to facilitate this ... hint, you could create an Array of type Server.\par
+            'I left this out as most apps will only need to support 1 connection to a Server\par
+            'and it would complicate things a little more than they already are :)))\par
+\par
+\par
+}
+ 

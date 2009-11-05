@@ -1,0 +1,35 @@
+Type=Exe
+Module=General; Code\GrhDatMaker\General.bas
+Startup="Sub Main"
+HelpFile=""
+Title="GrhDatMaker"
+ExeName32="ToolGrhDatMaker.exe"
+Command32=""
+Name="GrhDatMaker"
+HelpContextID="0"
+CompatibleMode="0"
+MajorVer=0
+MinorVer=1
+RevisionVer=1
+AutoIncrementVer=0
+ServerSupportFiles=0
+VersionCompanyName="Spodi"
+VersionProductName="vbGORE Grh Dot Dat Maker"
+CompilationType=0
+OptimizationType=0
+FavorPentiumPro(tm)=0
+CodeViewDebugInfo=0
+NoAliasing=0
+BoundsCheck=0
+OverflowCheck=0
+FlPointCheck=0
+FDIVCheck=0
+UnroundedFP=0
+StartMode=0
+Unattended=0
+Retained=0
+ThreadPerObject=0
+MaxNumberOfThreads=1
+
+[MS Transaction Server]
+AutoRefresh=1
