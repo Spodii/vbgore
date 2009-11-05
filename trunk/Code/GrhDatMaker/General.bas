@@ -48,19 +48,19 @@ Dim sX As Integer
 Dim sY As Integer
 Dim PixelWidth As Integer
 Dim PixelHeight As Integer
-Dim FileNum As Integer
+Dim FileNum As Long
 Dim NumFrames As Byte
-Dim Frames(1 To 16) As Integer
+Dim Frames() As Long
 Dim Speed As Single
-Dim LastGrh As Integer
-Dim Grh As Integer
+Dim LastGrh As Long
+Dim Grh As Long
 Dim Frame As Long
 Dim ln As String
 Dim TempLine As String
 Dim RawFile As String
 Dim NumRawFile As Long
 Dim LastFile As Long
-Dim Lines As Integer
+Dim Lines As Long
 
     InitFilePaths
 
@@ -77,7 +77,7 @@ Dim Lines As Integer
         Open Data2Path & RawFile For Input As #2
 
         'Set the buffer's initial size
-        ReDim GrhBuffer(1 To 65535)
+        ReDim GrhBuffer(1 To 2000000)
 
         'Do a loop to check for repeat numbers
         While Not EOF(2)
@@ -144,16 +144,18 @@ Dim Lines As Integer
                     Put #1, , NumFrames
 
                     If NumFrames > 1 Then
+                        ReDim Frames(1 To NumFrames)
+                        
                         'Read a animation GRH set
                         For Frame = 1 To NumFrames
+                        
                             'Check and put each frame
                             Frames(Frame) = Val(ReadField(Frame + 1, ln, "-"))
-
                             If Frames(Frame) <= 0 Or Frames(Frame) > LastGrh Then GoTo ErrorHandler
-
                             Put #1, , Frames(Frame)
+                
                         Next Frame
-
+                        
                         'Check and put speed
                         Speed = CSng(ReadField(NumFrames + 2, ln, "-"))
                         If Speed = 0 Then GoTo ErrorHandler
@@ -199,6 +201,7 @@ Dim Lines As Integer
     MsgBox "Finished.", vbOKOnly
 
     'Unload
+    Erase GrhBuffer
     End
     
 Exit Sub

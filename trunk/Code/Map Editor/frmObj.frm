@@ -118,19 +118,19 @@ Dim LoopC As Integer
     
     'Set the NPCs array
     FileNum = FreeFile
-    Open App.Path & "\OBJs\Count.obj" For Binary As FileNum
-    Get FileNum, , NumOBJs
-    Close FileNum
+    DB_RS.Open "SELECT id FROM objects ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
+    NumOBJs = DB_RS(0)
+    DB_RS.Close
     ReDim OBJs(1 To NumOBJs)
     OBJList.Clear
 
     'Load all the names
-    For LoopC = 1 To NumOBJs
-        Open (App.Path & "\OBJs\" & LoopC & ".obj") For Binary As FileNum
-        Get FileNum, , OBJs(LoopC)
-        OBJList.AddItem OBJs(LoopC).Name
-        Close FileNum
-    Next LoopC
+    DB_RS.Open "SELECT name FROM objects", DB_Conn, adOpenStatic, adLockOptimistic
+    Do While DB_RS.EOF = False
+        OBJList.AddItem Trim$(DB_RS!Name)
+        DB_RS.MoveNext
+    Loop
+    DB_RS.Close
     
     'Select the first slot
     OBJList.ListIndex = 0

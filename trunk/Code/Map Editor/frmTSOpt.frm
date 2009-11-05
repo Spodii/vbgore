@@ -191,6 +191,15 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
 
 End Sub
 
+Private Sub HeightTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub SaveLbl_Click()
 
     tsTileHeight = Val(HeightTxt.Text)
@@ -209,4 +218,22 @@ Private Sub SaveLbl_Click()
     HideFrmTSOpt
     ShowFrmTileSelect stBoxID
 
+End Sub
+
+Private Sub StartTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub WidthTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub

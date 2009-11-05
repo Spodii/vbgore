@@ -97,3 +97,12 @@ ErrOut:
     SfxTxt.Text = 0
 
 End Sub
+
+Private Sub SfxTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub

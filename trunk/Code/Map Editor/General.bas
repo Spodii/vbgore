@@ -211,7 +211,7 @@ Sub SetTile(ByVal tX As Byte, ByVal tY As Byte, ByVal Button As Integer, ByVal S
 '*****************************************************************
 'Updates the marked tile with the new graphics/lights/etc
 '*****************************************************************
-Dim TempOBJ As ObjData
+Dim TempLng As Long
 Dim TempNPC As NPC
 Dim l1(1 To 4) As Byte
 Dim l2(1 To 4) As Byte
@@ -288,8 +288,9 @@ Dim Y As Byte
                 If Not Shift Then
                     If frmNPCs.SetOpt.Value = True Then
                         If MapData(tX, tY).NPCIndex = 0 Then
-                            TempNPC = OpenNPC(frmNPCs.NPCList.ListIndex + 1)
-                            Engine_Char_Make NextOpenCharIndex, TempNPC.Char.Body, TempNPC.Char.Head, TempNPC.Char.Heading, tX, tY, TempNPC.Name, TempNPC.Char.Weapon, TempNPC.Char.Hair, frmNPCs.NPCList.ListIndex + 1
+                            DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
+                            Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                            DB_RS.Close
                         End If
                     End If
                     If frmNPCs.EraseOpt.Value = True Then
@@ -340,11 +341,10 @@ Dim Y As Byte
             If Not Shift Then
                 If frmObj.SetOpt.Value = True Then
                     If MapData(tX, tY).ObjInfo.ObjIndex = 0 Then
-                        i = FreeFile
-                        Open App.Path & "\OBJs\" & frmObj.OBJList.ListIndex + 1 & ".obj" For Binary As #i
-                            Get #i, , TempOBJ
-                        Close #i
-                        Engine_OBJ_Create TempOBJ.GrhIndex, tX, tY
+                        DB_RS.Open "SELECT grhindex FROM objects WHERE id=" & frmObj.OBJList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
+                        TempLng = DB_RS!GrhIndex
+                        DB_RS.Close
+                        Engine_OBJ_Create TempLng, tX, tY
                         MapData(tX, tY).ObjInfo.ObjIndex = frmObj.OBJList.ListIndex + 1
                         MapData(tX, tY).ObjInfo.Amount = Val(frmObj.AmountTxt.Text)
                     End If
@@ -372,8 +372,11 @@ Dim Y As Byte
                 If frmParticles.ParticlesList.ListIndex + 1 >= LBound(Effect) Then
                     If frmParticles.ParticlesList.ListIndex + 1 <= UBound(Effect) Then
                         If Effect(frmParticles.ParticlesList.ListIndex + 1).Used = True Then
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).X = HoverX
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).Y = HoverY
+                            For i = 0 To Effect(frmParticles.ParticlesList.ListIndex + 1).ParticleCount
+                                Effect(frmParticles.ParticlesList.ListIndex + 1).Particles(i).sngA = 0
+                            Next i
+                            Effect(frmParticles.ParticlesList.ListIndex + 1).X = HoverX - (ParticleOffsetX - 288)
+                            Effect(frmParticles.ParticlesList.ListIndex + 1).Y = HoverY - (ParticleOffsetY - 288)
                         End If
                     End If
                 End If
@@ -426,6 +429,12 @@ Sub Game_Map_Switch(Map As Integer)
 '*****************************************************************
 'Loads and switches to a new map
 '*****************************************************************
+Dim GetEffectNum As Byte
+Dim GetX As Integer
+Dim GetY As Integer
+Dim GetParticleCount As Integer
+Dim GetGfx As Byte
+Dim GetDirection As Integer
 Dim ByFlags As Long
 Dim BxFlags As Byte
 Dim MapNum As Byte
@@ -515,7 +524,7 @@ Dim X As Byte
                 Engine_Init_Grh MapData(X, Y).Graphic(3), MapData(X, Y).Graphic(3).GrhIndex
             End If
             If ByFlags And 16 Then
-                Get #MapNum, , MapData(X, Y).Graphic(4).GrhIndex
+               Get #MapNum, , MapData(X, Y).Graphic(4).GrhIndex
                 Engine_Init_Grh MapData(X, Y).Graphic(4), MapData(X, Y).Graphic(4).GrhIndex
             End If
             If ByFlags And 32 Then
@@ -603,10 +612,11 @@ Dim X As Byte
             'Load NPC
             If BxFlags And 2 Then
                 Get #InfNum, , TempInt
-        
+
                 'Set up pos and startup pos
-                TempNPC = OpenNPC(TempInt)
-                Engine_Char_Make NextOpenCharIndex, TempNPC.Char.Body, TempNPC.Char.Head, TempNPC.Char.Heading, X, Y, TempNPC.Name, TempNPC.Char.Weapon, TempNPC.Char.Hair, TempNPC.NPCNumber
+                DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & TempInt, DB_Conn, adOpenStatic, adLockOptimistic
+                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, X, Y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                DB_RS.Close
         
             End If
         
@@ -625,13 +635,6 @@ Dim X As Byte
     'Get the number of effects
     Get #MapNum, , Y
     
-    Dim GetEffectNum As Byte
-    Dim GetX As Integer
-    Dim GetY As Integer
-    Dim GetParticleCount As Integer
-    Dim GetGfx As Byte
-    Dim GetDirection As Integer
-
     'Store the individual particle effect types
     If Y > 0 Then
         For X = 1 To Y
@@ -641,7 +644,7 @@ Dim X As Byte
             Get #MapNum, , GetParticleCount
             Get #MapNum, , GetGfx
             Get #MapNum, , GetDirection
-            Effect_Begin GetEffectNum, GetX + 288, GetY + 288, GetGfx, GetParticleCount, GetDirection
+            Effect_Begin GetEffectNum, GetX, GetY, GetGfx, GetParticleCount, GetDirection
         Next X
     End If
     
@@ -887,26 +890,17 @@ Dim i As Integer
     For X = 1 To NumEffects
         If Effect(X).Used Then
             If Effect(X).BoundToMap Then
-                Select Case Effect(X).EffectNum
-                    Case EffectNum_Fire
-                        Put #FileNumMap, , EffectNum_Fire
-                        i = Effect(X).X 'Store as integer instead of single to save room
-                        Put #FileNumMap, , i
-                        i = Effect(X).Y 'Store as integer instead of single to save room
-                        Put #FileNumMap, , i
-                        Put #FileNumMap, , Effect(X).ParticleCount
-                        Put #FileNumMap, , Effect(X).Gfx
-                        i = Effect(X).Direction  'Store as integer instead of single to save room
-                        Put #FileNumMap, , i
-                    Case EffectNum_Waterfall
-                        Put #FileNumMap, , EffectNum_Waterfall
-                        i = Effect(X).X 'Store as integer instead of single to save room
-                        Put #FileNumMap, , i
-                        i = Effect(X).Y 'Store as integer instead of single to save room
-                        Put #FileNumMap, , i
-                        Put #FileNumMap, , Effect(X).ParticleCount
-                        Put #FileNumMap, , Effect(X).Gfx
-                End Select
+                If Effect(X).EffectNum = EffectNum_Waterfall Or Effect(X).EffectNum = EffectNum_Fire Then
+                    Put #FileNumMap, , Effect(X).EffectNum
+                    i = Effect(X).X + ParticleOffsetX   'Store as integer instead of single to save room
+                    Put #FileNumMap, , i
+                    i = Effect(X).Y + ParticleOffsetY   'Store as integer instead of single to save room
+                    Put #FileNumMap, , i
+                    Put #FileNumMap, , Effect(X).ParticleCount
+                    Put #FileNumMap, , Effect(X).Gfx
+                    i = Effect(X).Direction  'Store as integer instead of single to save room
+                    Put #FileNumMap, , i
+                End If
             End If
         End If
     Next X
@@ -944,6 +938,9 @@ Dim i As Integer
     Data2Path = App.Path & "\Data2\"
     MapPath = App.Path & "\Maps\"
     MapEXPath = App.Path & "\MapsEX\"
+    
+    'Load MySQL
+    MySQL_Init
     
     'Show the screens
     frmMain.Show
@@ -1041,30 +1038,6 @@ Dim LoopC As Long
     Loop While CharList(LoopC).NPCNumber > 0
 
     NextOpenNPC = LoopC
-
-End Function
-
-Function OpenNPC(ByVal NPCNumber As Integer) As NPC
-
-'*****************************************************************
-'Loads a NPC and returns its index
-'*****************************************************************
-
-Dim NPCIndex As Integer
-Dim FileNum As Byte
-
-    'Check for valid NPCNumber
-    If NPCNumber <= 0 Then Exit Function
-    If Engine_FileExist(App.Path & "\NPCs\" & NPCNumber & ".npc", vbNormal) = False Then Exit Function
-
-    'Load stats from file
-    FileNum = FreeFile
-    Open App.Path & "\NPCs\" & NPCNumber & ".npc" For Binary As FileNum
-        Get FileNum, , OpenNPC
-    Close FileNum
-    
-    'Save NPCNumber
-    OpenNPC.NPCNumber = NPCNumber
 
 End Function
 

@@ -24,9 +24,8 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You do not know that spell!"
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 37
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
@@ -34,16 +33,15 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.ModStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "Not enough mana."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).ModStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
     End If
 
     'Check if still exhausted
@@ -60,9 +58,10 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
             If UserList(TargetIndex).Counters.BlessCounter > 0 Then
                 If UserList(TargetIndex).Skills.Bless > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast bless on " & UserList(CasterIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "bless"
+                    ConBuf.Put_String UserList(CasterIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -71,9 +70,10 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
             If NPCList(TargetIndex).Counters.BlessCounter > 0 Then
                 If NPCList(TargetIndex).Skills.Bless > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast bless on " & NPCList(TargetIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "bless"
+                    ConBuf.Put_String NPCList(TargetIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -108,23 +108,24 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.ModStat(SID.MinMAN) = UserList(CasterIndex).Stats.ModStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
 
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 40
         If TargetType = CharType_PC Then
-            ConBuf.Put_String "You blessed " & UserList(TargetIndex).Name & "."
+            ConBuf.Put_String UserList(TargetIndex).Name
         ElseIf TargetType = CharType_NPC Then
-            ConBuf.Put_String "You blessed " & NPCList(TargetIndex).Name & "."
+            ConBuf.Put_String NPCList(TargetIndex).Name
         End If
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String UserList(CasterIndex).Name & " blessed you with a power of " & UserList(CasterIndex).Skills.Bless & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 41
+            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_Integer UserList(CasterIndex).Skills.Bless
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.BlessCounter = 300000
@@ -156,13 +157,14 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).ModStat(SID.MinMAN) = NPCList(CasterIndex).ModStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String NPCList(CasterIndex).Name & " blessed you with a power of " & NPCList(CasterIndex).Skills.Bless & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 41
+            ConBuf.Put_String NPCList(CasterIndex).Name
+            ConBuf.Put_Integer NPCList(CasterIndex).Skills.Bless
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.BlessCounter = 300000
@@ -220,9 +222,8 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You do not know that skill!"
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 37
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
@@ -230,16 +231,15 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.ModStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * 0.5 Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * 0.5 Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "Not enough mana."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).ModStat(SID.MinMAN) < NPCList(CasterIndex).BaseStat(SID.Mag) * 0.5 Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < NPCList(CasterIndex).BaseStat(SID.Mag) * 0.5 Then Exit Sub
     End If
 
     'Apply spell exhaustion
@@ -282,44 +282,47 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
 
     'Reduce the caster's mana
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.ModStat(SID.MinMAN) = UserList(CasterIndex).Stats.ModStat(SID.MinMAN) - (UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - (UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).ModStat(SID.MinMAN) = NPCList(CasterIndex).ModStat(SID.MinMAN) - (NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - (NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'Cast on the target
     If TargetType = CharType_PC Then
-        UserList(TargetIndex).Stats.ModStat(SID.MinHP) = UserList(TargetIndex).Stats.ModStat(SID.MinHP) + UserList(CasterIndex).Stats.ModStat(SID.Mag)
+        UserList(TargetIndex).Stats.BaseStat(SID.MinHP) = UserList(TargetIndex).Stats.BaseStat(SID.MinHP) + UserList(CasterIndex).Stats.ModStat(SID.Mag)
     ElseIf TargetType = CharType_NPC Then
-        NPCList(TargetIndex).ModStat(SID.MinHP) = NPCList(TargetIndex).ModStat(SID.MinHP) + NPCList(CasterIndex).ModStat(SID.Mag)
-        If NPCList(TargetIndex).ModStat(SID.MinHP) > NPCList(TargetIndex).ModStat(SID.MaxHP) Then NPCList(TargetIndex).ModStat(SID.MinHP) = NPCList(TargetIndex).ModStat(SID.MaxHP)
+        NPCList(TargetIndex).BaseStat(SID.MinHP) = NPCList(TargetIndex).BaseStat(SID.MinHP) + NPCList(CasterIndex).ModStat(SID.Mag)
+        If NPCList(TargetIndex).BaseStat(SID.MinHP) > NPCList(TargetIndex).ModStat(SID.MaxHP) Then NPCList(TargetIndex).BaseStat(SID.MinHP) = NPCList(TargetIndex).ModStat(SID.MaxHP)
     End If
 
     'Say the information
     If TargetIndex = CasterIndex Then
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 42
         If TargetType = CharType_PC Then
-            ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You healed yourself."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
-            Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+            ConBuf.Put_String "yourself"
+        ElseIf TargetType = CharType_NPC Then
+            ConBuf.Put_String NPCList(TargetIndex).Name
         End If
+        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
     Else
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 42
         If TargetType = CharType_PC Then
-            ConBuf.Put_String "You healed " & UserList(TargetIndex).Name & "."
+            ConBuf.Put_String UserList(TargetIndex).Name
         ElseIf TargetType = CharType_NPC Then
-            ConBuf.Put_String "You healed " & NPCList(TargetIndex).Name & "."
+            ConBuf.Put_String NPCList(TargetIndex).Name
         End If
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String UserList(CasterIndex).Name & " healed you " & UserList(CasterIndex).Stats.BaseStat(SID.Mag) & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 43
+            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_Integer UserList(CasterIndex).Stats.BaseStat(SID.Mag)
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
         End If
 
@@ -341,9 +344,8 @@ Public Sub Skill_IronSkin(ByVal UserIndex As Integer)
     'Check for the skill in the user posession
     If UserList(UserIndex).KnownSkills(SkID.IronSkin) = 0 Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "You do not know that skill!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 37
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
@@ -406,9 +408,8 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).KnownSkills(SkID.Protection) = 0 Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You do not know that spell!"
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 37
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
@@ -416,16 +417,15 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.ModStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "Not enough mana."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).ModStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
     End If
 
     'Check if still exhausted
@@ -442,9 +442,10 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
             If UserList(TargetIndex).Counters.ProtectCounter > 0 Then
                 If UserList(TargetIndex).Skills.Protect > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast protection on " & UserList(CasterIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "protection"
+                    ConBuf.Put_String UserList(CasterIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -453,9 +454,10 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
             If NPCList(TargetIndex).Counters.ProtectCounter > 0 Then
                 If NPCList(TargetIndex).Skills.Protect > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast protection on " & NPCList(TargetIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "protection"
+                    ConBuf.Put_String NPCList(TargetIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -490,23 +492,24 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.ModStat(SID.MinMAN) = UserList(CasterIndex).Stats.ModStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
 
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 44
         If TargetType = CharType_PC Then
-            ConBuf.Put_String "You protected " & UserList(TargetIndex).Name & "."
+            ConBuf.Put_String UserList(TargetIndex).Name
         ElseIf TargetType = CharType_NPC Then
-            ConBuf.Put_String "You protected " & NPCList(TargetIndex).Name & "."
+            ConBuf.Put_String NPCList(TargetIndex).Name
         End If
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String UserList(CasterIndex).Name & " protected you with a power of " & UserList(CasterIndex).Skills.Protect & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 45
+            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_Integer UserList(CasterIndex).Skills.Protect
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.ProtectCounter = 300000
@@ -538,13 +541,14 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).ModStat(SID.MinMAN) = NPCList(CasterIndex).ModStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String NPCList(CasterIndex).Name & " protected you with a power of " & NPCList(CasterIndex).Skills.Protect & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 45
+            ConBuf.Put_String NPCList(CasterIndex).Name
+            ConBuf.Put_Integer NPCList(CasterIndex).Skills.Protect
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.ProtectCounter = 300000
@@ -600,19 +604,17 @@ Dim Damage As Integer
 
     If UserList(CasterIndex).KnownSkills(SkID.SpikeField) = 0 Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "You do not know that spell!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 37
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
 
     'Check for enough mana
-    If UserList(CasterIndex).Stats.ModStat(SID.MinMAN) < 1 Then
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < 1 Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Not enough mana."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 38
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
@@ -629,7 +631,7 @@ Dim Damage As Integer
     'Set the values to shorter variables
     Damage = UserList(CasterIndex).Stats.BaseStat(SID.Mag) + 5
     aMap = UserList(CasterIndex).Pos.Map
-    aX = UserList(CasterIndex).Pos.x
+    aX = UserList(CasterIndex).Pos.X
     aY = UserList(CasterIndex).Pos.Y
 
     'Loop through all the tiles, damaging any NPC on them
@@ -784,9 +786,8 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).KnownSkills(SkID.Strengthen) = 0 Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You do not know that spell!"
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 37
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
@@ -794,16 +795,15 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.ModStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "Not enough mana."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).ModStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
     End If
 
     'Check if still exhausted
@@ -820,9 +820,10 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
             If UserList(TargetIndex).Counters.StrengthenCounter > 0 Then
                 If UserList(TargetIndex).Skills.Strengthen > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast strengthen on " & UserList(CasterIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "strengthen"
+                    ConBuf.Put_String UserList(CasterIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -831,9 +832,10 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
             If NPCList(TargetIndex).Counters.StrengthenCounter > 0 Then
                 If NPCList(TargetIndex).Skills.Strengthen > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_Talk
-                    ConBuf.Put_String "Magical interference trying to cast strengthen on " & NPCList(TargetIndex).Name
-                    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 39
+                    ConBuf.Put_String "strengthen"
+                    ConBuf.Put_String NPCList(TargetIndex).Name
                     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
                 End If
             End If
@@ -868,23 +870,24 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.ModStat(SID.MinMAN) = UserList(CasterIndex).Stats.ModStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
 
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 46
         If TargetType = CharType_PC Then
-            ConBuf.Put_String "You strengthened " & UserList(TargetIndex).Name & "."
+            ConBuf.Put_String UserList(TargetIndex).Name
         ElseIf TargetType = CharType_NPC Then
-            ConBuf.Put_String "You strengthened " & NPCList(TargetIndex).Name & "."
+            ConBuf.Put_String NPCList(TargetIndex).Name
         End If
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String UserList(CasterIndex).Name & " strengthened you with a power of " & UserList(CasterIndex).Skills.Strengthen & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 47
+            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_Integer UserList(CasterIndex).Skills.Strengthen
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.StrengthenCounter = 300000
@@ -916,13 +919,14 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).ModStat(SID.MinMAN) = NPCList(CasterIndex).ModStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
 
         If TargetType = CharType_PC Then
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String NPCList(CasterIndex).Name & " strengthened you with a power of " & NPCList(CasterIndex).Skills.Strengthen & "."
-            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 47
+            ConBuf.Put_String NPCList(CasterIndex).Name
+            ConBuf.Put_Integer NPCList(CasterIndex).Skills.Strengthen
             Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
 
             UserList(TargetIndex).Counters.StrengthenCounter = 300000
@@ -968,19 +972,17 @@ Dim WarCursePower As Integer
 
     If UserList(CasterIndex).KnownSkills(SkID.Warcry) = 0 Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "You do not know that skill!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 37
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
 
     'Check for enough endurance
-    If UserList(CasterIndex).Stats.ModStat(SID.MinSTA) < 1 Then '(3 * UserList(CasterIndex).Stats.ModWarcry) Then
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) < 1 Then '(3 * UserList(CasterIndex).Stats.ModWarcry) Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Not enough stamina."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 48
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
@@ -997,31 +999,36 @@ Dim WarCursePower As Integer
 
     'Cast on all NPCs in the PC area
     ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "You warcry!"
-    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    ConBuf.Put_Byte DataCode.Server_Message
+    ConBuf.Put_Byte 49
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
+    'Loop through all the alive and active NPCs
     For LoopC = 1 To NumNPCs
-        If NPCList(LoopC).Flags.NPCAlive Then
+        If NPCList(LoopC).Flags.NPCActive Then
             If NPCList(LoopC).Flags.NPCAlive Then
                 If NPCList(LoopC).Pos.Map = UserList(CasterIndex).Pos.Map Then
                     If NPCList(LoopC).Attackable Then
                         WarCursePower = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
                         If NPCList(LoopC).Skills.WarCurse <= WarCursePower Then
-                            If Server_Distance(UserList(CasterIndex).Pos.x, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.x, NPCList(LoopC).Pos.Y) <= Max_Server_Distance Then
+                            If Server_Distance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y) <= Max_Server_Distance Then
                                 NPCList(LoopC).Skills.WarCurse = WarCursePower
                                 NPCList(LoopC).Counters.WarCurseCounter = 30000 '30 seconds
+                                
+                                'Tell the users in the screen that the NPC is weaker
                                 ConBuf.Clear
-                                ConBuf.Put_Byte DataCode.Comm_Talk
-                                ConBuf.Put_String NPCList(LoopC).Name & " appears weaker."
-                                ConBuf.Put_Byte DataCode.Comm_FontType_Info
+                                ConBuf.Put_Byte DataCode.Server_Message
+                                ConBuf.Put_Byte 50
+                                ConBuf.Put_String NPCList(LoopC).Name
                                 Data_Send ToNPCArea, LoopC, ConBuf.Get_Buffer
+                                
+                                'Warcurse icon
                                 ConBuf.Clear
                                 ConBuf.Put_Byte DataCode.Server_IconWarCursed
                                 ConBuf.Put_Byte 1
                                 ConBuf.Put_Integer NPCList(LoopC).Char.CharIndex
                                 Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map
+                                
                             End If
                         End If
                     End If

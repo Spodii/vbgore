@@ -20,11 +20,11 @@ Public EmoID As EmoID
 '********** Packets ************
 'Data String Codenames (Reduces all data transfers to 1 byte tags)
 Public Type DataCode
-    Comm_Talk As Byte                   'Normal chat - "@"
-    Comm_UMsgbox As Byte                'Urgent Messagebox - "!!"
-    Comm_Shout As Byte                  'Shout A Message - "/SHOUT"
-    Comm_Emote As Byte                  'Emote A Message - ":"
-    Comm_Whisper As Byte                'Whisper A Private Message - "\"
+    Comm_Talk As Byte
+    Comm_UMsgbox As Byte
+    Comm_Shout As Byte
+    Comm_Emote As Byte
+    Comm_Whisper As Byte
     Comm_FontType_Talk As Byte
     Comm_FontType_Fight As Byte
     Comm_FontType_Info As Byte
@@ -36,16 +36,16 @@ Public Type DataCode
     Server_MailItemRemove As Byte
     Server_MailDelete As Byte
     Server_MailCompose As Byte
-    Server_UserCharIndex As Byte        'User Character Index - "SUC"
-    Server_SetUserPosition As Byte      'Set User's Position - "SUP"
-    Server_MakeChar As Byte             'Create New Character From Map - "MAC"
-    Server_EraseChar As Byte            'Erase Character From Map - "ERC"
-    Server_MoveChar As Byte             'Move Character On Map - "MOC"
-    Server_ChangeChar As Byte           'Change Character Apperance - "CHC"
-    Server_MakeObject As Byte           'Create An Object On Map - "MOB"
-    Server_EraseObject As Byte          'Erase An Object On Map - "EOB"
-    Server_PlaySound As Byte            'Play A Sound On Client - "PLW"
-    Server_Who As Byte                  'Who Is Currently Online - "/WHO"
+    Server_UserCharIndex As Byte
+    Server_SetUserPosition As Byte
+    Server_MakeChar As Byte
+    Server_EraseChar As Byte
+    Server_MoveChar As Byte
+    Server_ChangeChar As Byte
+    Server_MakeObject As Byte
+    Server_EraseObject As Byte
+    Server_PlaySound As Byte
+    Server_Who As Byte
     Server_CharHP As Byte
     Server_CharMP As Byte
     Server_IconCursed As Byte
@@ -60,25 +60,26 @@ Public Type DataCode
     Server_Help As Byte
     Server_Disconnect As Byte
     Server_Connect As Byte
-    Map_LoadMap As Byte                 'Load Map - "SCM"
-    Map_DoneLoadingMap As Byte          'Done Loading Map - "DLM"
-    Map_DoneSwitching As Byte           'Done Switching Maps - "DSM"
-    Map_SendName As Byte                'Request Map Name - "SMN"
-    Map_RequestPositionUpdate As Byte   'Request Position Update - "RPU"
+    Server_Message As Byte
+    Map_LoadMap As Byte
+    Map_DoneLoadingMap As Byte
+    Map_DoneSwitching As Byte
+    Map_SendName As Byte
+    Map_RequestPositionUpdate As Byte
     User_Target As Byte
-    User_KnownSkills As Byte            'Request Known Skills
-    User_Attack As Byte                 'User Attack - "ATT"
-    User_SetInventorySlot As Byte       'Set User Inventory Slot - "SIS"
+    User_KnownSkills As Byte
+    User_Attack As Byte
+    User_SetInventorySlot As Byte
     User_Desc As Byte
-    User_Login  As Byte                 'Log In Existing User - "LOGIN"
-    User_NewLogin As Byte               'Create A New User - "NLOGIN"
-    User_Get As Byte                    'User Get An Item Off Ground - "GET"
-    User_Drop As Byte                   'User Drop An Item - "DRP"
-    User_Use As Byte                    'User Use An Item - "USE"
-    User_Move As Byte                   'Move User Character - "M"
-    User_Rotate As Byte                 'Rotate User Character - "SUH"
-    User_LeftClick As Byte              'User Left-Clicked Tile - "LC"
-    User_RightClick As Byte             'User Right-Clicked Tile - "RC"
+    User_Login  As Byte
+    User_NewLogin As Byte
+    User_Get As Byte
+    User_Drop As Byte
+    User_Use As Byte
+    User_Move As Byte
+    User_Rotate As Byte
+    User_LeftClick As Byte
+    User_RightClick As Byte
     User_LookLeft As Byte
     User_LookRight As Byte
     User_AggressiveFace As Byte
@@ -96,6 +97,7 @@ Public Type DataCode
     GM_Summon As Byte
     GM_Kick As Byte
     GM_Raise As Byte
+    GM_SetGMLevel As Byte
 End Type
 Public DataCode As DataCode
 
@@ -261,6 +263,8 @@ Public Sub InitDataCommands()
         .Server_MailItemRemove = 75
         .Server_MailDelete = 76
         .Server_MailCompose = 77
+        .GM_SetGMLevel = 78
+        .Server_Message = 79
     End With
 
 End Sub

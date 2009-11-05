@@ -75,29 +75,27 @@ Dim LoopC As Integer
     SetOpt.Value = True
     EraseOpt.Value = False
     
-    'Set the NPCs array
-    FileNum = FreeFile
-    Open App.Path & "\NPCs\Count.npc" For Binary As FileNum
-    Get FileNum, , NumNPCs
-    Close FileNum
+    'Get the number of NPCs (Sort by id, descending, only get 1 entry, only return id)
+    DB_RS.Open "SELECT id FROM npcs ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
+    NumNPCs = DB_RS(0)
+    DB_RS.Close
     
-    If NumNPCs > 0 Then
-        ReDim NPCs(1 To NumNPCs)
-        NPCList.Clear
+    'Clear the npc list
+    NPCList.Clear
     
-        'Load all the names
-        For LoopC = 1 To NumNPCs
-            If Engine_FileExist(App.Path & "\NPCs\" & LoopC & ".npc", vbNormal) Then
-                Open (App.Path & "\NPCs\" & LoopC & ".npc") For Binary As FileNum
-                Get FileNum, , NPCs(LoopC)
-                NPCList.AddItem NPCs(LoopC).Name
-                Close FileNum
-            End If
-        Next LoopC
-        
-        'Select the first slot
-        NPCList.ListIndex = 0
-    End If
+    'Check for a valid number of NPCs
+    If NumNPCs <= 0 Then Exit Sub
+    
+    'Load the NPCs
+    DB_RS.Open "SELECT name FROM npcs", DB_Conn, adOpenStatic, adLockOptimistic
+    Do While DB_RS.EOF = False
+        NPCList.AddItem Trim$(DB_RS!Name)
+        DB_RS.MoveNext
+    Loop
+    DB_RS.Close
+    
+    'Select the first slot
+    NPCList.ListIndex = 0
 
 End Sub
 

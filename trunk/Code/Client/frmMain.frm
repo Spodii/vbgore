@@ -263,15 +263,26 @@ Dim i As Byte
                     ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/SUM" Then
                         sndBuf.Put_Byte DataCode.GM_Summon
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/SETGM" Then
+                        TempS = Split(SplitCommandFromString(EnterTextBuffer), " ")
+                        If UBound(TempS) > 0 Then
+                            If IsNumeric(TempS(1)) Then
+                                sndBuf.Put_Byte DataCode.GM_SetGMLevel
+                                sndBuf.Put_String TempS(0)
+                                sndBuf.Put_Byte CByte(TempS(1))
+                            End If
+                        End If
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/KICK" Then
                         sndBuf.Put_Byte DataCode.GM_Kick
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/RAISE" Then
                         TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
-                        If IsNumeric(TempS(1)) Then
-                            sndBuf.Put_Byte DataCode.GM_Raise
-                            sndBuf.Put_String TempS(0)
-                            sndBuf.Put_Long CLng(TempS(1))
+                        If UBound(TempS) > 0 Then
+                            If IsNumeric(TempS(1)) Then
+                                sndBuf.Put_Byte DataCode.GM_Raise
+                                sndBuf.Put_String TempS(0)
+                                sndBuf.Put_Long CLng(TempS(1))
+                            End If
                         End If
                     Else
                         sndBuf.Put_Byte DataCode.Comm_Talk
@@ -634,6 +645,7 @@ Static x As Long
             Case .Server_MailMessage: Data_Server_MailMessage rBuf
             Case .Server_MakeChar: Data_Server_MakeChar rBuf
             Case .Server_MakeObject: Data_Server_MakeObject rBuf
+            Case .Server_Message: Data_Server_Message rBuf
             Case .Server_MoveChar: Data_Server_MoveChar rBuf
             Case .Server_Ping: Data_Server_Ping
             Case .Server_PlaySound: Data_Server_PlaySound rBuf

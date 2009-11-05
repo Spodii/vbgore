@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.3            ************
+'************            Official Release: Version 0.2.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -104,7 +104,7 @@ Public Const ForceUpdateCheck As Boolean = False
 Public Type ObjData
     Name As String              'Name
     ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Integer         'Graphic index
+    GrhIndex As Long            'Graphic index
     MinHP As Integer            'Bonus HP regenerated
     MaxHP As Integer            'Bonus Max HP raised
     MinHIT As Integer           'Bonus minimum hit
@@ -134,10 +134,14 @@ Public Const MAX_INVENTORY_SLOTS As Byte = 49
 Type Inventory
     ObjIndex As Long
     Name As String
-    GrhIndex As Integer
+    GrhIndex As Long
     Amount As Integer
     Equipped As Boolean
 End Type
+
+'Messages
+Public NumMessages As Byte
+Public Message() As String
 
 'Known user skills/spells
 Public UserKnowSkill(1 To NumSkills)

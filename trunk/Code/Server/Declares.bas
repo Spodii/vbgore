@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.3            ************
+'************            Official Release: Version 0.2.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -95,6 +95,7 @@ Option Explicit
 'These two are mostly used for checking to make sure the encryption works
 Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
 Public Const DEBUG_PacketFlood As Boolean = False           'Set to true when using ToolPacketSender
+Public Const DEBUG_DebugMode As Boolean = True              'If we display critical errors
 
 '********** Public CONSTANTS ***********
 
@@ -152,7 +153,7 @@ Public Const AGGRESSIVEFACETIME = 4000  'How long char remains aggressive-faced 
 '************ Positioning ************
 Type WorldPos   'Holds placement information
     Map As Integer  'Map
-    x As Integer    'X coordinate
+    X As Integer    'X coordinate
     Y As Integer    'Y coordinate
 End Type
 
@@ -187,15 +188,11 @@ End Type
 '************ Map Tiles/Information ************
 Type MapBlock   'Information for each map block
     Blocked As Byte             'If the tile is blocked
-    Graphic(1 To 6) As Integer  'Index of the 6 graphic layers
-    Light(1 To 24) As Long      'Holds the lighting values
     UserIndex As Integer        'Index of the user on the tile
     NPCIndex As Integer         'Index of the NPC on the tile
     ObjInfo As Obj              'Information of the object on the tile
     TileExit As WorldPos        'Warp location when user touches the tile
     Mailbox As Byte             'If there is a mailbox on the tile
-    Shadow(1 To 6) As Byte      'If the surface shows a shadow
-    Sfx As Integer              'The sound effect that is placed on the map block
 End Type
 Public MapData() As MapBlock
 Type MapInfo    'Map information
@@ -277,12 +274,13 @@ Type UserFlags  'Flags for a user
     TradeWithNPC As Integer 'NPC the user is trading with
     TargetIndex As Integer  'Index of the NPC or Player targeted
     Target As Byte          'Type of targeting - 0 for none, 1 for player, 2 for NPC
-    AdminID As Byte         'What type of admin the user is: 0 = None, 1 = GM, 2 = Dev, 3 = GM/Dev
+    GMLevel As Byte         'What type of admin the user is: 0 = None, 1 = GM
     Disconnecting As Byte   'If the user will be disconnected after data is sent
     QuestNPC As Integer     'The ID of the NPC that the user is talking to about a quest
 End Type
 Type UserCounters   'Counters for a user
-    IdleCount As Long           'Stores last time the user made a move
+    IdleCount As Long           'Stores last time the user sent an action packet
+    LastPacket As Long          'Stores last time the user sent ANY packet
     AttackCounter As Long       'Stores last time user attacked
     MoveCounter As Long         'Stores last time the user moved
     SendMapCounter As WorldPos  'Stores map counter information
@@ -342,7 +340,7 @@ Type User   'Holds data for a user
     CompletedQuests As String   'The string contains the indexes of all completed quests in order
     Quest(1 To MaxQuests) As Integer            'The quest index of the current quests if any
     QuestStatus(1 To MaxQuests) As QuestStatus  'Counts certain parts of quests that require being counted (ie NPC kills)
-    MailID(1 To MaxMailPerUser) As Integer      'ID of the user's mail
+    MailID(1 To MaxMailPerUser) As Long         'ID of the user's mail
     MailboxPos As WorldPos                      'Position of the last-used mailbox
 End Type
 Public UserList() As User   'Holds data for each user
@@ -440,6 +438,7 @@ Public MaxXBorder As Byte
 Public MinYBorder As Byte
 Public MaxYBorder As Byte
 Public ResPos As WorldPos
+Public StartPos As WorldPos
 Public NumUsers As Integer  'Current number of users
 Public LastUser As Integer  'Index of the last user
 Public LastChar As Integer
@@ -450,6 +449,7 @@ Public NumQuests As Integer
 Public NumObjDatas As Integer
 
 Public IdleLimit As Long
+Public LastPacket As Long
 Public MaxUsers As Integer
 
 'Connection group information
@@ -486,6 +486,7 @@ Public Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) 
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
+Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 678  Code: 0  Total: 678 Lines
 ':) CommentOnly: 129 (19%)  Commented: 228 (33.6%)  Empty: 65 (9.6%)  Max Logic Depth: 1

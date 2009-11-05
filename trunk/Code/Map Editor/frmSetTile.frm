@@ -1977,6 +1977,15 @@ ErrOut:
 
 End Sub
 
+Private Sub GrhTxt_KeyPress(Index As Integer, KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub LayerChk_Click(Index As Integer)
 
     DrawPreview
@@ -2022,6 +2031,15 @@ ErrOut:
 
 End Sub
 
+Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub ShadowTxt_Change(Index As Integer)
 Dim i As Long
 On Error GoTo ErrOut
@@ -2034,4 +2052,13 @@ On Error GoTo ErrOut
     
 ErrOut:
     ShadowTxt(Index).Text = 0
+End Sub
+
+Private Sub ShadowTxt_KeyPress(Index As Integer, KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub

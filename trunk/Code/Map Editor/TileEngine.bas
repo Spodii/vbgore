@@ -78,19 +78,19 @@ End Type
 Public Type GrhData
     sX As Integer
     sY As Integer
-    FileNum As Integer
+    FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
     TileWidth As Single
     TileHeight As Single
     NumFrames As Byte
-    Frames() As Integer
+    Frames() As Long
     Speed As Single
 End Type
 
 'Points to a grhData and keeps animation info
 Public Type Grh
-    GrhIndex As Integer
+    GrhIndex As Long
     FrameCounter As Single
     SpeedCounter As Byte
     Started As Byte
@@ -277,7 +277,7 @@ Private NumWings As Integer     'Number of wings
 Private NumHeads As Integer     'Number of heads
 Private NumHairs As Integer     'Number of hairs
 Private NumWeapons As Integer   'Number of weapons
-Private NumGrhs As Integer      'Number of grhs
+Private NumGrhs As Long         'Number of grhs
 Public NumMaps As Integer       'Number of maps
 Public NumGrhFiles As Integer   'Number of pngs
 Public LastChar As Integer      'Last character
@@ -938,7 +938,7 @@ ErrOut:
 
 End Function
 
-Sub Engine_Init_Grh(ByRef Grh As Grh, ByVal GrhIndex As Integer, Optional ByVal Started As Byte = 2)
+Sub Engine_Init_Grh(ByRef Grh As Grh, ByVal GrhIndex As Long, Optional ByVal Started As Byte = 2)
 
 '*****************************************************************
 'Sets up a grh. MUST be done before rendering
@@ -965,12 +965,12 @@ Sub Engine_Init_Grh(ByRef Grh As Grh, ByVal GrhIndex As Integer, Optional ByVal 
 End Sub
 
 Sub Engine_Init_GrhData()
-Dim Grh As Integer
+Dim Grh As Long
 Dim Frame As Long
 
     'Get Number of Graphics
     GrhPath = App.Path & "\Grh\"
-    NumGrhs = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhs"))
+    NumGrhs = CLng(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhs"))
     
     'Resize arrays
     ReDim GrhData(1 To NumGrhs) As GrhData
@@ -1227,8 +1227,8 @@ Dim s As String
     UserPos.Y = MinYBorder
 
     'Set scroll pixels per frame
-    ScrollPixelsPerFrameX = 24
-    ScrollPixelsPerFrameY = 24
+    ScrollPixelsPerFrameX = 36
+    ScrollPixelsPerFrameY = 36
 
     'Set the array sizes by the number of graphic files
     NumGrhFiles = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
@@ -1658,7 +1658,7 @@ Dim aY As Integer
 
 End Sub
 
-Sub Engine_OBJ_Create(ByVal GrhIndex As Integer, ByVal X As Byte, ByVal Y As Byte)
+Sub Engine_OBJ_Create(ByVal GrhIndex As Long, ByVal X As Byte, ByVal Y As Byte)
 
 '*****************************************************************
 'Create an object on the map and update LastOBJ value

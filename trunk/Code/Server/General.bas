@@ -1,6 +1,27 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Function Server_UserExist(ByVal UserName As String, Optional ByVal DeleteIfExists As Boolean = False) As Boolean
+'*****************************************************************
+'Checks the database for if a user exists by the specified name
+'*****************************************************************
+
+    'Make the query
+    DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserName & "'", DB_Conn, adOpenStatic, adLockOptimistic
+
+    'If End Of File = true, then the user doesn't exist
+    If DB_RS.EOF = True Then Server_UserExist = False Else Server_UserExist = True
+    
+    'Close the recordset
+    DB_RS.Close
+    
+    'Check for the delete flag
+    If DeleteIfExists Then
+        If Server_UserExist Then DB_Conn.Execute "DELETE FROM users WHERE `name`='" & UserName & "'"
+    End If
+
+End Function
+
 Function Server_LegalString(ByVal CheckString As String) As Boolean
 
 '*****************************************************************

@@ -1,0 +1,39 @@
+[CHATWINDOW] 
+ScreenX= 0 
+ScreenY= 396 
+
+[MENU]
+ScreenX= 340
+ScreenY= 217
+
+[DEV]
+ScreenX= 0
+ScreenY= 0
+
+[AMOUNT]
+ScreenX= 375
+ScreenY= 275
+
+[WRITEMESSAGE]
+ScreenX= 0
+ScreenY= 0
+
+[VIEWMESSAGE]
+ScreenX= 0
+ScreenY= 0
+
+[MAILBOX]
+ScreenX= 0
+ScreenY= 0
+
+[SHOP]
+ScreenX= 0
+ScreenY= 0
+
+[INVENTORY]
+ScreenX= 0
+ScreenY= 0
+
+[QUICKBAR]
+ScreenX= 0
+ScreenY= 553

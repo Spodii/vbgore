@@ -1,5 +1,5 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\STDOLE2.TLB#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
 Module=AllFilesInFolder; Code\Common Code\AllFilesInFolder.bas
 Module=Compressions; Code\Common Code\Compressions.bas
 Form=Code\Folder Compress\frmMain.frm
@@ -13,8 +13,8 @@ Name="FolderCompress"
 HelpContextID="0"
 CompatibleMode="0"
 MajorVer=0
-MinorVer=1
-RevisionVer=3
+MinorVer=2
+RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"

@@ -23,6 +23,19 @@ Private ModStats(1 To NumStats) As Long
 Private UpdateBaseStats(1 To NumStats) As Byte
 Private UpdateModStats(1 To NumStats) As Byte
 
+Public Sub ForceFullUpdate()
+Dim i As Long
+
+    'Force update of every stat
+    LastHPPercent = 255
+    LastMPPercent = 255
+    For i = 1 To NumStats
+        UpdateBaseStats(i) = 1
+        UpdateModStats(i) = 1
+    Next i
+
+End Sub
+
 Public Property Get BaseStat(ByVal StatID As Byte) As Long
 
 'Get the stat value
@@ -43,33 +56,14 @@ Public Property Let BaseStat(ByVal StatID As Byte, ByVal Value As Long)
     'Apply limit on HP/Mana/Stamina
     Select Case StatID
     Case SID.MinHP
-        If Value > BaseStat(SID.MaxHP) Then BaseStat(SID.MinHP) = BaseStat(SID.MaxHP)
+        If Value > ModStat(SID.MaxHP) Then BaseStat(SID.MinHP) = ModStat(SID.MaxHP)
     Case SID.MinMAN
-        If Value > BaseStat(SID.MaxMAN) Then BaseStat(SID.MinMAN) = BaseStat(SID.MaxMAN)
+        If Value > ModStat(SID.MaxMAN) Then BaseStat(SID.MinMAN) = ModStat(SID.MaxMAN)
     Case SID.MinSTA
-        If Value > BaseStat(SID.MaxSTA) Then BaseStat(SID.MinSTA) = BaseStat(SID.MaxSTA)
+        If Value > ModStat(SID.MaxSTA) Then BaseStat(SID.MinSTA) = ModStat(SID.MaxSTA)
     End Select
 
 End Property
-
-Public Sub LoadClass(ByVal FileIndex As Byte)
-
-Dim i As Long
-
-    For i = 1 To NumStats
-    
-        'Load the stat values
-        Get #FileIndex, , BaseStats(i)
-
-        'Set the mod values to the base values
-        ModStats(i) = BaseStats(i)
-        
-        UpdateBaseStats(i) = 1
-        UpdateModStats(i) = 1
-            
-    Next i
-
-End Sub
 
 Public Property Get ModStat(ByVal StatID As Byte) As Long
 
@@ -81,35 +75,19 @@ End Property
 
 Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
 
-'Let the stat value
-
+    'Check for a reference to a stat that can not be modded
+    If StatID = SID.MinHP Or StatID = SID.MinMAN Or StatID = SID.MinSTA Or StatID = SID.Gold Or _
+        StatID = SID.Points Or StatID = SID.EXP Or StatID = SID.ELU Or StatID = SID.ELV Then
+        If DEBUG_DebugMode Then MsgBox "Invalid stat ID was referenced for ModStat. Please refer to UserStats.ModStat[PropertyLet] for this error!" & vbCrLf & "SID of the stat referenced was: " & StatID, vbOKOnly
+        Exit Property
+    End If
+    
+    'Let the stat value
     If ModStat(StatID) = Value Then Exit Property
     ModStats(StatID) = Value
     UpdateModStats(StatID) = 1
 
-    'Apply limit on HP/Mana/Stamina
-    Select Case StatID
-    Case SID.MinHP
-        If Value > ModStat(SID.MaxHP) Then ModStats(SID.MinHP) = ModStats(SID.MaxHP)
-    Case SID.MinMAN
-        If Value > ModStat(SID.MaxMAN) Then ModStats(SID.MinMAN) = ModStats(SID.MaxMAN)
-    Case SID.MinSTA
-        If Value > ModStat(SID.MaxSTA) Then ModStats(SID.MinSTA) = ModStats(SID.MaxSTA)
-    End Select
-
 End Property
-
-Public Sub SaveClass(ByVal FileIndex As Byte)
-Dim i As Long
-
-    For i = 1 To NumStats
-    
-        'Save the class values
-        Put #FileIndex, , BaseStats(i)
-            
-    Next i
-
-End Sub
 
 Public Sub SendUpdatedStats()
 
@@ -153,8 +131,8 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     If j Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     'Check the HP Percent
-    If LastHPPercent <> CByte((ModStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
-        LastHPPercent = CByte((ModStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
+    If LastHPPercent <> CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
+        LastHPPercent = CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_CharHP
         ConBuf.Put_Byte LastHPPercent
@@ -163,8 +141,8 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     End If
 
     'Check the MP Percent
-    If LastMPPercent <> CByte(ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100 Then
-        LastMPPercent = CByte(ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100
+    If LastMPPercent <> CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100) Then
+        LastMPPercent = CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100)
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_CharMP
         ConBuf.Put_Byte LastMPPercent

@@ -374,6 +374,15 @@ ErrOut:
 
 End Sub
 
+Private Sub DirTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub Form_Load()
 
     'Update list
@@ -408,6 +417,24 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 End Sub
 
+Private Sub GfxTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub IndexTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub MiscLbl_Click(Index As Integer)
 
     'Display help on the *
@@ -437,8 +464,35 @@ ErrOut:
     
 End Sub
 
+Private Sub ParticlesTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub RefreshLbl_Click()
 
     UpdateEffectList
 
+End Sub
+
+Private Sub XTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub YTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub

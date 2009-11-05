@@ -146,6 +146,15 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub MapTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub SetOpt_Click()
 
     SetOpt.Value = True
@@ -187,4 +196,22 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
         End If
     End If
 
+End Sub
+
+Private Sub XTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub YTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub

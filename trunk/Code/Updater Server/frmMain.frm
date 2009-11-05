@@ -461,7 +461,7 @@ Dim j As Integer
     DoEvents
 
     'Start up the socket
-    LocalID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdateIP"), Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
+    LocalID = Sox.Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
     Sox.SetOption LocalID, soxSO_TCP_NODELAY, True
     
     If frmMain.Sox.Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly

@@ -4,7 +4,7 @@ Option Explicit
 Public Type NPCTradeItems
     Name As String
     Price As Long
-    GrhIndex As Integer
+    GrhIndex As Long
 End Type
 
 Public NPCTradeItems() As NPCTradeItems
@@ -207,7 +207,7 @@ Dim ByFlags As Long
 Dim MapNum As Byte
 Dim i As Integer
 Dim Y As Byte
-Dim x As Byte
+Dim X As Byte
 
     'Clear the offset values for the particle engine
     ParticleOffsetX = 0
@@ -242,115 +242,115 @@ Dim x As Byte
 
     'Load arrays
     For Y = YMinMapSize To YMaxMapSize
-        For x = XMinMapSize To XMaxMapSize
+        For X = XMinMapSize To XMaxMapSize
         
             'Clear the graphic layers
             For i = 1 To 6
-                MapData(x, Y).Graphic(i).GrhIndex = 0
+                MapData(X, Y).Graphic(i).GrhIndex = 0
             Next i
 
             'Get flag's byte
             Get #MapNum, , ByFlags
 
             'Blocked
-            If ByFlags And 1 Then Get #MapNum, , MapData(x, Y).Blocked Else MapData(x, Y).Blocked = 0
+            If ByFlags And 1 Then Get #MapNum, , MapData(X, Y).Blocked Else MapData(X, Y).Blocked = 0
 
             'Graphic layers
             If ByFlags And 2 Then
-                Get #MapNum, , MapData(x, Y).Graphic(1).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(1), MapData(x, Y).Graphic(1).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(1).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(1), MapData(X, Y).Graphic(1).GrhIndex
             End If
             If ByFlags And 4 Then
-                Get #MapNum, , MapData(x, Y).Graphic(2).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(2), MapData(x, Y).Graphic(2).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(2).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(2), MapData(X, Y).Graphic(2).GrhIndex
             End If
             If ByFlags And 8 Then
-                Get #MapNum, , MapData(x, Y).Graphic(3).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(3), MapData(x, Y).Graphic(3).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(3).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(3), MapData(X, Y).Graphic(3).GrhIndex
             End If
             If ByFlags And 16 Then
-                Get #MapNum, , MapData(x, Y).Graphic(4).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(4), MapData(x, Y).Graphic(4).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(4).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(4), MapData(X, Y).Graphic(4).GrhIndex
             End If
             If ByFlags And 32 Then
-                Get #MapNum, , MapData(x, Y).Graphic(5).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(5), MapData(x, Y).Graphic(5).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(5).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(5), MapData(X, Y).Graphic(5).GrhIndex
             End If
             If ByFlags And 64 Then
-                Get #MapNum, , MapData(x, Y).Graphic(6).GrhIndex
-                Engine_Init_Grh MapData(x, Y).Graphic(6), MapData(x, Y).Graphic(6).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(6).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(6), MapData(X, Y).Graphic(6).GrhIndex
             End If
             
             'Set light to default (-1) - it will be set again if it is not -1 from the code below
             For i = 1 To 24
-                MapData(x, Y).Light(i) = -1
+                MapData(X, Y).Light(i) = -1
             Next i
             
             'Get lighting values
             If ByFlags And 128 Then
                 For i = 1 To 4
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 256 Then
                 For i = 5 To 8
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 512 Then
                 For i = 9 To 12
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 1024 Then
                 For i = 13 To 16
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 2048 Then
                 For i = 17 To 20
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 4096 Then
                 For i = 21 To 24
-                    Get #MapNum, , MapData(x, Y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
 
             'Store the lighting in the SaveLightBuffer
             For i = 1 To 24
-                SaveLightBuffer(x, Y).Light(i) = MapData(x, Y).Light(i)
+                SaveLightBuffer(X, Y).Light(i) = MapData(X, Y).Light(i)
             Next i
 
             'Mailbox
             If ByFlags And 8192 Then
-                MapData(x, Y).Mailbox = 1
+                MapData(X, Y).Mailbox = 1
             Else
-                MapData(x, Y).Mailbox = 0
+                MapData(X, Y).Mailbox = 0
             End If
 
             'Shadows
-            If ByFlags And 16384 Then MapData(x, Y).Shadow(1) = 1 Else MapData(x, Y).Shadow(1) = 0
-            If ByFlags And 32768 Then MapData(x, Y).Shadow(2) = 1 Else MapData(x, Y).Shadow(2) = 0
-            If ByFlags And 65536 Then MapData(x, Y).Shadow(3) = 1 Else MapData(x, Y).Shadow(3) = 0
-            If ByFlags And 131072 Then MapData(x, Y).Shadow(4) = 1 Else MapData(x, Y).Shadow(4) = 0
-            If ByFlags And 262144 Then MapData(x, Y).Shadow(5) = 1 Else MapData(x, Y).Shadow(5) = 0
-            If ByFlags And 524288 Then MapData(x, Y).Shadow(6) = 1 Else MapData(x, Y).Shadow(6) = 0
+            If ByFlags And 16384 Then MapData(X, Y).Shadow(1) = 1 Else MapData(X, Y).Shadow(1) = 0
+            If ByFlags And 32768 Then MapData(X, Y).Shadow(2) = 1 Else MapData(X, Y).Shadow(2) = 0
+            If ByFlags And 65536 Then MapData(X, Y).Shadow(3) = 1 Else MapData(X, Y).Shadow(3) = 0
+            If ByFlags And 131072 Then MapData(X, Y).Shadow(4) = 1 Else MapData(X, Y).Shadow(4) = 0
+            If ByFlags And 262144 Then MapData(X, Y).Shadow(5) = 1 Else MapData(X, Y).Shadow(5) = 0
+            If ByFlags And 524288 Then MapData(X, Y).Shadow(6) = 1 Else MapData(X, Y).Shadow(6) = 0
             
             'Clear any old sfx
-            If Not MapData(x, Y).Sfx Is Nothing Then
-                MapData(x, Y).Sfx.Stop
-                Set MapData(x, Y).Sfx = Nothing
+            If Not MapData(X, Y).Sfx Is Nothing Then
+                MapData(X, Y).Sfx.Stop
+                Set MapData(X, Y).Sfx = Nothing
             End If
             
             'Set the sfx
             If ByFlags And 1048576 Then
                 Get #MapNum, , i
-                Engine_Sound_SetToMap i, x, Y
+                Engine_Sound_SetToMap i, X, Y
             End If
 
-        Next x
+        Next X
     Next Y
     
     'Get the number of effects
@@ -358,15 +358,15 @@ Dim x As Byte
 
     'Store the individual particle effect types
     If Y > 0 Then
-        For x = 1 To Y
+        For X = 1 To Y
             Get #MapNum, , GetEffectNum
             Get #MapNum, , GetX
             Get #MapNum, , GetY
             Get #MapNum, , GetParticleCount
             Get #MapNum, , GetGfx
             Get #MapNum, , GetDirection
-            Effect_Begin GetEffectNum, GetX + 288, GetY + 288, GetGfx, GetParticleCount, GetDirection
-        Next x
+            Effect_Begin GetEffectNum, GetX, GetY, GetGfx, GetParticleCount, GetDirection
+        Next X
     End If
     
     Close #MapNum
@@ -399,158 +399,25 @@ Dim i As Byte
     'Skin positions
     t = DataPath & "Skins\" & CurrentSkin & ".dat"   'Set the custom positions file for the skin
     With GameWindow
-        Engine_Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.x)
+        Engine_Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.X)
         Engine_Var_Write t, "QUICKBAR", "ScreenY", Str(.QuickBar.Screen.Y)
-        Engine_Var_Write t, "CHATWINDOW", "ScreenX", Str(.ChatWindow.Screen.x)
+        Engine_Var_Write t, "CHATWINDOW", "ScreenX", Str(.ChatWindow.Screen.X)
         Engine_Var_Write t, "CHATWINDOW", "ScreenY", Str(.ChatWindow.Screen.Y)
-        Engine_Var_Write t, "INVENTORY", "ScreenX", Str(.Inventory.Screen.x)
+        Engine_Var_Write t, "INVENTORY", "ScreenX", Str(.Inventory.Screen.X)
         Engine_Var_Write t, "INVENTORY", "ScreenY", Str(.Inventory.Screen.Y)
-        Engine_Var_Write t, "SHOP", "ScreenX", Str(.Shop.Screen.x)
+        Engine_Var_Write t, "SHOP", "ScreenX", Str(.Shop.Screen.X)
         Engine_Var_Write t, "SHOP", "ScreenY", Str(.Shop.Screen.Y)
-        Engine_Var_Write t, "MAILBOX", "ScreenX", Str(.Mailbox.Screen.x)
+        Engine_Var_Write t, "MAILBOX", "ScreenX", Str(.Mailbox.Screen.X)
         Engine_Var_Write t, "MAILBOX", "ScreenY", Str(.Mailbox.Screen.Y)
-        Engine_Var_Write t, "VIEWMESSAGE", "ScreenX", Str(.ViewMessage.Screen.x)
+        Engine_Var_Write t, "VIEWMESSAGE", "ScreenX", Str(.ViewMessage.Screen.X)
         Engine_Var_Write t, "VIEWMESSAGE", "ScreenY", Str(.ViewMessage.Screen.Y)
-        Engine_Var_Write t, "WRITEMESSAGE", "ScreenX", Str(.WriteMessage.Screen.x)
+        Engine_Var_Write t, "WRITEMESSAGE", "ScreenX", Str(.WriteMessage.Screen.X)
         Engine_Var_Write t, "WRITEMESSAGE", "ScreenY", Str(.WriteMessage.Screen.Y)
-        Engine_Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.x)
+        Engine_Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.X)
         Engine_Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
-        Engine_Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.x)
+        Engine_Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.X)
         Engine_Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
     End With
-
-End Sub
-
-Sub Game_SaveMapData(SaveAs As Integer)
-
-'*****************************************************************
-'Saves map data to file
-'*****************************************************************
-
-Dim ByFlags As Long
-Dim FileNum As Byte
-Dim i As Integer
-Dim Y As Long
-Dim x As Long
-
-    'Remove old file if it exists
-    If Engine_FileExist(MapPath & SaveAs & ".map", vbNormal) = True Then Kill MapPath & SaveAs & ".map"
-
-    'Write header info on Map.dat
-    Call Engine_Var_Write(DataPath & "Map.dat", "INIT", "NumMaps", Str$(NumMaps))
-
-    'Open .map file
-    FileNum = FreeFile
-    Open MapPath & SaveAs & ".map" For Binary As #FileNum
-    Seek #FileNum, 1
-
-    'Map header
-    Put #FileNum, , MapInfo.MapVersion
-
-    'Loop through each tile
-    For Y = YMinMapSize To YMaxMapSize
-        For x = XMinMapSize To XMaxMapSize
-
-            'Reset flags
-            ByFlags = 0
-
-            'Blocked
-            If MapData(x, Y).Blocked > 0 Then ByFlags = ByFlags Or 1
-
-            'Graphic layers
-            If MapData(x, Y).Graphic(1).GrhIndex Then ByFlags = ByFlags Or 2
-            If MapData(x, Y).Graphic(2).GrhIndex Then ByFlags = ByFlags Or 4
-            If MapData(x, Y).Graphic(3).GrhIndex Then ByFlags = ByFlags Or 8
-            If MapData(x, Y).Graphic(4).GrhIndex Then ByFlags = ByFlags Or 16
-            If MapData(x, Y).Graphic(5).GrhIndex Then ByFlags = ByFlags Or 32
-            If MapData(x, Y).Graphic(6).GrhIndex Then ByFlags = ByFlags Or 64
-
-            'Light 1-4 used
-            For i = 1 To 4
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 128
-            Next i
-            'Light 5-8 used
-            For i = 5 To 8
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 256
-            Next i
-            'Light 9-12 used
-            For i = 9 To 12
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 512
-            Next i
-            'Light 13-16 used
-            For i = 13 To 16
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 1024
-            Next i
-            'Light 17-20 used
-            For i = 17 To 20
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 2048
-            Next i
-            'Light 21-24 used
-            For i = 21 To 24
-                If MapData(x, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 4096
-            Next i
-            
-            'Mailbox
-            If MapData(x, Y).Mailbox = 1 Then ByFlags = ByFlags Or 8192
-            
-            'Shadows
-            If MapData(x, Y).Shadow(1) = 1 Then ByFlags = ByFlags Or 16384
-            If MapData(x, Y).Shadow(2) = 1 Then ByFlags = ByFlags Or 32768
-            If MapData(x, Y).Shadow(3) = 1 Then ByFlags = ByFlags Or 65536
-            If MapData(x, Y).Shadow(4) = 1 Then ByFlags = ByFlags Or 131072
-            If MapData(x, Y).Shadow(5) = 1 Then ByFlags = ByFlags Or 262144
-            If MapData(x, Y).Shadow(6) = 1 Then ByFlags = ByFlags Or 524288
-
-            'Store layers
-            Put #FileNum, , ByFlags
-            
-            'Save blocked value
-            If MapData(x, Y).Blocked > 0 Then Put #FileNum, , MapData(x, Y).Blocked
-            
-            'Save needed grh indexes
-            For i = 1 To 6
-                If MapData(x, Y).Graphic(i).GrhIndex > 0 Then
-                    Put #FileNum, , MapData(x, Y).Graphic(i).GrhIndex
-                End If
-            Next i
-
-            'Save needed lights
-            If ByFlags And 128 Then
-                For i = 1 To 4
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-            If ByFlags And 256 Then
-                For i = 5 To 8
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-            If ByFlags And 512 Then
-                For i = 9 To 12
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-            If ByFlags And 1024 Then
-                For i = 13 To 16
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-            If ByFlags And 2048 Then
-                For i = 17 To 20
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-            If ByFlags And 4096 Then
-                For i = 21 To 24
-                    Put #FileNum, , MapData(x, Y).Light(i)
-                Next i
-            End If
-
-        Next x
-    Next Y
-
-    'Close .map file
-    Close #FileNum
 
 End Sub
 
@@ -587,9 +454,9 @@ Dim i As Integer
         End If
     End If
     
-    'Kill the temp key
-    If Engine_FileExist(DataPath & "tempkey.dat", vbNormal) Then Kill DataPath & "tempkey.dat"
-    
+    'Load the messages
+    Engine_Init_Messages
+
     'Fill startup variables for the tile engine
     TilePixelWidth = 32
     TilePixelHeight = 32
@@ -610,7 +477,7 @@ Dim i As Integer
     ReDim MapData(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
 
     'Set intial user position
-    UserPos.x = MinXBorder
+    UserPos.X = MinXBorder
     UserPos.Y = MinYBorder
 
     'Set scroll pixels per frame

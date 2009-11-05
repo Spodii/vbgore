@@ -71,7 +71,7 @@ Public MapOpt() As MapOpt
 Public Type ObjData
     Name As String              'Name
     ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Integer         'Graphic index
+    GrhIndex As Long            'Graphic index
     MinHP As Integer            'Bonus HP regenerated
     MaxHP As Integer            'Bonus Max HP raised
     MinHIT As Integer           'Bonus minimum hit

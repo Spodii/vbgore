@@ -1,14 +1,13 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
 Object = "{C1A38C00-7EC2-4319-A304-FE5B3519AF73}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
-   BackColor       =   &H00C0C0C0&
+   BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
    Caption         =   "vbGORE Server"
-   ClientHeight    =   2940
+   ClientHeight    =   2640
    ClientLeft      =   1950
    ClientTop       =   1530
-   ClientWidth     =   5925
+   ClientWidth     =   4305
    BeginProperty Font 
       Name            =   "Arial"
       Size            =   8.25
@@ -23,30 +22,23 @@ Begin VB.Form frmMain
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    PaletteMode     =   1  'UseZOrder
-   ScaleHeight     =   196
+   ScaleHeight     =   176
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   395
+   ScaleWidth      =   287
    StartUpPosition =   2  'CenterScreen
    Begin SoxOCX.Sox Sox 
       Height          =   420
-      Left            =   4560
-      Top             =   2520
+      Left            =   1080
+      Top             =   0
       Visible         =   0   'False
       Width           =   420
       _ExtentX        =   741
       _ExtentY        =   741
    End
-   Begin MSWinsockLib.Winsock WebServer 
-      Left            =   4080
-      Top             =   2520
-      _ExtentX        =   741
-      _ExtentY        =   741
-      _Version        =   393216
-   End
    Begin VB.Timer DataCalcTmr 
       Interval        =   1000
-      Left            =   5520
-      Top             =   2520
+      Left            =   2040
+      Top             =   0
    End
    Begin VB.TextBox BytesOutTxt 
       Appearance      =   0  'Flat
@@ -61,11 +53,11 @@ Begin VB.Form frmMain
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   120
+      Left            =   2520
       Locked          =   -1  'True
-      TabIndex        =   9
-      Top             =   1560
-      Width           =   2175
+      TabIndex        =   5
+      Top             =   360
+      Width           =   1695
    End
    Begin VB.TextBox BytesInTxt 
       Appearance      =   0  'Flat
@@ -80,63 +72,25 @@ Begin VB.Form frmMain
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   120
+      Left            =   2520
       Locked          =   -1  'True
-      TabIndex        =   8
-      Top             =   2280
-      Width           =   2175
+      TabIndex        =   4
+      Top             =   960
+      Width           =   1695
    End
    Begin VB.Timer GameTimer 
       Enabled         =   0   'False
       Interval        =   50
-      Left            =   5040
-      Top             =   2520
+      Left            =   1560
+      Top             =   0
    End
    Begin VB.ListBox Userslst 
       Appearance      =   0  'Flat
-      Height          =   2550
-      Left            =   2400
-      TabIndex        =   2
-      Top             =   240
-      Width           =   3435
-   End
-   Begin VB.TextBox LocalAdd 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   285
+      Height          =   2130
       Left            =   120
-      Locked          =   -1  'True
-      TabIndex        =   1
-      Top             =   360
-      Width           =   2175
-   End
-   Begin VB.TextBox PortTxt 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   285
-      Left            =   120
-      Locked          =   -1  'True
       TabIndex        =   0
-      Top             =   960
-      Width           =   2175
+      Top             =   360
+      Width           =   2355
    End
    Begin VB.Label Label5 
       Appearance      =   0  'Flat
@@ -153,11 +107,11 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H80000008&
+      ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   120
-      TabIndex        =   7
-      Top             =   1320
+      Left            =   2520
+      TabIndex        =   3
+      Top             =   120
       Width           =   1695
    End
    Begin VB.Label Label4 
@@ -175,56 +129,12 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H80000008&
+      ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   120
-      TabIndex        =   6
-      Top             =   2040
-      Width           =   1575
-   End
-   Begin VB.Label Label1 
-      Appearance      =   0  'Flat
-      AutoSize        =   -1  'True
-      BackColor       =   &H00C0C0C0&
-      BackStyle       =   0  'Transparent
-      Caption         =   "Server Port:"
-      BeginProperty Font 
-         Name            =   "Verdana"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Left            =   120
-      TabIndex        =   5
+      Left            =   2520
+      TabIndex        =   2
       Top             =   720
-      Width           =   1185
-   End
-   Begin VB.Label Label8 
-      Appearance      =   0  'Flat
-      AutoSize        =   -1  'True
-      BackColor       =   &H00C0C0C0&
-      BackStyle       =   0  'Transparent
-      Caption         =   "Server IP:"
-      BeginProperty Font 
-         Name            =   "Verdana"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Left            =   120
-      TabIndex        =   4
-      Top             =   120
-      Width           =   990
+      Width           =   1575
    End
    Begin VB.Label Label2 
       Alignment       =   2  'Center
@@ -242,11 +152,11 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H80000008&
+      ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   2400
-      TabIndex        =   3
-      Top             =   60
+      Left            =   120
+      TabIndex        =   1
+      Top             =   120
       Width           =   645
    End
 End
@@ -261,8 +171,7 @@ Public RecoverTimer As Long
 
 Private Sub DataCalcTmr_Timer()
 
-'Turn bytes into kilobytes
-
+    'Turn bytes into kilobytes
     If DataIn > 1024 Then
         Do While DataIn > 1024
             DataIn = DataIn - 1024
@@ -278,22 +187,25 @@ Private Sub DataCalcTmr_Timer()
     End If
 
     'Display statistics (KB)
-    BytesInTxt.Text = Round((DataKBIn + (DataIn / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 4)
-    BytesOutTxt.Text = Round((DataKBOut + (DataOut / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 4)
+    BytesInTxt.Text = Round((DataKBIn + (DataIn / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 6)
+    BytesOutTxt.Text = Round((DataKBOut + (DataOut / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 6)
 
     'Display statistics (Bytes)
-    'BytesInTxt.Text = Round(((DataKBIn * 1024) + DataIn) / ((timeGetTime - ServerStartTime) / 1000), 4)
-    'BytesOutTxt.Text = Round(((DataKBOut * 1024) + DataOut) / ((timeGetTime - ServerStartTime) / 1000), 4)
+    'BytesInTxt.Text = Round(((DataKBIn * 1024) + DataIn) / ((timeGetTime - ServerStartTime) / 1000), 6)
+    'BytesOutTxt.Text = Round(((DataKBOut * 1024) + DataOut) / ((timeGetTime - ServerStartTime) / 1000), 6)
 
 End Sub
 
 Private Sub Form_Load()
 
-    'Set the file paths
-    InitFilePaths
-
     'Create conversion buffer
     Set ConBuf = New DataBuffer
+    
+    'Load MySQL variables
+    MySQL_Init
+
+    'Set the file paths
+    InitFilePaths
 
     'Initialize our encryption
     Encryption_Misc_Init
@@ -306,9 +218,9 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    Select Case x
+    Select Case X
     Case MouseMove
     Case LeftUp
     Case LeftDown
@@ -414,27 +326,32 @@ Dim Update As Boolean
                     Server_CloseSocket UserIndex
                     Exit Sub
                 End If
+                If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
+                    ConBuf.Clear
+                    ConBuf.Put_Byte DataCode.Comm_UMsgbox
+                    ConBuf.Put_String "Sorry you have been idle to long. Disconnected."
+                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    Server_CloseSocket UserIndex
+                    Exit Sub
+                End If
             End If
             
             'Check if stats need to be recovered
             If Recover = True Then
 
                 'Check if Health needs to be updated
-                If UserList(UserIndex).Stats.ModStat(SID.MinHP) < UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MinHP) + UserList(UserIndex).Stats.ModStat(SID.Str) * 0.5
-                    If UserList(UserIndex).Stats.ModStat(SID.MinHP) > UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MaxHP)
+                If UserList(UserIndex).Stats.BaseStat(SID.MinHP) < UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then
+                    UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) + 1 + UserList(UserIndex).Stats.ModStat(SID.Str) * 0.5
                 End If
 
                 'Check if Stamina needs to be updated
-                If UserList(UserIndex).Stats.ModStat(SID.MinSTA) < UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinSTA) = UserList(UserIndex).Stats.ModStat(SID.MinSTA) + UserList(UserIndex).Stats.ModStat(SID.Agi) * 0.5
-                    If UserList(UserIndex).Stats.ModStat(SID.MinSTA) > UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then UserList(UserIndex).Stats.ModStat(SID.MinSTA) = UserList(UserIndex).Stats.ModStat(SID.MaxSTA)
+                If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) < UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then
+                    UserList(UserIndex).Stats.BaseStat(SID.MinSTA) = UserList(UserIndex).Stats.BaseStat(SID.MinSTA) + 1 + UserList(UserIndex).Stats.ModStat(SID.Agi) * 0.5
                 End If
 
                 'Check if Mana needs to be updated
-                If UserList(UserIndex).Stats.ModStat(SID.MinMAN) < UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinMAN) = UserList(UserIndex).Stats.ModStat(SID.MinMAN) + UserList(UserIndex).Stats.ModStat(SID.Mag) * 0.5
-                    If UserList(UserIndex).Stats.ModStat(SID.MinMAN) > UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then UserList(UserIndex).Stats.ModStat(SID.MinMAN) = UserList(UserIndex).Stats.ModStat(SID.MaxMAN)
+                If UserList(UserIndex).Stats.BaseStat(SID.MinMAN) < UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then
+                    UserList(UserIndex).Stats.BaseStat(SID.MinMAN) = UserList(UserIndex).Stats.BaseStat(SID.MinMAN) + 1 + UserList(UserIndex).Stats.ModStat(SID.Mag) * 0.5
                 End If
 
             End If
@@ -535,9 +452,9 @@ Dim Update As Boolean
                         NPCList(NPCIndex).Counters.WarCurseCounter = 0
                         NPCList(NPCIndex).Skills.WarCurse = 0
                         ConBuf.Clear
-                        ConBuf.Put_Byte DataCode.Comm_Talk
-                        ConBuf.Put_String NPCList(NPCIndex).Name & " appears stronger."
-                        ConBuf.Put_Byte DataCode.Comm_FontType_Fight
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 1
+                        ConBuf.Put_String NPCList(NPCIndex).Name
                         Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
                         ConBuf.Clear
                         ConBuf.Put_Byte DataCode.Server_IconWarCursed
@@ -598,7 +515,7 @@ Dim Update As Boolean
 
         'Save all user's data
         For UserIndex = 1 To LastUser
-            If UserList(UserIndex).Flags.UserLogged Then Save_User UserList(UserIndex), CharPath & UCase$(UserList(UserIndex).Name) & ".chr"
+            If UserList(UserIndex).Flags.UserLogged Then Save_User UserList(UserIndex)
         Next UserIndex
 
         'Reset the save counter
@@ -650,7 +567,7 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Static x As Long
+Static X As Long
 
     'Get the UserIndex
     Index = User_IndexFromSox(inSox)
@@ -658,6 +575,9 @@ Static x As Long
 
     'If it is a character disconnecting, do not check their packets since they're doodie heads
     If UserList(Index).Flags.Disconnecting Then Exit Sub
+    
+    'Reset the user's packet counter
+    UserList(Index).Counters.LastPacket = timeGetTime
     
     'Decrypt our packet
     Select Case EncryptionType
@@ -698,15 +618,15 @@ Static x As Long
 
         'Make the appropriate call based on the CommandID
         With DataCode
-
-            'Reset idle counter (sloppy method, clean up later)
+            
+            'Reset idle counter
             If CommandID <> .Server_Ping Then UserList(Index).Counters.IdleCount = timeGetTime
-
+        
             Select Case CommandID
             Case 0
                 If DEBUG_PrintPacketReadErrors Then
-                    x = x + 1
-                    Debug.Print "---Blank Byte #" & x
+                    X = X + 1
+                    Debug.Print "---Blank Byte #" & X
                 End If
             Case .Comm_Emote: Data_Comm_Emote rBuf, Index
             Case .Comm_Shout: Data_Comm_Shout rBuf, Index
@@ -716,8 +636,9 @@ Static x As Long
             Case .GM_Approach: Data_GM_Approach rBuf, Index
             Case .GM_Kick: Data_GM_Kick rBuf, Index
             Case .GM_Raise: Data_GM_Raise rBuf, Index
+            Case .GM_SetGMLevel: Data_GM_SetGMLevel rBuf, Index
             Case .GM_Summon: Data_GM_Summon rBuf, Index
-
+            
             Case .Map_DoneLoadingMap: Data_Map_DoneLoadingMap Index
 
             Case .Server_Help: Data_Server_Help Index
@@ -777,15 +698,28 @@ Private Sub StartServer()
 '*****************************************************************
 'Load up server
 '*****************************************************************
-
 Dim LoopC As Long
 
-'Check if server is already started
+    'Show the form
+    Me.Show
+    DoEvents
 
+    'Check if server is already started
     If GameTimer.Enabled = True Then Exit Sub
 
+    '*** Database ***
+    
+    'Remove online user states (in case server crashed or something else went wrong)
+    Me.Caption = "Removing `online` states..."
+    Me.Refresh
+    MySQL_RemoveOnline
+    
+    'Auto-optimize the database
+    Me.Caption = "Optimizing database..."
+    Me.Refresh
+    MySQL_Optimize
+
     '*** Init vars ***
-    Me.Caption = Me.Caption & " V." & App.Major & "." & App.Minor & "." & App.Revision
     
     'Setup Map borders
     MinXBorder = XMinMapSize + (XWindow \ 2)
@@ -811,22 +745,15 @@ Dim LoopC As Long
 
     '*** Load data ***
     Load_ServerIni
-    Load_Maps
     Load_OBJs
     Load_Quests
-
-    '*** Listen ***
-    If DEBUG_PacketFlood Then
-        LocalSoxID = Sox.Listen("127.0.0.1", 10200)
-    Else
-        LocalSoxID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "GameIP"), Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
-    End If
-    Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
+    Load_Maps
     
-    '*** Web Server ***
-    WebServer.RemoteHost = WebServer.LocalIP
-    WebServer.LocalPort = Var_Get(ServerDataPath & "Server.ini", "INIT", "WebPort")
-    WebServer.Listen
+    '*** Listen ***
+    frmMain.Caption = "Loading sockets..."
+    frmMain.Refresh
+    LocalSoxID = Sox.Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
+    Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
 
     '*** Misc ***
     'Calculate data transfer rate
@@ -836,8 +763,6 @@ Dim LoopC As Long
     Server_RefreshUserListBox
 
     'Show local IP/Port
-    LocalAdd.Text = frmMain.Sox.Address(LocalSoxID)
-    PortTxt.Text = Sox.Port(LocalSoxID)
     If frmMain.Sox.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     'Initialize LastWorldSave
@@ -850,62 +775,13 @@ Dim LoopC As Long
     'Set the starting time
     ServerStartTime = timeGetTime
 
-    'Show
-    Me.Show
-
-End Sub
-
-Private Sub WebServer_ConnectionRequest(ByVal requestID As Long)
-    
-    'Accept the socket
-    WebServer.Close
-    WebServer.Accept requestID
-    
-End Sub
-
-Private Sub WebServer_DataArrival(ByVal bytesTotal As Long)
-Dim OutBuffer As String
-Dim Buffer As String
-Dim i As Long
-
-    'Get the data from the socket
-    WebServer.GetData Buffer, vbString, bytesTotal
-
-    
-    Select Case Buffer
-    
-        'Send the general data
-        Case "g"
-            OutBuffer = "<b><font color=darkred>Server Name: </font></b>" & frmMain.Caption & "<br>"
-            OutBuffer = OutBuffer & "<b><font color=darkred>Total Maps: </font></b>" & NumMaps & "<br>"
-            OutBuffer = OutBuffer & "<b><font color=darkred>Total NPCs: </font></b>" & NumNPCs & "<br>"
-            OutBuffer = OutBuffer & "<b><font color=darkred>Total Quests: </font></b>" & NumQuests & "<br>"
-            OutBuffer = OutBuffer & "<b><font color=darkred>Total Skills: </font></b>" & NumSkills & "<br>"
-            OutBuffer = OutBuffer & "<b><font color=darkred>Total Emoticons: </font></b>" & NumEmotes & "<br>"
-            OutBuffer = OutBuffer & "<br><b><font color=darkred>The following NPCs are alive:</font></b><br>"
-            OutBuffer = OutBuffer & "<b>"
-            For i = 1 To NumNPCs
-                If NPCList(i).Flags.NPCAlive Then
-                    If NPCList(i).Flags.NPCActive Then
-                        If i Mod 2 = 1 Then
-                            OutBuffer = OutBuffer & "<font color=purple>"
-                        Else
-                            OutBuffer = OutBuffer & "<font color=black>"
-                        End If
-                        OutBuffer = OutBuffer & " - " & NPCList(i).Name & " (hp: " & NPCList(i).ModStat(SID.MinHP) & "/" & NPCList(i).ModStat(SID.MaxHP) & ")</font><br>"
-                    End If
-                End If
-            Next i
-            OutBuffer = OutBuffer & "</b>"
-            WebServer.SendData OutBuffer
-    End Select
-    
-    'Close the socket
-    DoEvents    'Allows time for the data to send
-    WebServer.Close
-    WebServer.Listen
+    'Done
+    Me.Caption = "vbGORE V." & App.Major & "." & App.Minor & "." & App.Revision
 
 End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 3  Code: 650  Total: 653 Lines
 ':) CommentOnly: 95 (14.5%)  Commented: 5 (0.8%)  Empty: 144 (22.1%)  Max Logic Depth: 8
+Private Sub Userslst_Click()
+
+End Sub

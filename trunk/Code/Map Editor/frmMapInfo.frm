@@ -200,6 +200,24 @@ Private Sub MusicTxt_Change()
 
 End Sub
 
+Private Sub MusicTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub VersionTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub WeatherTxt_Change()
 
     If WeatherTxt.Text = "" Then WeatherTxt.Text = "0"
@@ -217,4 +235,13 @@ Private Sub VersionTxt_Change()
     If Val(VersionTxt.Text) < 0 Then VersionTxt.Text = "0"
     MapInfo.MapVersion = Val(VersionTxt.Text)
 
+End Sub
+
+Private Sub WeatherTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub

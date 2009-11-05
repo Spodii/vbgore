@@ -6,13 +6,13 @@ Public Sub NPC_UpdateModStats(ByVal NPCIndex As Integer)
 Dim Temp As Integer
 
     'Set the HP
-    Temp = NPCList(NPCIndex).ModStat(SID.MinHP)
+    Temp = NPCList(NPCIndex).BaseStat(SID.MinHP)
 
     'Copy over the base stats to the mod stats
     CopyMemory NPCList(NPCIndex).ModStat(1), NPCList(NPCIndex).BaseStat(1), 4 * NumStats
 
     'Put back the HP
-    NPCList(NPCIndex).ModStat(SID.MinHP) = Temp
+    NPCList(NPCIndex).BaseStat(SID.MinHP) = Temp
 
 End Sub
 
@@ -29,6 +29,9 @@ Dim t1 As Byte
 Dim t2 As Byte
 Dim Y As Long
 Dim X As Long
+
+    'Do nothing if no players are on the map
+    If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers = 0 Then Exit Sub
 
     'Update the action delay counter
     If NPCList(NPCIndex).Flags.ActionDelay > 0 Then
@@ -204,7 +207,7 @@ Dim Hit As Integer
     If Hit < 1 Then Hit = 1
 
     'Hit user
-    UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MinHP) - Hit
+    UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) - Hit
 
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_SetCharDamage
@@ -213,12 +216,12 @@ Dim Hit As Integer
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
     'User Die
-    If UserList(UserIndex).Stats.ModStat(SID.MinHP) <= 0 Then
+    If UserList(UserIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
         'Kill user
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "The " & NPCList(NPCIndex).Name & " kills you!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Fight
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 73
+        ConBuf.Put_String NPCList(NPCIndex).Name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         User_Kill UserIndex
     End If
@@ -298,14 +301,14 @@ Dim i As Integer
     If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then Exit Sub
 
     'Get the pre-damage percentage
-    HPA = CByte((NPCList(NPCIndex).ModStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+    HPA = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
 
     'Lower the NPC's life
-    NPCList(NPCIndex).ModStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MinHP) - Damage
+    NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).BaseStat(SID.MinHP) - Damage
 
     'Check to update health percentage client-side
-    If NPCList(NPCIndex).ModStat(SID.MinHP) > 0 Then
-        HPB = CByte((NPCList(NPCIndex).ModStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+    If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
+        HPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
         If HPA <> HPB Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_CharHP
@@ -333,7 +336,7 @@ Dim i As Integer
     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
 
     'Check if the NPC died
-    If NPCList(NPCIndex).ModStat(SID.MinHP) <= 0 Then
+    If NPCList(NPCIndex).BaseStat(SID.MinHP) <= 0 Then
 
         If UserIndex > 0 Then
 
@@ -346,9 +349,12 @@ Dim i As Integer
                         If UserList(UserIndex).QuestStatus(i).NPCKills <= QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount Then
                             UserList(UserIndex).QuestStatus(i).NPCKills = UserList(UserIndex).QuestStatus(i).NPCKills + 1
                             ConBuf.Clear
-                            ConBuf.Put_Byte DataCode.Comm_Talk
-                            ConBuf.Put_String "You have killed " & UserList(UserIndex).QuestStatus(i).NPCKills & " of " & QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount & " " & NPCList(QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC).Name & "s!"
-                            ConBuf.Put_Byte DataCode.Comm_FontType_Quest
+                            ConBuf.Put_Byte DataCode.Server_Message
+                            ConBuf.Put_Byte 74
+                            ConBuf.Put_Integer UserList(UserIndex).QuestStatus(i).NPCKills
+                            ConBuf.Put_Integer QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount
+                            ConBuf.Put_String NPCList(QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC).Name
+                            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                         End If
 
                     End If
@@ -361,9 +367,9 @@ Dim i As Integer
 
             'Display kill message to the user
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "You kill " & NPCList(NPCIndex).Name & "!"
-            ConBuf.Put_Byte DataCode.Comm_FontType_Fight
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 75
+            ConBuf.Put_String NPCList(NPCIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
         End If
@@ -415,7 +421,7 @@ Sub NPC_Kill(ByVal NPCIndex As Integer)
 '*****************************************************************
     
     'Set health back to 100%
-    NPCList(NPCIndex).ModStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
+    NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
 
     'Erase it from map
     NPC_EraseChar NPCIndex
@@ -430,8 +436,6 @@ Sub NPC_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCInd
 '*****************************************************************
 'Makes and places a NPC character
 '*****************************************************************
-
-Dim EmptySkills As Declares.Skills  'VB thinks we are trying to declare the module if we dont put the Declares in there (sigh)
 Dim SndHP As Byte
 Dim SndMP As Byte
 
@@ -443,8 +447,8 @@ Dim SndMP As Byte
     NPCList(NPCIndex).Flags.NPCAlive = 1
 
     'Set the hp/mp to send
-    If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).ModStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
-    If NPCList(NPCIndex).ModStat(SID.MaxMAN) > 0 Then SndMP = CByte((NPCList(NPCIndex).ModStat(SID.MinMAN) / NPCList(NPCIndex).ModStat(SID.MaxMAN)) * 100)
+    If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+    If NPCList(NPCIndex).ModStat(SID.MaxMAN) > 0 Then SndMP = CByte((NPCList(NPCIndex).BaseStat(SID.MinMAN) / NPCList(NPCIndex).ModStat(SID.MaxMAN)) * 100)
 
     'Send make character command to clients
     ConBuf.Clear
@@ -463,7 +467,7 @@ Dim SndMP As Byte
     ConBuf.Put_Byte SndMP
 
     'NPCs wont be created with active spells
-    NPCList(NPCIndex).Skills = EmptySkills
+    ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
 
     'Send the NPC
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map

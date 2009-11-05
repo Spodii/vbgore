@@ -1033,10 +1033,31 @@ Public Sub SetInfo(ByVal tX As Byte, ByVal tY As Byte)
         If MapData(tX, tY).Blocked And 4 Then frmBlock.BlockChk(3).Value = 1 Else frmBlock.BlockChk(3).Value = 0
         If MapData(tX, tY).Blocked And 8 Then frmBlock.BlockChk(4).Value = 1 Else frmBlock.BlockChk(4).Value = 0
     End If
+    WMapTxt.Text = MapData(tX, tY).TileExit.Map
+    WXTxt.Text = MapData(tX, tY).TileExit.X
+    WYTxt.Text = MapData(tX, tY).TileExit.Y
     XLbl.Caption = tX
     YLbl.Caption = tY
     LayerLbl_Click SelectedLayer
     
+End Sub
+
+Private Sub AmountTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub BlockedTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
@@ -1081,6 +1102,13 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     If XLbl.Caption > XMaxMapSize Then Exit Sub
     If YLbl.Caption < YMinMapSize Then Exit Sub
     If YLbl.Caption > YMaxMapSize Then Exit Sub
+    
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
     
     'Change the graphic
     Engine_Init_Grh MapData(XLbl.Caption, YLbl.Caption).Graphic(SelectedLayer), CInt(GrhTxt.Text)
@@ -1129,6 +1157,13 @@ Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
 Dim i As Long
 On Error GoTo ErrOut
     
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+    
     i = Val(LightTxt(Index).Text)
 
     'Set the light
@@ -1161,6 +1196,33 @@ ErrOut:
 
 End Sub
 
+Private Sub MailboxTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub NPCTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub ObjTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub SfxTxt_Change()
 Dim i As Integer
 On Error GoTo ErrOut
@@ -1176,8 +1238,45 @@ ErrOut:
 
 End Sub
 
+Private Sub SfxTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
 Private Sub ShadowChk_Click()
 
     MapData(XLbl.Caption, YLbl.Caption).Shadow(SelectedLayer) = ShadowChk.Value
 
 End Sub
+
+Private Sub WMapTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub WXTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+
+Private Sub WYTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
+End Sub
+

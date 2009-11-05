@@ -1,6 +1,298 @@
 Attribute VB_Name = "TCP"
 Option Explicit
 
+Sub Data_Server_Message(ByRef rBuf As DataBuffer)
+'*********************************************
+'Server sending a common message to client (reccomended you send
+' as many messages as possible via this method to save bandwidth)
+'<MessageID(B)><...depends on the message>
+'*********************************************
+Dim MessageID As Byte
+Dim TempStr As String
+Dim Str1 As String
+Dim Str2 As String
+Dim Lng1 As Long
+Dim Int1 As Integer
+Dim Int2 As Integer
+Dim Byt1 As Byte
+
+    'Get the message ID
+    MessageID = rBuf.Get_Byte
+    
+    'Check what to do depending on the message ID
+    '*** Please refer to the language file for the description of the numbers ***
+    Select Case MessageID
+        Case 1
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(1), "<npcname>", Str1), FontColor_Info
+        Case 2
+            Engine_AddToChatTextBuffer Message(2), FontColor_Fight
+        Case 3
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(3), "<exp>", Lng1), FontColor_Info
+        Case 4
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(4), "<gold>", Lng1), FontColor_Info
+        Case 5
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(5), "<skill>", Str1), FontColor_Info
+        Case 6
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(6), "<skill>", Str1), FontColor_Info
+        Case 7
+            Engine_AddToChatTextBuffer Message(7), FontColor_Quest
+        Case 8
+            Engine_AddToChatTextBuffer Message(8), FontColor_Quest
+        Case 9
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(9), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<npcname>", Str1), FontColor_Quest
+        Case 10
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(10), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<objname>", Str1), FontColor_Quest
+        Case 11
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            Int2 = rBuf.Get_Integer
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(11), "<npcamount>", Int1)
+            TempStr = Replace$(TempStr, "<npcname>", Str1)
+            TempStr = Replace$(TempStr, "<objamount>", Int2)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<objname>", Str2), FontColor_Quest
+        Case 12
+            Engine_AddToChatTextBuffer Message(12), FontColor_Quest
+        Case 13
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(13), "<name>", Str1), FontColor_Info
+        Case 14
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(14), "<cost>", Lng1), FontColor_Info
+        Case 15
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(15), "<sender>", Str1), FontColor_Info
+        Case 16
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(16), "<receiver>", Str1), FontColor_Info
+        Case 17
+            Engine_AddToChatTextBuffer Message(17), FontColor_Info
+        Case 18
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(18), "<sender>", Str1), FontColor_Info
+        Case 19
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(19), "<receiver>", Str1), FontColor_Info
+        Case 20
+            Engine_AddToChatTextBuffer Message(20), FontColor_Info
+        Case 21
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(21), "<cost>", Lng1), FontColor_Info
+        Case 22
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(22), "<name>", Str1), FontColor_Info
+        Case 23
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(23), "<name>", Str1), FontColor_Info
+        Case 24
+            Engine_AddToChatTextBuffer Message(24), FontColor_Info
+        Case 25
+            Engine_AddToChatTextBuffer Message(25), FontColor_Info
+        Case 26
+            Engine_AddToChatTextBuffer Message(26), FontColor_Info
+        Case 27
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(27), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str1), FontColor_Info
+        Case 28
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(28), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str1), FontColor_Info
+        Case 29
+            Engine_AddToChatTextBuffer Message(29), FontColor_Info
+        Case 30
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(30), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<desc>", Str2), FontColor_Info
+        Case 31
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(31), "<name>", Str1), FontColor_Info
+        Case 32
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(32), "<name>", Str1), FontColor_Info
+        Case 33
+            Engine_AddToChatTextBuffer Message(33), FontColor_Info
+        Case 34
+            Engine_AddToChatTextBuffer Message(34), FontColor_Info
+        Case 35
+            Byt1 = rBuf.Get_Byte
+            Engine_AddToChatTextBuffer Replace$(Message(35), "<amount>", Byt1), FontColor_Info
+        Case 36
+            Engine_AddToChatTextBuffer Message(36), FontColor_Info
+        Case 37
+            Engine_AddToChatTextBuffer Message(37), FontColor_Info
+        Case 38
+            Engine_AddToChatTextBuffer Message(38), FontColor_Info
+        Case 39
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(39), "<skill>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str2), FontColor_Info
+        Case 40
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(40), "<name>", Str1), FontColor_Info
+        Case 41
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(40), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<power>", Int1), FontColor_Info
+        Case 42
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(42), "<name>", Str1), FontColor_Info
+        Case 43
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(43), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<power>", Int1), FontColor_Info
+        Case 44
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(44), "<name>", Str1), FontColor_Info
+        Case 45
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(45), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<power>", Int1), FontColor_Info
+        Case 46
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(46), "<name>", Str1), FontColor_Info
+        Case 47
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(47), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<power>", Int1), FontColor_Info
+        Case 48
+            Engine_AddToChatTextBuffer Message(48), FontColor_Info
+        Case 49
+            Engine_AddToChatTextBuffer Message(49), FontColor_Info
+        Case 50
+            Engine_AddToChatTextBuffer Message(50), FontColor_Info
+        Case 51
+            Engine_AddToChatTextBuffer Message(51), FontColor_Info
+        Case 52
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(52), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<message>", Str2), FontColor_Talk
+        Case 53
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(53), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<message>", Str2), FontColor_Talk
+        Case 54
+            Str1 = rBuf.Get_String
+            Byt1 = rBuf.Get_Byte
+            TempStr = Replace$(Message(54), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<value>", Byt1), FontColor_Info
+        Case 55
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(55), "<value>", Lng1), FontColor_Info
+        Case 56
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(56), "<name>", Str1), FontColor_Info
+        Case 57
+            Engine_AddToChatTextBuffer Message(57), FontColor_Info
+        Case 58
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(58), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<amount>", Int1), FontColor_Info
+        Case 59
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            Int2 = rBuf.Get_Integer
+            TempStr = Replace$(Message(59), "<name>", Str1)
+            TempStr = Replace$(TempStr, "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<leftover>", Int2), FontColor_Info
+        Case 60
+            Engine_AddToChatTextBuffer Message(60), FontColor_Info
+        Case 61
+            Engine_AddToChatTextBuffer Message(61), FontColor_Info
+        Case 62
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(62), "<level>", Lng1), FontColor_Info
+        Case 63
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(63), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str1), FontColor_Info
+        Case 64
+            Engine_AddToChatTextBuffer Message(64), FontColor_Info
+        Case 65
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(65), "<amount>", Int1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str1), FontColor_Info
+        Case 66
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            Int2 = rBuf.Get_Integer
+            TempStr = Replace$(Message(66), "<amount>", Int1)
+            TempStr = Replace$(TempStr, "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<leftover>", Int2), FontColor_Info
+        Case 67
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            Lng1 = rBuf.Get_Long
+            TempStr = Replace$(Message(67), "<amount>", Int1)
+            TempStr = Replace$(TempStr, "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<total>", Lng1), FontColor_Info
+        Case 68
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(68), "<name>", Str1), FontColor_Info
+        Case 69
+            Engine_AddToChatTextBuffer Message(69), FontColor_Info
+        Case 70
+            Engine_AddToChatTextBuffer Message(70), FontColor_Info
+        Case 71
+            Byt1 = rBuf.Get_Byte
+            Engine_AddToChatTextBuffer Replace$(Message(71), "<value>", Byt1), FontColor_Info
+        Case 72
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(72), "<name>", Str1), FontColor_Info
+        Case 73
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(73), "<name>", Str1), FontColor_Info
+        Case 74
+            Int1 = rBuf.Get_Integer
+            Int2 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(74), "<amount>", Int1)
+            TempStr = Replace$(TempStr, "<total>", Int2)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<name>", Str1), FontColor_Quest
+        Case 75
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(75), "<name>", Str1), FontColor_Info
+        Case 76
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(76), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<message>", Str2), FontColor_Info
+        Case 77
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            TempStr = Replace$(Message(77), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<gm>", Str2), FontColor_Info
+        Case 78
+            Int1 = rBuf.Get_Integer
+            Engine_AddToChatTextBuffer Replace$(Message(78), "<value>", Int1), FontColor_Info
+    End Select
+
+End Sub
+
 Sub Data_Server_Connect()
 '*********************************************
 'Server is telling the client they have successfully logged in
@@ -616,16 +908,16 @@ Sub Data_Server_MakeObject(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Create an object on the object layer
-'<GrhIndex(I)><X(B)><Y(B)>
+'<GrhIndex(L)><X(B)><Y(B)>
 '*********************************************
 
-Dim GrhIndex As Integer
+Dim GrhIndex As Long
 Dim x As Byte
 Dim Y As Byte
 
 'Get the values
 
-    GrhIndex = rBuf.Get_Integer
+    GrhIndex = rBuf.Get_Long
     x = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 

@@ -1,5 +1,5 @@
 Type=Exe
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\STDOLE2.TLB#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{E1211242-8E94-11D1-8808-00C04FC2C603}#1.0#0#..\..\..\..\WINDOWS\system32\dx8vb.dll#DirectX 8 for Visual Basic Type Library
 Form=Code\Particle Editor\frmMain.frm
 Module=General; Code\Particle Editor\General.bas
@@ -16,8 +16,8 @@ Name="vbGOREPE"
 HelpContextID="0"
 CompatibleMode="0"
 MajorVer=0
-MinorVer=1
-RevisionVer=3
+MinorVer=2
+RevisionVer=0
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"
