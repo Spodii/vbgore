@@ -1,5 +1,5 @@
 Type=Control
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\STDOLE2.TLB#OLE Automation
 Object={831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0; MSCOMCTL.OCX
 Module=modSox; Code\SocketBinary\modSox.bas
 UserControl=Code\SocketBinary\Sox.ctl
@@ -7,6 +7,7 @@ Startup="(None)"
 HelpFile=""
 Title="SoxOCX"
 ExeName32="vbgoresocketbinary.ocx"
+Path32="Libraries"
 Command32=""
 Name="SoxOCX"
 HelpContextID="0"
@@ -23,7 +24,7 @@ CompilationType=0
 OptimizationType=0
 FavorPentiumPro(tm)=0
 CodeViewDebugInfo=0
-NoAliasing=-1
+NoAliasing=0
 BoundsCheck=-1
 OverflowCheck=-1
 FlPointCheck=-1
@@ -35,3 +36,6 @@ Retained=0
 ThreadPerObject=-1
 MaxNumberOfThreads=1
 ThreadingModel=1
+
+[MS Transaction Server]
+AutoRefresh=1

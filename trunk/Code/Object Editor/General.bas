@@ -1,88 +1,4 @@
 Attribute VB_Name = "General"
-'**       ____        _________   ______   ______  ______   _______           **
-'**       \   \      /   /     \ /  ____\ /      \|      \ |   ____|          **
-'**        \   \    /   /|      |  /     |        |       ||  |____           **
-'***        \   \  /   / |     /| |  ___ |        |      / |   ____|         ***
-'****        \   \/   /  |     \| |  \  \|        |   _  \ |  |____         ****
-'******       \      /   |      |  \__|  |        |  | \  \|       |      ******
-'********      \____/    |_____/ \______/ \______/|__|  \__\_______|    ********
-'*******************************************************************************
-'*******************************************************************************
-'************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.2            ************
-'************                 http://www.vbgore.com                 ************
-'*******************************************************************************
-'*******************************************************************************
-'***** Source Distribution Information: ****************************************
-'*******************************************************************************
-'** If you wish to distribute this source code, you must distribute as-is     **
-'** from the vbGORE website unless permission is given to do otherwise. This  **
-'** comment block must remain in-tact in the distribution. If you wish to     **
-'** distribute modified versions of vbGORE, please contact Spodi (info below) **
-'** before distributing the source code. You may never label the source code  **
-'** as the "Official Release" or similar unless the code and content remains  **
-'** unmodified from the version downloaded from the official website.         **
-'** You may also never sale the source code without permission first. If you  **
-'** want to sell the code, please contact Spodi (below). This is to prevent   **
-'** people from ripping off other people by selling an insignificantly        **
-'** modified version of open-source code just to make a few quick bucks.      **
-'*******************************************************************************
-'***** Creating Engines With vbGORE: *******************************************
-'*******************************************************************************
-'** If you plan to create an engine with vbGORE that, please contact Spodi    **
-'** before doing so. You may not sell the engine unless told elsewise (the    **
-'** engine must has substantial modifications), and you may not claim it as   **
-'** all your own work - credit must be given to vbGORE, along with a link to  **
-'** the vbGORE homepage. Failure to gain approval from Spodi directly to      **
-'** make a new engine with vbGORE will result in first a friendly reminder,   **
-'** followed by much more drastic measures.                                   **
-'*******************************************************************************
-'***** Helping Out vbGORE: *****************************************************
-'*******************************************************************************
-'** If you want to help out with vbGORE's progress, theres a few things you   **
-'** can do:                                                                   **
-'**  *Donate - Great way to keep a free project going. :) Info and benifits   **
-'**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
-'**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        help expend the wiki pages!                                        **
-'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
-'**        page or a link to vbGORE in a forum you visit, every link helps    **
-'**        spread the word of vbGORE's existance! Buttons and banners for     **
-'**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
-'*******************************************************************************
-'***** Conact Information: *****************************************************
-'*******************************************************************************
-'** Please contact the creator of vbGORE (Spodi) directly with any questions: **
-'** AIM: Spodii                          Yahoo: Spodii                        **
-'** MSN: Spodii@hotmail.com              Email: spodi@vbgore.com              **
-'** 2nd Email: spodii@hotmail.com        Website: http://www.vbgore.com       **
-'*******************************************************************************
-'***** Credits: ****************************************************************
-'*******************************************************************************
-'** Below are credits to those who have helped with the project or who have   **
-'** distributed source code which has help this project's creation. The below **
-'** is listed in no particular order of significance:                         **
-'**                                                                           **
-'** ORE (Aaron Perkins): Used as base engine and for learning experience      **
-'**   http://www.baronsoft.com/                                               **
-'** SOX (Trevor Herselman): Used for all the networking                       **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=35239&lngWId=1      **
-'** Compression Methods (Marco v/d Berg): Provided compression algorithms     **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
-'** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
-'**                                                                           **
-'** Also, all the members of the vbGORE community who have submitted          **
-'** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'**                                                                           **
-'** If you feel you belong in these credits, please contact Spodi (above).    **
-'*******************************************************************************
-'*******************************************************************************
-
 Option Explicit
 
 '********** Direct X ***********
@@ -114,42 +30,6 @@ Public Type TLVERTEX
 End Type
 
 Private VertexArray(0 To 3) As TLVERTEX
-
-Public Const NumStats As Byte = 31
-Public Type StatOrder
-    Gold As Byte
-    EXP As Byte
-    ELV As Byte
-    ELU As Byte
-    MaxHIT As Byte
-    MinHIT As Byte
-    MinMAN As Byte
-    MinHP As Byte
-    MinSTA As Byte
-    Points As Byte
-    DEF As Byte
-    MaxHP As Byte
-    MaxSTA As Byte
-    MaxMAN As Byte
-    Str As Byte
-    Agil As Byte
-    Mag As Byte
-    Regen As Byte
-    Rest As Byte
-    Meditate As Byte
-    Fist As Byte
-    Staff As Byte
-    Sword As Byte
-    Parry As Byte
-    Dagger As Byte
-    Clairovoyance As Byte
-    Immunity As Byte
-    DefensiveMag As Byte
-    OffensiveMag As Byte
-    SummoningMag As Byte
-    WeaponSkill As Byte     'Only used on NPCs
-End Type
-Public SID As StatOrder 'Stat ID
 
 'Heading constants
 Public Const NORTH = 1
@@ -247,7 +127,7 @@ Public Type ObjData
     SpriteWeapon As Integer     'Index of the weapon sprite to change to
     SpriteHair As Integer       'Index of the hair sprite to change to
     SpriteHead As Integer       'Index of the head sprite to change to
-    SpriteHelm As Integer       'Index of the helmet sprite to change to
+    SpriteWings As Integer      'Index of the wings sprite to change to
     WeaponType As Byte          'What type of weapon, if it is a weapon
     Price As Long               'Price of the object
     RepHP As Long               'How much HP to replenish
@@ -348,7 +228,7 @@ Dim i As Long
         .SBodyTxt.Text = OpenObj.SpriteBody
         .SHairTxt.Text = OpenObj.SpriteHair
         .SHeadTxt.Text = OpenObj.SpriteHead
-        .SHelmTxt.Text = OpenObj.SpriteHelm
+        .SWingsTxt.Text = OpenObj.SpriteWings
         For i = 1 To .StatTxt.ubound
             If i > NumStats Then
                 .StatTxt(i).Enabled = False
@@ -398,7 +278,7 @@ Dim i As Long
         OpenObj.SpriteBody = Val(.SBodyTxt.Text)
         OpenObj.SpriteHair = Val(.SHairTxt.Text)
         OpenObj.SpriteHead = Val(.SHeadTxt.Text)
-        OpenObj.SpriteHelm = Val(.SHelmTxt.Text)
+        OpenObj.SpriteWings = Val(.SWingsTxt.Text)
         For i = 1 To NumStats
             OpenObj.AddStat(i) = Val(.StatTxt(i).Text)
         Next i
@@ -661,33 +541,24 @@ Sub Engine_Init_BodyData()
 '*****************************************************************
 'Loads Body.dat
 '*****************************************************************
-
 Dim LoopC As Long
+Dim j As Long
+
 'Get number of bodies
 
     NumBodies = CInt(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
+    
     'Resize array
-    ReDim BodyData(1 To NumBodies) As BodyData
+    ReDim BodyData(0 To NumBodies) As BodyData
+    
     'Fill list
     For LoopC = 1 To NumBodies
-        Engine_Init_Grh BodyData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk1")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk2")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk3")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk4")), 0
-        BodyData(LoopC).Walk(5) = BodyData(LoopC).Walk(1)
-        BodyData(LoopC).Walk(6) = BodyData(LoopC).Walk(2)
-        BodyData(LoopC).Walk(7) = BodyData(LoopC).Walk(3)
-        BodyData(LoopC).Walk(8) = BodyData(LoopC).Walk(4)
-        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetY"))
-        Engine_Init_Grh BodyData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack1")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack2")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack3")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack4")), 1
-        BodyData(LoopC).Attack(5) = BodyData(LoopC).Attack(1)
-        BodyData(LoopC).Attack(6) = BodyData(LoopC).Attack(2)
-        BodyData(LoopC).Attack(7) = BodyData(LoopC).Attack(3)
-        BodyData(LoopC).Attack(8) = BodyData(LoopC).Attack(4)
+        For j = 1 To 8
+            Engine_Init_Grh BodyData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh BodyData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "a" & j)), 1
+        Next j
+        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetY"))
     Next LoopC
 
 End Sub
@@ -885,17 +756,19 @@ Sub Engine_Init_HeadData()
 
 Dim LoopC As Long
 Dim i As Integer
-'Get Number of heads
 
+    'Get Number of heads
     NumHeads = CInt(Engine_Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
+    
     'Resize array
-    ReDim HeadData(1 To NumHeads) As HeadData
+    ReDim HeadData(0 To NumHeads) As HeadData
+    
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "h" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
             Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ah" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
             Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
         Next i
     Next LoopC

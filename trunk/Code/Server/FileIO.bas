@@ -54,9 +54,9 @@ Dim i As Long
     ReDim MapData(1 To NumMaps, XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
     ReDim MapInfo(1 To NumMaps) As MapInfo
 
-    'Create ConnectionGroups (connection group 0 are players downloading maps)
-    ReDim ConnectionGroups(0 To NumMaps)
-    For LoopC = 0 To NumMaps
+    'Create ConnectionGroups
+    ReDim ConnectionGroups(1 To NumMaps)
+    For LoopC = 1 To NumMaps
         ReDim ConnectionGroups(LoopC).UserIndex(0)
     Next LoopC
 
@@ -231,8 +231,9 @@ Dim FileNum As Byte
 
     'Load stats from file
     FileNum = FreeFile
+
     Open NPCsPath & NPCNumber & ".npc" For Binary As FileNum
-    Get FileNum, , NPCList(NPCIndex)
+        Get FileNum, , NPCList(NPCIndex)
     Close FileNum
 
     'Set the temp mod stats
@@ -328,10 +329,13 @@ Dim i As Integer
     FileNum = FreeFile
     Open UserFile For Binary As FileNum
     Get FileNum, , UserChar.ArmorEqpSlot
+    Get FileNum, , UserChar.WingsEqpSlot
     Get FileNum, , UserChar.Char
     Get FileNum, , i
     UserChar.CompletedQuests = Space$(i)
     Get FileNum, , UserChar.CompletedQuests
+    Get FileNum, , i
+    UserChar.Desc = Space$(i)
     Get FileNum, , UserChar.Desc
     Get FileNum, , UserChar.Object
     Get FileNum, , UserChar.Pos
@@ -346,6 +350,7 @@ Dim i As Integer
     'Equipt items
     If UserChar.WeaponEqpSlot > 0 Then UserChar.WeaponEqpObjIndex = UserChar.Object(UserChar.WeaponEqpSlot).ObjIndex
     If UserChar.ArmorEqpSlot > 0 Then UserChar.ArmorEqpObjIndex = UserChar.Object(UserChar.ArmorEqpSlot).ObjIndex
+    If UserChar.WingsEqpSlot > 0 Then UserChar.WingsEqpObjIndex = UserChar.Object(UserChar.WingsEqpSlot).ObjIndex
 
 End Sub
 
@@ -379,142 +384,6 @@ Dim LengthB As Byte     'Length of a string as a byte
 
 End Sub
 
-Sub Save_Map(MapNum As Integer)
-
-'*****************************************************************
-'Saves all info of a specific map (used for live-editing)
-'*****************************************************************
-Dim FileNumMap As Byte
-Dim FileNumInf As Byte
-Dim NPCIndex As Long
-Dim ByFlags As Byte
-Dim LoopC As Long
-Dim Y As Long
-Dim x As Long
-
-    'Respawn the NPCs so they can be saved
-    For NPCIndex = 1 To LastNPC
-        If NPCList(NPCIndex).Flags.NPCActive Then   'Make sure NPC is active
-            If NPCList(NPCIndex).Flags.NPCAlive = 0 Then NPC_Spawn NPCIndex
-        End If
-    Next NPCIndex
-
-    'Erase old files if the exist
-    If Server_FileExist(MapPath & MapNum & ".map", vbNormal) Then Kill MapPath & MapNum & ".map"
-    If Server_FileExist(MapEXPath & MapNum & ".inf", vbNormal) Then Kill MapEXPath & MapNum & ".inf"
-
-    'Open .map file
-    FileNumMap = FreeFile
-    Open MapPath & MapNum & ".map" For Binary As #FileNumMap
-    Seek #FileNumMap, 1
-
-    'Open .inf file
-    FileNumInf = FreeFile
-    Open MapEXPath & MapNum & ".inf" For Binary As #FileNumInf
-    Seek #FileNumInf, 1
-
-    'Map Header
-    Put #FileNumMap, , MapInfo(MapNum).MapVersion
-
-    'Write .map file
-    For Y = YMinMapSize To YMaxMapSize
-        For x = XMinMapSize To XMaxMapSize
-            '#######################
-            '.map file
-            '#######################
-
-            '***********************
-            'Prepare flag's bytes
-            '***********************
-            'Reset it
-            ByFlags = 0
-            'Blocked
-            If MapData(MapNum, x, Y).Blocked Then ByFlags = ByFlags Or 1
-            'Layer 2 used
-            If MapData(MapNum, x, Y).Graphic(2) Then ByFlags = ByFlags Or 2
-            'Layer 3 used
-            If MapData(MapNum, x, Y).Graphic(3) Then ByFlags = ByFlags Or 4
-            'Layer 4 used
-            If MapData(MapNum, x, Y).Graphic(4) Then ByFlags = ByFlags Or 8
-            'Mailbox
-            If MapData(MapNum, x, Y).Mailbox = 1 Then ByFlags = ByFlags Or 16
-
-            '**********************
-            'Store data
-            '**********************
-            'Save the flags
-            Put #FileNumMap, , ByFlags
-
-            'Save lighting
-            Put #FileNumMap, , MapData(MapNum, x, Y).Light
-
-            'Save layer 1
-            Put #FileNumMap, , MapData(MapNum, x, Y).Graphic(1)
-
-            'Save needed grh indexes
-            For LoopC = 2 To 4
-                If MapData(MapNum, x, Y).Graphic(LoopC) Then
-                    Put #FileNumMap, , MapData(MapNum, x, Y).Graphic(LoopC)
-                End If
-            Next LoopC
-
-            '#######################
-            '.inf file
-            '#######################
-            '***********************
-            'Prepare flag's bytes
-            '***********************
-            'Reset it
-            ByFlags = 0
-            'Tile Exit
-            If MapData(MapNum, x, Y).TileExit.Map Then ByFlags = ByFlags Or 1
-            'NPC
-            If MapData(MapNum, x, Y).NPCIndex Then ByFlags = ByFlags Or 2
-            'Item
-            If MapData(MapNum, x, Y).ObjInfo.ObjIndex Then ByFlags = ByFlags Or 4
-
-            '**********************
-            'Store data
-            '**********************
-            'Save the flags
-            Put #FileNumInf, , ByFlags
-
-            'Save Tile exits
-            If MapData(MapNum, x, Y).TileExit.Map Then
-                Put #FileNumInf, , MapData(MapNum, x, Y).TileExit.Map
-                Put #FileNumInf, , MapData(MapNum, x, Y).TileExit.x
-                Put #FileNumInf, , MapData(MapNum, x, Y).TileExit.Y
-            End If
-
-            'Save NPCs
-            If MapData(MapNum, x, Y).NPCIndex Then
-                NPCList(MapData(MapNum, x, Y).NPCIndex).Pos.x = NPCList(MapData(MapNum, x, Y).NPCIndex).StartPos.x
-                NPCList(MapData(MapNum, x, Y).NPCIndex).Pos.Y = NPCList(MapData(MapNum, x, Y).NPCIndex).StartPos.Y
-                NPCList(MapData(MapNum, x, Y).NPCIndex).Pos.Map = NPCList(MapData(MapNum, x, Y).NPCIndex).StartPos.Map
-                Put #FileNumInf, , NPCList(MapData(MapNum, x, Y).NPCIndex).NPCNumber
-            End If
-
-            'Item
-            If MapData(MapNum, x, Y).ObjInfo.ObjIndex Then
-                Put #FileNumInf, , MapData(MapNum, x, Y).ObjInfo.ObjIndex
-                Put #FileNumInf, , MapData(MapNum, x, Y).ObjInfo.Amount
-            End If
-        Next x
-    Next Y
-
-    'Close .map file
-    Close #FileNumMap
-
-    'Close .inf file
-    Close #FileNumInf
-
-    'write .dat file
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo(MapNum).Name
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo(MapNum).Weather)
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo(MapNum).Music)
-
-End Sub
-
 Sub Save_MapData()
 
 '*****************************************************************
@@ -525,7 +394,6 @@ Dim Map As Long
 Dim x As Long
 Dim Y As Long
 Dim ByFlags As Byte
-Dim FSO As New FileSystemObject
 Dim FileNum As Byte
 
     NumMaps = Val(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
@@ -534,10 +402,6 @@ Dim FileNum As Byte
     FileNum = FreeFile
 
     For Map = 1 To NumMaps
-        If Server_FileExist(App.Path & "\Backup\" & Map & ".inf", vbNormal) Then Kill App.Path & "\Backup\" & Map & ".inf"
-
-        'Move files from Maps folder to the Backup folder
-        FSO.MoveFile MapEXPath & Map & ".inf", App.Path & "\Backup\" & Map & ".inf"
 
         'Open files and save updated version
 
@@ -612,10 +476,13 @@ Dim i As Integer
     Close FileNum
     Open UserFile For Binary As FileNum
     Put FileNum, , UserChar.ArmorEqpSlot
+    Put FileNum, , UserChar.WingsEqpSlot
     Put FileNum, , UserChar.Char
     i = CInt(Len(UserChar.CompletedQuests))
     Put FileNum, , i
     Put FileNum, , UserChar.CompletedQuests
+    i = CInt(Len(UserChar.Desc))
+    Put FileNum, , i
     Put FileNum, , UserChar.Desc
     Put FileNum, , UserChar.Object
     Put FileNum, , UserChar.Pos

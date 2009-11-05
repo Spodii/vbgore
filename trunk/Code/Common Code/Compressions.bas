@@ -38,11 +38,11 @@ Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As
 
 Private Sub Compression_Add_ASCtoArray(WhichArray() As Byte, ToPos As Long, Text As String)
 
-Dim x As Long
+Dim X As Long
 
     If ToPos + Len(Text) > UBound(WhichArray) Then ReDim Preserve WhichArray(ToPos + Len(Text) + 500)
-    For x = 1 To Len(Text)
-        WhichArray(ToPos) = Asc(Mid$(Text, x, 1))
+    For X = 1 To Len(Text)
+        WhichArray(ToPos) = Asc(Mid$(Text, X, 1))
         ToPos = ToPos + 1
     Next
 
@@ -50,10 +50,10 @@ End Sub
 
 Private Sub Compression_Add_BitsToContStream(Number As Long, NumBits As Integer)
 
-Dim x As Long
+Dim X As Long
 
-    For x = NumBits - 1 To 0 Step -1
-        CntByteBuf = CntByteBuf * 2 + (-1 * ((Number And CDbl(2 ^ x)) > 0))
+    For X = NumBits - 1 To 0 Step -1
+        CntByteBuf = CntByteBuf * 2 + (-1 * ((Number And CDbl(2 ^ X)) > 0))
         CntBitCount = CntBitCount + 1
         If CntBitCount = 8 Then
             ContStream(CntPos) = CntByteBuf
@@ -137,12 +137,12 @@ Dim OldDict As Integer
 Dim OldPos As Integer
 Dim TempDist As Integer
 Dim DistCount As Integer
-Dim x As Integer
+Dim X As Integer
 
     Temp = (CLng(1024) * DictionarySize) / 256 - 1
-    For x = 0 To 16
-        If 2 ^ x > Temp Then
-            MaxDictBitPos = x
+    For X = 0 To 16
+        If 2 ^ X > Temp Then
+            MaxDictBitPos = X
             Exit For
         End If
     Next
@@ -225,11 +225,11 @@ Dim x As Integer
 End Sub
 
 'This is a 1 run method but we have to keep the whole contents
-'in memory until some variables are saved wich are needed bij the decompressor
+'in memory until some variables are saved wich are needed by the decompressor
 
 Public Sub Compression_Compress_RLE(ByteArray() As Byte, IsCompressed As Boolean)
 
-Dim x As Long
+Dim X As Long
 Dim Y As Long
 Dim ByteCount As Long
 Dim LastAsc As Integer
@@ -252,8 +252,8 @@ Dim NoLength As Boolean
     LengthPos = 0
     TelSame = 0
     ZeroCount = 0
-    For x = 0 To UBound(ByteArray)
-        If LastAsc = ByteArray(x) And x <> 0 Then IsRun = True Else IsRun = False
+    For X = 0 To UBound(ByteArray)
+        If LastAsc = ByteArray(X) And X <> 0 Then IsRun = True Else IsRun = False
         If IsRun = False Then
             If TelSame = 1 Then
                 TelSame = 0
@@ -274,12 +274,12 @@ Dim NoLength As Boolean
                 Call Compression_Add_CharToArray(LengthStream, LengthPos, CByte(TelSame))
                 TelSame = 0
             End If
-            Call Compression_Add_CharToArray(OutStream, OutPos, ByteArray(x))
+            Call Compression_Add_CharToArray(OutStream, OutPos, ByteArray(X))
             ByteCount = ByteCount + 1
         Else
             TelSame = TelSame + 1
         End If
-        LastAsc = ByteArray(x)
+        LastAsc = ByteArray(X)
     Next
     If IsRun = True Then
         If TelSame < 2 Then
@@ -339,8 +339,6 @@ Dim IsCompressed As Boolean
 End Sub
 
 Public Sub Compression_DeCompress(SrcFile As String, DestFile As String, Compression As CompressMethods)
-
-Dim Dummy As Boolean
 
     Compression_File_Load SrcFile
     Select Case Compression
@@ -413,7 +411,7 @@ End Sub
 
 Public Sub Compression_DeCompress_RLE(ByteArray() As Byte)
 
-Dim x As Long
+Dim X As Long
 Dim CntCount As Long
 Dim LastChar As Byte
 Dim ByteCount As Long
@@ -422,19 +420,19 @@ Dim ZeroCount As Integer
 Dim LengthPos As Long
 
     ZeroCount = 0
-    For x = 1 To UBound(ByteArray)
-        If ByteArray(x) = 0 Then
+    For X = 1 To UBound(ByteArray)
+        If ByteArray(X) = 0 Then
             If ZeroCount = ByteArray(0) Then Exit For
             ZeroCount = ZeroCount + 1
         End If
-        If ByteArray(x) <> 255 Then
+        If ByteArray(X) <> 255 Then
             CntCount = CntCount + 1
         End If
     Next
     OutPos = 0
     CntPos = 1
     '    LengthPos = 0
-    LengthPos = x + 1
+    LengthPos = X + 1
     InpPos = LengthPos
     Do While CntCount > 0
         If ByteArray(InpPos) <> 255 Then
@@ -447,19 +445,19 @@ Dim LengthPos As Long
     CntCount = Compression_ReadFromArray_Char(ByteArray, LengthPos)
     Do
         If ByteCount = 0 Then
-            For x = 1 To UBound(ByteArray) - InpPos + 1
+            For X = 1 To UBound(ByteArray) - InpPos + 1
                 LastChar = Compression_ReadFromArray_Char(ByteArray, InpPos)
                 Call Compression_Add_CharToArray(OutStream, OutPos, LastChar)
             Next
         Else
-            For x = 1 To ByteCount
+            For X = 1 To ByteCount
                 LastChar = Compression_ReadFromArray_Char(ByteArray, InpPos)
                 Call Compression_Add_CharToArray(OutStream, OutPos, LastChar)
             Next
             If ByteCount = 255 Then
                 Do
                     ByteCount = Compression_ReadFromArray_Char(ByteArray, CntPos)
-                    For x = 1 To ByteCount
+                    For X = 1 To ByteCount
                         LastChar = Compression_ReadFromArray_Char(ByteArray, InpPos)
                         Call Compression_Add_CharToArray(OutStream, OutPos, LastChar)
                     Next
@@ -468,13 +466,13 @@ Dim LengthPos As Long
             Else
                 ByteCount = Compression_ReadFromArray_Char(ByteArray, CntPos)
             End If
-            For x = 1 To CntCount
+            For X = 1 To CntCount
                 Call Compression_Add_CharToArray(OutStream, OutPos, LastChar)
             Next
             If CntCount = 255 Then
                 Do
                     CntCount = Compression_ReadFromArray_Char(ByteArray, LengthPos)
-                    For x = 1 To CntCount
+                    For X = 1 To CntCount
                         Call Compression_Add_CharToArray(OutStream, OutPos, LastChar)
                     Next
                 Loop While CntCount = 255
@@ -491,12 +489,12 @@ End Sub
 
 Public Sub Compression_DeCompress_RLELoop(ByteArray() As Byte)
 
-Dim x As Integer
+Dim X As Integer
 Dim TimesRLE As Integer
 
     TimesRLE = ByteArray(UBound(ByteArray))
     ReDim Preserve ByteArray(UBound(ByteArray) - 1)
-    For x = 1 To TimesRLE
+    For X = 1 To TimesRLE
         Call Compression_DeCompress_RLE(ByteArray)
     Next
 
@@ -506,9 +504,13 @@ Private Sub Compression_File_Load(FilePath As String)
 
 Dim FreeNum As Integer
 
-    If LenB(FilePath) = 0 Then Exit Sub
+    If Len(FilePath) = 0 Then Exit Sub
     FreeNum = FreeFile
     Open FilePath For Binary As #FreeNum
+    If LOF(FreeNum) = 0 Then
+        Close #FreeNum
+        Exit Sub
+    End If
     ReDim CompressArray(0 To LOF(FreeNum) - 1)
     Get #FreeNum, , CompressArray()
     Close #FreeNum
@@ -519,7 +521,7 @@ Private Sub Compression_File_Save(FilePath As String)
 
 Dim FreeNum As Integer
 
-    If LenB(FilePath) = 0 Then Exit Sub
+    If Len(FilePath) = 0 Then Exit Sub
     FreeNum = FreeFile
     Open FilePath For Binary As #FreeNum
     Put #FreeNum, , CompressArray()
@@ -529,16 +531,16 @@ End Sub
 
 Private Sub Compression_MultiDictionary4_Init()
 
-Dim x As Integer
+Dim X As Integer
 Dim Y As Integer
 
     MaxDict = (2 ^ MaxDictBitPos) - 1
     ReDim Dict(MaxDict)
-    For x = 0 To 255
-        Dict(0) = Dict(0) & Chr$(x)
+    For X = 0 To 255
+        Dict(0) = Dict(0) & Chr$(X)
     Next
-    For x = 1 To MaxDict
-        Dict(x) = vbNullString
+    For X = 1 To MaxDict
+        Dict(X) = vbNullString
     Next
     AddDict = 1
     UsedDicts = AddDict
@@ -582,17 +584,17 @@ End Function
 
 Private Function Compression_ReadFromArray_Bits(FromArray() As Byte, FromPos As Long, NumBits As Integer) As Long
 
-Dim x As Integer
+Dim X As Integer
 Dim Temp As Long
 
-    For x = 1 To NumBits
+    For X = 1 To NumBits
         Temp = Temp * 2 + (-1 * ((FromArray(FromPos) And 2 ^ (7 - ReadBitPos)) > 0))
         ReadBitPos = ReadBitPos + 1
         If ReadBitPos = 8 Then
             If FromPos + 1 > UBound(FromArray) Then
-                Do While x < NumBits
+                Do While X < NumBits
                     Temp = Temp * 2
-                    x = x + 1
+                    X = X + 1
                 Loop
                 FromPos = FromPos + 1
                 Exit For

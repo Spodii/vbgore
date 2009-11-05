@@ -177,6 +177,9 @@ Sub ShowFrmTileSelect(ByVal stBoxIDx As Byte)
     frmTileSelect.Show , frmMain
     tsDrawAll = 1
     stBoxID = stBoxIDx
+    If tsStart = 0 Then tsStart = 1
+    If tsTileWidth = 0 Then tsTileWidth = 32
+    If tsTileHeight = 0 Then tsTileHeight = 32
     tsWidth = CLng(frmTileSelect.ScaleWidth / tsTileWidth)  'Use clng to make sure we round down
     tsHeight = CLng(frmTileSelect.ScaleHeight / tsTileHeight)
     ReDim PreviewGrhList(tsWidth * tsHeight)    'Resize our array accordingly to fit all our Grhs
@@ -1057,7 +1060,7 @@ Dim FileNum As Byte
     'Load stats from file
     FileNum = FreeFile
     Open App.Path & "\NPCs\" & NPCNumber & ".npc" For Binary As FileNum
-    Get FileNum, , OpenNPC
+        Get FileNum, , OpenNPC
     Close FileNum
     
     'Save NPCNumber

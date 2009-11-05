@@ -2,14 +2,18 @@
 NumHeads=1
 
 [1]
-h1=10006
-h2=10002
-h3=10000
-h4=10004
-h5=10006
-h6=10002
-h7=10000
-h8=10004
+'These are the values from Grh1.raw
+'The numbers represent the direction the head is facing:
+'1 = North, 2 = East, 3 = South, 4 = West, 5 = NorthEast, 6 = SouthEast, 7 = SouthWest, 8 = NorthWest
+'b = blinking, a = aggressive, ab = aggressive + blinking
+1=10006
+2=10002
+3=10000
+4=10004
+5=10006
+6=10002
+7=10000
+8=10004
 b1=10006
 b2=10003
 b3=10001
@@ -18,14 +22,14 @@ b5=10006
 b6=10003
 b7=10001
 b8=10005
-ah1=10006
-ah2=10009
-ah3=10007
-ah4=10011
-ah5=10013
-ah6=10009
-ah7=10007
-ah8=10011
+a1=10006
+a2=10009
+a3=10007
+a4=10011
+a5=10013
+a6=10009
+a7=10007
+a8=10011
 ab1=10006
 ab2=10010
 ab3=10008

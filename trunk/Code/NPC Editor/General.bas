@@ -1,88 +1,4 @@
 Attribute VB_Name = "General"
-'**       ____        _________   ______   ______  ______   _______           **
-'**       \   \      /   /     \ /  ____\ /      \|      \ |   ____|          **
-'**        \   \    /   /|      |  /     |        |       ||  |____           **
-'***        \   \  /   / |     /| |  ___ |        |      / |   ____|         ***
-'****        \   \/   /  |     \| |  \  \|        |   _  \ |  |____         ****
-'******       \      /   |      |  \__|  |        |  | \  \|       |      ******
-'********      \____/    |_____/ \______/ \______/|__|  \__\_______|    ********
-'*******************************************************************************
-'*******************************************************************************
-'************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.2            ************
-'************                 http://www.vbgore.com                 ************
-'*******************************************************************************
-'*******************************************************************************
-'***** Source Distribution Information: ****************************************
-'*******************************************************************************
-'** If you wish to distribute this source code, you must distribute as-is     **
-'** from the vbGORE website unless permission is given to do otherwise. This  **
-'** comment block must remain in-tact in the distribution. If you wish to     **
-'** distribute modified versions of vbGORE, please contact Spodi (info below) **
-'** before distributing the source code. You may never label the source code  **
-'** as the "Official Release" or similar unless the code and content remains  **
-'** unmodified from the version downloaded from the official website.         **
-'** You may also never sale the source code without permission first. If you  **
-'** want to sell the code, please contact Spodi (below). This is to prevent   **
-'** people from ripping off other people by selling an insignificantly        **
-'** modified version of open-source code just to make a few quick bucks.      **
-'*******************************************************************************
-'***** Creating Engines With vbGORE: *******************************************
-'*******************************************************************************
-'** If you plan to create an engine with vbGORE that, please contact Spodi    **
-'** before doing so. You may not sell the engine unless told elsewise (the    **
-'** engine must has substantial modifications), and you may not claim it as   **
-'** all your own work - credit must be given to vbGORE, along with a link to  **
-'** the vbGORE homepage. Failure to gain approval from Spodi directly to      **
-'** make a new engine with vbGORE will result in first a friendly reminder,   **
-'** followed by much more drastic measures.                                   **
-'*******************************************************************************
-'***** Helping Out vbGORE: *****************************************************
-'*******************************************************************************
-'** If you want to help out with vbGORE's progress, theres a few things you   **
-'** can do:                                                                   **
-'**  *Donate - Great way to keep a free project going. :) Info and benifits   **
-'**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
-'**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        help expend the wiki pages!                                        **
-'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
-'**        page or a link to vbGORE in a forum you visit, every link helps    **
-'**        spread the word of vbGORE's existance! Buttons and banners for     **
-'**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
-'*******************************************************************************
-'***** Conact Information: *****************************************************
-'*******************************************************************************
-'** Please contact the creator of vbGORE (Spodi) directly with any questions: **
-'** AIM: Spodii                          Yahoo: Spodii                        **
-'** MSN: Spodii@hotmail.com              Email: spodi@vbgore.com              **
-'** 2nd Email: spodii@hotmail.com        Website: http://www.vbgore.com       **
-'*******************************************************************************
-'***** Credits: ****************************************************************
-'*******************************************************************************
-'** Below are credits to those who have helped with the project or who have   **
-'** distributed source code which has help this project's creation. The below **
-'** is listed in no particular order of significance:                         **
-'**                                                                           **
-'** ORE (Aaron Perkins): Used as base engine and for learning experience      **
-'**   http://www.baronsoft.com/                                               **
-'** SOX (Trevor Herselman): Used for all the networking                       **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=35239&lngWId=1      **
-'** Compression Methods (Marco v/d Berg): Provided compression algorithms     **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
-'** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
-'**                                                                           **
-'** Also, all the members of the vbGORE community who have submitted          **
-'** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'**                                                                           **
-'** If you feel you belong in these credits, please contact Spodi (above).    **
-'*******************************************************************************
-'*******************************************************************************
-
 Option Explicit
 
 '********** Direct X ***********
@@ -114,42 +30,6 @@ Public Type TLVERTEX
 End Type
 
 Private VertexArray(0 To 3) As TLVERTEX
-
-Public Const NumStats As Byte = 31
-Public Type StatOrder
-    Gold As Byte
-    EXP As Byte
-    ELV As Byte
-    ELU As Byte
-    MaxHIT As Byte
-    MinHIT As Byte
-    MinMAN As Byte
-    MinHP As Byte
-    MinSTA As Byte
-    Points As Byte
-    DEF As Byte
-    MaxHP As Byte
-    MaxSTA As Byte
-    MaxMAN As Byte
-    Str As Byte
-    Agil As Byte
-    Mag As Byte
-    Regen As Byte
-    Rest As Byte
-    Meditate As Byte
-    Fist As Byte
-    Staff As Byte
-    Sword As Byte
-    Parry As Byte
-    Dagger As Byte
-    Clairovoyance As Byte
-    Immunity As Byte
-    DefensiveMag As Byte
-    OffensiveMag As Byte
-    SummoningMag As Byte
-    WeaponSkill As Byte     'Only used on NPCs
-End Type
-Public SID As StatOrder 'Stat ID
 
 'Heading constants
 Public Const NORTH = 1
@@ -197,6 +77,12 @@ Public Type BodyData
     HeadOffset As Position
 End Type
 
+'Wings list
+Public Type WingData
+    Walk(1 To 8) As Grh
+    Attack(1 To 8) As Grh
+End Type
+
 'Weapons list
 Public Type WeaponData
     Walk(1 To 8) As Grh
@@ -230,6 +116,7 @@ Type CharShort
     Head As Integer         'Head index
     Body As Integer         'Body index
     Weapon As Integer       'Weapon index
+    Wings As Integer        'Wings index
     Heading As Byte         'Current direction facing
     HeadHeading As Byte     'Direction char's head is facing
     Desc As String          'Description
@@ -311,6 +198,7 @@ Public Type Char
     Head As HeadData
     Weapon As WeaponData
     Hair As HairData
+    Wings As WingData
     Moving As Byte
     Aggressive As Byte
     BlinkTimer As Single
@@ -339,6 +227,7 @@ Public SurfaceSize() As Point       'Holds the size of the surfaces for SurfaceD
 Public BodyData() As BodyData       'Holds data about body structure
 Public HeadData() As HeadData       'Holds data about head structure
 Public HairData() As HairData       'Holds data about hair structure
+Public WingData() As WingData       'Holds data about wing structure
 Public WeaponData() As WeaponData   'Holds data about weapon structure
 Public ObjData() As ObjData
 
@@ -363,6 +252,7 @@ Private Type D3DXIMAGE_INFO_A
 End Type
 
 Private NumBodies As Integer
+Private NumWings As Integer
 Private NumGrhs As Integer
 Private NumHairs As Integer
 Private NumObjs As Integer
@@ -594,6 +484,11 @@ Dim LoopC As Byte
 Dim Green As Byte
 Dim RenderColor(1 To 4) As Long
 Dim ShadowColor As Long
+Dim HeadGrh As Grh
+Dim BodyGrh As Grh
+Dim WeaponGrh As Grh
+Dim HairGrh As Grh
+Dim WingsGrh As Grh
 
     '***** Set the variables *****
     RenderColor(1) = -1
@@ -653,42 +548,68 @@ Dim ShadowColor As Long
     Engine_Render_Grh CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
 
     '***** Render Character *****
+    '***** (When updating this, make sure you copy it to the NPCEditor and MapEditor, too!) *****
     CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading).FrameCounter = CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).FrameCounter
-    'Draw body and weapon
+
+    'The body, weapon and wings
     If CharList(CharIndex).ActionIndex <= 1 Then
         'Walking
-        Engine_Render_Grh CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading), PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, True, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        BodyGrh = CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading)
+        WeaponGrh = CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading)
+        WingsGrh = CharList(CharIndex).Wings.Walk(CharList(CharIndex).Heading)
     Else
         'Attacking
-        Engine_Render_Grh CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading), PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, True, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        BodyGrh = CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading)
+        WeaponGrh = CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading)
+        WingsGrh = CharList(CharIndex).Wings.Attack(CharList(CharIndex).Heading)
     End If
-
-    'Draw Head
-    If CharList(CharIndex).Aggressive > 0 Then
-        'Aggressive
-        If CharList(CharIndex).BlinkTimer > 0 Then
-            'Blinking
-            Engine_Render_Grh CharList(CharIndex).Head.AgrBlink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Else
-            'Normal
-            Engine_Render_Grh CharList(CharIndex).Head.AgrHead(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        End If
-    Else
-        'Not Aggressive
-        If CharList(CharIndex).BlinkTimer > 0 Then
-            'Blinking
-            Engine_Render_Grh CharList(CharIndex).Head.Blink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Else
-            'Normal
-            Engine_Render_Grh CharList(CharIndex).Head.Head(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        End If
+    
+    'The head
+    If CharList(CharIndex).Aggressive > 0 Then  'Aggressive
+        If CharList(CharIndex).BlinkTimer > 0 Then HeadGrh = CharList(CharIndex).Head.AgrBlink(CharList(CharIndex).HeadHeading) Else HeadGrh = CharList(CharIndex).Head.AgrHead(CharList(CharIndex).HeadHeading)
+    Else    'Non-aggressive
+        If CharList(CharIndex).BlinkTimer > 0 Then HeadGrh = CharList(CharIndex).Head.Blink(CharList(CharIndex).HeadHeading) Else HeadGrh = CharList(CharIndex).Head.Head(CharList(CharIndex).HeadHeading)
     End If
-
-    'Draw Hair
-    Engine_Render_Grh CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-
+    
+    'The hair
+    HairGrh = CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading)
+    
+    'Make the paperdoll layering based off the direction they are heading
+        
+    '*** NORTH / NORTHEAST *** (1.Weapon 2.Body 3.Head 4.Hair 5.Wings)
+    If CharList(CharIndex).Heading = NORTH Or CharList(CharIndex).Heading = NORTHEAST Then
+        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        
+    '*** EAST / SOUTHEAST *** (1.Body 2.Head 3.Hair 4.Wings 5.Weapon)
+    ElseIf CharList(CharIndex).Heading = EAST Or CharList(CharIndex).Heading = SOUTHEAST Then
+        Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        
+    '*** SOUTH / SOUTHWEST *** (1.Wings 2.Body 3.Head 4.Hair 5.Weapon)
+    ElseIf CharList(CharIndex).Heading = SOUTH Or CharList(CharIndex).Heading = SOUTHWEST Then
+        Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        
+    '*** WEST / NORTHWEST *** (1.Weapon 1.Body 2.Head 3.Hair 4.Wings)
+    ElseIf CharList(CharIndex).Heading = WEST Or CharList(CharIndex).Heading = NORTHWEST Then
+        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        
+    End If
+    
 End Sub
 
 Sub Editor_SaveNPC(ByVal NPCNum As Integer)
@@ -717,6 +638,7 @@ Dim i As Byte
         OpenNPC.Char.Weapon = .WeaponTxt.Text
         OpenNPC.Char.Body = .BodyTxt.Text
         OpenNPC.Char.Hair = .HairTxt.Text
+        OpenNPC.Char.Wings = .WingsTxt.Text
         OpenNPC.Char.Head = .HeadTxt.Text
         OpenNPC.Char.Heading = .HeadingTxt.Text
         OpenNPC.GiveEXP = .GiveExpTxt.Text
@@ -742,22 +664,8 @@ Dim i As Byte
 
 End Sub
 
-Sub Editor_OpenNPC(ByVal NPCNum As Integer)
-Dim FileNum As Byte
+Sub Editor_UpdateNPC()
 Dim i As Byte
-
-    'Check that the file exists
-    If Engine_FileExist(NPCsPath & NPCNumber & ".npc", vbNormal) = False Then
-        MsgBox "Error! NPC file (" & NPCsPath & NPCNumber & ".npc) does not exist!", vbOKOnly
-        Exit Sub
-    End If
-
-    'Load up a NPC
-    NPCNumber = NPCNum
-    FileNum = FreeFile
-    Open NPCsPath & NPCNumber & ".npc" For Binary As #FileNum
-        Get #FileNum, , OpenNPC
-    Close #FileNum
     
     'Display the information
     With frmMain
@@ -768,6 +676,7 @@ Dim i As Byte
         .BodyTxt.Text = OpenNPC.Char.Body
         .HairTxt.Text = OpenNPC.Char.Hair
         .HeadTxt.Text = OpenNPC.Char.Head
+        .WingsTxt.Text = OpenNPC.Char.Wings
         .HeadingTxt.Text = OpenNPC.Char.Heading
         .GiveExpTxt.Text = OpenNPC.GiveEXP
         .GiveGoldTxt.Text = OpenNPC.GiveGLD
@@ -802,6 +711,26 @@ Dim i As Byte
     CharList(1).Active = 1
     
     Editor_SetNPCGrhs
+    
+End Sub
+
+Sub Editor_OpenNPC(ByVal NPCNum As Integer)
+Dim FileNum As Byte
+
+    'Check that the file exists
+    If Engine_FileExist(NPCsPath & NPCNumber & ".npc", vbNormal) = False Then
+        MsgBox "Error! NPC file (" & NPCsPath & NPCNumber & ".npc) does not exist!", vbOKOnly
+        Exit Sub
+    End If
+
+    'Load up a NPC
+    NPCNumber = NPCNum
+    FileNum = FreeFile
+    Open NPCsPath & NPCNumber & ".npc" For Binary As #FileNum
+        Get #FileNum, , OpenNPC
+    Close #FileNum
+    
+    Editor_UpdateNPC
 
 End Sub
 
@@ -810,11 +739,13 @@ Dim EmptyBodyData As BodyData
 Dim EmptyHeadData As HeadData
 Dim EmptyHairData As HairData
 Dim EmptyWeaponData As WeaponData
+Dim EmptyWingData As WingData
 
     If Val(frmMain.BodyTxt.Text) > 0 And Val(frmMain.BodyTxt.Text) <= UBound(BodyData) Then CharList(1).Body = BodyData(Val(frmMain.BodyTxt.Text)) Else CharList(1).Body = EmptyBodyData
     If Val(frmMain.HeadTxt.Text) > 0 And Val(frmMain.HeadTxt.Text) <= UBound(HeadData) Then CharList(1).Head = HeadData(Val(frmMain.HeadTxt.Text)) Else CharList(1).Head = EmptyHeadData
     If Val(frmMain.HairTxt.Text) > 0 And Val(frmMain.HairTxt.Text) <= UBound(HairData) Then CharList(1).Hair = HairData(Val(frmMain.HairTxt.Text)) Else CharList(1).Hair = EmptyHairData
     If Val(frmMain.WeaponTxt.Text) > 0 And Val(frmMain.WeaponTxt.Text) <= UBound(WeaponData) Then CharList(1).Weapon = WeaponData(Val(frmMain.WeaponTxt.Text)) Else CharList(1).Weapon = EmptyWeaponData
+    If Val(frmMain.WingsTxt.Text) > 0 And Val(frmMain.WingsTxt.Text) <= UBound(WingData) Then CharList(1).Wings = WingData(Val(frmMain.WingsTxt.Text)) Else CharList(1).Wings = EmptyWingData
     CharList(1).Heading = SOUTH
     CharList(1).HeadHeading = SOUTH
     CharList(1).Moving = 1
@@ -920,6 +851,8 @@ Sub Engine_Init_BodyData()
 '*****************************************************************
 
 Dim LoopC As Long
+Dim j As Long
+
 'Get number of bodies
 
     NumBodies = CInt(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
@@ -927,24 +860,12 @@ Dim LoopC As Long
     ReDim BodyData(1 To NumBodies) As BodyData
     'Fill list
     For LoopC = 1 To NumBodies
-        Engine_Init_Grh BodyData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk1")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk2")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk3")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk4")), 0
-        BodyData(LoopC).Walk(5) = BodyData(LoopC).Walk(1)
-        BodyData(LoopC).Walk(6) = BodyData(LoopC).Walk(2)
-        BodyData(LoopC).Walk(7) = BodyData(LoopC).Walk(3)
-        BodyData(LoopC).Walk(8) = BodyData(LoopC).Walk(4)
-        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetY"))
-        Engine_Init_Grh BodyData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack1")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack2")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack3")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack4")), 1
-        BodyData(LoopC).Attack(5) = BodyData(LoopC).Attack(1)
-        BodyData(LoopC).Attack(6) = BodyData(LoopC).Attack(2)
-        BodyData(LoopC).Attack(7) = BodyData(LoopC).Attack(3)
-        BodyData(LoopC).Attack(8) = BodyData(LoopC).Attack(4)
+        For j = 1 To 8
+            Engine_Init_Grh BodyData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh BodyData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "a" & j)), 1
+        Next j
+        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetY"))
     Next LoopC
 
 End Sub
@@ -1134,6 +1055,30 @@ Dim i As Integer
 
 End Sub
 
+Sub Engine_Init_WingData()
+
+'*****************************************************************
+'Loads Wing.dat
+'*****************************************************************
+Dim LoopC As Long
+Dim j As Long
+
+    'Get number of wings
+    NumWings = CInt(Engine_Var_Get(DataPath & "Wing.dat", "INIT", "NumWings"))
+    
+    'Resize array
+    ReDim WingData(0 To NumWings) As WingData
+    
+    'Fill list
+    For LoopC = 1 To NumWings
+        For j = 1 To 8
+            Engine_Init_Grh WingData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh WingData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
+        Next j
+    Next LoopC
+
+End Sub
+
 Sub Engine_Init_HeadData()
 
 '*****************************************************************
@@ -1150,9 +1095,9 @@ Dim i As Integer
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "h" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
             Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ah" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
             Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
         Next i
     Next LoopC
@@ -1227,6 +1172,7 @@ Function Engine_Init_TileEngine(ByRef setDisplayFormhWnd As Long, ByVal setTileP
     Engine_Init_WeaponData
     Engine_Init_HeadData
     Engine_Init_HairData
+    Engine_Init_WingData
     Editor_LoadOBJs
 
     'Set FPS value to 60 for startup

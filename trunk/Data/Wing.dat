@@ -1,0 +1,24 @@
+[INIT]
+NumWings=1
+
+[1]
+'These are the values from Grh1.raw
+'The numbers represent the direction the head is facing:
+'1 = North, 2 = East, 3 = South, 4 = West, 5 = NorthEast, 6 = SouthEast, 7 = SouthWest, 8 = NorthWest
+'No letter = walking, a = attacking
+1=1238
+2=1237
+3=1236
+4=1239
+5=1238
+6=1237
+7=1236
+8=1239
+a1=1207
+a2=1211
+a3=1215
+a4=1219
+a5=1207
+a6=1211
+a7=1215
+a8=1219

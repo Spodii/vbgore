@@ -5,8 +5,7 @@ Public Sub NPC_UpdateModStats(ByVal NPCIndex As Integer)
 
 Dim Temp As Integer
 
-'Set the HP
-
+    'Set the HP
     Temp = NPCList(NPCIndex).ModStat(SID.MinHP)
 
     'Copy over the base stats to the mod stats
@@ -31,9 +30,6 @@ Dim t2 As Byte
 Dim Y As Long
 Dim X As Long
 
-    'Leave if map is in devmode (dont do NPC AI)
-    If MapInfo(NPCList(NPCIndex).Pos.Map).DevMode Then Exit Sub
-
     'Update the action delay counter
     If NPCList(NPCIndex).Flags.ActionDelay > 0 Then
         NPCList(NPCIndex).Flags.ActionDelay = NPCList(NPCIndex).Flags.ActionDelay - Elapsed
@@ -53,7 +49,7 @@ Dim X As Long
                 If MapData(nPos.Map, nPos.X, nPos.Y).UserIndex > 0 Then
     
                     'Face NPC to target
-                    NPC_ChangeChar ToMap, NPCIndex, NPCIndex, NPCList(NPCIndex).Char.Body, NPCList(NPCIndex).Char.Head, CByte(HeadingLoop), NPCList(NPCIndex).Char.Weapon, NPCList(NPCIndex).Char.Hair
+                    NPC_ChangeChar ToMap, NPCIndex, NPCIndex, NPCList(NPCIndex).Char.Body, NPCList(NPCIndex).Char.Head, CByte(HeadingLoop), NPCList(NPCIndex).Char.Weapon, NPCList(NPCIndex).Char.Hair, NPCList(NPCIndex).Char.Wings
     
                     'Tell everyone in the PC area to show the attack animation
                     ConBuf.Clear
@@ -190,21 +186,16 @@ Dim Hit As Integer
     NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
 
     'Check if the user has a 100% chance to miss
-    If NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50 < UserList(UserIndex).Stats.ModStat(SID.Parry) Then Exit Sub
+    If NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50 < UserList(UserIndex).Stats.ModStat(SID.Agi) Then Exit Sub
 
-    'If user weapon skill is at least 50 points greater, 100% chance to hit
-    If NPCList(NPCIndex).ModStat(SID.WeaponSkill) - 50 <= UserList(UserIndex).Stats.ModStat(SID.Parry) Then
-
-        'Since the user doesn't have 100% chance to hit, calculate if they hit
-        If Server_RandomNumber(1, 100) >= ((NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50) - UserList(UserIndex).Stats.ModStat(SID.Parry)) Then
-            ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Server_SetCharDamage
-            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-            ConBuf.Put_Integer -1
-            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-            Exit Sub
-        End If
-
+    'Calculate if they hit
+    If Server_RandomNumber(1, 100) >= ((NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50) - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_SetCharDamage
+        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+        ConBuf.Put_Integer -1
+        Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Exit Sub
     End If
 
     'Calculate hit
@@ -234,7 +225,7 @@ Dim Hit As Integer
 
 End Sub
 
-Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, NPCIndex As Integer, Body As Integer, Head As Integer, Heading As Byte, Weapon As Integer, Hair As Integer)
+Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer)
 
 '*****************************************************************
 'Changes a NPC char's head,body and heading
@@ -242,6 +233,7 @@ Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, NPCIndex A
 
     NPCList(NPCIndex).Char.Body = Body
     NPCList(NPCIndex).Char.Head = Head
+    NPCList(NPCIndex).Char.Wings = Wings
     NPCList(NPCIndex).Char.Heading = Heading
     NPCList(NPCIndex).Char.HeadHeading = Heading
 
@@ -253,6 +245,7 @@ Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, NPCIndex A
     ConBuf.Put_Byte Heading
     ConBuf.Put_Integer Weapon
     ConBuf.Put_Integer Hair
+    ConBuf.Put_Integer Wings
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
 End Sub
@@ -297,9 +290,12 @@ Dim HPA As Byte         'HP percentage before reducing hp
 Dim HPB As Byte         'HP percentage after reducing hp
 Dim i As Integer
 
-'Check if the NPC can be attacked
-
+    'Check if the NPC can be attacked
     If NPCList(NPCIndex).Attackable = 0 Then Exit Sub
+
+    'If NPC has no health, they can not be attacked
+    If NPCList(NPCIndex).ModStat(SID.MaxHP) = 0 Then Exit Sub
+    If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then Exit Sub
 
     'Get the pre-damage percentage
     HPA = CByte((NPCList(NPCIndex).ModStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
@@ -369,7 +365,7 @@ Dim i As Integer
             ConBuf.Put_String "You kill " & NPCList(NPCIndex).Name & "!"
             ConBuf.Put_Byte DataCode.Comm_FontType_Fight
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
+            
         End If
 
         'Kill off the NPC
@@ -462,6 +458,7 @@ Dim SndMP As Byte
     ConBuf.Put_String NPCList(NPCIndex).Name
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
+    ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
     ConBuf.Put_Byte SndHP
     ConBuf.Put_Byte SndMP
 

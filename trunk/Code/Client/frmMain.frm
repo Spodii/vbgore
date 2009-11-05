@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{9842967E-F54F-4981-93DF-0772B2672E38}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{E4B113F2-DDE2-4AB3-AEA1-60C47D60380C}#1.0#0"; "vbgoresocketstring.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -39,6 +39,12 @@ Begin VB.Form frmMain
       Width           =   420
       _ExtentX        =   741
       _ExtentY        =   741
+   End
+   Begin VB.Timer ShutdownTimer 
+      Enabled         =   0   'False
+      Interval        =   200
+      Left            =   1080
+      Top             =   120
    End
    Begin VB.Timer PingTmr 
       Enabled         =   0   'False
@@ -260,8 +266,6 @@ Dim i As Byte
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/KICK" Then
                         sndBuf.Put_Byte DataCode.GM_Kick
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
-                    ElseIf UCase$(EnterTextBuffer) = "/DEVMODE" Then
-                        sndBuf.Put_Byte DataCode.Dev_SetMode
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/RAISE" Then
                         TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
                         If IsNumeric(TempS(1)) Then
@@ -304,24 +308,33 @@ Dim i As Byte
                 ShowGameWindow(ChatWindow) = 1
                 LastClickedWindow = ChatWindow
             End If
+        ElseIf KeyCode = vbKeyS Then
+            If ShowGameWindow(StatWindow) Then
+                ShowGameWindow(StatWindow) = 0
+            Else
+                ShowGameWindow(StatWindow) = 1
+                LastClickedWindow = StatWindow
+            End If
         End If
     End If
     
     'Close screen
     If KeyCode = vbKeyEscape Then
         If LastClickedWindow = 0 Then
-            If EnterText Then
-                EnterTextBuffer = vbNullString
-                EnterText = False
+            If ShowGameWindow(MenuWindow) = 1 Then
+                ShowGameWindow(MenuWindow) = 0
+                LastClickedWindow = 0
             Else
-                ShowGameWindow(MenuWindow) = 1
-                LastClickedWindow = MenuWindow
+                If EnterText Then
+                    EnterTextBuffer = vbNullString
+                    EnterText = False
+                Else
+                    ShowGameWindow(MenuWindow) = 1
+                    LastClickedWindow = MenuWindow
+                End If
             End If
         Else
-            If ShowGameWindow(LastClickedWindow) Then
-                ShowGameWindow(LastClickedWindow) = 0
-                If LastClickedWindow = DevWindow Then sndBuf.Put_Byte DataCode.Dev_SetMode
-            End If
+            If ShowGameWindow(LastClickedWindow) Then ShowGameWindow(LastClickedWindow) = 0
         End If
         LastClickedWindow = 0
     End If
@@ -389,260 +402,6 @@ Dim b As Boolean
                     End If
                 End If
             End Select
-        End If
-        'Dev window
-    ElseIf LastClickedWindow = DevWindow Then
-        If DevHasFocus Then
-            Select Case DevHasFocus
-            Case Lighting1
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Lighting(1)) > 0 Then
-                        DevValue.Lighting(1) = Left$(DevValue.Lighting(1), Len(DevValue.Lighting(1)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Lighting(1)) < 500 Then
-                            DevValue.Lighting(1) = DevValue.Lighting(1) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Lighting2
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Lighting(2)) > 0 Then
-                        DevValue.Lighting(2) = Left$(DevValue.Lighting(2), Len(DevValue.Lighting(2)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Lighting(2)) < 500 Then
-                            DevValue.Lighting(2) = DevValue.Lighting(2) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Lighting3
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Lighting(3)) > 0 Then
-                        DevValue.Lighting(3) = Left$(DevValue.Lighting(3), Len(DevValue.Lighting(3)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Lighting(3)) < 500 Then
-                            DevValue.Lighting(3) = DevValue.Lighting(3) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Lighting4
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Lighting(4)) > 0 Then
-                        DevValue.Lighting(4) = Left$(DevValue.Lighting(4), Len(DevValue.Lighting(4)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Lighting(4)) < 500 Then
-                            DevValue.Lighting(4) = DevValue.Lighting(4) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Grh1
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Grh(1)) > 0 Then
-                        DevValue.Grh(1) = Left$(DevValue.Grh(1), Len(DevValue.Grh(1)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Grh(1)) < 500 Then
-                            DevValue.Grh(1) = DevValue.Grh(1) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Grh2
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Grh(2)) > 0 Then
-                        DevValue.Grh(2) = Left$(DevValue.Grh(2), Len(DevValue.Grh(2)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Grh(2)) < 500 Then
-                            DevValue.Grh(2) = DevValue.Grh(2) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Grh3
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Grh(3)) > 0 Then
-                        DevValue.Grh(3) = Left$(DevValue.Grh(3), Len(DevValue.Grh(3)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Grh(3)) < 500 Then
-                            DevValue.Grh(3) = DevValue.Grh(3) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Grh4
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Grh(4)) > 0 Then
-                        DevValue.Grh(4) = Left$(DevValue.Grh(4), Len(DevValue.Grh(4)) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Grh(4)) < 500 Then
-                            DevValue.Grh(4) = DevValue.Grh(4) & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case NPC
-                If KeyAscii = 8 Then
-                    If Len(DevValue.NPC) > 0 Then
-                        DevValue.NPC = Left$(DevValue.NPC, Len(DevValue.NPC) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.NPC) < 500 Then
-                            DevValue.NPC = DevValue.NPC & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Blocked
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Blocked) > 0 Then
-                        DevValue.Blocked = Left$(DevValue.Blocked, Len(DevValue.Blocked) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Blocked) < 500 Then
-                            DevValue.Blocked = DevValue.Blocked & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case ExitMap
-                If KeyAscii = 8 Then
-                    If Len(DevValue.ExitMap) > 0 Then
-                        DevValue.ExitMap = Left$(DevValue.ExitMap, Len(DevValue.ExitMap) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.ExitMap) < 500 Then
-                            DevValue.ExitMap = DevValue.ExitMap & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case ExitX
-                If KeyAscii = 8 Then
-                    If Len(DevValue.ExitX) > 0 Then
-                        DevValue.ExitX = Left$(DevValue.ExitX, Len(DevValue.ExitX) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.ExitX) < 500 Then
-                            DevValue.ExitX = DevValue.ExitX & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case ExitY
-                If KeyAscii = 8 Then
-                    If Len(DevValue.ExitY) > 0 Then
-                        DevValue.ExitY = Left$(DevValue.ExitY, Len(DevValue.ExitY) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.ExitY) < 500 Then
-                            DevValue.ExitY = DevValue.ExitY & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Mailbox
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Mailbox) > 0 Then
-                        DevValue.Mailbox = Left$(DevValue.Mailbox, Len(DevValue.Mailbox) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Mailbox) < 500 Then
-                            DevValue.Mailbox = DevValue.Mailbox & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Namex
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Name) > 0 Then
-                        DevValue.Name = Left$(DevValue.Name, Len(DevValue.Name) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Name) < 500 Then
-                            DevValue.Name = DevValue.Name & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Obj
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Obj) > 0 Then
-                        DevValue.Obj = Left$(DevValue.Obj, Len(DevValue.Obj) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Obj) < 500 Then
-                            DevValue.Obj = DevValue.Obj & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case ObjAmount
-                If KeyAscii = 8 Then
-                    If Len(DevValue.ObjAmount) > 0 Then
-                        DevValue.ObjAmount = Left$(DevValue.ObjAmount, Len(DevValue.ObjAmount) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.ObjAmount) < 500 Then
-                            DevValue.ObjAmount = DevValue.ObjAmount & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Version
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Version) > 0 Then
-                        DevValue.Version = Left$(DevValue.Version, Len(DevValue.Version) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Version) < 500 Then
-                            DevValue.Version = DevValue.Version & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            Case Weather
-                If KeyAscii = 8 Then
-                    If Len(DevValue.Weather) > 0 Then
-                        DevValue.Weather = Left$(DevValue.Weather, Len(DevValue.Weather) - 1)
-                    End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(DevValue.Weather) < 500 Then
-                            DevValue.Weather = DevValue.Weather & Chr$(KeyAscii)
-                        End If
-                    End If
-                End If
-            End Select
-            Game_ClearMapTileChanged
         End If
         'Send text
     Else
@@ -758,6 +517,17 @@ Private Sub PingTmr_Timer()
 
 End Sub
 
+Private Sub ShutdownTimer_Timer()
+
+    On Error Resume Next    'Who cares about an error if we are closing down
+
+    'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
+    Engine_Init_UnloadTileEngine
+    Engine_UnloadAllForms
+    End
+
+End Sub
+
 Private Sub Sox_OnClose(inSox As Long)
 
     If SocketOpen = 1 Then IsUnloading = 1
@@ -814,7 +584,13 @@ Static x As Long
     'Dim i As Long
     'Dim S As String
     'For i = LBound(inData) To UBound(inData)
-    '    S = S & inData(i) & " "
+    '    If inData(i) > 100 Then
+    '        S = S & inData(i) & " "
+    '    ElseIf inData(i) > 10 Then
+    '        S = S & "0" & inData(i) & " "
+    '    Else
+    '        S = S & "00" & inData(i) & " "
+    '    End If
     'Next i
     'Debug.Print S
 
@@ -834,15 +610,9 @@ Static x As Long
             Case .Comm_Talk: Data_Comm_Talk rBuf
             Case .Comm_UMsgbox: Data_Comm_UMsgBox rBuf
 
-            Case .Dev_SetMapInfo: Data_Dev_SetMapInfo rBuf
-            Case .Dev_SetMode: Data_Dev_SetMode rBuf
-
             Case .Map_DoneSwitching: Data_Map_DoneSwitching
-            Case .Map_EndTransfer: Data_Map_EndTransfer rBuf
             Case .Map_LoadMap: Data_Map_LoadMap rBuf
             Case .Map_SendName:  Data_Map_SendName rBuf
-            Case .Map_StartTransfer: Data_Map_StartTransfer rBuf
-            Case .Map_UpdateTile:  Data_Map_UpdateTile rBuf
 
             Case .Server_ChangeChar: Data_Server_ChangeChar rBuf
             Case .Server_CharHP: Data_Server_CharHP rBuf
@@ -904,9 +674,14 @@ Private Function SplitCommandFromString(StringBuffer As String) As String
 
 Dim TempSplit() As String
 Dim i As Integer
-
+    
+    If StringBuffer = "" Then Exit Function
+    If Len(StringBuffer) < 2 Then Exit Function
+    
     TempSplit() = Split(StringBuffer, " ")
-
+    
+    If UBound(TempSplit) = 0 Then Exit Function
+    
     For i = 1 To UBound(TempSplit)
         SplitCommandFromString = SplitCommandFromString & TempSplit(i) & " "
     Next i

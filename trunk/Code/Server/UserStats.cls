@@ -56,13 +56,17 @@ Public Sub LoadClass(ByVal FileIndex As Byte)
 
 Dim i As Long
 
-'Load the class values
-
-    Get #FileIndex, , BaseStats()
-
-    'Set the mod values to the base values
     For i = 1 To NumStats
+    
+        'Load the stat values
+        Get #FileIndex, , BaseStats(i)
+
+        'Set the mod values to the base values
         ModStats(i) = BaseStats(i)
+        
+        UpdateBaseStats(i) = 1
+        UpdateModStats(i) = 1
+            
     Next i
 
 End Sub
@@ -96,10 +100,14 @@ Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
 End Property
 
 Public Sub SaveClass(ByVal FileIndex As Byte)
+Dim i As Long
 
-'Save the class values
-
-    Put #FileIndex, , BaseStats()
+    For i = 1 To NumStats
+    
+        'Save the class values
+        Put #FileIndex, , BaseStats(i)
+            
+    Next i
 
 End Sub
 

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{1FBEF8E7-C785-4338-83C0-B3688028151A}#1.0#0"; "vbgoresocketstring.ocx"
+Object = "{E4B113F2-DDE2-4AB3-AEA1-60C47D60380C}#1.0#0"; "vbgoresocketstring.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
@@ -15,6 +15,7 @@ Begin VB.Form frmMain
    ScaleHeight     =   275
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   257
+   StartUpPosition =   2  'CenterScreen
    Begin VB.Frame Frame3 
       BackColor       =   &H00000000&
       Caption         =   "Connection Information"
@@ -28,10 +29,10 @@ Begin VB.Form frmMain
          Strikethrough   =   0   'False
       EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   855
+      Height          =   975
       Left            =   120
       TabIndex        =   8
-      Top             =   600
+      Top             =   480
       Width           =   3615
       Begin SoxOCX.Sox Sox 
          Height          =   420
@@ -46,6 +47,30 @@ Begin VB.Form frmMain
          Interval        =   1000
          Left            =   2400
          Top             =   240
+      End
+      Begin VB.Label StatusLbl 
+         AutoSize        =   -1  'True
+         BackStyle       =   0  'Transparent
+         Caption         =   "None"
+         ForeColor       =   &H00FFFFFF&
+         Height          =   195
+         Left            =   1680
+         TabIndex        =   22
+         Top             =   720
+         Width           =   390
+      End
+      Begin VB.Label Label1 
+         Alignment       =   1  'Right Justify
+         AutoSize        =   -1  'True
+         BackStyle       =   0  'Transparent
+         Caption         =   "Status :"
+         ForeColor       =   &H00FFFFFF&
+         Height          =   195
+         Index           =   9
+         Left            =   1035
+         TabIndex        =   21
+         Top             =   720
+         Width           =   540
       End
       Begin VB.Label Label1 
          Alignment       =   1  'Right Justify
@@ -301,90 +326,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-'**       ____        _________   ______   ______  ______   _______           **
-'**       \   \      /   /     \ /  ____\ /      \|      \ |   ____|          **
-'**        \   \    /   /|      |  /     |        |       ||  |____           **
-'***        \   \  /   / |     /| |  ___ |        |      / |   ____|         ***
-'****        \   \/   /  |     \| |  \  \|        |   _  \ |  |____         ****
-'******       \      /   |      |  \__|  |        |  | \  \|       |      ******
-'********      \____/    |_____/ \______/ \______/|__|  \__\_______|    ********
-'*******************************************************************************
-'*******************************************************************************
-'************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.2            ************
-'************                 http://www.vbgore.com                 ************
-'*******************************************************************************
-'*******************************************************************************
-'***** Source Distribution Information: ****************************************
-'*******************************************************************************
-'** If you wish to distribute this source code, you must distribute as-is     **
-'** from the vbGORE website unless permission is given to do otherwise. This  **
-'** comment block must remain in-tact in the distribution. If you wish to     **
-'** distribute modified versions of vbGORE, please contact Spodi (info below) **
-'** before distributing the source code. You may never label the source code  **
-'** as the "Official Release" or similar unless the code and content remains  **
-'** unmodified from the version downloaded from the official website.         **
-'** You may also never sale the source code without permission first. If you  **
-'** want to sell the code, please contact Spodi (below). This is to prevent   **
-'** people from ripping off other people by selling an insignificantly        **
-'** modified version of open-source code just to make a few quick bucks.      **
-'*******************************************************************************
-'***** Creating Engines With vbGORE: *******************************************
-'*******************************************************************************
-'** If you plan to create an engine with vbGORE that, please contact Spodi    **
-'** before doing so. You may not sell the engine unless told elsewise (the    **
-'** engine must has substantial modifications), and you may not claim it as   **
-'** all your own work - credit must be given to vbGORE, along with a link to  **
-'** the vbGORE homepage. Failure to gain approval from Spodi directly to      **
-'** make a new engine with vbGORE will result in first a friendly reminder,   **
-'** followed by much more drastic measures.                                   **
-'*******************************************************************************
-'***** Helping Out vbGORE: *****************************************************
-'*******************************************************************************
-'** If you want to help out with vbGORE's progress, theres a few things you   **
-'** can do:                                                                   **
-'**  *Donate - Great way to keep a free project going. :) Info and benifits   **
-'**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
-'**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        help expend the wiki pages!                                        **
-'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
-'**        page or a link to vbGORE in a forum you visit, every link helps    **
-'**        spread the word of vbGORE's existance! Buttons and banners for     **
-'**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
-'*******************************************************************************
-'***** Conact Information: *****************************************************
-'*******************************************************************************
-'** Please contact the creator of vbGORE (Spodi) directly with any questions: **
-'** AIM: Spodii                          Yahoo: Spodii                        **
-'** MSN: Spodii@hotmail.com              Email: spodi@vbgore.com              **
-'** 2nd Email: spodii@hotmail.com        Website: http://www.vbgore.com       **
-'*******************************************************************************
-'***** Credits: ****************************************************************
-'*******************************************************************************
-'** Below are credits to those who have helped with the project or who have   **
-'** distributed source code which has help this project's creation. The below **
-'** is listed in no particular order of significance:                         **
-'**                                                                           **
-'** ORE (Aaron Perkins): Used as base engine and for learning experience      **
-'**   http://www.baronsoft.com/                                               **
-'** SOX (Trevor Herselman): Used for all the networking                       **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=35239&lngWId=1      **
-'** Compression Methods (Marco v/d Berg): Provided compression algorithms     **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
-'** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
-'**                                                                           **
-'** Also, all the members of the vbGORE community who have submitted          **
-'** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'**                                                                           **
-'** If you feel you belong in these credits, please contact Spodi (above).    **
-'*******************************************************************************
-'*******************************************************************************
-
 Option Explicit
 
 'The update server works in the following manner:
@@ -440,74 +381,111 @@ Private ConnectionsEst As Long  'Total amount of connections established
 Private FileList() As String            'List of files by their complete path on the server
 Private FileListShortName() As String   'List of files by their shortened path
 Private FileSize() As Long              'Size of the file in bytes
+Private FileHash() As String * 32       'MD5 hash of the file
 Private NumFiles As Long
 
-'***** Used for changing file times *****
-Private Type FILETIME
-    dwLowDateTime As Long
-    dwHighDateTime As Long
-End Type
-Private Type SECURITY_ATTRIBUTES
-    nLength As Long
-    lpSecurityDescriptor As Long
-    bInheritHandle As Long
-End Type
-Private Const FILE_ATTRIBUTE_READONLY = &H1
-Private Const FILE_ATTRIBUTE_HIDDEN = &H2
-Private Const FILE_ATTRIBUTE_SYSTEM = &H4
-Private Const FILE_ATTRIBUTE_DIRECTORY = &H10
-Private Const FILE_ATTRIBUTE_ARCHIVE = &H20
-Private Const FILE_ATTRIBUTE_DEVICE = &H40
-Private Const FILE_ATTRIBUTE_NORMAL = &H80
-Private Const FILE_ATTRIBUTE_TEMPORARY = &H100
-Private Const FILE_ATTRIBUTE_SPARSE_FILE = &H200
-Private Const FILE_ATTRIBUTE_REPARSE_POINT = &H400
-Private Const FILE_ATTRIBUTE_COMPRESSED = &H800
-Private Const FILE_ATTRIBUTE_OFFLINE = &H1000
-Private Const FILE_ATTRIBUTE_NOT_CONTENT_INDEXED = &H2000
-Private Const FILE_ATTRIBUTE_ENCRYPTED = &H4000
-Private Const FILE_FLAG_BACKUP_SEMANTICS = &H2000000
-Private Const FILE_SHARE_READ = &H1
-Private Const FILE_SHARE_WRITE = &H2
-Private Const FILE_SHARE_DELETE = &H4
-Private Const GENERIC_READ = &H80000000
-Private Const GENERIC_WRITE = &H40000000
-Private Const GENERIC_EXECUTE = &H20000000
-Private Const GENERIC_ALL = &H10000000
-Private Const DELETE = &H10000
-Private Const READ_CONTROL = &H20000
-Private Const WRITE_DAC = &H40000
-Private Const WRITE_OWNER = &H80000
-Private Const SYNCHRONIZE = &H100000
-Private Const FORMAT_MESSAGE_ALLOCATE_BUFFER = &H100
-Private Const FORMAT_MESSAGE_IGNORE_INSERTS = &H200
-Private Const FORMAT_MESSAGE_FROM_STRING = &H400
-Private Const FORMAT_MESSAGE_FROM_HMODULE = &H800
-Private Const FORMAT_MESSAGE_FROM_SYSTEM = &H1000
-Private Const FORMAT_MESSAGE_ARGUMENT_ARRAY = &H2000
-Private Const FORMAT_MESSAGE_MAX_WIDTH_MASK = &HFF
-Private Const CREATE_NEW = 1
-Private Const CREATE_ALWAYS = 2
-Private Const OPEN_EXISTING = 3
-Private Const OPEN_ALWAYS = 4
-Private Const TRUNCATE_EXISTING = 5
+'Path to the compressed file (CompressPath + FileListShortName)
+Private CompressPath As String
 
-Private Declare Function GetFileTime Lib "kernel32" (ByVal hFile As Long, lpCreationTime As FILETIME, lpLastAccessTime As FILETIME, lpLastWriteTime As FILETIME) As Long
-Private Declare Function CreateFile Lib "kernel32" Alias "CreateFileA" (ByVal lpFileName As String, ByVal dwDesiredAccess As Long, ByVal dwShareMode As Long, lpSecurityAttributes As SECURITY_ATTRIBUTES, ByVal dwCreationDisposition As Long, ByVal dwFlagsAndAttributes As Long, ByVal hTemplateFile As Long) As Long
-Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
 Private Declare Function GetTickCount Lib "kernel32.dll" () As Long
 Private Declare Sub ReleaseCapture Lib "user32" ()
 Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lparam As Any) As Long
+Private Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
+ 
+Sub Initialize()
+Dim FileNum As Byte
+Dim i As Long
+Dim j As Integer
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    InitFilePaths
+    
+    StatusLbl.Caption = "Loading file list"
+    DoEvents
+    
+    'Set the compressed path
+    CompressPath = App.Path & "\_Compressed"
+
+    'Get the file list
+    FileList() = AllFilesInFolders(App.Path & "\UpdateFiles\", True)
+    NumFiles = UBound(FileList())
+    
+    'Quit if we have no files to update
+    If NumFiles = 0 Then
+        MsgBox "Error: You must include files to update to run the server!" & vbCrLf & _
+            "Place them in the following path:" & vbCrLf & vbCrLf & _
+            App.Path & "\UpdateFiles\", vbOKOnly
+        Unload Me
+        Exit Sub
+    End If
+
+    'Create the short file list
+    ReDim FileListShortName(0 To NumFiles)
+    j = Len(App.Path & "UpdateFiles\")
+    For i = 0 To NumFiles
+        FileListShortName(i) = Right$(FileList(i), Len(FileList(i)) - j)
+    Next i
+    
+    StatusLbl.Caption = "Loading file sizes"
+    DoEvents
+
+    'Create the file size list
+    ReDim FileSize(0 To NumFiles)
+    FileNum = FreeFile
+    For i = 0 To NumFiles
+        Open FileList(i) For Append As #FileNum
+        FileSize(i) = LOF(FileNum)
+        Close #FileNum
+    Next i
+    
+    StatusLbl.Caption = "Creating MD5 hashes"
+    DoEvents
+    
+    'Create MD5 hashes
+    ReDim FileHash(0 To NumFiles)
+    For i = 0 To NumFiles
+        FileHash(i) = MD5_File(FileList(i))
+    Next i
+    
+    StatusLbl.Caption = "Compressing files"
+    DoEvents
+    
+    'Create compressed files
+    For i = 0 To NumFiles
+        If Engine_FileExist(App.Path & "\_Compressed" & FileListShortName(i), vbNormal) Then Kill App.Path & "\_Compressed" & FileListShortName(i)
+        MakeSureDirectoryPathExists App.Path & "\_Compressed" & FileListShortName(i)
+        Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), RLE_Loop
+    Next i
+    
+    StatusLbl.Caption = "Creating socket"
+    DoEvents
+
+    'Start up the socket
+    LocalID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdateIP"), Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
+    Sox.SetOption LocalID, soxSO_TCP_NODELAY, True
+    
+    If frmMain.Sox.Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
+
+    StatusLbl.Caption = "Loaded!"
+
+End Sub
+
+Private Sub Form_DblClick()
+
+    'Send to system tray
+    Me.WindowState = vbMinimized
+
+End Sub
+
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
 
     ReleaseCapture
     SendMessage Me.hwnd, &HA1, 2, 0&
 
     'Close form
     If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
+        If x >= Me.ScaleWidth - 23 Then
+            If x <= Me.ScaleWidth - 10 Then
                 If Y <= 26 Then
                     If Y >= 11 Then
                         Unload Me
@@ -521,50 +499,46 @@ End Sub
 
 Private Sub Form_Load()
 
-Dim FileNum As Byte
-Dim i As Long
-Dim j As Integer
-
-'Get the file list
-
-    FileList() = AllFilesInFolders(App.Path & "\Files\", True)
-    NumFiles = UBound(FileList())
-    
-    'Quit if we have no files to update
-    If NumFiles = 0 Then
-        MsgBox "Error: You must include files to update to run the server!", vbOKOnly
-        Unload Me
-        Exit Sub
-    End If
-
-    'Create the short file list
-    ReDim FileListShortName(0 To NumFiles)
-    j = Len(App.Path)
-    For i = 0 To NumFiles
-        FileListShortName(i) = Right$(FileList(i), Len(FileList(i)) - j)
-    Next i
-
-    'Create the file size list
-    ReDim FileSize(0 To NumFiles)
-    FileNum = FreeFile
-    For i = 0 To NumFiles
-        Open FileList(i) For Append As #FileNum
-        FileSize(i) = LOF(FileNum)
-        Close #FileNum
-    Next i
-
-    'Start up the socket
-    LocalID = Sox.Listen("127.0.0.1", 10201)
-    Sox.SetOption LocalID, soxSO_TCP_NODELAY, True
-
     'Show the form
     Me.Show
-
+    DoEvents
+    
+    'Load
+    Initialize
+    
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Function Engine_FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
-    Select Case X
+'Checks if a file exists
+
+    Engine_FileExist = (Dir$(File, FileType) <> "")
+
+End Function
+
+Private Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
+
+'*****************************************************************
+'Gets a variable from a text file
+'*****************************************************************
+
+Dim sSpaces As String ' This will hold the input that the program will retrieve
+Dim szReturn As String ' This will be the defaul value if the string is not found
+
+    szReturn = vbNullString
+
+    sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
+
+    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
+
+    Var_Get = RTrim$(sSpaces)
+    Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
+
+End Function
+
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+
+    Select Case x
     Case MouseMove
     Case LeftUp
     Case LeftDown
@@ -642,43 +616,40 @@ Dim i As Integer
 End Sub
 
 Private Sub SendFileRequest(ByVal UserIndex As Long, ByVal FileIndex As Long)
-
-Dim SECURITY_ATTRIBUTES As SECURITY_ATTRIBUTES
-Dim File_CreationTime As FILETIME
-Dim File_LastAccessTime As FILETIME
-Dim File_LastWriteTime As FILETIME
 Dim FileNum As Byte
-Dim Temp As Long
 
-'Check for valid file index
-
+    'Check for valid file index
     If FileIndex < 0 Then Exit Sub
     If FileIndex > NumFiles Then Exit Sub
 
-    'Get the file's LastWrite time
-    SECURITY_ATTRIBUTES.nLength = Len(SECURITY_ATTRIBUTES)
-    SECURITY_ATTRIBUTES.lpSecurityDescriptor = 0
-    SECURITY_ATTRIBUTES.bInheritHandle = False
-    Temp = CreateFile(FileList(FileIndex) & Chr$(0), GENERIC_READ Or GENERIC_WRITE, FILE_SHARE_READ Or FILE_SHARE_WRITE, SECURITY_ATTRIBUTES, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0&)
-    DoEvents
-    GetFileTime Temp, File_CreationTime, File_LastAccessTime, File_LastWriteTime
-    DoEvents
-    CloseHandle Temp
-
     'Send the request to start transfering the file
-    Sox.SendData UserIndex, "****sendrequest****|" & FileListShortName(FileIndex) & "|" & FileSize(FileIndex) & "|" & File_LastWriteTime.dwLowDateTime & "|" & File_LastWriteTime.dwHighDateTime
+    DoEvents
+    Sox.SendData UserIndex, "****sendrequest****|" & FileListShortName(FileIndex) & "|" & FileSize(FileIndex) & "|" & FileHash(FileIndex)
+
+End Sub
+
+Private Sub Sox_OnClose(inSox As Long)
+Dim i As Long
+    
+    'Remove the user's ConnID if they are on the socket that just closed
+    For i = 1 To UBound(UserList)
+        If UserList(i).ConnID = inSox Then
+            UserList(i).ConnID = 0
+            Exit For
+        End If
+    Next i
 
 End Sub
 
 Private Sub Sox_OnConnection(inSox As Long)
 
-'Assign the inSox ID as the ConnID
-
+    'Assign the inSox ID as the ConnID
     UserList(inSox).ConnID = inSox
 
     'Start the transfering with the first file
     UserList(inSox).CurrFile = 0
     UserList(inSox).LastBytesSent = 0
+    DoEvents
     SendFileRequest inSox, UserList(inSox).CurrFile
 
     'Raise connections count
@@ -703,10 +674,10 @@ Dim FileLen As Long
 
         'Send the whole file
         FileNum = FreeFile
-        Open FileList(UserList(inSox).CurrFile) For Binary Access Read As #FileNum
-        FileLen = LOF(FileNum)
-        SendBuffer = Space$(FileLen)
-        Get #FileNum, , SendBuffer
+        Open CompressPath & FileListShortName(UserList(inSox).CurrFile) For Binary Access Read As #FileNum
+            FileLen = LOF(FileNum)
+            SendBuffer = Space$(FileLen)
+            Get #FileNum, , SendBuffer
         Close #FileNum
         Sox.SendData inSox, SendBuffer & "****ENDOFFILE****"
 
@@ -759,8 +730,7 @@ End Sub
 
 Private Sub Sox_OnSendProgress(inSox As Long, bytesSent As Long, bytesRemaining As Long)
 
-'Update the sending information
-
+    'Update the sending information
     If UserList(inSox).CurrFile <= NumFiles Then FileNameLbl.Caption = FileListShortName(UserList(inSox).CurrFile)
     PercentLbl.Caption = Round(bytesSent / (bytesSent + bytesRemaining), 2) * 100 & "%"
     ClientIPLbl.Caption = Sox.Address(inSox)

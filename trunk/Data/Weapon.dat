@@ -2,6 +2,7 @@
 NumWeapons=1
 
 [Weapon1]
+'These are the values from Grh1.raw
 Walk1=1338
 Walk2=1337
 Walk3=1336

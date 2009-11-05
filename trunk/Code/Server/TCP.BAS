@@ -28,7 +28,6 @@ Dim txt As String
 
     'Check for invalid conditions
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If txt = vbNullString Then Exit Sub
     
     ConBuf.Clear
@@ -52,7 +51,6 @@ Dim txt As String
 
     'Check for invalid conditions
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If txt = vbNullString Then Exit Sub
     
     ConBuf.Clear
@@ -76,7 +74,6 @@ Dim txt As String
 
     'Check for invalid conditions
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If txt = vbNullString Then Exit Sub
     
     ConBuf.Clear
@@ -118,7 +115,6 @@ Dim TempStr() As String
 
     'Check for invalid conditions
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If txt = vbNullString Then Exit Sub
     
     'User is not online
@@ -155,487 +151,6 @@ ErrOut:
 
 End Sub
 
-Sub Data_Dev_Save_Map(ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Dev saves the map
-'<>
-'*****************************************************************
-
-Dim nPos As WorldPos
-Dim i As Integer
-
-'Check for invalid conditions
-
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    
-    'Update the version
-    If MapInfo(UserList(UserIndex).Pos.Map).MapVersion < MaxVersion Then
-        MapInfo(UserList(UserIndex).Pos.Map).MapVersion = MapInfo(UserList(UserIndex).Pos.Map).MapVersion + 1
-    Else
-        MapInfo(UserList(UserIndex).Pos.Map).MapVersion = 1
-    End If
-
-    'Send the version update
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Dev_SetMapInfo
-    ConBuf.Put_String MapInfo(UserList(UserIndex).Pos.Map).Name
-    ConBuf.Put_Integer MapInfo(UserList(UserIndex).Pos.Map).MapVersion
-    ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Weather
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-    'Save the map
-    Save_Map UserList(UserIndex).Pos.Map
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "Map has been updated and saved by Dev " & UserList(UserIndex).Name & "."
-    ConBuf.Put_Byte DataCode.Comm_FontType_Info
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-
-    'Update all the users on the map
-    For i = 1 To NumUsers
-        If UserList(i).Pos.Map = UserList(UserIndex).Pos.Map Then
-            Server_ClosestLegalPos UserList(i).Pos, nPos
-            User_WarpChar i, UserList(i).Pos.Map, nPos.x, nPos.Y, True
-        End If
-    Next i
-
-End Sub
-
-Sub Data_Dev_SetBlocked(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's blocked setting
-'<IsBlocked(B)>
-'*****************************************************************
-
-Dim IsBlocked As Byte
-
-    IsBlocked = rBuf.Get_Byte
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If IsBlocked > 1 Then Exit Sub
-
-    'Set the tile to the IsBlocked value
-    MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY).Blocked = IsBlocked
-
-End Sub
-
-Sub Data_Dev_SetExit(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's exit coordinates
-'<Map(I)><X(B)><Y(B)>
-'*****************************************************************
-
-Dim nMap As Integer
-Dim nX As Integer
-Dim nY As Integer
-
-    nMap = rBuf.Get_Integer
-    nX = rBuf.Get_Byte
-    nY = rBuf.Get_Byte
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If nX < XMinMapSize Then nX = 0
-    If nY < YMinMapSize Then nY = 0
-    If nX > XMaxMapSize Then nX = 0
-    If nY > YMaxMapSize Then nY = 0
-    If nMap < 0 Then nMap = 0
-
-    'Invalid map
-    If nMap > NumMaps Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Invalid map number. Specified: " & nMap & "  Total: " & NumMaps
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Exit Sub
-    End If
-
-    'Set the exit information
-    With MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY)
-        If nX = 0 Or nY = 0 Or nMap = 0 Then
-            .TileExit.Map = 0
-            .TileExit.x = 0
-            .TileExit.Y = 0
-        Else
-            .TileExit.Map = nMap
-            .TileExit.x = nX
-            .TileExit.Y = nY
-        End If
-    End With
-
-End Sub
-
-Sub Data_Dev_SetLight(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's lighting
-'<Light1(L)><Light2(L)><Light3(L)><Light4(L)>
-'*****************************************************************
-
-Dim Light(1 To 4) As Long
-Dim i As Byte
-
-    For i = 1 To 4
-        Light(i) = rBuf.Get_Long
-    Next i
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-
-    'Set the new light values
-    With MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY)
-        For i = 1 To 4
-            .Light(i) = Light(i)
-        Next i
-    End With
-
-End Sub
-
-Sub Data_Dev_SetMailbox(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's mailbox setting
-'<IsMailbox(B)>
-'*****************************************************************
-
-Dim IsMailbox As Byte
-
-    IsMailbox = rBuf.Get_Byte
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If IsMailbox > 1 Then Exit Sub
-
-    'Set the mailbox flag to IsMailbox
-    MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY).Mailbox = IsMailbox
-
-End Sub
-
-Sub Data_Dev_SetMapInfo(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change map info
-'<Name(S)><Version(I)><Weather(B)>
-'*****************************************************************
-
-Dim Name As String
-Dim Version As Integer
-Dim Weather As Byte
-
-    Name = rBuf.Get_String
-    
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-
-    'The client wants the map info
-    If Name = "<ACQUIRE>" Then
-
-        'Send the map information
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Dev_SetMapInfo
-        ConBuf.Put_String MapInfo(UserList(UserIndex).Pos.Map).Name
-        ConBuf.Put_Integer MapInfo(UserList(UserIndex).Pos.Map).MapVersion
-        ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Weather
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'User wants to set the info
-    Else
-
-        'Retrieve the values
-        Version = rBuf.Get_Integer
-        Weather = rBuf.Get_Byte
-
-        'Check for invalid conditions
-        If Version > MaxVersion Then Exit Sub
-        If Weather < 0 Then Exit Sub
-        If Weather > 255 Then Exit Sub
-        If Len(Name) < 1 Then Exit Sub
-        If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
-        If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
-
-        'Set the new map information
-        MapInfo(UserList(UserIndex).Pos.Map).Name = Name
-        MapInfo(UserList(UserIndex).Pos.Map).MapVersion = Version
-        MapInfo(UserList(UserIndex).Pos.Map).Weather = Weather
-
-    End If
-
-End Sub
-
-Sub Data_Dev_SetMode(ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change user's dev mode
-'<>
-'*****************************************************************
-
-Dim x As Byte
-Dim Y As Byte
-Dim i As Integer
-
-'Check if the user is a dev
-
-    If UserList(UserIndex).Flags.AdminID = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.AdminID = 1 Then Exit Sub
-
-    'Enter dev mode
-    If UserList(UserIndex).Flags.DevMode = 0 Then
-        UserList(UserIndex).Flags.DevMode = 1
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "You have entered Dev Mode. Type /DEVMODE again to exit."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        ConBuf.Put_Byte DataCode.Dev_SetMode
-        ConBuf.Put_Byte 1
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'Set map to devmode
-        If MapInfo(UserList(UserIndex).Pos.Map).DevMode = 0 Then
-            MapInfo(UserList(UserIndex).Pos.Map).DevMode = 1
-            For x = XMinMapSize To XMaxMapSize
-                For Y = YMinMapSize To YMaxMapSize
-                    i = MapData(UserList(UserIndex).Pos.Map, x, Y).NPCIndex
-                    If i Then
-                        NPCList(i).Pos = NPCList(i).StartPos
-                        NPC_EraseChar i
-                        NPC_Spawn i
-                    End If
-                Next Y
-            Next x
-        End If
-
-        'Exit dev mode
-    Else
-        MapInfo(UserList(UserIndex).Pos.Map).DevMode = 0
-        UserList(UserIndex).Flags.DevMode = 0
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "You have exited Dev Mode. Thank you for shopping at Dev-Mart."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        ConBuf.Put_Byte DataCode.Dev_SetMode
-        ConBuf.Put_Byte 0
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-    End If
-
-End Sub
-
-Sub Data_Dev_SetNPC(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's NPC
-'<NPCNumber(I)>
-'*****************************************************************
-
-Dim NPCIndex As Integer
-Dim NPCNumber As Integer
-Dim EmptyNPC As NPC
-
-    NPCNumber = rBuf.Get_Integer
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If NPCNumber < 0 Then Exit Sub
-
-    'Erase the old NPC
-    If NPCNumber = 0 Then
-        NPCIndex = MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY).NPCIndex
-        If NPCIndex > 0 Then NPC_EraseChar NPCIndex
-
-        'Create a new NPC
-    Else
-        NPCIndex = Load_NPC(NPCNumber)
-        NPCList(NPCIndex).Pos.Map = UserList(UserIndex).Pos.Map
-        NPCList(NPCIndex).Pos.x = UserList(UserIndex).Flags.SetTileX
-        NPCList(NPCIndex).Pos.Y = UserList(UserIndex).Flags.SetTileY
-        NPCList(NPCIndex).StartPos = NPCList(NPCIndex).Pos
-    End If
-
-End Sub
-
-Sub Data_Dev_SetObject(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's NPC
-'<OBJIndex(I)><Amount(I)>
-'*****************************************************************
-
-Dim TempObj As Obj
-
-    TempObj.ObjIndex = rBuf.Get_Integer
-    TempObj.Amount = rBuf.Get_Integer
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If TempObj.ObjIndex > UBound(ObjData()) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Error: ObjIndex > UBound(ObjData())! Object creation aborted!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Exit Sub
-    End If
-    If TempObj.ObjIndex < 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Error: ObjIndex < 0! Object creation aborted!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Exit Sub
-    End If
-    If TempObj.Amount < 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Error: Amount < 0! Object creation aborted!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Exit Sub
-    End If
-    If TempObj.Amount > MAX_INVENTORY_OBJS Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "Error: Amount > MAX_INVENTORY_OBJS! Object creation aborted!"
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Exit Sub
-    End If
-
-    'If one equals zero, then the other will equal zero
-    If TempObj.ObjIndex = 0 Then TempObj.Amount = 0
-    If TempObj.Amount = 0 Then TempObj.ObjIndex = 0
-
-    'Set the object on the map (finally...)
-    If TempObj.ObjIndex > 0 Then
-        Obj_Make ToMap, UserIndex, TempObj, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY
-    Else
-        Obj_Erase ToMap, UserIndex, -1, UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY
-    End If
-
-End Sub
-
-Sub Data_Dev_SetSurface(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Change the tile's graphic layers
-'<Layer1(I)><Layer2(I)><Layer3(I)><Layer4(I)>
-'*****************************************************************
-
-Dim NewGraphic(1 To 4) As Integer
-Dim i As Byte
-
-    For i = 1 To 4
-        NewGraphic(i) = rBuf.Get_Integer
-    Next i
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-
-    'Set the new graphic values
-    With MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY)
-        For i = 1 To 4
-            .Graphic(i) = NewGraphic(i)
-        Next i
-    End With
-
-End Sub
-
-Sub Data_Dev_SetTile(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Set the tile to start changing
-'<TileX(B)><TileY(B)>
-'*****************************************************************
-
-Dim tX As Byte
-Dim tY As Byte
-
-    tX = rBuf.Get_Byte
-    tY = rBuf.Get_Byte
-
-    'Check for invalid conditions
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If tX < XMinMapSize Then Exit Sub
-    If tY < YMinMapSize Then Exit Sub
-    If tX > XMaxMapSize Then Exit Sub
-    If tY > YMaxMapSize Then Exit Sub
-
-    'Set the tiles
-    UserList(UserIndex).Flags.SetTileX = tX
-    UserList(UserIndex).Flags.SetTileY = tY
-
-End Sub
-
-Sub Data_Dev_UpdateTile(ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Done setting the tile - send update changes
-'<>
-'*****************************************************************
-
-'Check for invalid conditions
-
-    If UserList(UserIndex).Flags.SetTileX < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileX > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SetTileY > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.DevMode = 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-
-    'Update the map tile
-    ConBuf.Clear
-    Server_UpdateMapTile UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Flags.SetTileX, UserList(UserIndex).Flags.SetTileY
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-
-End Sub
-
 Sub Data_GM_Approach(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************
@@ -669,16 +184,6 @@ Dim nPos As WorldPos
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Comm_Talk
         ConBuf.Put_String "User switching maps."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        Exit Sub
-    End If
-
-    'Don't allow if downloading a new map
-    If UserList(TargetIndex).Flags.DownloadingMap Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "User busy downloading a map."
         ConBuf.Put_Byte DataCode.Comm_FontType_Info
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
@@ -798,7 +303,6 @@ Dim nPos As WorldPos
 
     'Check for invalid values
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
 
     'Check the user admin ID
     If UserList(UserIndex).Flags.AdminID = 2 Then Exit Sub
@@ -867,43 +371,6 @@ Sub Data_Map_DoneLoadingMap(ByVal UserIndex As Integer)
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_UserCharIndex
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-End Sub
-
-Sub Data_Map_RequestUpdate(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
-
-'*****************************************************************
-'Request a map update (invalid map version or map doesn't exist on the client)
-'<MapNum(I)>
-'*****************************************************************
-
-Dim MapNum As Integer
-
-    MapNum = rBuf.Get_Integer
-
-    'Check for invalid values
-    If MapNum > NumMaps Then Exit Sub
-    If MapNum <= 0 Then Exit Sub
-
-    UserList(UserIndex).Flags.DownloadingMap = 1
-    UserList(UserIndex).Counters.SendMapCounter.Map = MapNum
-    UserList(UserIndex).Counters.SendMapCounter.x = XMinMapSize
-    UserList(UserIndex).Counters.SendMapCounter.Y = YMinMapSize
-
-    'Add user to the corresponding connection group
-    If UBound(ConnectionGroups(0).UserIndex()) = 0 Then
-        ReDim ConnectionGroups(0).UserIndex(1 To 1)
-        frmMain.AutoMapTimer.Enabled = True
-    Else
-        ReDim Preserve ConnectionGroups(0).UserIndex(1 To UBound(ConnectionGroups(0).UserIndex()) + 1)
-    End If
-    ConnectionGroups(0).UserIndex(UBound(ConnectionGroups(0).UserIndex())) = UserIndex
-
-    'Start the transfer and send the new version number
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Map_StartTransfer
-    ConBuf.Put_Integer MapInfo(MapNum).MapVersion
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
 End Sub
@@ -1415,8 +882,9 @@ Dim i As Long
         For LoopC = 1 To 10
             If LoopC + ((i - 1) * 10) > NumUsers Then Exit For
             tStr = UserNames(LoopC + ((i - 1) * 10))
-            If LoopC <> 10 Then tStr = tStr & ", "
+            tStr = tStr & ", "
         Next LoopC
+        tStr = Left$(tStr, Len(tStr) - 2)   'Crop off the last comma
         ConBuf.Put_Byte DataCode.Comm_Talk
         ConBuf.Put_String tStr
         ConBuf.Put_Byte DataCode.Comm_FontType_Info
@@ -1446,9 +914,7 @@ Sub Data_User_BaseStat(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 'User wants to raise a stat
 '<StatID(B)>
 '*****************************************************************
-
 Dim StatID As Byte
-Dim Cost As Long
 
     StatID = rBuf.Get_Byte
 
@@ -1457,12 +923,9 @@ Dim Cost As Long
     If StatID <= 0 Then Exit Sub
     If StatID > NumStats Then Exit Sub
 
-    'Get the cost
-    Cost = Server_CalcEXPCost(UserList(UserIndex).Stats.BaseStat(StatID))
-
     'Raise the stat if possible
-    If UserList(UserIndex).Stats.BaseStat(SID.Points) >= Cost Then
-        UserList(UserIndex).Stats.BaseStat(SID.Points) = UserList(UserIndex).Stats.BaseStat(SID.Points) - Cost
+    If UserList(UserIndex).Stats.BaseStat(SID.Points) >= 1 Then
+        UserList(UserIndex).Stats.BaseStat(SID.Points) = UserList(UserIndex).Stats.BaseStat(SID.Points) - 1
         UserList(UserIndex).Stats.BaseStat(StatID) = UserList(UserIndex).Stats.BaseStat(StatID) + 1
     End If
 
@@ -1722,7 +1185,6 @@ Sub Data_User_LookLeft(ByVal UserIndex As Integer)
 'Check for invalid values
 
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If UserList(UserIndex).Char.HeadHeading = 0 Then Exit Sub
     If UserList(UserIndex).Char.HeadHeading = UserList(UserIndex).Char.Heading - 1 Then Exit Sub
 
@@ -1749,7 +1211,6 @@ Sub Data_User_LookRight(ByVal UserIndex As Integer)
 'Check for invalid values
 
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If UserList(UserIndex).Char.HeadHeading = UserList(UserIndex).Char.Heading + 1 Then Exit Sub
 
     'Turn the head
@@ -2159,6 +1620,7 @@ Dim Name As String
     'Erase user's character
     UserList(UserIndex).Char.Body = 0
     UserList(UserIndex).Char.Head = 0
+    UserList(UserIndex).Char.Wings = 0
     UserList(UserIndex).Char.Heading = 0
     UserList(UserIndex).Char.HeadHeading = 0
 
@@ -2180,22 +1642,6 @@ Dim Name As String
             Else
                 ReDim ConnectionGroups(Map).UserIndex(0)
             End If
-        End If
-    End If
-
-    If UserList(UserIndex).Flags.DownloadingMap = 1 Then
-        If UBound(ConnectionGroups(0).UserIndex()) > 1 Then
-            For LoopC = 1 To UBound(ConnectionGroups(0).UserIndex()) - 1
-                If ConnectionGroups(0).UserIndex(LoopC) = UserIndex Then Exit For
-            Next LoopC
-            For LoopC = LoopC To UBound(ConnectionGroups(0).UserIndex()) - 1
-                ConnectionGroups(0).UserIndex(LoopC) = ConnectionGroups(0).UserIndex(LoopC + 1)
-            Next LoopC
-            ReDim Preserve ConnectionGroups(0).UserIndex(1 To UBound(ConnectionGroups(0).UserIndex()) - 1)
-        Else
-            ReDim ConnectionGroups(0).UserIndex(0)
-            'Stop automap timer
-            frmMain.AutoMapTimer = False
         End If
     End If
 
@@ -2311,6 +1757,9 @@ Dim Count As Byte
         Exit Sub
         
     End If
+    
+    'Clear the idle counter
+    UserList(UserIndex).Counters.IdleCount = timeGetTime
 
     'Set name
     UserList(UserIndex).Name = Name
@@ -2335,9 +1784,6 @@ Dim Count As Byte
     ConBuf.Put_Integer MapInfo(UserList(UserIndex).Pos.Map).MapVersion
     ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Weather
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
-
-    'Clear the idle counter
-    UserList(UserIndex).Counters.IdleCount = timeGetTime
 
     'Send data
     Data_SendBuffer UserIndex
@@ -2375,7 +1821,7 @@ Dim Count As Byte
     'Send welcome message
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "Welcome to vbGORE Version 0.1.1!"
+    ConBuf.Put_String "Welcome to vbGORE Version 0.1.3!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk
 
     ConBuf.Put_Byte DataCode.Comm_Talk
@@ -2444,7 +1890,6 @@ Sub User_ConnectNew(ByVal UserIndex As Integer, ByVal Name As String, ByVal Pass
 '*****************************************************************
 Dim EmptyUser As User
 Dim i As Byte
-Dim b As Byte
 
     'Make sure the user is not in use
     If UserList(UserIndex).Flags.UserLogged Then Exit Sub
@@ -2457,9 +1902,11 @@ Dim b As Byte
     
     'Check to remove the Packetflooder char
     If DEBUG_PacketFlood Then
+        On Error GoTo ErrOut    'Catch the character path being open already preventing errors
         If Server_FileExist(CharPath & UCase$(Name) & ".chr", vbNormal) Then Kill CharPath & UCase$(Name) & ".chr"
         If Server_FileExist(CharPath & UCase$(Name) & ".ip", vbNormal) Then Kill CharPath & UCase$(Name) & ".char.ip"
         If Server_FileExist(CharPath & UCase$(Name) & ".pass", vbNormal) Then Kill CharPath & UCase$(Name) & ".char.pass"
+        On Error GoTo 0
     End If
 
     'Clear user character
@@ -2477,6 +1924,7 @@ Dim b As Byte
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
+        
     End If
 
     'Set the stats class
@@ -2498,9 +1946,13 @@ Dim b As Byte
     UserList(UserIndex).Pos.Y = 15
 
     'Set the user's starting stats
-    For b = 1 To NumStats
-        UserList(UserIndex).Stats.BaseStat(b) = 1
-    Next b
+    UserList(UserIndex).Stats.BaseStat(SID.Str) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.Agi) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.Mag) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.Gold) = 100
+    UserList(UserIndex).Stats.BaseStat(SID.DEF) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.MinHIT) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.MaxHIT) = 1
     UserList(UserIndex).Stats.BaseStat(SID.MaxHP) = 50
     UserList(UserIndex).Stats.BaseStat(SID.MaxMAN) = 50
     UserList(UserIndex).Stats.BaseStat(SID.MaxSTA) = 50
@@ -2515,12 +1967,24 @@ Dim b As Byte
     UserList(UserIndex).Object(2).Amount = 1
     UserList(UserIndex).Object(3).ObjIndex = 3
     UserList(UserIndex).Object(3).Amount = 1
+    
+    'Equipt the armor
     UserList(UserIndex).Object(4).ObjIndex = 5
     UserList(UserIndex).Object(4).Amount = 1
     UserList(UserIndex).Object(4).Equipped = 0
+    User_UseInvItem UserIndex, 4
+    
+    'Equipt the weapon
     UserList(UserIndex).Object(5).ObjIndex = 6
     UserList(UserIndex).Object(5).Amount = 1
     UserList(UserIndex).Object(5).Equipped = 0
+    User_UseInvItem UserIndex, 5
+    
+    'Equipt the wings
+    UserList(UserIndex).Object(6).ObjIndex = 7
+    UserList(UserIndex).Object(6).Amount = 1
+    UserList(UserIndex).Object(6).Equipped = 0
+    User_UseInvItem UserIndex, 6
 
     'For testing only
     UserList(UserIndex).KnownSkills(SkID.Bless) = 1
@@ -2536,11 +2000,13 @@ Dim b As Byte
 
     'Write a test message to the user
     For i = 1 To 15
-        Server_WriteMail -1, UserList(UserIndex).Name, "Test Message", "This is a test message from the game admin VERSION 2.0 OMFG LOLOCAUST KKTHXN BYE!!!! LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL  LOL", "1,1,1,1,1,1,1,1,1,1", "1,2,3,4,94,95,96,97,98,99"
+        Server_WriteMail -1, UserList(UserIndex).Name, "Test Message", "This is a test message that simply shows the pwnification of the mailing system.", "1,1,1,1,1,1,1,1,1,1", "1,2,3,4,94,95,96,97,98,99"
     Next i
 
     'Go through regular connecting routine
     User_Connect UserIndex, Name, Password, True
+    
+ErrOut:
 
 End Sub
 

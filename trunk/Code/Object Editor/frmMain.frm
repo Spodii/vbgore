@@ -44,7 +44,7 @@ Begin VB.Form frmMain
       Top             =   4800
       Width           =   975
    End
-   Begin VB.TextBox SHelmTxt 
+   Begin VB.TextBox SWingsTxt 
       Appearance      =   0  'Flat
       Height          =   195
       Left            =   3840
@@ -608,7 +608,7 @@ Begin VB.Form frmMain
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
-      Caption         =   "Helmet:"
+      Caption         =   "Wings:"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -624,7 +624,7 @@ Begin VB.Form frmMain
       Left            =   3120
       TabIndex        =   69
       Top             =   5280
-      Width           =   660
+      Width           =   600
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -1300,17 +1300,17 @@ ErrOut:
     
 End Sub
 
-Private Sub SHelmTxt_Change()
+Private Sub SWingsTxt_Change()
 Dim i As Integer
 On Error GoTo ErrOut
 
-    i = Val(SHelmTxt.Text)
+    i = Val(SWingsTxt.Text)
 
     Exit Sub
     
 ErrOut:
 
-    SHelmTxt.Text = "0"
+    SWingsTxt.Text = "0"
     
 End Sub
 

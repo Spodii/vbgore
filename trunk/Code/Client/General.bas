@@ -10,6 +10,8 @@ End Type
 Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
+Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 Private Sub Draw_Stat(ByVal SkillName As String, ByVal Base As Long, ByVal Modi As Long)
 
@@ -76,19 +78,6 @@ Dim LoopC As Integer
 
 End Function
 
-Public Sub Game_ClearMapTileChanged()
-
-Dim x As Byte
-Dim Y As Byte
-
-    For x = 1 To 100
-        For Y = 1 To 100
-            MapTileChanged(x, Y) = 0
-        Next Y
-    Next x
-
-End Sub
-
 Function Game_ClickItem(ItemIndex As Byte, Optional ByVal InventoryType As Long = 1) As Long
 
 '***************************************************
@@ -115,178 +104,6 @@ Function Game_GetEXPCost(BaseSkill As Long) As Long
     Game_GetEXPCost = Int(0.17376 * (BaseSkill ^ 3) + 0.44 * (BaseSkill ^ 2) - 0.48 * BaseSkill + 1.035) + 1
 
 End Function
-
-Private Sub Game_InitDataCommands()
-
-'Load the values for the data commands
-
-    With EmoID
-        .Dots = 1
-        .Exclimation = 2
-        .Question = 3
-        .Surprised = 4
-        .Heart = 5
-        .Hearts = 6
-        .HeartBroken = 7
-        .Utensils = 8
-        .Meat = 9
-        .ExcliQuestion = 10
-    End With
-
-    With SkID
-        .Bless = 1
-        .Curse = 2
-        .Heal = 3
-        .IronSkin = 4
-        .Protection = 5
-        .Strengthen = 6
-        .Warcry = 7
-        .SpikeField = 8
-    End With
-
-    With SID
-        .Agil = 1
-        .Clairovoyance = 2
-        .Dagger = 3
-        .DEF = 4
-        .DefensiveMag = 5
-        .ELU = 6
-        .ELV = 7
-        .EXP = 8
-        .Fist = 9
-        .Gold = 10
-        .Immunity = 11
-        .Mag = 12
-        .MaxHIT = 13
-        .MaxHP = 14
-        .MaxMAN = 15
-        .MaxSTA = 16
-        .Meditate = 17
-        .MinHIT = 18
-        .MinHP = 19
-        .MinMAN = 20
-        .MinSTA = 21
-        .OffensiveMag = 22
-        .Parry = 23
-        .Points = 24
-        .Regen = 25
-        .Rest = 26
-        .Staff = 27
-        .Str = 28
-        .SummoningMag = 29
-        .Sword = 30
-        .WeaponSkill = 31
-    End With
-
-    With DataCode
-        .Comm_UMsgbox = 2
-        .Server_IconSpellExhaustion = 3
-        .Comm_Shout = 4
-        .Server_UserCharIndex = 5
-        .Comm_Emote = 6
-        .Server_SetUserPosition = 7
-        .Map_LoadMap = 8
-        .Map_DoneLoadingMap = 9
-        .Map_RequestUpdate = 10
-        .Map_StartTransfer = 11
-        .Server_CharHP = 12
-        .Map_EndTransfer = 13
-        .Map_DoneSwitching = 14
-        .Map_SendName = 15
-        .User_Attack = 16
-        .Server_MakeChar = 17
-        .Server_EraseChar = 18
-        .Server_MoveChar = 19
-        .Server_ChangeChar = 20
-        .Server_MakeObject = 21
-        .Server_EraseObject = 22
-        .User_KnownSkills = 23
-        .User_SetInventorySlot = 24
-        .User_StartQuest = 25
-        .Server_Connect = 26
-        .Server_PlaySound = 27
-        .User_Login = 28
-        .User_NewLogin = 29
-        .Comm_Whisper = 30
-        .Server_Who = 31
-        .User_Move = 32
-        .User_Rotate = 33
-        .User_LeftClick = 34
-        .User_RightClick = 35
-        .Map_RequestPositionUpdate = 36
-        .User_Get = 37
-        .User_Drop = 38
-        .User_Use = 39
-        '40
-        .Comm_Talk = 41
-        .Server_SetCharDamage = 42
-        .User_ChangeInvSlot = 43
-        .User_Emote = 44
-        .Server_CharMP = 45
-        .Server_Disconnect = 46
-        'All numbers between the above and below are free...
-        .User_BaseStat = 90
-        .User_ModStat = 91
-        .Comm_FontType_Fight = 92
-        .Comm_FontType_Info = 93
-        .Comm_FontType_Quest = 94
-        .Comm_FontType_Talk = 95
-        '. = 96
-        '. = 97
-        '. = 98
-        '. = 99
-        '. = 100
-        '. = 101
-        .User_CastSkill = 102
-        .Server_IconCursed = 103
-        .Server_IconWarCursed = 104
-        .Server_IconBlessed = 105
-        .Server_IconStrengthened = 106
-        .Server_IconProtected = 107
-        .Server_IconIronSkin = 108
-        .Server_MailBox = 109
-        .Server_MailMessage = 110
-        .Server_MailItemInfo = 111
-        .Server_MailItemTake = 112
-        .Server_MailItemRemove = 113
-        .Server_MailDelete = 114
-        .Server_MailCompose = 115
-        '. = 116
-        '. = 117
-        '. = 118
-        .User_LookLeft = 119
-        .User_LookRight = 120
-        .User_Blink = 121
-        .User_AggressiveFace = 122
-        .User_Trade_BuyFromNPC = 123
-        .User_Trade_SellToNPC = 124
-        .User_Trade_StartNPCTrade = 125
-        .Dev_SetBlocked = 126
-        .Dev_SetExit = 127
-        .Dev_SetLight = 128
-        .Dev_SetMailbox = 129
-        .Dev_SetMapInfo = 130
-        .Dev_SetNPC = 131
-        .Dev_SetObject = 132
-        .User_Target = 133
-        .Dev_SetSurface = 134
-        ' = 135
-        .Map_UpdateTile = 136
-        .Dev_UpdateTile = 137
-        .Dev_SaveMap = 138
-        .Server_Ping = 139
-        '140
-        .User_Desc = 141
-        .Server_Help = 142
-        .GM_Approach = 143
-        .GM_Summon = 144
-        .GM_Kick = 145
-        .GM_Raise = 146
-        .Dev_SetMode = 147
-        .Dev_SetTile = 148
-    End With
-
-End Sub
 
 Function Game_LegalCharacter(KeyAscii As Byte) As Boolean
 
@@ -598,8 +415,6 @@ Dim i As Byte
         Engine_Var_Write t, "WRITEMESSAGE", "ScreenY", Str(.WriteMessage.Screen.Y)
         Engine_Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.x)
         Engine_Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
-        Engine_Var_Write t, "DEV", "ScreenX", Str(.Dev.Screen.x)
-        Engine_Var_Write t, "DEV", "ScreenY", Str(.Dev.Screen.Y)
         Engine_Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.x)
         Engine_Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
     End With
@@ -744,11 +559,36 @@ Sub Main()
 '*****************************************************************
 'Main
 '*****************************************************************
-
+Dim StartTime As Long
+Dim FileNum As Byte
 Dim i As Integer
 
     'Init file paths
     InitFilePaths
+    
+    'Check if we need to run the updater
+    If ForceUpdateCheck = True Then
+    
+        'Check for the right parameter
+        If Command$ <> "-sdf@041jkdf0)21`~" Then
+
+            'Force the creation of frmConnect, thus forcing the creation of its hWnd
+            Load frmConnect
+            frmConnect.Show
+            frmConnect.Hide
+            
+            'Load the updater
+            ShellExecute frmConnect.hwnd, vbNullString, App.Path & "\UpdateClient.exe", vbNullString, vbNullString, 1   'The 1 means "show normal"
+    
+            'Unload the client
+            Engine_UnloadAllForms
+            End
+        
+        End If
+    End If
+    
+    'Kill the temp key
+    If Engine_FileExist(DataPath & "tempkey.dat", vbNormal) Then Kill DataPath & "tempkey.dat"
     
     'Fill startup variables for the tile engine
     TilePixelWidth = 32
@@ -789,6 +629,7 @@ Dim i As Integer
     Engine_Init_GrhData
     Engine_Init_BodyData
     Engine_Init_WeaponData
+    Engine_Init_WingData
     Engine_Init_HeadData
     Engine_Init_HairData
     Engine_Init_MapData
@@ -806,7 +647,7 @@ Dim i As Integer
     DoEvents
 
     'Load the data commands
-    Game_InitDataCommands
+    InitDataCommands
 
     'Display connect window
     frmConnect.Visible = True
@@ -818,6 +659,10 @@ Dim i As Integer
         'Don't draw frame is window is minimized or there is no map loaded
         If frmMain.WindowState <> 1 Then
             If CurMap > 0 Then
+            
+                'Calculate the starttime - this is the absolute time it takes from start to finish, disincluding DoEvents
+                ' The idea is that it works just like the ElapsedTime, but in slightly different placing
+                StartTime = timeGetTime
 
                 'Show the next frame
                 Engine_ShowNextFrame
@@ -865,12 +710,17 @@ Dim i As Integer
                     End If
                     
                 Next i
+                
+                'Do sleep event - force FPS at ~60 (62.5) average (prevents extensive processing)
+                If (timeGetTime - StartTime) < 16 Then  'If Elapsed Time < Time Required For 60 FPS
+                    Sleep 16 - (timeGetTime - StartTime)
+                End If
 
             End If
         End If
-
+        
         'Do other events
-        DoEvents
+       DoEvents
 
         'Check if unloading
         If IsUnloading = 1 Then
@@ -886,11 +736,18 @@ Dim i As Integer
 
     Loop
 
-    'Close Down
+    'Save the config
     Game_Config_Save
-    Engine_Init_UnloadTileEngine
-    Engine_UnloadAllForms
-    End
+    
+    'Close down
+    frmMain.ShutdownTimer.Enabled = True
+    
+    'Errors dont matter right now
+    On Error Resume Next
+    
+    'Make sure the socket is closed
+    frmMain.Sox.ShutDown
+    frmMain.Sox.UnHook
 
 End Sub
 

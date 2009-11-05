@@ -1,13 +1,13 @@
 VERSION 5.00
-Object = "{9842967E-F54F-4981-93DF-0772B2672E38}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{D1EE5822-4214-490C-81BE-49A1E232B2F0}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    AutoRedraw      =   -1  'True
    BackColor       =   &H00000000&
    Caption         =   "Packet Sender"
-   ClientHeight    =   3255
+   ClientHeight    =   450
    ClientLeft      =   60
    ClientTop       =   450
-   ClientWidth     =   4560
+   ClientWidth     =   7560
    FillColor       =   &H00FFFFFF&
    BeginProperty Font 
       Name            =   "Courier New"
@@ -18,14 +18,274 @@ Begin VB.Form frmMain
       Italic          =   0   'False
       Strikethrough   =   0   'False
    EndProperty
-   ForeColor       =   &H8000000E&
+   ForeColor       =   &H00000000&
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   217
+   ScaleHeight     =   30
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   304
+   ScaleWidth      =   504
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   19
+      Left            =   6960
+      TabIndex        =   19
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   18
+      Left            =   6600
+      TabIndex        =   18
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   17
+      Left            =   6240
+      TabIndex        =   17
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   16
+      Left            =   5880
+      TabIndex        =   16
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   15
+      Left            =   5520
+      TabIndex        =   15
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   14
+      Left            =   5160
+      TabIndex        =   14
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   13
+      Left            =   4800
+      TabIndex        =   13
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   12
+      Left            =   4440
+      TabIndex        =   12
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   11
+      Left            =   4080
+      TabIndex        =   11
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   10
+      Left            =   3720
+      TabIndex        =   10
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   9
+      Left            =   3360
+      TabIndex        =   9
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   8
+      Left            =   3000
+      TabIndex        =   8
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   7
+      Left            =   2640
+      TabIndex        =   7
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   6
+      Left            =   2280
+      TabIndex        =   6
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   5
+      Left            =   1920
+      TabIndex        =   5
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   4
+      Left            =   1560
+      TabIndex        =   4
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   3
+      Left            =   1200
+      TabIndex        =   3
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   2
+      Left            =   840
+      TabIndex        =   2
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H000000FF&
+      Height          =   165
+      Index           =   1
+      Left            =   480
+      TabIndex        =   1
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
+   Begin VB.TextBox ByteTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      ForeColor       =   &H00FFFFFF&
+      Height          =   165
+      Index           =   0
+      Left            =   120
+      TabIndex        =   0
+      Text            =   "0"
+      Top             =   120
+      Width           =   375
+   End
    Begin VB.Timer DispTmr 
       Enabled         =   0   'False
       Interval        =   500
@@ -47,112 +307,69 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-'**       ____        _________   ______   ______  ______   _______           **
-'**       \   \      /   /     \ /  ____\ /      \|      \ |   ____|          **
-'**        \   \    /   /|      |  /     |        |       ||  |____           **
-'***        \   \  /   / |     /| |  ___ |        |      / |   ____|         ***
-'****        \   \/   /  |     \| |  \  \|        |   _  \ |  |____         ****
-'******       \      /   |      |  \__|  |        |  | \  \|       |      ******
-'********      \____/    |_____/ \______/ \______/|__|  \__\_______|    ********
-'*******************************************************************************
-'*******************************************************************************
-'************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.2            ************
-'************                 http://www.vbgore.com                 ************
-'*******************************************************************************
-'*******************************************************************************
-'***** Source Distribution Information: ****************************************
-'*******************************************************************************
-'** If you wish to distribute this source code, you must distribute as-is     **
-'** from the vbGORE website unless permission is given to do otherwise. This  **
-'** comment block must remain in-tact in the distribution. If you wish to     **
-'** distribute modified versions of vbGORE, please contact Spodi (info below) **
-'** before distributing the source code. You may never label the source code  **
-'** as the "Official Release" or similar unless the code and content remains  **
-'** unmodified from the version downloaded from the official website.         **
-'** You may also never sale the source code without permission first. If you  **
-'** want to sell the code, please contact Spodi (below). This is to prevent   **
-'** people from ripping off other people by selling an insignificantly        **
-'** modified version of open-source code just to make a few quick bucks.      **
-'*******************************************************************************
-'***** Creating Engines With vbGORE: *******************************************
-'*******************************************************************************
-'** If you plan to create an engine with vbGORE that, please contact Spodi    **
-'** before doing so. You may not sell the engine unless told elsewise (the    **
-'** engine must has substantial modifications), and you may not claim it as   **
-'** all your own work - credit must be given to vbGORE, along with a link to  **
-'** the vbGORE homepage. Failure to gain approval from Spodi directly to      **
-'** make a new engine with vbGORE will result in first a friendly reminder,   **
-'** followed by much more drastic measures.                                   **
-'*******************************************************************************
-'***** Helping Out vbGORE: *****************************************************
-'*******************************************************************************
-'** If you want to help out with vbGORE's progress, theres a few things you   **
-'** can do:                                                                   **
-'**  *Donate - Great way to keep a free project going. :) Info and benifits   **
-'**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
-'**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        help expend the wiki pages!                                        **
-'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
-'**        page or a link to vbGORE in a forum you visit, every link helps    **
-'**        spread the word of vbGORE's existance! Buttons and banners for     **
-'**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
-'*******************************************************************************
-'***** Conact Information: *****************************************************
-'*******************************************************************************
-'** Please contact the creator of vbGORE (Spodi) directly with any questions: **
-'** AIM: Spodii                          Yahoo: Spodii                        **
-'** MSN: Spodii@hotmail.com              Email: spodi@vbgore.com              **
-'** 2nd Email: spodii@hotmail.com        Website: http://www.vbgore.com       **
-'*******************************************************************************
-'***** Credits: ****************************************************************
-'*******************************************************************************
-'** Below are credits to those who have helped with the project or who have   **
-'** distributed source code which has help this project's creation. The below **
-'** is listed in no particular order of significance:                         **
-'**                                                                           **
-'** ORE (Aaron Perkins): Used as base engine and for learning experience      **
-'**   http://www.baronsoft.com/                                               **
-'** SOX (Trevor Herselman): Used for all the networking                       **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=35239&lngWId=1      **
-'** Compression Methods (Marco v/d Berg): Provided compression algorithms     **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
-'** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
-'**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
-'**                                                                           **
-'** Also, all the members of the vbGORE community who have submitted          **
-'** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'**                                                                           **
-'** If you feel you belong in these credits, please contact Spodi (above).    **
-'*******************************************************************************
-'*******************************************************************************
-
 Option Explicit
+
+'Defines how we want to flood our packets
+'If this byte = 0, then we will wait for a response back from the server for every packet we send to send the next one
+'If this byte = 1, then we will send packets as fast as we possibly can until we break something / everything
+Private Const HeavyFlooding As Byte = 0
 
 'Our current sending progress
 Private NumBytes As Integer
-Private ByteVal() As Byte
-Private Const MaxBytes As Long = 5000   'Even if we reach this value, we'd just be sending broken packets
+Private ByteVal() As Integer
+Private Const MaxBytes As Long = 20 'Even if we reach this value, we'd just be sending broken packets
 
 'Misc variables
-Private s As String
 Private SoxID As Long
 Private SocketOpen As Byte
 Private Connected As Byte
 Private sndBuf As DataBuffer
 
+Private Sub ByteTxt_Change(Index As Integer)
+Dim b As Byte
+
+    'Make sure it is a value byte value (or -1)
+    If Val(ByteTxt(Index).Text) > 255 Then
+        ByteTxt(Index).Text = 255
+        Exit Sub
+    End If
+    If Val(ByteTxt(Index).Text) < 0 Then
+        ByteTxt(Index).Text = 0
+        Exit Sub
+    End If
+    On Error GoTo ErrOut
+    b = Val(ByteTxt(Index).Text)
+    On Error GoTo 0
+
+    'Change the value
+    ByteVal(Index + 1) = b
+    
+    'Change the NumBytes
+    If ByteVal(Index + 1) > 0 Then
+        If (Index + 1) > NumBytes Then NumBytes = (Index + 1)
+    End If
+    
+    Exit Sub
+    
+ErrOut:
+
+    ByteTxt(Index).Text = 0
+
+End Sub
+
 Private Sub DispTmr_Timer()
+Dim i As Long
 
     'Display information - this program is supposed to hardly cause any crashes and run for hours,
     ' even days at a time. There is no point to showing every number change since it slows things
     ' down a LOT!
-    Me.Cls
-    Me.Print "Size: " & NumBytes
-    Me.Print s
+    For i = 1 To MaxBytes
+        If i > NumBytes Then
+            ByteTxt(i - 1).Text = ""
+        Else
+            ByteTxt(i - 1).Text = ByteVal(i)
+        End If
+    Next i
     
 End Sub
 
@@ -161,11 +378,11 @@ Dim j As Byte
 Dim FileNum As Byte
     
     'Load our saved state if it exists
+    ReDim ByteVal(MaxBytes)
     If FileExist(App.Path & "\Data2\packetflooder.dat", vbNormal) Then
         FileNum = FreeFile
         Open App.Path & "\Data2\packetflooder.dat" For Binary As FileNum
             Get #FileNum, , NumBytes
-            ReDim ByteVal(NumBytes)
             For j = 1 To NumBytes
                 Get #FileNum, , ByteVal(j)
             Next j
@@ -173,7 +390,6 @@ Dim FileNum As Byte
     Else
         'Set up our basic variables
         NumBytes = 1
-        ReDim ByteVal(MaxBytes)
     End If
     
     'Turn off nagling since bandwidth is not our worry if we are working locally
@@ -181,7 +397,6 @@ Dim FileNum As Byte
     
     'Show our form
     Me.Show
-    Me.Print "Connecting to server..."
 
     'Create the buffer
     Set sndBuf = New DataBuffer
@@ -190,7 +405,7 @@ Dim FileNum As Byte
     Do While Connected = 0
     
         'Make the connected
-        SoxID = Sox.Connect("127.0.0.1", 10200)
+        SoxID = Sox.Connect("64.187.111.152", 7234)
         
         'Check if the connected fialed
         If SoxID = -1 Then
@@ -256,7 +471,6 @@ End Function
 
 Private Sub SendNextPacket()
 Dim i As Byte
-Dim j As String
 
     'Build our next byte value
     i = 1
@@ -267,9 +481,6 @@ Dim j As String
         i = i + 1
     Loop
     ByteVal(1) = ByteVal(1) + 1
-    
-    'Clear the display string
-    s = ""
 
     'Build the buffer
     sndBuf.Clear
@@ -277,18 +488,7 @@ Dim j As String
     
         'Put the byte in the buffer
         sndBuf.Put_Byte ByteVal(i)
-        
-        'Update the display
-        j = ByteVal(i)
-        If ByteVal(i) < 100 Then j = "0" & ByteVal(i)
-        If ByteVal(i) < 10 Then j = "00" & ByteVal(i)
-        s = s & j
-        If (i Mod 11) = 0 Then
-            s = s & vbCrLf
-        Else
-            If i <> NumBytes Then s = s & " "
-        End If
-        
+
     Next i
     Data_Send
 
@@ -296,8 +496,18 @@ End Sub
 
 Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
 
-    SendNextPacket
+    'Wait for a packet (first byte = 111) from the server saying it is ready for the next one
+    If HeavyFlooding = 0 Then
+        If inData(0) = 111 Then SendNextPacket
+    End If
     
+End Sub
+
+Private Sub Sox_OnSendComplete(inSox As Long)
+
+    'If we are doing heavy flooding, we wait for no man - fire at will!
+    SendNextPacket
+
 End Sub
 
 Private Sub Sox_OnState(inSox As Long, inState As SoxOCX.enmSoxState)

@@ -1,5 +1,6 @@
 VERSION 5.00
-Object = "{9842967E-F54F-4981-93DF-0772B2672E38}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{C1A38C00-7EC2-4319-A304-FE5B3519AF73}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   1  'Fixed Single
@@ -28,12 +29,19 @@ Begin VB.Form frmMain
    StartUpPosition =   2  'CenterScreen
    Begin SoxOCX.Sox Sox 
       Height          =   420
-      Left            =   4080
+      Left            =   4560
       Top             =   2520
       Visible         =   0   'False
       Width           =   420
       _ExtentX        =   741
       _ExtentY        =   741
+   End
+   Begin MSWinsockLib.Winsock WebServer 
+      Left            =   4080
+      Top             =   2520
+      _ExtentX        =   741
+      _ExtentY        =   741
+      _Version        =   393216
    End
    Begin VB.Timer DataCalcTmr 
       Interval        =   1000
@@ -77,12 +85,6 @@ Begin VB.Form frmMain
       TabIndex        =   8
       Top             =   2280
       Width           =   2175
-   End
-   Begin VB.Timer AutoMapTimer 
-      Enabled         =   0   'False
-      Interval        =   5
-      Left            =   4560
-      Top             =   2520
    End
    Begin VB.Timer GameTimer 
       Enabled         =   0   'False
@@ -257,79 +259,6 @@ Attribute VB_Exposed = False
 Option Explicit
 Public RecoverTimer As Long
 
-Private Sub AutoMaptimer_Timer()
-
-'*****************************************************************
-'Send out map updates if needed
-'*****************************************************************
-
-Dim UserIndex As Long
-Dim LoopX As Long
-Dim LoopC As Long
-Dim TempInt As Integer
-Dim ChunkData As Integer
-Dim MapPiece As MapBlock
-
-    If UBound(ConnectionGroups(0).UserIndex()) > 0 Then
-        For UserIndex = 1 To UBound(ConnectionGroups(0).UserIndex())
-
-            'Clear buffer
-            ConBuf.Clear
-
-            'Send 20 tiles at a time
-            For LoopX = 1 To 20
-
-                If UserList(UserIndex).Flags.DownloadingMap Then
-
-                    'Done sending map
-                    If UserList(UserIndex).Counters.SendMapCounter.Y > YMaxMapSize Then
-                        ConBuf.Put_Byte DataCode.Map_EndTransfer
-                        ConBuf.Put_Integer UserList(UserIndex).Counters.SendMapCounter.Map
-                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                        UserList(UserIndex).Flags.DownloadingMap = 0
-                        UserList(UserIndex).Counters.SendMapCounter.x = 0
-                        UserList(UserIndex).Counters.SendMapCounter.Y = 0
-                        UserList(UserIndex).Counters.SendMapCounter.Map = 0
-                        TempInt = UBound(ConnectionGroups(0).UserIndex()) - 1
-                        If TempInt = 0 Then
-                            ReDim ConnectionGroups(0).UserIndex(0)
-                            frmMain.AutoMapTimer.Enabled = False
-                        Else
-                            For LoopC = 1 To TempInt - 1
-                                If ConnectionGroups(0).UserIndex(LoopC) = UserIndex Then Exit For
-                            Next LoopC
-                            For LoopC = LoopC To TempInt - 1
-                                ConnectionGroups(0).UserIndex(LoopC) = ConnectionGroups(0).UserIndex(LoopC + 1)
-                            Next LoopC
-                            ReDim ConnectionGroups(0).UserIndex(1 To TempInt - 1)
-                        End If
-                        Exit For
-                    Else
-
-                        'Build the map tile into the buffer
-                        Server_UpdateMapTile UserIndex, UserList(UserIndex).Counters.SendMapCounter.Map, UserList(UserIndex).Counters.SendMapCounter.x, UserList(UserIndex).Counters.SendMapCounter.Y
-
-                        'Update which tile we're on
-                        UserList(UserIndex).Counters.SendMapCounter.x = UserList(UserIndex).Counters.SendMapCounter.x + 1
-                        If UserList(UserIndex).Counters.SendMapCounter.x > XMaxMapSize Then
-                            UserList(UserIndex).Counters.SendMapCounter.x = XMinMapSize
-                            UserList(UserIndex).Counters.SendMapCounter.Y = UserList(UserIndex).Counters.SendMapCounter.Y + 1
-                        End If
-
-                    End If
-                End If
-
-            Next LoopX
-
-            'Send the chunk to the user
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        Next UserIndex
-
-    End If
-
-End Sub
-
 Private Sub DataCalcTmr_Timer()
 
 'Turn bytes into kilobytes
@@ -492,19 +421,19 @@ Dim Update As Boolean
 
                 'Check if Health needs to be updated
                 If UserList(UserIndex).Stats.ModStat(SID.MinHP) < UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MinHP) + UserList(UserIndex).Stats.ModStat(SID.Regen) * 0.5
+                    UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MinHP) + UserList(UserIndex).Stats.ModStat(SID.Str) * 0.5
                     If UserList(UserIndex).Stats.ModStat(SID.MinHP) > UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then UserList(UserIndex).Stats.ModStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MaxHP)
                 End If
 
                 'Check if Stamina needs to be updated
                 If UserList(UserIndex).Stats.ModStat(SID.MinSTA) < UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinSTA) = UserList(UserIndex).Stats.ModStat(SID.MinSTA) + UserList(UserIndex).Stats.ModStat(SID.Rest) * 0.5
+                    UserList(UserIndex).Stats.ModStat(SID.MinSTA) = UserList(UserIndex).Stats.ModStat(SID.MinSTA) + UserList(UserIndex).Stats.ModStat(SID.Agi) * 0.5
                     If UserList(UserIndex).Stats.ModStat(SID.MinSTA) > UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then UserList(UserIndex).Stats.ModStat(SID.MinSTA) = UserList(UserIndex).Stats.ModStat(SID.MaxSTA)
                 End If
 
                 'Check if Mana needs to be updated
                 If UserList(UserIndex).Stats.ModStat(SID.MinMAN) < UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then
-                    UserList(UserIndex).Stats.ModStat(SID.MinMAN) = UserList(UserIndex).Stats.ModStat(SID.MinMAN) + UserList(UserIndex).Stats.ModStat(SID.Meditate) * 0.5
+                    UserList(UserIndex).Stats.ModStat(SID.MinMAN) = UserList(UserIndex).Stats.ModStat(SID.MinMAN) + UserList(UserIndex).Stats.ModStat(SID.Mag) * 0.5
                     If UserList(UserIndex).Stats.ModStat(SID.MinMAN) > UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then UserList(UserIndex).Stats.ModStat(SID.MinMAN) = UserList(UserIndex).Stats.ModStat(SID.MaxMAN)
                 End If
 
@@ -784,26 +713,12 @@ Static x As Long
             Case .Comm_Talk: Data_Comm_Talk rBuf, Index
             Case .Comm_Whisper: Data_Comm_Whisper rBuf, Index
 
-            Case .Dev_SaveMap: Data_Dev_Save_Map Index
-            Case .Dev_SetBlocked: Data_Dev_SetBlocked rBuf, Index
-            Case .Dev_SetExit: Data_Dev_SetExit rBuf, Index
-            Case .Dev_SetLight: Data_Dev_SetLight rBuf, Index
-            Case .Dev_SetMailbox: Data_Dev_SetMailbox rBuf, Index
-            Case .Dev_SetMapInfo: Data_Dev_SetMapInfo rBuf, Index
-            Case .Dev_SetMode: Data_Dev_SetMode Index
-            Case .Dev_SetNPC: Data_Dev_SetNPC rBuf, Index
-            Case .Dev_SetObject: Data_Dev_SetObject rBuf, Index
-            Case .Dev_SetSurface: Data_Dev_SetSurface rBuf, Index
-            Case .Dev_SetTile: Data_Dev_SetTile rBuf, Index
-            Case .Dev_UpdateTile: Data_Dev_UpdateTile Index
-
             Case .GM_Approach: Data_GM_Approach rBuf, Index
             Case .GM_Kick: Data_GM_Kick rBuf, Index
             Case .GM_Raise: Data_GM_Raise rBuf, Index
             Case .GM_Summon: Data_GM_Summon rBuf, Index
 
             Case .Map_DoneLoadingMap: Data_Map_DoneLoadingMap Index
-            Case .Map_RequestUpdate: Data_Map_RequestUpdate rBuf, Index
 
             Case .Server_Help: Data_Server_Help Index
             Case .Server_MailCompose: Data_Server_MailCompose rBuf, Index
@@ -879,7 +794,7 @@ Dim LoopC As Long
     MaxYBorder = YMaxMapSize - (YWindow \ 2)
     
     'Load Data Commands
-    Server_InitDataCommands
+    InitDataCommands
 
     'Calculate the max distance between a char and another in it's PC area
     Max_Server_Distance = Fix(Sqr((MinYBorder - 1) ^ 2 + (MinXBorder - 1) ^ 2))
@@ -891,8 +806,8 @@ Dim LoopC As Long
 
     'Set up the help lines
     HelpLine(1) = "To move, use W A S D or arrow keys."
-    HelpLine(2) = "To enter map editing mode, type /devmode."
-    HelpLine(3) = "To attack, use Ctrl, and get objects with Alt"
+    HelpLine(2) = "To attack, use Ctrl, and get objects with Alt."
+    HelpLine(3) = "As many help lines as you want can be added..."
 
     '*** Load data ***
     Load_ServerIni
@@ -904,9 +819,14 @@ Dim LoopC As Long
     If DEBUG_PacketFlood Then
         LocalSoxID = Sox.Listen("127.0.0.1", 10200)
     Else
-        LocalSoxID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "IP"), 10200)
+        LocalSoxID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "GameIP"), Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
     End If
     Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
+    
+    '*** Web Server ***
+    WebServer.RemoteHost = WebServer.LocalIP
+    WebServer.LocalPort = Var_Get(ServerDataPath & "Server.ini", "INIT", "WebPort")
+    WebServer.Listen
 
     '*** Misc ***
     'Calculate data transfer rate
@@ -918,7 +838,7 @@ Dim LoopC As Long
     'Show local IP/Port
     LocalAdd.Text = frmMain.Sox.Address(LocalSoxID)
     PortTxt.Text = Sox.Port(LocalSoxID)
-    If frmMain.Sox.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your internal IP if you are on a router, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig", vbOKOnly
+    If frmMain.Sox.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     'Initialize LastWorldSave
     LastWorldSave = timeGetTime
@@ -932,6 +852,58 @@ Dim LoopC As Long
 
     'Show
     Me.Show
+
+End Sub
+
+Private Sub WebServer_ConnectionRequest(ByVal requestID As Long)
+    
+    'Accept the socket
+    WebServer.Close
+    WebServer.Accept requestID
+    
+End Sub
+
+Private Sub WebServer_DataArrival(ByVal bytesTotal As Long)
+Dim OutBuffer As String
+Dim Buffer As String
+Dim i As Long
+
+    'Get the data from the socket
+    WebServer.GetData Buffer, vbString, bytesTotal
+
+    
+    Select Case Buffer
+    
+        'Send the general data
+        Case "g"
+            OutBuffer = "<b><font color=darkred>Server Name: </font></b>" & frmMain.Caption & "<br>"
+            OutBuffer = OutBuffer & "<b><font color=darkred>Total Maps: </font></b>" & NumMaps & "<br>"
+            OutBuffer = OutBuffer & "<b><font color=darkred>Total NPCs: </font></b>" & NumNPCs & "<br>"
+            OutBuffer = OutBuffer & "<b><font color=darkred>Total Quests: </font></b>" & NumQuests & "<br>"
+            OutBuffer = OutBuffer & "<b><font color=darkred>Total Skills: </font></b>" & NumSkills & "<br>"
+            OutBuffer = OutBuffer & "<b><font color=darkred>Total Emoticons: </font></b>" & NumEmotes & "<br>"
+            OutBuffer = OutBuffer & "<br><b><font color=darkred>The following NPCs are alive:</font></b><br>"
+            OutBuffer = OutBuffer & "<b>"
+            For i = 1 To NumNPCs
+                If NPCList(i).Flags.NPCAlive Then
+                    If NPCList(i).Flags.NPCActive Then
+                        If i Mod 2 = 1 Then
+                            OutBuffer = OutBuffer & "<font color=purple>"
+                        Else
+                            OutBuffer = OutBuffer & "<font color=black>"
+                        End If
+                        OutBuffer = OutBuffer & " - " & NPCList(i).Name & " (hp: " & NPCList(i).ModStat(SID.MinHP) & "/" & NPCList(i).ModStat(SID.MaxHP) & ")</font><br>"
+                    End If
+                End If
+            Next i
+            OutBuffer = OutBuffer & "</b>"
+            WebServer.SendData OutBuffer
+    End Select
+    
+    'Close the socket
+    DoEvents    'Allows time for the data to send
+    WebServer.Close
+    WebServer.Listen
 
 End Sub
 

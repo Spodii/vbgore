@@ -17,6 +17,16 @@ Begin VB.Form frmMain
    ScaleMode       =   0  'User
    ScaleWidth      =   352
    StartUpPosition =   2  'CenterScreen
+   Begin VB.TextBox WingsTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   2280
+      TabIndex        =   78
+      Top             =   2520
+      Width           =   735
+   End
    Begin VB.TextBox IDTxt 
       Alignment       =   2  'Center
       Appearance      =   0  'Flat
@@ -27,7 +37,7 @@ Begin VB.Form frmMain
       MaxLength       =   4
       TabIndex        =   74
       Text            =   "-1"
-      Top             =   7440
+      Top             =   7560
       Width           =   975
    End
    Begin VB.TextBox AmountTxt 
@@ -40,7 +50,7 @@ Begin VB.Form frmMain
       MaxLength       =   4
       TabIndex        =   72
       Text            =   "-1"
-      Top             =   7440
+      Top             =   7560
       Width           =   735
    End
    Begin VB.ListBox OBJList 
@@ -52,13 +62,13 @@ Begin VB.Form frmMain
       Left            =   2520
       List            =   "frmMain.frx":9F72E
       TabIndex        =   71
-      Top             =   5280
+      Top             =   5400
       Width           =   2535
    End
    Begin VB.Timer RenderTimer 
       Interval        =   50
-      Left            =   4320
-      Top             =   2040
+      Left            =   4800
+      Top             =   2160
    End
    Begin VB.TextBox WeaponTxt 
       Appearance      =   0  'Flat
@@ -67,7 +77,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   2520
       TabIndex        =   66
-      Top             =   2520
+      Top             =   2760
       Width           =   735
    End
    Begin VB.TextBox BodyTxt 
@@ -138,7 +148,7 @@ Begin VB.Form frmMain
       Left            =   1200
       MaxLength       =   1
       TabIndex        =   59
-      Top             =   6360
+      Top             =   6480
       Width           =   495
    End
    Begin VB.TextBox RespawnTxt 
@@ -148,7 +158,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   1200
       TabIndex        =   58
-      Top             =   6120
+      Top             =   6240
       Width           =   1215
    End
    Begin VB.TextBox QuestTxt 
@@ -158,7 +168,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   1200
       TabIndex        =   57
-      Top             =   5880
+      Top             =   6000
       Width           =   1215
    End
    Begin VB.TextBox GiveGoldTxt 
@@ -168,7 +178,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   1200
       TabIndex        =   56
-      Top             =   5640
+      Top             =   5760
       Width           =   1215
    End
    Begin VB.TextBox GiveExpTxt 
@@ -178,7 +188,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   1200
       TabIndex        =   55
-      Top             =   5400
+      Top             =   5520
       Width           =   1215
    End
    Begin VB.CheckBox HostileChk 
@@ -189,7 +199,7 @@ Begin VB.Form frmMain
       Height          =   255
       Left            =   4200
       TabIndex        =   53
-      Top             =   2880
+      Top             =   3000
       Width           =   855
    End
    Begin VB.CheckBox AttackChk 
@@ -200,7 +210,7 @@ Begin VB.Form frmMain
       Height          =   255
       Left            =   3000
       TabIndex        =   52
-      Top             =   2880
+      Top             =   3000
       Width           =   1095
    End
    Begin VB.TextBox StatTxt 
@@ -211,7 +221,7 @@ Begin VB.Form frmMain
       Index           =   35
       Left            =   4080
       TabIndex        =   46
-      Top             =   4680
+      Top             =   4800
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -222,7 +232,7 @@ Begin VB.Form frmMain
       Index           =   34
       Left            =   4080
       TabIndex        =   45
-      Top             =   4440
+      Top             =   4560
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -233,7 +243,7 @@ Begin VB.Form frmMain
       Index           =   33
       Left            =   4080
       TabIndex        =   44
-      Top             =   4200
+      Top             =   4320
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -244,7 +254,7 @@ Begin VB.Form frmMain
       Index           =   32
       Left            =   4080
       TabIndex        =   43
-      Top             =   3960
+      Top             =   4080
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -255,7 +265,7 @@ Begin VB.Form frmMain
       Index           =   31
       Left            =   4080
       TabIndex        =   42
-      Top             =   3720
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -266,7 +276,7 @@ Begin VB.Form frmMain
       Index           =   30
       Left            =   4080
       TabIndex        =   41
-      Top             =   3480
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -277,7 +287,7 @@ Begin VB.Form frmMain
       Index           =   29
       Left            =   4080
       TabIndex        =   40
-      Top             =   3240
+      Top             =   3360
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -288,7 +298,7 @@ Begin VB.Form frmMain
       Index           =   28
       Left            =   3120
       TabIndex        =   39
-      Top             =   4680
+      Top             =   4800
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -299,7 +309,7 @@ Begin VB.Form frmMain
       Index           =   21
       Left            =   2160
       TabIndex        =   38
-      Top             =   4680
+      Top             =   4800
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -310,7 +320,7 @@ Begin VB.Form frmMain
       Index           =   27
       Left            =   3120
       TabIndex        =   37
-      Top             =   4440
+      Top             =   4560
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -321,7 +331,7 @@ Begin VB.Form frmMain
       Index           =   20
       Left            =   2160
       TabIndex        =   36
-      Top             =   4440
+      Top             =   4560
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -332,7 +342,7 @@ Begin VB.Form frmMain
       Index           =   14
       Left            =   1200
       TabIndex        =   35
-      Top             =   4680
+      Top             =   4800
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -343,7 +353,7 @@ Begin VB.Form frmMain
       Index           =   13
       Left            =   1200
       TabIndex        =   34
-      Top             =   4440
+      Top             =   4560
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -354,7 +364,7 @@ Begin VB.Form frmMain
       Index           =   12
       Left            =   1200
       TabIndex        =   33
-      Top             =   4200
+      Top             =   4320
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -365,7 +375,7 @@ Begin VB.Form frmMain
       Index           =   26
       Left            =   3120
       TabIndex        =   32
-      Top             =   4200
+      Top             =   4320
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -376,7 +386,7 @@ Begin VB.Form frmMain
       Index           =   7
       Left            =   240
       TabIndex        =   31
-      Top             =   4680
+      Top             =   4800
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -387,7 +397,7 @@ Begin VB.Form frmMain
       Index           =   6
       Left            =   240
       TabIndex        =   30
-      Top             =   4440
+      Top             =   4560
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -398,7 +408,7 @@ Begin VB.Form frmMain
       Index           =   5
       Left            =   240
       TabIndex        =   29
-      Top             =   4200
+      Top             =   4320
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -409,7 +419,7 @@ Begin VB.Form frmMain
       Index           =   19
       Left            =   2160
       TabIndex        =   28
-      Top             =   4200
+      Top             =   4320
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -420,7 +430,7 @@ Begin VB.Form frmMain
       Index           =   25
       Left            =   3120
       TabIndex        =   27
-      Top             =   3960
+      Top             =   4080
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -431,7 +441,7 @@ Begin VB.Form frmMain
       Index           =   24
       Left            =   3120
       TabIndex        =   26
-      Top             =   3720
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -442,7 +452,7 @@ Begin VB.Form frmMain
       Index           =   23
       Left            =   3120
       TabIndex        =   25
-      Top             =   3480
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -453,7 +463,7 @@ Begin VB.Form frmMain
       Index           =   22
       Left            =   3120
       TabIndex        =   24
-      Top             =   3240
+      Top             =   3360
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -464,7 +474,7 @@ Begin VB.Form frmMain
       Index           =   18
       Left            =   2160
       TabIndex        =   23
-      Top             =   3960
+      Top             =   4080
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -475,7 +485,7 @@ Begin VB.Form frmMain
       Index           =   17
       Left            =   2160
       TabIndex        =   22
-      Top             =   3720
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -486,7 +496,7 @@ Begin VB.Form frmMain
       Index           =   16
       Left            =   2160
       TabIndex        =   21
-      Top             =   3480
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -497,7 +507,7 @@ Begin VB.Form frmMain
       Index           =   15
       Left            =   2160
       TabIndex        =   20
-      Top             =   3240
+      Top             =   3360
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -508,7 +518,7 @@ Begin VB.Form frmMain
       Index           =   11
       Left            =   1200
       TabIndex        =   19
-      Top             =   3960
+      Top             =   4080
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -519,7 +529,7 @@ Begin VB.Form frmMain
       Index           =   10
       Left            =   1200
       TabIndex        =   18
-      Top             =   3720
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -530,7 +540,7 @@ Begin VB.Form frmMain
       Index           =   9
       Left            =   1200
       TabIndex        =   17
-      Top             =   3480
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -541,7 +551,7 @@ Begin VB.Form frmMain
       Index           =   8
       Left            =   1200
       TabIndex        =   16
-      Top             =   3240
+      Top             =   3360
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -552,7 +562,7 @@ Begin VB.Form frmMain
       Index           =   4
       Left            =   240
       TabIndex        =   15
-      Top             =   3960
+      Top             =   4080
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -563,7 +573,7 @@ Begin VB.Form frmMain
       Index           =   3
       Left            =   240
       TabIndex        =   14
-      Top             =   3720
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -574,7 +584,7 @@ Begin VB.Form frmMain
       Index           =   2
       Left            =   240
       TabIndex        =   13
-      Top             =   3480
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox StatTxt 
@@ -585,7 +595,7 @@ Begin VB.Form frmMain
       Index           =   1
       Left            =   240
       TabIndex        =   12
-      Top             =   3240
+      Top             =   3360
       Width           =   975
    End
    Begin VB.PictureBox PreviewPic 
@@ -603,11 +613,52 @@ Begin VB.Form frmMain
       Width           =   1215
    End
    Begin MSComDlg.CommonDialog CD 
-      Left            =   3720
+      Left            =   4200
       Top             =   2040
       _ExtentX        =   847
       _ExtentY        =   847
       _Version        =   393216
+   End
+   Begin VB.Label NewLbl 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "New"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   240
+      Left            =   4620
+      TabIndex        =   79
+      Top             =   1800
+      Width           =   465
+   End
+   Begin VB.Label MiscLbl 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Wings:"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   20
+      Left            =   1680
+      TabIndex        =   77
+      Top             =   2520
+      Width           =   600
    End
    Begin VB.Label AddLbl 
       AutoSize        =   -1  'True
@@ -626,7 +677,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   4680
       TabIndex        =   76
-      Top             =   7440
+      Top             =   7560
       Width           =   345
    End
    Begin VB.Label MiscLbl 
@@ -647,7 +698,7 @@ Begin VB.Form frmMain
       Index           =   19
       Left            =   3330
       TabIndex        =   75
-      Top             =   7440
+      Top             =   7560
       Width           =   270
    End
    Begin VB.Label MiscLbl 
@@ -668,7 +719,7 @@ Begin VB.Form frmMain
       Index           =   18
       Left            =   1800
       TabIndex        =   73
-      Top             =   7440
+      Top             =   7560
       Width           =   705
    End
    Begin VB.Label MiscLbl 
@@ -689,7 +740,7 @@ Begin VB.Form frmMain
       Index           =   17
       Left            =   2520
       TabIndex        =   70
-      Top             =   5040
+      Top             =   5160
       Width           =   1545
    End
    Begin VB.Label LoadLbl 
@@ -791,7 +842,7 @@ Begin VB.Form frmMain
       Index           =   15
       Left            =   240
       TabIndex        =   51
-      Top             =   6360
+      Top             =   6480
       Width           =   780
    End
    Begin VB.Label MiscLbl 
@@ -812,7 +863,7 @@ Begin VB.Form frmMain
       Index           =   14
       Left            =   240
       TabIndex        =   50
-      Top             =   6120
+      Top             =   6240
       Width           =   855
    End
    Begin VB.Label MiscLbl 
@@ -833,7 +884,7 @@ Begin VB.Form frmMain
       Index           =   13
       Left            =   240
       TabIndex        =   49
-      Top             =   5880
+      Top             =   6000
       Width           =   570
    End
    Begin VB.Label MiscLbl 
@@ -854,7 +905,7 @@ Begin VB.Form frmMain
       Index           =   12
       Left            =   240
       TabIndex        =   48
-      Top             =   5640
+      Top             =   5760
       Width           =   915
    End
    Begin VB.Label MiscLbl 
@@ -875,7 +926,7 @@ Begin VB.Form frmMain
       Index           =   11
       Left            =   240
       TabIndex        =   47
-      Top             =   5400
+      Top             =   5520
       Width           =   885
    End
    Begin VB.Label MiscLbl 
@@ -896,7 +947,7 @@ Begin VB.Form frmMain
       Index           =   10
       Left            =   120
       TabIndex        =   11
-      Top             =   5160
+      Top             =   5280
       Width           =   555
    End
    Begin VB.Label MiscLbl 
@@ -917,7 +968,7 @@ Begin VB.Form frmMain
       Index           =   9
       Left            =   120
       TabIndex        =   10
-      Top             =   3000
+      Top             =   3120
       Width           =   600
    End
    Begin VB.Label MiscLbl 
@@ -1001,7 +1052,7 @@ Begin VB.Form frmMain
       Index           =   5
       Left            =   1680
       TabIndex        =   6
-      Top             =   2520
+      Top             =   2760
       Width           =   780
    End
    Begin VB.Label MiscLbl 
@@ -1129,6 +1180,12 @@ Dim i As Integer
             & "LBound: " & LBound(ObjData) & " UBound: " & UBound(ObjData), vbOKOnly
             Exit Sub
     End If
+    
+    'Check for the object file
+    If Engine_FileExist(OBJsPath & IDTxt.Text & ".obj", vbNormal) = False Then
+        MsgBox "The item could not be found in the database!", vbOKOnly
+        Exit Sub
+    End If
 
     'Make sure item doesn't already exist in the list
     If OpenNPC.NumVendItems > 0 Then
@@ -1218,6 +1275,20 @@ ErrOut:
 
 End Sub
 
+Private Sub NewLbl_Click()
+Dim EmptyNPC As NPC
+
+    'Confirm
+    If MsgBox("Are you sure you wish to clear the current NPC's settings?", vbYesNo) = vbNo Then Exit Sub
+        
+    'Clear the NPC
+    OpenNPC = EmptyNPC
+    
+    'Update the screen
+    Editor_UpdateNPC
+
+End Sub
+
 Private Sub OBJList_KeyDown(KeyCode As Integer, Shift As Integer)
 Dim i As Integer
 
@@ -1302,8 +1373,20 @@ Private Sub SaveLbl_Click()
 
 End Sub
 
+Private Sub StatTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    StatTxt(Index).ToolTipText = "StatID: " & Index
+
+End Sub
+
 Private Sub WeaponTxt_Change()
 
     Editor_SetNPCGrhs
 
+End Sub
+
+Private Sub WingsTxt_Change()
+    
+    Editor_SetNPCGrhs
+    
 End Sub
