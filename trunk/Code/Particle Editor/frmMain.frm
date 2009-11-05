@@ -40,7 +40,7 @@ Attribute VB_Exposed = False
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.1            ************
+'************            Official Release: Version 0.1.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -74,14 +74,14 @@ Attribute VB_Exposed = False
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/modules.php?name=Content&pa=showpage&pid=11  **
+'**        http://www.vbgore.com/en/index.php?title=Donate                    **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        create tutorials for the Knowledge Base. :)                        **
-'**  *Ads - Advertisements have been placed on the site for those who can     **
-'**        not or do not want to donate. Not donating is understandable - not **
-'**        everyone has access to credit cards / paypal or spair money laying **
-'**        around. These ads allow for a free way for you to help out the     **
-'**        site. Those who do donate have the option to hide/remove the ads.  **
+'**        help expend the wiki pages!                                        **
+'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
+'**        page or a link to vbGORE in a forum you visit, every link helps    **
+'**        spread the word of vbGORE's existance! Buttons and banners for     **
+'**        linking to vbGORE can be found on the following page:              **
+'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -106,11 +106,9 @@ Attribute VB_Exposed = False
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
 '** Game Programming Wiki (All community): Help on many different subjects    **
 '**   http://wwww.gpwiki.org/                                                 **
-'** ORE Maraxus's Edition (Maraxus): Used the map editor from this project    **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'** Big thanks goes to Van, Nex666 and ChAsE01!                               **
 '**                                                                           **
 '** If you feel you belong in these credits, please contact Spodi (above).    **
 '*******************************************************************************
@@ -175,30 +173,30 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 'Recreate the effect
 
     If Button = vbRightButton Then
         Effect(DispEffect).Used = False
         ResetEffect
-        Effect(DispEffect).x = x
+        Effect(DispEffect).X = X
         Effect(DispEffect).Y = Y
-        ResetX = x
+        ResetX = X
         ResetY = Y
     End If
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 'Reposition the effect
 
     If Button = vbLeftButton Then
         If Effect(DispEffect).Used = False Then ResetEffect
-        Effect(DispEffect).x = x
+        Effect(DispEffect).X = X
         Effect(DispEffect).Y = Y
-        ResetX = x
+        ResetX = X
         ResetY = Y
     End If
 
@@ -223,10 +221,9 @@ Private Sub ResetEffect()
     'DispEffect = Effect_Protection_Begin(ResetX, ResetY, 11, 100, 40, 15)
     'DispEffect = Effect_Strengthen_Begin(ResetX, ResetY, 12, 100, 40, 15)
     
-    'DispEffect = Effect_EquationTemplate_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000)
-    'DispEffect = Effect_EquationTemplate_Begin(0, Me.ScaleHeight * 0.5, 1, 1000)
+    DispEffect = Effect_EquationTemplate_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000)
     
-    DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
+    'DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
 
 End Sub
 

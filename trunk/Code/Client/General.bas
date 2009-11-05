@@ -41,11 +41,9 @@ Function Game_CheckUserData() As Boolean
 '*****************************************************************
 'Checks all user data for mistakes and reports them.
 '*****************************************************************
-
 Dim LoopC As Integer
-Dim CharAscii As Integer
-'Password
 
+    'Password
     If LenB(UserPassword) = 0 Then
         MsgBox ("Password box is empty.")
         Exit Function
@@ -54,29 +52,25 @@ Dim CharAscii As Integer
         MsgBox ("Password must be 10 characters or less.")
         Exit Function
     End If
-    For LoopC = 1 To Len(UserPassword)
-        CharAscii = Asc(Mid$(UserPassword, LoopC, 1))
-        If Game_LegalCharacter(CharAscii) = False Then
-            MsgBox ("Invalid Password.")
-            Exit Function
-        End If
-    Next LoopC
+    If Game_LegalString(UserPassword) = False Then
+        MsgBox ("Invalid Password.")
+        Exit Function
+    End If
+    
     'Name
     If LenB(UserName) = 0 Then
         MsgBox ("Name box is empty.")
         Exit Function
     End If
-    If Len(UserName) > 30 Then
-        MsgBox ("Name must be 30 characters or less.")
+    If Len(UserName) > 10 Then
+        MsgBox ("Name must be 10 characters or less.")
         Exit Function
     End If
-    For LoopC = 1 To Len(UserName)
-        CharAscii = Asc(Mid$(UserName, LoopC, 1))
-        If Game_LegalCharacter(CharAscii) = False Then
-            MsgBox ("Invalid Name.")
-            Exit Function
-        End If
-    Next LoopC
+    If Game_LegalString(UserName) = False Then
+        MsgBox ("Invalid Name.")
+        Exit Function
+    End If
+    
     'If all good send true
     Game_CheckUserData = True
 
@@ -209,7 +203,7 @@ Private Sub Game_InitDataCommands()
         .User_KnownSkills = 23
         .User_SetInventorySlot = 24
         .User_StartQuest = 25
-        '26
+        .Server_Connect = 26
         .Server_PlaySound = 27
         .User_Login = 28
         .User_NewLogin = 29
@@ -294,33 +288,71 @@ Private Sub Game_InitDataCommands()
 
 End Sub
 
-Function Game_LegalCharacter(KeyAscii As Integer) As Boolean
+Function Game_LegalCharacter(KeyAscii As Byte) As Boolean
 
 '*****************************************************************
-'Only allow characters that are Win 95 filename compatible
+'Only allow certain specified characters
 '*****************************************************************
-'if backspace allow
 
-    If KeyAscii = 8 Then
+    On Error GoTo ErrOut
+
+    'Allow numbers between 0 and 9
+    If KeyAscii >= 48 Or KeyAscii <= 57 Then
         Game_LegalCharacter = True
         Exit Function
     End If
-    'Only allow space,numbers,letters and special characters
-    If KeyAscii < 32 Then
-        Game_LegalCharacter = False
+    
+    'Allow letters A to Z
+    If KeyAscii >= 65 Or KeyAscii <= 90 Then
+        Game_LegalCharacter = True
         Exit Function
     End If
-    If KeyAscii > 126 Then
-        Game_LegalCharacter = False
+    
+    'Allow letters a to z
+    If KeyAscii >= 97 Or KeyAscii <= 122 Then
+        Game_LegalCharacter = True
         Exit Function
     End If
-    'Check for bad special characters in between
-    If KeyAscii = 34 Or KeyAscii = 42 Or KeyAscii = 47 Or KeyAscii = 58 Or KeyAscii = 60 Or KeyAscii = 62 Or KeyAscii = 63 Or KeyAscii = 92 Or KeyAscii = 124 Then
-        Game_LegalCharacter = False
-        Exit Function
-    End If
-    'else everything is cool
-    Game_LegalCharacter = True
+    
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the character must be invalid
+    Game_LegalCharacter = False
+    
+End Function
+
+Function Game_LegalString(ByVal CheckString As String) As Boolean
+
+'*****************************************************************
+'Check for illegal characters in the string (wrapper for Server_LegalCharacter)
+'*****************************************************************
+Dim i As Long
+
+    On Error GoTo ErrOut
+
+    'Check for invalid string
+    If CheckString = vbNullChar Then Exit Function
+    If LenB(CheckString) < 1 Then Exit Function
+
+    'Loop through the string
+    For i = 1 To Len(CheckString)
+        
+        'Check the values
+        If Game_LegalCharacter(AscB(Mid$(CheckString, i, 1))) = False Then Exit Function
+        
+    Next i
+    
+    'If we have made it this far, then all is good
+    Game_LegalString = True
+
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the string must be invalid
+    Game_LegalString = False
 
 End Function
 
@@ -334,12 +366,12 @@ Dim i As Byte
 
     'Quickbar
     For i = 1 To 12
-        QuickBarID(i).ID = Val(Engine_Var_Get(IniPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID"))
-        QuickBarID(i).Type = Val(Engine_Var_Get(IniPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type"))
+        QuickBarID(i).ID = Val(Engine_Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID"))
+        QuickBarID(i).Type = Val(Engine_Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type"))
     Next i
     
     'Skin
-    CurrentSkin = Engine_Var_Get(IniPath & "Game.ini", "INIT", "CurrentSkin")
+    CurrentSkin = Engine_Var_Get(DataPath & "Game.ini", "INIT", "CurrentSkin")
 
 End Sub
 
@@ -540,15 +572,15 @@ Dim i As Byte
 
     'Quickbar
     For i = 1 To 12
-        Engine_Var_Write IniPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID", Str$(QuickBarID(i).ID)
-        Engine_Var_Write IniPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type", Str$(QuickBarID(i).Type)
+        Engine_Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID", Str$(QuickBarID(i).ID)
+        Engine_Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type", Str$(QuickBarID(i).Type)
     Next i
     
     'Skin
-    Engine_Var_Write IniPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
+    Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
     
     'Skin positions
-    t = IniPath & "Skins\" & CurrentSkin & ".dat"   'Set the custom positions file for the skin
+    t = DataPath & "Skins\" & CurrentSkin & ".dat"   'Set the custom positions file for the skin
     With GameWindow
         Engine_Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.x)
         Engine_Var_Write t, "QUICKBAR", "ScreenY", Str(.QuickBar.Screen.Y)
@@ -590,7 +622,7 @@ Dim x As Long
     If Engine_FileExist(MapPath & SaveAs & ".map", vbNormal) = True Then Kill MapPath & SaveAs & ".map"
 
     'Write header info on Map.dat
-    Call Engine_Var_Write(IniPath & "Map.dat", "INIT", "NumMaps", Str$(NumMaps))
+    Call Engine_Var_Write(DataPath & "Map.dat", "INIT", "NumMaps", Str$(NumMaps))
 
     'Open .map file
     FileNum = FreeFile
@@ -715,15 +747,54 @@ Sub Main()
 
 Dim i As Integer
 
+    'Init file paths
+    InitFilePaths
+    
+    'Fill startup variables for the tile engine
+    TilePixelWidth = 32
+    TilePixelHeight = 32
+    WindowTileHeight = 18
+    WindowTileWidth = 25
+    TileBufferSize = 10
+    EnterTextBufferWidth = 1
+    EngineBaseSpeed = 0.011
+    ReDim SkillListIDs(1 To NumSkills)
+
+    'Setup borders
+    MinXBorder = XMinMapSize + (WindowTileWidth \ 2)
+    MaxXBorder = XMaxMapSize - (WindowTileWidth \ 2)
+    MinYBorder = YMinMapSize + (WindowTileHeight \ 2)
+    MaxYBorder = YMaxMapSize - (WindowTileHeight \ 2)
+
+    'Resize mapdata array
+    ReDim MapData(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
+
+    'Set intial user position
+    UserPos.x = MinXBorder
+    UserPos.Y = MinYBorder
+
+    'Set scroll pixels per frame
+    ScrollPixelsPerFrameX = 8
+    ScrollPixelsPerFrameY = 8
+    ShowGameWindow(QuickBarWindow) = 1
+    ShowGameWindow(ChatWindow) = 1
+
+    'Set the array sizes by the number of graphic files
+    NumGrhFiles = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
+    ReDim SurfaceDB(1 To NumGrhFiles)
+    ReDim SurfaceSize(1 To NumGrhFiles)
+    ReDim SurfaceTimer(1 To NumGrhFiles)
+    
+    'Load graphic data into memory
+    Engine_Init_GrhData
+    Engine_Init_BodyData
+    Engine_Init_WeaponData
+    Engine_Init_HeadData
+    Engine_Init_HairData
+    Engine_Init_MapData
+
     'Create the buffer
     Set sndBuf = New DataBuffer
-
-    'Init file paths
-    MusicPath = App.Path & "\Music\"
-    IniPath = App.Path & "\Data\"
-    MapPath = App.Path & "\Maps\"
-    SfxPath = App.Path & "\Sfx\"
-    GrhPath = App.Path & "\Grh\"
     
     'Initialize our encryption
     Encryption_Misc_Init
@@ -802,7 +873,7 @@ Dim i As Integer
         DoEvents
 
         'Check if unloading
-        If IsUnloading Then
+        If IsUnloading = 1 Then
             If frmMain.Sox.ShutDown <> soxERROR Then
                 frmMain.Sox.UnHook
                 prgRun = False
@@ -811,7 +882,7 @@ Dim i As Integer
         End If
 
         'Send the data buffer
-        Data_Send
+        If SocketOpen = 1 Then Data_Send
 
     Loop
 

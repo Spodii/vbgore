@@ -1,17 +1,21 @@
 Attribute VB_Name = "NPCs"
 Option Explicit
 
-Private Type NodeType
-    X As Integer
-    Y As Integer
-    Points As Single
-    Parent As Integer
-End Type
-Public Nodes() As NodeType
-Public Field() As Byte
-Public FieldSize As Long    'States the size of our field - keep it as long to prevent a variable conversion in ZeroMemory call
-Private Order As Collection 'Holds our nodes (used to find the path)
-Private Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
+Public Sub NPC_UpdateModStats(ByVal NPCIndex As Integer)
+
+Dim Temp As Integer
+
+'Set the HP
+
+    Temp = NPCList(NPCIndex).ModStat(SID.MinHP)
+
+    'Copy over the base stats to the mod stats
+    CopyMemory NPCList(NPCIndex).ModStat(1), NPCList(NPCIndex).BaseStat(1), 4 * NumStats
+
+    'Put back the HP
+    NPCList(NPCIndex).ModStat(SID.MinHP) = Temp
+
+End Sub
 
 Sub NPC_AI(ByVal NPCIndex As Integer)
 
@@ -76,7 +80,7 @@ Dim X As Long
     Case 2  '*** Random movement ***
         NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
 
-    Case 4  '*** Go towards nearby players - simple/fast AI ***
+    Case 3  '*** Go towards nearby players - simple/fast AI ***
 
         'Look for a user
         X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
@@ -127,29 +131,6 @@ Dim X As Long
 
         End If
 
-    Case 3  '*** Use pathfinding algorithm to reach player - advanced/slow AI ***
-    
-        'Check for a user in the screen if the NPC has no path
-        If NPCList(NPCIndex).Flags.HasPath = 0 Then
-            If LastUser > 0 Then
-                For X = 1 To LastUser
-                    If UserList(X).Pos.Map = NPCList(NPCIndex).Pos.Map Then
-                        'Perform a very simple distance check to see if the PC is in range
-                        If Abs(NPCList(NPCIndex).Pos.X - UserList(X).Pos.X) < XWindow * 0.5 Then
-                            If Abs(NPCList(NPCIndex).Pos.Y - UserList(X).Pos.Y) < YWindow * 0.5 Then
-                                'Give the path to the NPC so they can KILL!!!! OMGPWN >:D
-                                NPC_AI_FindPath NPCIndex, UserList(X).Pos.X, UserList(X).Pos.Y
-                                Exit For
-                            End If
-                        End If
-                    End If
-                Next X
-            End If
-        End If
-
-        'Use the path we just got (unless we got no path, in which case there is no path, so dont path the no path!)
-        If NPCList(NPCIndex).Flags.HasPath Then NPC_AI_UsePath NPCIndex
-
     End Select
 
 End Sub
@@ -190,198 +171,6 @@ Dim Y As Integer
     Next tX
 
 End Function
-
-Public Sub NPC_AI_FindPath(ByVal NPCIndex As Integer, ByVal GoalX As Integer, ByVal GoalY As Integer, Optional ByVal MaxNodes As Long = 1000)
-
-'*****************************************************************
-'Use path finding algorithm to find the path between NPC's position and the Goal position
-'Thanks to Chase for writing the base of this! :)
-'*****************************************************************
-
-Dim NodeCount As Integer    'Number of nodes we have
-Dim LoopNodes As Integer
-Dim Position As Integer
-Dim Parent As Integer
-Dim Points As Single
-Dim Last As Integer
-Dim Item As Variant
-Dim a As Integer
-Dim b As Integer
-Dim i As Integer
-Dim X As Integer
-
-    'Create out new collection that orders our search
-    Set Order = New Collection
-    Order.Add 1
-    
-    'Clear the HasPath flag
-    NPCList(NPCIndex).Flags.HasPath = 0
-
-    'Set our goal
-    NPCList(NPCIndex).Flags.GoalX = GoalX
-    NPCList(NPCIndex).Flags.GoalY = GoalY
-
-    'Create the first node in the start position
-    NodeCount = 1
-    Nodes(1).X = NPCList(NPCIndex).Pos.X    'Start X
-    Nodes(1).Y = NPCList(NPCIndex).Pos.Y    'Start Y
-
-    'Clear our array so we can use the values again
-    ZeroMemory Field(MinXBorder, MinYBorder), FieldSize
-    
-    Do
-
-        'Goal can not be reached from start position - sorry dude, you're not going anywhere :(
-        If Order.Count = 0 Then Exit Sub
-
-        Parent = Order.Item(1)  'Get the number of the first node
-        Order.Remove 1  'Remove first node from order so second node is now first
-        For LoopNodes = 1 To 4
-            Select Case LoopNodes
-            Case 1
-                a = Nodes(Parent).X
-                b = Nodes(Parent).Y - 1
-            Case 2
-                a = Nodes(Parent).X + 1
-                b = Nodes(Parent).Y
-            Case 3
-                a = Nodes(Parent).X
-                b = Nodes(Parent).Y + 1
-            Case 4
-                a = Nodes(Parent).X - 1
-                b = Nodes(Parent).Y
-            End Select
-
-            'Check that we are still in the field
-            If a >= MinXBorder Then
-                If a < MaxXBorder Then
-                    If b >= MinYBorder Then
-                        If b < MaxYBorder Then
-                            If (a <> Nodes(Parent).X Or b <> Nodes(Parent).Y) Then
-
-                                'Check if we are at the finishing spot
-                                If a = GoalX Then
-                                    If b = GoalY Then
-
-                                        'Hella sweet, G! We found the path! w00t w00t! ^_^
-
-                                        'Figure out how large we need our return array
-                                        Last = Parent
-                                        NodeCount = 0
-                                        Do Until Last = 1
-                                            Last = Nodes(Last).Parent
-                                            NodeCount = NodeCount + 1
-                                        Loop
-                                        If NodeCount = 0 Then Exit Sub
-                                        ReDim NPCList(NPCIndex).Flags.WalkPath(1 To NodeCount + 1)
-                                        Last = Parent   'Draw all nodes - first draws node that came to goal then its parent
-
-                                        'Keep going backwords until we map out the completed path from start to finish
-                                        i = 1
-                                        Do Until Last = 1
-                                            Last = Nodes(Last).Parent
-                                            NPCList(NPCIndex).Flags.WalkPath(i).X = Nodes(Last).X
-                                            NPCList(NPCIndex).Flags.WalkPath(i).Y = Nodes(Last).Y
-                                            i = i + 1
-                                        Loop
-
-                                        'We are already there
-                                        If i = 0 Then Exit Sub
-
-                                        'Move the NPC to the next node
-                                        NPCList(NPCIndex).Flags.HasPath = 1
-                                        NPCList(NPCIndex).Flags.PathPos = NodeCount
-
-                                        Exit Sub
-
-                                    End If
-                                End If
-
-                                'Check if our map piece is a valid piece to step on
-                                If Field(a, b) = 0 Then 'We haven't checked this piece already
-                                    If MapData(1, a, b).Blocked = 0 Then    'The map tile isn't blocked
-                                        If MapData(1, a, b).NPCIndex = 0 Then   'There is no NPCs already on this tile
-
-                                            'Raise the number of nodes we have
-                                            NodeCount = NodeCount + 1
-                                            
-                                            'Check if we have passed the maximum number of nodes we want to search through
-                                            If NodeCount > MaxNodes Then Exit Sub
-                                            
-                                            'Create new node and add points to it
-                                            Nodes(NodeCount).Parent = Parent    'Remember its parent so we can find out the path later
-                                            Nodes(NodeCount).X = a
-                                            Nodes(NodeCount).Y = b
-                                            Nodes(NodeCount).Points = Points
-
-                                            'Set the field value - this prevents us from doing multiple checks on the same tile
-                                            Field(a, b) = 1
-
-                                            'Get the value of the block - lets us organize to get the shortest path
-                                            Points = 0.2 * Sqr(((a - GoalX) * (a - GoalX)) + ((b - GoalY) * (b - GoalY)))
-
-                                            'Loop through the nodes to find where to place our node
-                                            Position = 0
-                                            For Each Item In Order
-                                                Position = Position + 1
-                                                If Points < Nodes(Item).Points Then 'Put it into order (less points the better)
-                                                    Order.Add NodeCount, , Position
-                                                    GoTo Next_
-                                                End If
-                                            Next
-
-                                            'It doesn't have a better point score than any other node so put it into bottom of order
-                                            Order.Add NodeCount
-
-                                        End If
-                                    End If
-                                End If
-
-                            End If
-                        End If
-                    End If
-                End If
-            End If
-Next_:
-
-        Next LoopNodes
-    Loop
-
-End Sub
-
-Public Sub NPC_AI_UsePath(ByVal NPCIndex As Integer)
-
-'*****************************************************************
-'Takes the NPC's path and applies it to their movement - NPC MUST have a path
-'*****************************************************************
-Dim i As Integer
-
-'Check for a path
-    If NPCList(NPCIndex).Flags.HasPath = 0 Then Exit Sub
-    If UBound(NPCList(NPCIndex).Flags.WalkPath) = 0 Then Exit Sub
-
-    'Check for walk delay
-    If NPCList(NPCIndex).Flags.ActionDelay > 0 Then Exit Sub
-
-    'Check if the path was obstructed - dont worry about directional blocking since directional blocks should be stationary
-    For i = NPCList(NPCIndex).Flags.PathPos To 1
-        If Server_LegalPos(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Flags.WalkPath(i).X, NPCList(NPCIndex).Flags.WalkPath(i).Y, 0) = False Then
-            NPC_AI_FindPath NPCIndex, NPCList(NPCIndex).Flags.GoalX, NPCList(NPCIndex).Flags.GoalY
-            Exit Sub
-        End If
-    Next i
-
-    'Everything looks good to go, move the NPC
-    NPC_MoveChar NPCIndex, Server_FindDirection(NPCList(NPCIndex).Pos, NPCList(NPCIndex).Flags.WalkPath(NPCList(NPCIndex).Flags.PathPos))
-
-    'Check if we have finished the path
-    If NPCList(NPCIndex).Flags.PathPos <= 1 Then
-        NPCList(NPCIndex).Flags.HasPath = 0
-    Else
-        NPCList(NPCIndex).Flags.PathPos = NPCList(NPCIndex).Flags.PathPos - 1
-    End If
-
-End Sub
 
 Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer)
 

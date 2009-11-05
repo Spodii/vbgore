@@ -104,8 +104,8 @@ Option Explicit
 Private Sub Form_Load()
 
     'Get the username/password
-    NameTxt.Text = Engine_Var_Get(IniPath & "Game.ini", "INIT", "Name")
-    PasswordTxt.Text = Engine_Var_Get(IniPath & "Game.ini", "INIT", "Password")
+    NameTxt.Text = Engine_Var_Get(DataPath & "Game.ini", "INIT", "Name")
+    PasswordTxt.Text = Engine_Var_Get(DataPath & "Game.ini", "INIT", "Password")
     
     'Get the background
     Me.Picture = LoadPicture(App.Path & "\Grh\Connect.bmp")
@@ -119,11 +119,11 @@ Private Sub InitSoxSocket()
 '*****************************************************************
 
     'Save the game ini
-    Call Engine_Var_Write(IniPath & "Game.ini", "INIT", "Name", UserName)
+    Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Name", UserName)
     If SavePassChk.Value = 0 Then
-        Call Engine_Var_Write(IniPath & "Game.ini", "INIT", "Password", "")
+        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", "")
     Else
-        Call Engine_Var_Write(IniPath & "Game.ini", "INIT", "Password", UserPassword)
+        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
     End If
 
     'Set up the socket
@@ -137,14 +137,14 @@ Private Sub InitSoxSocket()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 '*****************************************************************
 'Process clicking events
 '*****************************************************************
     
     'New
-    If Engine_RectCollision(x, Y, 1, 1, 29, 85, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 85, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -154,7 +154,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y A
     End If
     
     'Connect
-    If Engine_RectCollision(x, Y, 1, 1, 29, 129, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 129, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -164,13 +164,13 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y A
     End If
     
     'Exit
-    If Engine_RectCollision(x, Y, 1, 1, 29, 174, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 174, 141, 36) Then
         'Save the game ini
-        Engine_Var_Write IniPath & "Game.ini", "INIT", "Name", NameTxt.Text
+        Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then
-            Engine_Var_Write IniPath & "Game.ini", "INIT", "Password", ""
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", ""
         Else
-            Engine_Var_Write IniPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
         End If
     
         'End program

@@ -1,22 +1,6 @@
 Attribute VB_Name = "GameLogic"
 Option Explicit
 
-Public Sub NPC_UpdateModStats(ByVal NPCIndex As Integer)
-
-Dim Temp As Integer
-
-'Set the HP
-
-    Temp = NPCList(NPCIndex).ModStat(SID.MinHP)
-
-    'Copy over the base stats to the mod stats
-    CopyMemory NPCList(NPCIndex).ModStat(1), NPCList(NPCIndex).BaseStat(1), 4 * NumStats
-
-    'Put back the HP
-    NPCList(NPCIndex).ModStat(SID.MinHP) = Temp
-
-End Sub
-
 Sub Obj_Erase(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Num As Integer, ByVal Map As Byte, ByVal x As Integer, ByVal Y As Integer)
 
 '*****************************************************************
@@ -31,7 +15,7 @@ Sub Obj_Erase(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Num As In
         MapData(Map, x, Y).ObjInfo.ObjIndex = 0
         MapData(Map, x, Y).ObjInfo.Amount = 0
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Obj_Eraseect
+        ConBuf.Put_Byte DataCode.Server_EraseObject
         ConBuf.Put_Byte CByte(x)
         ConBuf.Put_Byte CByte(Y)
         Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
@@ -47,7 +31,7 @@ Sub Obj_Make(ByVal sndRoute As Byte, ByVal sndIndex As Integer, Obj As Obj, ByVa
 
     MapData(UserList(sndIndex).Pos.Map, x, Y).ObjInfo = Obj
     ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Server_Obj_Makeect
+    ConBuf.Put_Byte DataCode.Server_MakeObject
     ConBuf.Put_Integer ObjData(Obj.ObjIndex).GrhIndex
     ConBuf.Put_Byte CByte(x)
     ConBuf.Put_Byte CByte(Y)
@@ -69,7 +53,7 @@ Dim S As String
 
     If QuestData(QuestID).FinishReqNPC Then
         FileNum = FreeFile
-        Open App.Path & "\NPCs\" & QuestData(QuestID).FinishReqNPC & ".npc" For Binary As FileNum
+        Open NPCsPath & QuestData(QuestID).FinishReqNPC & ".npc" For Binary As FileNum
         Get #FileNum, , TempNPC
         Close #FileNum
     End If
@@ -214,13 +198,14 @@ Sub Quest_General(ByVal UserIndex As Integer, ByVal NPCIndex As Integer)
 Dim S As String
 Dim i As Integer
 
-'Check for valid values
-
+    'Check for valid values
+    On Error GoTo ErrOut:
     If UserIndex <= 0 Then Exit Sub
     If UserIndex > LastUser Then Exit Sub
     If NPCIndex <= 0 Then Exit Sub
     If NPCIndex > LastNPC Then Exit Sub
     If NPCList(NPCIndex).Quest <= 0 Then Exit Sub
+    On Error GoTo 0
 
     'Check if the user is currently involved in the quest
     For i = 1 To MaxQuests
@@ -267,6 +252,8 @@ Dim i As Integer
 
     'Set the pending quest to the selected quest
     UserList(UserIndex).Flags.QuestNPC = NPCIndex
+    
+ErrOut:
 
 End Sub
 
@@ -343,28 +330,44 @@ Function Server_CheckTargetedDistance(ByVal UserIndex As Integer) As Byte
 
 Dim TargetID As Integer
 
+    'Set the target ID
+    TargetID = UserList(UserIndex).Flags.TargetIndex
+
     Select Case UserList(UserIndex).Flags.Target
 
-        'User
-    Case 1
-        TargetID = UserList(UserIndex).Flags.TargetIndex
-        If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, UserList(TargetID).Pos.x, UserList(TargetID).Pos.Y) <= Max_Server_Distance Then
+        'Self
+        Case 0
             Server_CheckTargetedDistance = 1
             Exit Function
-        End If
 
-        'NPC
-    Case 2
-        TargetID = UserList(UserIndex).Flags.TargetIndex
-        If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, NPCList(TargetID).Pos.x, NPCList(TargetID).Pos.Y) <= Max_Server_Distance Then
-            Server_CheckTargetedDistance = 1
-            Exit Function
-        End If
+        'User
+        Case 1
+        
+            'Check the map
+            If UserList(UserIndex).Pos.Map <> UserList(TargetID).Pos.Map Then Exit Function
+            
+            'Check the X/Y position
+            If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, UserList(TargetID).Pos.x, UserList(TargetID).Pos.Y) <= Max_Server_Distance Then
+                Server_CheckTargetedDistance = 1
+                Exit Function
+            End If
+    
+            'NPC
+        Case 2
+        
+            'Check the map
+            If UserList(UserIndex).Pos.Map <> NPCList(TargetID).Pos.Map Then Exit Function
+        
+            'Check the X/Y position
+            If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, NPCList(TargetID).Pos.x, NPCList(TargetID).Pos.Y) <= Max_Server_Distance Then
+                Server_CheckTargetedDistance = 1
+                Exit Function
+            End If
 
     End Select
 
-    'Not in distance or nothing targeted
-    If TargetID Or UserList(UserIndex).Flags.TargetIndex Then
+    'Not in distance or nothing targeted, so tell the user it is not targeted
+    If TargetID = 0 Or UserList(UserIndex).Flags.TargetIndex = 0 Then
         UserList(UserIndex).Flags.Target = 0
         UserList(UserIndex).Flags.TargetIndex = 0
         ConBuf.Clear
@@ -604,9 +607,9 @@ Function Server_LegalPos(ByVal Map As Integer, ByVal x As Integer, ByVal Y As In
 '*****************************************************************
 'Checks to see if a tile position is legal
 '*****************************************************************
+On Error GoTo ErrOut
 
-'Make sure it's a legal map
-
+    'Make sure it's a legal map
     If Map <= 0 Then Exit Function
     If Map > NumMaps Then Exit Function
 
@@ -649,9 +652,10 @@ Function Server_LegalPos(ByVal Map As Integer, ByVal x As Integer, ByVal Y As In
 
     'If we are still in this routine, then it must be a legal position
     Server_LegalPos = True
+    
+ErrOut:
 
 End Function
-
 
 Function Server_NextOpenCharIndex() As Integer
 
@@ -664,12 +668,12 @@ Dim LoopC As Long
 'Check for the first char creation
 
     If LastChar = 0 Then
-        ReDim CharList(1 To 1)
+        ReDim CharList(0 To 1)
         LastChar = 1
         Server_NextOpenCharIndex = 1
         Exit Function
     End If
-
+    
     'Loop through the character slots
     For LoopC = 1 To LastChar + 1
 
@@ -677,7 +681,7 @@ Dim LoopC As Long
         If LoopC > LastChar Then
             LastChar = LoopC
             Server_NextOpenCharIndex = LoopC
-            ReDim Preserve CharList(1 To LastChar)
+            ReDim Preserve CharList(0 To LastChar)
             Exit Function
         End If
 
@@ -712,7 +716,6 @@ Public Function Server_SkillIDtoSkillName(ByVal SkillID As Byte) As String
 End Function
 
 Public Sub Server_WriteMail(WriterIndex As Integer, RecieverName As String, Subject As String, Message As String, ObjIndexString As String, ObjAmountString As String)
-
 Dim MailIndex As Integer
 Dim MailData As MailData
 Dim TempSplit() As String
@@ -721,13 +724,24 @@ Dim TempUser As User
 Dim LoopC As Byte
 Dim LoopX As Byte
 
-'Check for a valid reciever name
-
+    On Error GoTo ErrOut
+    
+    'Check for a valid reciever name
+    If Server_LegalString(RecieverName) = False Then
+        If WriterIndex <> -1 Then
+            ConBuf.Clear
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String "The name " & RecieverName & " contains invalid characters. If this is an error, please contact the a game admin."
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+        End If
+        Exit Sub
+    End If
     If Server_FileExist(CharPath & UCase$(RecieverName) & ".chr", vbNormal) = False Then
         If WriterIndex <> -1 Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Comm_Talk
-            ConBuf.Put_String "User" & RecieverName & " does not exist!"
+            ConBuf.Put_String "User " & RecieverName & " does not exist!"
             ConBuf.Put_Byte DataCode.Comm_FontType_Info
             Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
         End If
@@ -738,7 +752,7 @@ Dim LoopX As Byte
     Do
         MailIndex = MailIndex + 1
         If MailIndex > MaxMail Then Exit Sub
-    Loop While Server_FileExist(App.Path & "\Mail\" & MailIndex & ".mail", vbNormal)
+    Loop While Server_FileExist(MailPath & MailIndex & ".mail", vbNormal)
 
     'Set up the mail type
     MailData.New = 1
@@ -753,10 +767,11 @@ Dim LoopX As Byte
 
     'Split up the object index string
     TempSplit = Split(ObjIndexString, ",")
+    
     For LoopC = 0 To UBound(TempSplit())
         MailData.Obj(LoopC + 1).ObjIndex = TempSplit(LoopC)
     Next LoopC
-
+    
     'Split up the object amount string
     TempSplit2 = Split(ObjAmountString, ",")
     For LoopC = 0 To UBound(TempSplit2())
@@ -863,6 +878,8 @@ Dim LoopX As Byte
     'Save the mail
     Save_Mail MailIndex, MailData
 
+ErrOut:
+
 End Sub
 
 Public Sub User_AddObjToInv(ByVal UserIndex As Integer, ByRef Object As Obj)
@@ -916,12 +933,13 @@ Sub User_Attack(ByVal UserIndex As Integer)
 
 Dim AttackPos As WorldPos
 
-'Check for invalid values
-
+    'Check for invalid values
+    On Error GoTo ErrOut
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
     If UserList(UserIndex).Stats.ModStat(SID.MinSTA) <= 0 Then Exit Sub
     If UserList(UserIndex).Counters.AttackCounter > timeGetTime - STAT_ATTACKWAIT Then Exit Sub
+    On Error GoTo 0
 
     'Update counters
     UserList(UserIndex).Counters.AttackCounter = timeGetTime
@@ -943,12 +961,7 @@ Dim AttackPos As WorldPos
         Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
         'Go to the user attacking user sub
-        'User_AttackUser UserIndex, MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).UserIndex
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String "PVP is currently disabled."
-        ConBuf.Put_Byte DataCode.Comm_FontType_Fight
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        User_AttackUser UserIndex, MapData(AttackPos.Map, AttackPos.x, AttackPos.Y).UserIndex
         Exit Sub
 
     End If
@@ -978,6 +991,8 @@ Dim AttackPos As WorldPos
         End If
         Exit Sub
     End If
+    
+ErrOut:
 
 End Sub
 
@@ -1109,10 +1124,7 @@ Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Use
 'Changes a user char's head,body and heading
 '*****************************************************************
 
-Dim i As Byte
-
-'Check for invalid values
-
+    'Check for invalid values
     If UserIndex > MaxUsers Then Exit Sub
     If UserIndex <= 0 Then Exit Sub
     If Body < 0 Then Exit Sub
@@ -1122,43 +1134,23 @@ Dim i As Byte
     If Hair < 0 Then Exit Sub
 
     'Apply the values
-    If UserList(UserIndex).Char.Body <> Body Then
-        UserList(UserIndex).Char.Body = Body
-        i = 1
-    End If
-    If UserList(UserIndex).Char.Head <> Head Then
-        UserList(UserIndex).Char.Head = Head
-        i = 1
-    End If
-    If UserList(UserIndex).Char.Heading <> Heading Then
-        UserList(UserIndex).Char.Heading = Heading
-        i = 1
-    End If
-    If UserList(UserIndex).Char.HeadHeading <> Heading Then
-        UserList(UserIndex).Char.HeadHeading = Heading
-        i = 1
-    End If
-    If UserList(UserIndex).Char.Weapon <> Weapon Then
-        UserList(UserIndex).Char.Weapon = Weapon
-        i = 1
-    End If
-    If UserList(UserIndex).Char.Hair <> Hair Then
-        UserList(UserIndex).Char.Hair = Hair
-        i = 1
-    End If
+    If UserList(UserIndex).Char.Body <> Body Then UserList(UserIndex).Char.Body = Body
+    If UserList(UserIndex).Char.Head <> Head Then UserList(UserIndex).Char.Head = Head
+    If UserList(UserIndex).Char.Heading <> Heading Then UserList(UserIndex).Char.Heading = Heading
+    If UserList(UserIndex).Char.HeadHeading <> Heading Then UserList(UserIndex).Char.HeadHeading = Heading
+    If UserList(UserIndex).Char.Weapon <> Weapon Then UserList(UserIndex).Char.Weapon = Weapon
+    If UserList(UserIndex).Char.Hair <> Hair Then UserList(UserIndex).Char.Hair = Hair
 
     'Send the update
-    If i = 1 Then   'Make sure we only send update when it is needed
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_ChangeChar
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        ConBuf.Put_Integer Body
-        ConBuf.Put_Integer Head
-        ConBuf.Put_Byte Heading
-        ConBuf.Put_Integer Weapon
-        ConBuf.Put_Integer Hair
-        Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-    End If
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.Server_ChangeChar
+    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+    ConBuf.Put_Integer Body
+    ConBuf.Put_Integer Head
+    ConBuf.Put_Byte Heading
+    ConBuf.Put_Integer Weapon
+    ConBuf.Put_Integer Hair
+    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
 
 End Sub
 
@@ -1168,6 +1160,8 @@ Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, Object As Use
 'Changes a user's inventory
 '*****************************************************************
 
+    If Object.ObjIndex < 0 Then Exit Sub
+    If Object.ObjIndex > NumObjDatas Then Exit Sub
     UserList(UserIndex).Object(Slot) = Object
 
     If Object.ObjIndex Then
@@ -1202,12 +1196,21 @@ Sub User_DropObj(ByVal UserIndex As Integer, ByVal Slot As Byte, ByVal Num As In
 
 Dim Obj As Obj
 
-'Check for invalid values
-
+    'Check for invalid values
+    On Error GoTo ErrOut
+    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
+    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
+    If UserList(UserIndex).Pos.x < XMinMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.x > XMaxMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.Y < YMinMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.Y > YMaxMapSize Then Exit Sub
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
+    If Slot <= 0 Then Exit Sub
+    If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
+    If UserList(UserIndex).Object(Slot).Amount <= 0 Then Exit Sub
     If Num > UserList(UserIndex).Object(Slot).Amount Then Num = UserList(UserIndex).Object(Slot).Amount
-    If Num <= 0 Then Exit Sub
+    On Error GoTo 0
 
     'Check for object on gorund
     If MapData(UserList(UserIndex).Pos.Map, x, Y).ObjInfo.ObjIndex <> 0 Then
@@ -1235,6 +1238,8 @@ Dim Obj As Obj
     End If
 
     User_UpdateInv False, UserIndex, Slot
+    
+ErrOut:
 
 End Sub
 
@@ -1243,22 +1248,34 @@ Sub User_EraseChar(ByVal UserIndex As Integer)
 '*****************************************************************
 'Erase a character
 '*****************************************************************
-'Remove from list
 
-    CharList(UserList(UserIndex).Char.CharIndex).Index = 0
-    CharList(UserList(UserIndex).Char.CharIndex).CharType = 0
-
-    'Remove from map
-    MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y).UserIndex = 0
-
+    On Error GoTo ErrOut
+    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
+    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
+    On Error GoTo 0
+    
     'Send erase command to clients
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_EraseChar
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-
+    
+    'Remove from list
+    CharList(UserList(UserIndex).Char.CharIndex).Index = 0
+    CharList(UserList(UserIndex).Char.CharIndex).CharType = 0
+    
     'Update userlist
     UserList(UserIndex).Char.CharIndex = 0
+    
+    If UserList(UserIndex).Pos.x < XMinMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.x > XMaxMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.Y < YMinMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.Y > YMaxMapSize Then Exit Sub
+
+    'Remove from map
+    MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y).UserIndex = 0
+    
+ErrOut:
 
 End Sub
 
@@ -1272,13 +1289,21 @@ Dim x As Integer
 Dim Y As Integer
 Dim Slot As Byte
 
-'Check for invalud values
-
+    'Check for invalud values
+    On Error GoTo ErrOut
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
+    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
+    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
 
     x = UserList(UserIndex).Pos.x
     Y = UserList(UserIndex).Pos.Y
+    
+    If x < XMinMapSize Then Exit Sub
+    If x > XMaxMapSize Then Exit Sub
+    If Y < YMinMapSize Then Exit Sub
+    If Y > YMaxMapSize Then Exit Sub
+    On Error GoTo 0
 
     'Check for object on ground
     If MapData(UserList(UserIndex).Pos.Map, x, Y).ObjInfo.ObjIndex <= 0 Then
@@ -1357,6 +1382,8 @@ Dim Slot As Byte
     'Update the user's inventory
     Call User_UpdateInv(False, UserIndex, Slot)
 
+ErrOut:
+
 End Sub
 
 Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer)
@@ -1367,8 +1394,7 @@ Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Am
 
 Dim Slot As Byte
 
-'Check for invalid values
-
+    'Check for invalid values
     If UserIndex <= 0 Then Exit Sub
     If ObjIndex <= 0 Then Exit Sub
     If UserIndex > LastUser Then Exit Sub
@@ -1479,6 +1505,14 @@ Dim TempPos As WorldPos
         User_Close UserIndex
         Exit Sub
     End If
+    
+    'Remove the targeted NPC
+    UserList(UserIndex).Flags.Target = 0
+    UserList(UserIndex).Flags.TargetIndex = 0
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Target
+    ConBuf.Put_Integer 0
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     'Warp him there
     User_WarpChar UserIndex, TempPos.Map, TempPos.x, TempPos.Y
@@ -1497,8 +1531,8 @@ Dim LoopC As Byte
 Dim TempCharIndex As Integer
 Dim MsgData As MailData
 
-'Check for invalid values
-
+    'Check for invalid values
+    On Error GoTo ErrOut
     If Not Server_InMapBounds(x, Y) Then Exit Sub
     If UserIndex <= 0 Then Exit Sub
     If UserIndex > MaxUsers Then Exit Sub
@@ -1506,6 +1540,7 @@ Dim MsgData As MailData
     If Map > NumMaps Then Exit Sub
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
+    On Error GoTo 0
 
     '***** Right Click *****
     If Button = vbRightButton Then
@@ -1708,6 +1743,8 @@ Dim MsgData As MailData
         End If
 
     End If
+    
+ErrOut:
 
 End Sub
 
@@ -1876,7 +1913,7 @@ Dim UserIndex As Integer
 
 'check for bad name
 
-    If LenB(Name) = 0 Then
+    If Len(Name) = 0 Then
         User_NameToIndex = 0
         Exit Function
     End If
@@ -2219,15 +2256,19 @@ Sub User_UseInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte)
 
 Dim Obj As ObjData
 
-'Check for invalid values
-
+    'Check for invalid values
+    On Error GoTo ErrOut
+    If UserList(UserIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserIndex > MaxUsers Then Exit Sub
     If UserIndex <= 0 Then Exit Sub
     If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
     If Slot <= 0 Then Exit Sub
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).Flags.DownloadingMap Then Exit Sub
-
+    If UserList(UserIndex).Object(Slot).ObjIndex < 0 Then Exit Sub
+    If UserList(UserIndex).Object(Slot).ObjIndex > NumObjDatas Then Exit Sub
+    On Error GoTo 0
+    
     Obj = ObjData(UserList(UserIndex).Object(Slot).ObjIndex)
 
     'Apply the replenish values
@@ -2238,11 +2279,19 @@ Dim Obj As ObjData
     End With
 
     Select Case Obj.ObjType
+    
     Case OBJTYPE_USEONCE
 
         'Remove from inventory
         UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
         If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
+        
+        'Set the paper-doll
+        If Obj.SpriteHair <> -1 Then UserList(UserIndex).Char.Hair = Obj.SpriteHair
+        If Obj.SpriteBody <> -1 Then UserList(UserIndex).Char.Body = Obj.SpriteBody
+        If Obj.SpriteHead <> -1 Then UserList(UserIndex).Char.Head = Obj.SpriteHead
+        If Obj.SpriteWeapon <> -1 Then UserList(UserIndex).Char.Weapon = Obj.SpriteWeapon
+        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair
 
     Case OBJTYPE_WEAPON
 
@@ -2295,6 +2344,8 @@ Dim Obj As ObjData
 
     'Update user's stats and inventory
     User_UpdateInv False, UserIndex, Slot
+    
+ErrOut:
 
 End Sub
 
@@ -2308,6 +2359,9 @@ Dim OldMap As Integer
 Dim LoopC As Long
 
     OldMap = UserList(UserIndex).Pos.Map
+
+    If OldMap <= 0 Then Exit Sub
+    If OldMap > NumMaps Then Exit Sub
 
     User_EraseChar UserIndex
 

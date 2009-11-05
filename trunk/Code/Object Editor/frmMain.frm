@@ -1133,11 +1133,11 @@ Dim TempNum As Integer
         .Filter = "Objects|*.obj"
         .DialogTitle = "Load"
         .FileName = ""
-        .InitDir = OBJPath
+        .InitDir = OBJsPath
         .flags = cdlOFNFileMustExist
         .ShowOpen
     End With
-    FileName = Right$(frmMain.CD.FileName, Len(frmMain.CD.FileName) - Len(OBJPath))
+    FileName = Right$(frmMain.CD.FileName, Len(frmMain.CD.FileName) - Len(OBJsPath))
     Editor_LoadOBJ Val(FileName)
     
     Exit Sub

@@ -1,11 +1,80 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Function Server_LegalString(ByVal CheckString As String) As Boolean
+
+'*****************************************************************
+'Check for illegal characters in the string (wrapper for Server_LegalCharacter)
+'*****************************************************************
+Dim i As Long
+
+    On Error GoTo ErrOut
+
+    'Check for invalid string
+    If CheckString = vbNullChar Then Exit Function
+    If LenB(CheckString) < 1 Then Exit Function
+
+    'Loop through the string
+    For i = 1 To Len(CheckString)
+        
+        'Check the values
+        If Server_LegalCharacter(AscB(Mid$(CheckString, i, 1))) = False Then Exit Function
+        
+    Next i
+    
+    'If we have made it this far, then all is good
+    Server_LegalString = True
+
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the string must be invalid
+    Server_LegalString = False
+
+End Function
+
+Function Server_LegalCharacter(KeyAscii As Byte) As Boolean
+
+'*****************************************************************
+'Only allow certain specified characters
+'*****************************************************************
+
+    On Error GoTo ErrOut
+
+    'Allow numbers between 0 and 9
+    If KeyAscii >= 48 Or KeyAscii <= 57 Then
+        Server_LegalCharacter = True
+        Exit Function
+    End If
+    
+    'Allow letters A to Z
+    If KeyAscii >= 65 Or KeyAscii <= 90 Then
+        Server_LegalCharacter = True
+        Exit Function
+    End If
+    
+    'Allow letters a to z
+    If KeyAscii >= 97 Or KeyAscii <= 122 Then
+        Server_LegalCharacter = True
+        Exit Function
+    End If
+    
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the character must be invalid
+    Server_LegalCharacter = False
+    
+End Function
+
 Function Server_CalcEXPCost(BaseSkill As Long) As Long
 
 '*****************************************************************
 'Calculate the exp required to raise a skill up to the next point
 '*****************************************************************
+On Error Resume Next
 
     Server_CalcEXPCost = Int(0.17376 * (BaseSkill ^ 3) + 0.44 * (BaseSkill ^ 2) - 0.48 * BaseSkill + 1.035) + 1
 
@@ -26,8 +95,16 @@ Function Server_FileExist(File As String, FileType As VbFileAttribute) As Boolea
 '*****************************************************************
 'Checks to see if a file exists
 '*****************************************************************
+On Error GoTo ErrOut
 
     If Dir$(File, FileType) <> "" Then Server_FileExist = True
+
+Exit Function
+
+'An error will most likely be caused by invalid filenames (those that do not follow the file name rules)
+ErrOut:
+
+    Server_FileExist = False
 
 End Function
 
@@ -113,12 +190,12 @@ Public Sub Server_InitDataCommands()
         .Server_EraseChar = 18
         .Server_MoveChar = 19
         .Server_ChangeChar = 20
-        .Server_Obj_Makeect = 21
-        .Server_Obj_Eraseect = 22
+        .Server_MakeObject = 21
+        .Server_EraseObject = 22
         .User_KnownSkills = 23
         .User_SetInventorySlot = 24
         .User_StartQuest = 25
-        '26
+        .Server_Connect = 26
         .Server_PlaySound = 27
         .User_Login = 28
         .User_NewLogin = 29
@@ -188,7 +265,7 @@ Public Sub Server_InitDataCommands()
         ' = 135
         .Map_UpdateTile = 136
         .Dev_UpdateTile = 137
-        .Dev_Save_Map = 138
+        .Dev_SaveMap = 138
         .Server_Ping = 139
         '140
         .User_Desc = 141
@@ -238,7 +315,7 @@ Dim LoopC As Long
 
 End Sub
 
-Public Sub Server_UpdateMapTile(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal X As Byte, ByVal Y As Byte)
+Public Sub Server_UpdateMapTile(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal x As Byte, ByVal Y As Byte)
 
 '*****************************************************************
 'Takes the map tile info and compiles it into the conversion buffer
@@ -248,11 +325,11 @@ Public Sub Server_UpdateMapTile(ByVal UserIndex As Integer, ByVal Map As Integer
 Dim ChunkData As Long
 Dim LoopC As Byte
 
-    With MapData(Map, X, Y)
+    With MapData(Map, x, Y)
 
         'Set the initial values
         ConBuf.Put_Byte DataCode.Map_UpdateTile
-        ConBuf.Put_Byte X
+        ConBuf.Put_Byte x
         ConBuf.Put_Byte Y
 
         'Build the chunk data

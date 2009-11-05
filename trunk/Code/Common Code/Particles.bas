@@ -920,7 +920,6 @@ Dim LoopC As Long
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngX > 1200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngY > 800 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Int(Rnd * ElapsedTime * 500) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Apply shift values
             Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
@@ -1229,7 +1228,6 @@ Dim LoopC As Long
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngX > 1200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngY > 800 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Int(Rnd * ElapsedTime * 500) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Apply shift values
             Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX

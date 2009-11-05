@@ -9,7 +9,7 @@ Attribute VB_Name = "General"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.1            ************
+'************            Official Release: Version 0.1.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "General"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/modules.php?name=Content&pa=showpage&pid=11  **
+'**        http://www.vbgore.com/en/index.php?title=Donate                    **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        create tutorials for the Knowledge Base. :)                        **
-'**  *Ads - Advertisements have been placed on the site for those who can     **
-'**        not or do not want to donate. Not donating is understandable - not **
-'**        everyone has access to credit cards / paypal or spair money laying **
-'**        around. These ads allow for a free way for you to help out the     **
-'**        site. Those who do donate have the option to hide/remove the ads.  **
+'**        help expend the wiki pages!                                        **
+'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
+'**        page or a link to vbGORE in a forum you visit, every link helps    **
+'**        spread the word of vbGORE's existance! Buttons and banners for     **
+'**        linking to vbGORE can be found on the following page:              **
+'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -75,11 +75,9 @@ Attribute VB_Name = "General"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
 '** Game Programming Wiki (All community): Help on many different subjects    **
 '**   http://wwww.gpwiki.org/                                                 **
-'** ORE Maraxus's Edition (Maraxus): Used the map editor from this project    **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'** Big thanks goes to Van, Nex666 and ChAsE01!                               **
 '**                                                                           **
 '** If you feel you belong in these credits, please contact Spodi (above).    **
 '*******************************************************************************
@@ -114,8 +112,6 @@ Public Type Quest
     Redoable As Byte                'If the quest can be done infinite times
 End Type
 
-Public QuestPath As String
-
 'Our current quest
 Public QuestNum As Integer
 Public OpenQuest As Quest
@@ -123,17 +119,17 @@ Public OpenQuest As Quest
 Sub Main()
 Dim FilePath As String
 
-    QuestPath = App.Path & "\Quests\"
+    InitFilePaths
 
     'Show the main form
     frmMain.Show
 
     'Check for the first quest
     If Command$ = "" Then
-        If Engine_FileExist(QuestPath & "1.quest", vbNormal) Then Editor_LoadQuest 1
+        If Engine_FileExist(QuestsPath & "1.quest", vbNormal) Then Editor_LoadQuest 1
     Else
         FilePath = Mid$(Command$, 2, Len(Command$) - 2) 'Retrieve the filepath from Command$ and crop off the "'s
-        Editor_LoadQuest Val(Right$(FilePath, Len(FilePath) - Len(QuestPath)))
+        Editor_LoadQuest Val(Right$(FilePath, Len(FilePath) - Len(QuestsPath)))
     End If
 
 End Sub
@@ -146,8 +142,8 @@ Sub Editor_LoadQuest(ByVal QuestID As Integer)
 Dim FileNum As Byte
 
     'Check that the file exists
-    If Engine_FileExist(QuestPath & QuestID & ".quest", vbNormal) = False Then
-        MsgBox "The selected quest file (" & QuestPath & QuestID & ".quest) does not exist!", vbOKOnly
+    If Engine_FileExist(QuestsPath & QuestID & ".quest", vbNormal) = False Then
+        MsgBox "The selected quest file (" & QuestsPath & QuestID & ".quest) does not exist!", vbOKOnly
         Exit Sub
     End If
 
@@ -155,7 +151,7 @@ Dim FileNum As Byte
 
     'Open the file
     FileNum = FreeFile
-    Open QuestPath & QuestID & ".quest" For Binary As #FileNum
+    Open QuestsPath & QuestID & ".quest" For Binary As #FileNum
         Get #FileNum, , OpenQuest
     Close #FileNum
     
@@ -229,18 +225,18 @@ Dim Num As Integer
     
     'Check to update the number of quests
     FileNum = FreeFile
-    Open QuestPath & "Count.quest" For Binary As #FileNum
+    Open QuestsPath & "Count.quest" For Binary As #FileNum
         Get #FileNum, , Num
     Close #FileNum
     If Num < QuestID Then
-        Open QuestPath & "Count.quest" For Binary As #FileNum
+        Open QuestsPath & "Count.quest" For Binary As #FileNum
             Put #FileNum, , QuestID
         Close #FileNum
     End If
         
     'Open the file
     FileNum = FreeFile
-    Open QuestPath & QuestID & ".quest" For Binary As #FileNum
+    Open QuestsPath & QuestID & ".quest" For Binary As #FileNum
         Put #FileNum, , OpenQuest
     Close #FileNum
     

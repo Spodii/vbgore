@@ -3,6 +3,8 @@ Option Explicit
 
 Sub Main()
 
+    InitFilePaths
+
     'Load the first message
     If Command$ = "" Then
         If Engine_FileExist(App.Path & "\Mail\1.mail", vbNormal) Then LoadMail App.Path & "\Mail\1.mail", MailData

@@ -3,7 +3,7 @@ Option Explicit
 
 Sub ShowFrmSetTile()
     frmSetTile.Visible = True
-    frmSetTile.Show
+    frmSetTile.Show , frmMain
     SetTilesChkValue = 1
     frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & "settile.bmp")
 End Sub
@@ -17,7 +17,7 @@ End Sub
 
 Sub ShowFrmTile()
     frmTile.Visible = True
-    frmTile.Show
+    frmTile.Show , frmMain
     ViewTilesChkValue = 1
     frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & "viewtiles.bmp")
 End Sub
@@ -31,7 +31,7 @@ End Sub
 
 Sub ShowFrmNPCs()
     frmNPCs.Visible = True
-    frmNPCs.Show
+    frmNPCs.Show , frmMain
     ShowNPCsChkValue = 1
     frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & "npc.bmp")
 End Sub
@@ -45,7 +45,7 @@ End Sub
 
 Sub ShowFrmMapInfo()
     frmMapInfo.Visible = True
-    frmMapInfo.Show
+    frmMapInfo.Show , frmMain
     ShowMapInfoChkValue = 1
     frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & "mapinfo.bmp")
 End Sub
@@ -59,7 +59,7 @@ End Sub
 
 Sub ShowFrmParticles()
     frmParticles.Visible = True
-    frmParticles.Show
+    frmParticles.Show , frmMain
     PartChkValue = 1
     frmMain.PartPic.Picture = LoadPicture(GrhMapPath & "particles.bmp")
 End Sub
@@ -73,7 +73,7 @@ End Sub
 
 Sub ShowFrmFloods()
     frmFloods.Visible = True
-    frmFloods.Show
+    frmFloods.Show , frmMain
     FloodsChkValue = 1
     frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & "floods.bmp")
 End Sub
@@ -87,7 +87,7 @@ End Sub
 
 Sub ShowFrmObj()
     frmObj.Visible = True
-    frmObj.Show
+    frmObj.Show , frmMain
     ObjEditChkValue = 1
     frmMain.ObjEditPic.Picture = LoadPicture(GrhMapPath & "objects.bmp")
 End Sub
@@ -101,7 +101,7 @@ End Sub
 
 Sub ShowFrmOptimizeStart()
     frmOptimizeStart.Visible = True
-    frmOptimizeStart.Show
+    frmOptimizeStart.Show , frmMain
 End Sub
 
 Sub HideFrmOptimizeStart()
@@ -111,7 +111,7 @@ End Sub
 
 Sub ShowFrmReport()
     frmReport.Visible = True
-    frmReport.Show
+    frmReport.Show , frmMain
 End Sub
 
 Sub HideFrmReport()
@@ -121,7 +121,7 @@ End Sub
 
 Sub ShowFrmSfx()
     frmSfx.Visible = True
-    frmSfx.Show
+    frmSfx.Show , frmMain
     SfxChkValue = 1
     frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & "sounds.bmp")
 End Sub
@@ -135,7 +135,7 @@ End Sub
 
 Sub ShowFrmExit()
     frmExit.Visible = True
-    frmExit.Show
+    frmExit.Show , frmMain
     ExitsChkValue = 1
     frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & "exits.bmp")
 End Sub
@@ -149,7 +149,7 @@ End Sub
 
 Sub ShowFrmBlock()
     frmBlock.Visible = True
-    frmBlock.Show
+    frmBlock.Show , frmMain
     BlocksChkValue = 1
     frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & "blocks.bmp")
 End Sub
@@ -163,7 +163,7 @@ End Sub
 
 Sub ShowFrmARGB(ByRef tTxtBox As TextBox)
     frmARGB.Visible = True
-    frmARGB.Show
+    frmARGB.Show , frmMain
     frmARGB.LongTxt.Text = tTxtBox.Text
 End Sub
 
@@ -174,7 +174,7 @@ End Sub
 
 Sub ShowFrmTileSelect(ByVal stBoxIDx As Byte)
     frmTileSelect.Visible = True
-    frmTileSelect.Show
+    frmTileSelect.Show , frmMain
     tsDrawAll = 1
     stBoxID = stBoxIDx
     tsWidth = CLng(frmTileSelect.ScaleWidth / tsTileWidth)  'Use clng to make sure we round down
@@ -190,11 +190,11 @@ End Sub
 
 Sub ShowFrmTSOpt()
     frmTSOpt.Visible = True
-    frmTSOpt.Show
+    frmTSOpt.Show , frmMain
     frmTileSelect.Enabled = False
-    frmTSOpt.WidthTxt.Text = Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "W")
-    frmTSOpt.HeightTxt.Text = Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "H")
-    frmTSOpt.StartTxt.Text = Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "S")
+    frmTSOpt.WidthTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W")
+    frmTSOpt.HeightTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H")
+    frmTSOpt.StartTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S")
 End Sub
 
 Sub HideFrmTSOpt()
@@ -446,7 +446,7 @@ Dim X As Byte
     LastOffsetY = 0
     
     'Change caption
-    frmMain.MapLbl.Caption = "Current Map: " & Map
+    frmMain.MapLbl.Caption = "Map: " & Map
     
     '*** Misc ***
 
@@ -913,9 +913,9 @@ Dim i As Integer
     Close #FileNumInf
     
     'Update the NumMaps file
-    i = Engine_Var_Get(IniPath & "Map.dat", "INIT", "NumMaps")
+    i = Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps")
     If MapNum > i Then
-        Engine_Var_Write IniPath & "Map.dat", "INIT", "NumMaps", CStr(MapNum)
+        Engine_Var_Write DataPath & "Map.dat", "INIT", "NumMaps", CStr(MapNum)
     End If
 
     'Write .dat file
@@ -937,8 +937,8 @@ Dim FilePath As String
 Dim i As Integer
 
     'Init vars
-    IniPath = App.Path & "\Data\"
-    Ini2Path = App.Path & "\Data2\"
+    DataPath = App.Path & "\Data\"
+    Data2Path = App.Path & "\Data2\"
     MapPath = App.Path & "\Maps\"
     MapEXPath = App.Path & "\MapsEX\"
     

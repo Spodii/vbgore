@@ -63,6 +63,21 @@ Begin VB.Form frmMain
       TabIndex        =   0
       Top             =   0
       Width           =   12000
+      Begin VB.PictureBox NewPic 
+         Appearance      =   0  'Flat
+         BackColor       =   &H00C0C0C0&
+         BorderStyle     =   0  'None
+         ForeColor       =   &H80000008&
+         Height          =   480
+         Left            =   9120
+         ScaleHeight     =   32
+         ScaleMode       =   3  'Pixel
+         ScaleWidth      =   32
+         TabIndex        =   35
+         ToolTipText     =   "New: Clear the current map and make it a new map"
+         Top             =   960
+         Width           =   480
+      End
       Begin VB.PictureBox L6Pic 
          Appearance      =   0  'Flat
          BackColor       =   &H00404040&
@@ -463,10 +478,10 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00606060&
          Height          =   255
-         Left            =   8160
+         Left            =   7920
          TabIndex        =   34
          Top             =   1200
-         Width           =   1335
+         Width           =   1095
       End
       Begin VB.Label YLbl 
          AutoSize        =   -1  'True
@@ -503,7 +518,7 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00606060&
          Height          =   195
-         Left            =   6000
+         Left            =   6120
          TabIndex        =   32
          Top             =   1200
          Width           =   360
@@ -523,7 +538,7 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00606060&
          Height          =   195
-         Left            =   6960
+         Left            =   7080
          TabIndex        =   31
          Top             =   960
          Width           =   675
@@ -543,7 +558,7 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00606060&
          Height          =   195
-         Left            =   5925
+         Left            =   6120
          TabIndex        =   30
          Top             =   960
          Width           =   675
@@ -551,7 +566,7 @@ Begin VB.Form frmMain
       Begin VB.Label MapLbl 
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
-         Caption         =   "Current Map: 0"
+         Caption         =   "Map: 0"
          BeginProperty Font 
             Name            =   "MS Sans Serif"
             Size            =   8.25
@@ -563,10 +578,10 @@ Begin VB.Form frmMain
          EndProperty
          ForeColor       =   &H00606060&
          Height          =   255
-         Left            =   7800
+         Left            =   7920
          TabIndex        =   29
          Top             =   960
-         Width           =   1695
+         Width           =   1095
       End
    End
 End
@@ -604,8 +619,8 @@ Private Sub ExitPic_Click()
     IsUnloading = 1
     
     'Save positions
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
+    Engine_Var_Write Data2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
+    Engine_Var_Write Data2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
 
 End Sub
 
@@ -622,31 +637,31 @@ Private Sub Form_Load()
     GrhMapPath = App.Path & "\GrhMapEditor\"
 
     'Load preferences
-    frmMain.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "MAIN", "X"))
-    frmMain.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "MAIN", "Y"))
-    frmTile.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "TILE", "X"))
-    frmTile.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "TILE", "Y"))
-    frmSetTile.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "SETTILE", "X"))
-    frmSetTile.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "SETTILE", "Y"))
-    frmNPCs.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "NPCS", "X"))
-    frmNPCs.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "NPCS", "Y"))
-    frmMapInfo.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "MAPINFO", "X"))
-    frmMapInfo.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "MAPINFO", "Y"))
-    frmParticles.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "PART", "X"))
-    frmParticles.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "PART", "Y"))
-    frmFloods.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "FLOODS", "X"))
-    frmFloods.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "FLOODS", "Y"))
-    frmObj.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "OBJ", "X"))
-    frmObj.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "OBJ", "Y"))
-    frmExit.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "EXIT", "X"))
-    frmExit.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "EXIT", "Y"))
-    frmBlock.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "BLOCK", "X"))
-    frmBlock.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "BLOCK", "Y"))
-    frmSfx.Left = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "SFX", "X"))
-    frmSfx.Top = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "SFX", "Y"))
-    tsTileWidth = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "W"))
-    tsTileHeight = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "H"))
-    tsStart = Val(Engine_Var_Get(Ini2Path & "MapEditor.ini", "TSOPT", "S"))
+    frmMain.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAIN", "X"))
+    frmMain.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAIN", "Y"))
+    frmTile.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TILE", "X"))
+    frmTile.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TILE", "Y"))
+    frmSetTile.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "X"))
+    frmSetTile.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "Y"))
+    frmNPCs.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "NPCS", "X"))
+    frmNPCs.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "NPCS", "Y"))
+    frmMapInfo.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "X"))
+    frmMapInfo.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "Y"))
+    frmParticles.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "PART", "X"))
+    frmParticles.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "PART", "Y"))
+    frmFloods.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "X"))
+    frmFloods.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "Y"))
+    frmObj.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "OBJ", "X"))
+    frmObj.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "OBJ", "Y"))
+    frmExit.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "X"))
+    frmExit.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "Y"))
+    frmBlock.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "X"))
+    frmBlock.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "Y"))
+    frmSfx.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SFX", "X"))
+    frmSfx.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SFX", "Y"))
+    tsTileWidth = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W"))
+    tsTileHeight = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H"))
+    tsStart = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S"))
     
     'Set the toolbar
     ToolbarPic.Picture = LoadPicture(GrhMapPath & "toolbar.bmp")
@@ -672,6 +687,7 @@ Private Sub Form_Load()
     SavePic.Picture = LoadPicture(GrhMapPath & "save.bmp")
     SaveAsPic.Picture = LoadPicture(GrhMapPath & "saveas.bmp")
     ExitPic.Picture = LoadPicture(GrhMapPath & "exitbutton.bmp")
+    NewPic.Picture = LoadPicture(GrhMapPath & "newbutton.bmp")
     
     'Set the layer checks
     L1ChkValue = 1
@@ -802,6 +818,83 @@ End Sub
 
 Private Sub L6Pic_DblClick()
     L6Pic_Click
+End Sub
+
+Private Sub NewPic_Click()
+Dim tX As Long
+Dim tY As Long
+Dim i As Long
+
+    'Confirm
+    If MsgBox("Are you sure you wish to clear the current map?", vbYesNo) = vbNo Then Exit Sub
+    
+    'Turn off bright mode
+    If BrightChkValue = 1 Then BrightPic_Click
+    
+    'Erase characters
+    For i = 1 To LastChar
+        If CharList(i).Active Then Engine_Char_Erase i
+    Next i
+
+    'Erase objects
+    For i = 1 To LastObj
+        OBJList(i).Grh.GrhIndex = 0
+    Next i
+    
+    'Erase map-bound particle effects
+    For i = 1 To NumEffects
+        If Effect(i).Used Then
+            If Effect(i).BoundToMap Then Effect_Kill i
+        End If
+    Next i
+    Effect_Kill 0, True
+    
+    'Clear the map info
+    MapInfo.MapVersion = 1
+    MapInfo.Music = 0
+    MapInfo.Name = "New map"
+    MapInfo.Weather = 0
+    
+    'Clear the map tiles
+    For tX = XMinMapSize To XMaxMapSize
+        For tY = YMinMapSize To YMaxMapSize
+        
+            'Erase graphics / shadows
+            For i = 1 To 6
+                MapData(tX, tY).Graphic(i).GrhIndex = 0
+                MapData(tX, tY).Shadow(i) = 0
+            Next i
+            
+            'Erase lights
+            For i = 1 To 24
+                MapData(tX, tY).Light(i) = -1
+            Next i
+            
+            'Erase NPCs
+            If MapData(tX, tY).NPCIndex > 0 Then
+                Engine_Char_Erase MapData(tX, tY).NPCIndex
+                MapData(tX, tY).NPCIndex = 0
+            End If
+            
+            'Erase objects
+            If MapData(tX, tY).ObjInfo.ObjIndex > 0 Then
+                Engine_OBJ_Erase MapData(tX, tY).ObjInfo.ObjIndex
+                MapData(tX, tY).ObjInfo.ObjIndex = 0
+                MapData(tX, tY).ObjInfo.ObjIndex = 0
+            End If
+            
+            'Erase flags
+            MapData(tX, tY).Blocked = 0
+            MapData(tX, tY).Mailbox = 0
+            MapData(tX, tY).Sfx = 0
+            MapData(tX, tY).TileExit.Map = 0
+            MapData(tX, tY).TileExit.X = 0
+            MapData(tX, tY).TileExit.Y = 0
+            MapData(tX, tY).UserIndex = 0
+            
+        Next tY
+    Next tX
+
 End Sub
 
 Private Sub ObjEditPic_DblClick()

@@ -197,9 +197,9 @@ Private Sub SaveLbl_Click()
     tsTileWidth = Val(WidthTxt.Text)
     tsStart = Val(StartTxt.Text)
 
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "TSOPT", "W", WidthTxt.Text
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "TSOPT", "H", HeightTxt.Text
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "TSOPT", "S", StartTxt.Text
+    Engine_Var_Write Data2Path & "MapEditor.ini", "TSOPT", "W", WidthTxt.Text
+    Engine_Var_Write Data2Path & "MapEditor.ini", "TSOPT", "H", HeightTxt.Text
+    Engine_Var_Write Data2Path & "MapEditor.ini", "TSOPT", "S", StartTxt.Text
     
     tsWidth = CLng(frmTileSelect.ScaleWidth / tsTileWidth)  'Use clng to make sure we round down
     tsHeight = CLng(frmTileSelect.ScaleHeight / tsTileHeight)

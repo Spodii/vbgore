@@ -71,7 +71,7 @@ Exit Function
 
 ErrOut:
 
-    Debug.Print "Error: Could not acquire BYTE from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire BYTE from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
 
 End Function
 
@@ -89,7 +89,7 @@ Exit Function
 
 ErrOut:
 
-    Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
 
 End Function
 
@@ -107,7 +107,7 @@ Exit Function
 
 ErrOut:
 
-    Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
 
 End Function
 
@@ -154,7 +154,7 @@ Exit Function
 
 ErrOut:
 
-    Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
+    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
 
 End Function
 
@@ -185,7 +185,7 @@ Exit Function
 
 ErrOut:
 
-    Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
+    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
 
 End Function
 
@@ -220,13 +220,21 @@ Public Sub Put_Long(ByVal Value As Long)
 End Sub
 
 Public Sub Put_String(ByRef Value As String)
-
 Dim tempB() As Byte
-'Store a string
-'Convert the string to a byte array
 
+'Store a string
+
+    'Check for invalid value
+    If Value = vbNullString Then Exit Sub
+
+    'Convert the string to a byte array
     tempB = StrConv(Value, vbFromUnicode)
+    
     'Store a byte-long value that represents the size of the string
+    If UBound(tempB) > 254 Then
+        If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: The following string was too large to pack into the Put_String buffer! " & Value
+        Exit Sub
+    End If
     Put_Byte UBound(tempB) + 1
 
     'Resize the array to fit the string
@@ -241,14 +249,21 @@ End Sub
 Public Sub Put_StringEX(ByRef Value As String)
 
 Dim tempB() As Byte
-'Store a very long string
-'Convert the string to a byte array
-
+    'Store a very long string
+    
+    'Check for invalid value
+    If Value = vbNullString Then Exit Sub
+    
+    'Convert the string to a byte array
     tempB = StrConv(Value, vbFromUnicode)
 
     'Store a byte-long value that represents the size of the string
+    If UBound(tempB) > 32760 Then
+        If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: The following string was too large to pack into the Put_StringEX buffer! " & Value
+        Exit Sub
+    End If
     Put_Integer UBound(tempB) + 1
-
+ 
     'Resize the array to fit the string
     ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB) + 1)
 
@@ -260,8 +275,7 @@ End Sub
 
 Public Sub Set_Buffer(ByRef Value() As Byte)
 
-'Clear the values
-
+    'Clear the values
     Clear
 
     'Set the byte buffer to the size of the array being sent in
@@ -274,3 +288,4 @@ End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 27  Code: 236  Total: 263 Lines
 ':) CommentOnly: 54 (20.5%)  Commented: 2 (0.8%)  Empty: 96 (36.5%)  Max Logic Depth: 1
+

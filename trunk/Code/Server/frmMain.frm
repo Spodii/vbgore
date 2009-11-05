@@ -4,10 +4,10 @@ Begin VB.Form frmMain
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   1  'Fixed Single
    Caption         =   "vbGORE Server"
-   ClientHeight    =   6150
+   ClientHeight    =   2940
    ClientLeft      =   1950
    ClientTop       =   1530
-   ClientWidth     =   8415
+   ClientWidth     =   5925
    BeginProperty Font 
       Name            =   "Arial"
       Size            =   8.25
@@ -22,13 +22,14 @@ Begin VB.Form frmMain
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    PaletteMode     =   1  'UseZOrder
-   ScaleHeight     =   410
+   ScaleHeight     =   196
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   561
+   ScaleWidth      =   395
+   StartUpPosition =   2  'CenterScreen
    Begin SoxOCX.Sox Sox 
       Height          =   420
-      Left            =   120
-      Top             =   1440
+      Left            =   4080
+      Top             =   2520
       Visible         =   0   'False
       Width           =   420
       _ExtentX        =   741
@@ -36,8 +37,8 @@ Begin VB.Form frmMain
    End
    Begin VB.Timer DataCalcTmr 
       Interval        =   1000
-      Left            =   1560
-      Top             =   1440
+      Left            =   5520
+      Top             =   2520
    End
    Begin VB.TextBox BytesOutTxt 
       Appearance      =   0  'Flat
@@ -52,10 +53,10 @@ Begin VB.Form frmMain
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   2400
+      Left            =   120
       Locked          =   -1  'True
-      TabIndex        =   11
-      Top             =   960
+      TabIndex        =   9
+      Top             =   1560
       Width           =   2175
    End
    Begin VB.TextBox BytesInTxt 
@@ -73,27 +74,27 @@ Begin VB.Form frmMain
       Height          =   330
       Left            =   120
       Locked          =   -1  'True
-      TabIndex        =   10
-      Top             =   960
+      TabIndex        =   8
+      Top             =   2280
       Width           =   2175
    End
    Begin VB.Timer AutoMapTimer 
       Enabled         =   0   'False
       Interval        =   5
-      Left            =   600
-      Top             =   1440
+      Left            =   4560
+      Top             =   2520
    End
    Begin VB.Timer GameTimer 
       Enabled         =   0   'False
       Interval        =   50
-      Left            =   1080
-      Top             =   1440
+      Left            =   5040
+      Top             =   2520
    End
    Begin VB.ListBox Userslst 
       Appearance      =   0  'Flat
-      Height          =   3810
-      Left            =   4800
-      TabIndex        =   3
+      Height          =   2550
+      Left            =   2400
+      TabIndex        =   2
       Top             =   240
       Width           =   3435
    End
@@ -112,7 +113,7 @@ Begin VB.Form frmMain
       Height          =   285
       Left            =   120
       Locked          =   -1  'True
-      TabIndex        =   2
+      TabIndex        =   1
       Top             =   360
       Width           =   2175
    End
@@ -129,32 +130,11 @@ Begin VB.Form frmMain
          Strikethrough   =   0   'False
       EndProperty
       Height          =   285
-      Left            =   2400
-      Locked          =   -1  'True
-      TabIndex        =   1
-      Top             =   360
-      Width           =   2175
-   End
-   Begin VB.TextBox txStatus 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   400
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   2010
       Left            =   120
       Locked          =   -1  'True
-      MultiLine       =   -1  'True
-      ScrollBars      =   2  'Vertical
       TabIndex        =   0
-      Top             =   4080
-      Width           =   8175
+      Top             =   960
+      Width           =   2175
    End
    Begin VB.Label Label5 
       Appearance      =   0  'Flat
@@ -173,9 +153,9 @@ Begin VB.Form frmMain
       EndProperty
       ForeColor       =   &H80000008&
       Height          =   195
-      Left            =   2400
-      TabIndex        =   9
-      Top             =   720
+      Left            =   120
+      TabIndex        =   7
+      Top             =   1320
       Width           =   1695
    End
    Begin VB.Label Label4 
@@ -196,8 +176,8 @@ Begin VB.Form frmMain
       ForeColor       =   &H80000008&
       Height          =   195
       Left            =   120
-      TabIndex        =   8
-      Top             =   720
+      TabIndex        =   6
+      Top             =   2040
       Width           =   1575
    End
    Begin VB.Label Label1 
@@ -217,9 +197,9 @@ Begin VB.Form frmMain
       EndProperty
       ForeColor       =   &H80000008&
       Height          =   195
-      Left            =   2400
-      TabIndex        =   7
-      Top             =   120
+      Left            =   120
+      TabIndex        =   5
+      Top             =   720
       Width           =   1185
    End
    Begin VB.Label Label8 
@@ -240,31 +220,9 @@ Begin VB.Form frmMain
       ForeColor       =   &H80000008&
       Height          =   195
       Left            =   120
-      TabIndex        =   6
+      TabIndex        =   4
       Top             =   120
       Width           =   990
-   End
-   Begin VB.Label Label3 
-      Appearance      =   0  'Flat
-      AutoSize        =   -1  'True
-      BackColor       =   &H00C0C0C0&
-      BackStyle       =   0  'Transparent
-      Caption         =   "Status:"
-      BeginProperty Font 
-         Name            =   "Verdana"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Left            =   120
-      TabIndex        =   5
-      Top             =   3840
-      Width           =   675
    End
    Begin VB.Label Label2 
       Alignment       =   2  'Center
@@ -284,8 +242,8 @@ Begin VB.Form frmMain
       EndProperty
       ForeColor       =   &H80000008&
       Height          =   195
-      Left            =   4800
-      TabIndex        =   4
+      Left            =   2400
+      TabIndex        =   3
       Top             =   60
       Width           =   645
    End
@@ -329,7 +287,7 @@ Dim MapPiece As MapBlock
                         ConBuf.Put_Integer UserList(UserIndex).Counters.SendMapCounter.Map
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                         UserList(UserIndex).Flags.DownloadingMap = 0
-                        UserList(UserIndex).Counters.SendMapCounter.X = 0
+                        UserList(UserIndex).Counters.SendMapCounter.x = 0
                         UserList(UserIndex).Counters.SendMapCounter.Y = 0
                         UserList(UserIndex).Counters.SendMapCounter.Map = 0
                         TempInt = UBound(ConnectionGroups(0).UserIndex()) - 1
@@ -349,12 +307,12 @@ Dim MapPiece As MapBlock
                     Else
 
                         'Build the map tile into the buffer
-                        Server_UpdateMapTile UserIndex, UserList(UserIndex).Counters.SendMapCounter.Map, UserList(UserIndex).Counters.SendMapCounter.X, UserList(UserIndex).Counters.SendMapCounter.Y
+                        Server_UpdateMapTile UserIndex, UserList(UserIndex).Counters.SendMapCounter.Map, UserList(UserIndex).Counters.SendMapCounter.x, UserList(UserIndex).Counters.SendMapCounter.Y
 
                         'Update which tile we're on
-                        UserList(UserIndex).Counters.SendMapCounter.X = UserList(UserIndex).Counters.SendMapCounter.X + 1
-                        If UserList(UserIndex).Counters.SendMapCounter.X > XMaxMapSize Then
-                            UserList(UserIndex).Counters.SendMapCounter.X = XMinMapSize
+                        UserList(UserIndex).Counters.SendMapCounter.x = UserList(UserIndex).Counters.SendMapCounter.x + 1
+                        If UserList(UserIndex).Counters.SendMapCounter.x > XMaxMapSize Then
+                            UserList(UserIndex).Counters.SendMapCounter.x = XMinMapSize
                             UserList(UserIndex).Counters.SendMapCounter.Y = UserList(UserIndex).Counters.SendMapCounter.Y + 1
                         End If
 
@@ -402,8 +360,10 @@ End Sub
 
 Private Sub Form_Load()
 
-'Create conversion buffer
+    'Set the file paths
+    InitFilePaths
 
+    'Create conversion buffer
     Set ConBuf = New DataBuffer
 
     'Initialize our encryption
@@ -417,9 +377,9 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
 
-    Select Case X
+    Select Case x
     Case MouseMove
     Case LeftUp
     Case LeftDown
@@ -428,6 +388,7 @@ Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y A
             TrayDelete
             Me.WindowState = 0
             Me.Show
+            DataCalcTmr.Enabled = True
         End If
     Case LeftDbClick
     Case RightUp
@@ -444,6 +405,7 @@ Private Sub Form_Resize()
     If WindowState = 1 Then
         TrayAdd Me, "Game Server: " & CurrConnections & " connections", MouseMove
         Me.Hide
+        DataCalcTmr.Enabled = False
     End If
 
 End Sub
@@ -455,12 +417,16 @@ Dim LoopC As Long
     If Sox.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
         If MsgBox("ShutDown procedure has not completed!" & vbCrLf & "(Hint - Select No and Try again!)" & vbCrLf & "Execute Forced ShutDown?", vbApplicationModal + vbCritical + vbYesNo, "UNABLE TO COMPLY!") = vbNo Then
             Let Cancel = True
+            Exit Sub
         Else
             Sox.UnHook  'Unfortunately for now, I can't get around doing this automatically for you :( VB crashes if you don't do this!
         End If
     Else
         Sox.UnHook  'The reason is VB closes my Mod which stores the WindowProc function used for SubClassing and VB doesn't know that! So it closes the Mod before the Control!
     End If
+    
+    'Save the maps
+    Save_MapData
 
     'Deallocate all arrays to avoid memory leaks
     Erase UserList
@@ -510,15 +476,17 @@ Dim Update As Boolean
         If UserList(UserIndex).Flags.UserLogged Then
 
             'Check if it has been idle for too long
-            If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.Comm_UMsgbox
-                ConBuf.Put_String "Sorry you have been idle to long. Disconnected."
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                Server_CloseSocket UserIndex
-                Exit Sub
+            If DEBUG_PacketFlood = False Then
+                If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
+                    ConBuf.Clear
+                    ConBuf.Put_Byte DataCode.Comm_UMsgbox
+                    ConBuf.Put_String "Sorry you have been idle to long. Disconnected."
+                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    Server_CloseSocket UserIndex
+                    Exit Sub
+                End If
             End If
-
+            
             'Check if stats need to be recovered
             If Recover = True Then
 
@@ -753,7 +721,7 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Static X As Long
+Static x As Long
 
     'Get the UserIndex
     Index = User_IndexFromSox(inSox)
@@ -761,12 +729,6 @@ Static X As Long
 
     'If it is a character disconnecting, do not check their packets since they're doodie heads
     If UserList(Index).Flags.Disconnecting Then Exit Sub
-    
-    'Display the packet
-    If DEBUG_PrintPacket_In Then
-        frmMain.txStatus.Text = frmMain.txStatus.Text & "DataIn: " & StrConv(inData, vbUnicode) & " " & vbCrLf
-        frmMain.txStatus.SelStart = Len(frmMain.txStatus.Text)
-    End If
     
     'Decrypt our packet
     Select Case EncryptionType
@@ -789,7 +751,7 @@ Static X As Long
         Case EncryptionTypeTwofish
             Encryption_Twofish_DecryptByte inData, EncryptionKey
     End Select
-
+    
     'Create the data buffer
     Set rBuf = New DataBuffer
     rBuf.Set_Buffer inData
@@ -813,14 +775,16 @@ Static X As Long
 
             Select Case CommandID
             Case 0
-                X = X + 1
-                Debug.Print "---Blank Byte #" & X
+                If DEBUG_PrintPacketReadErrors Then
+                    x = x + 1
+                    Debug.Print "---Blank Byte #" & x
+                End If
             Case .Comm_Emote: Data_Comm_Emote rBuf, Index
             Case .Comm_Shout: Data_Comm_Shout rBuf, Index
             Case .Comm_Talk: Data_Comm_Talk rBuf, Index
             Case .Comm_Whisper: Data_Comm_Whisper rBuf, Index
 
-            Case .Dev_Save_Map: Data_Dev_Save_Map Index
+            Case .Dev_SaveMap: Data_Dev_Save_Map Index
             Case .Dev_SetBlocked: Data_Dev_SetBlocked rBuf, Index
             Case .Dev_SetExit: Data_Dev_SetExit rBuf, Index
             Case .Dev_SetLight: Data_Dev_SetLight rBuf, Index
@@ -871,25 +835,25 @@ Static X As Long
             Case .User_StartQuest: Data_User_StartQuest Index
             Case .User_Trade_BuyFromNPC: Data_User_Trade_BuyFromNPC rBuf, Index
             Case .User_Use: Data_User_Use rBuf, Index
-
-                'Case Else: Exit Sub 'Something went wrong or we hit the end, either way, RUN!!!!
+            
+            Case Else
+                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " cause premature packet handling abortion!"
+                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
+                
             End Select
 
         End With
 
         'Exit when the buffer runs out
-        If rBuf.Get_ReadPos >= BufUBound Then Exit Do
+        If rBuf.Get_ReadPos > BufUBound Then Exit Do
 
     Loop
-
-End Sub
-
-Private Sub Sox_OnError(inSox As Long, inError As Long, inDescription As String, inSource As String, inSnipet As String)
-
-    With txStatus
-        Let .Text = .Text & "Error: SocketID " & inSox & ": Error = " & inError & " (Description) " & inDescription & " (Source) " & inSource & " (Area) " & inSnipet & vbCrLf
-        Let .SelStart = Len(.Text) 'Just makes our new message visible
-    End With
+    
+    If DEBUG_PacketFlood = True Then
+        ConBuf.Clear
+        ConBuf.Put_Byte 111
+        Sox.SendData UserList(1).ConnID, ConBuf.Get_Buffer
+    End If
 
 End Sub
 
@@ -907,21 +871,13 @@ Dim LoopC As Long
 
     '*** Init vars ***
     Me.Caption = Me.Caption & " V." & App.Major & "." & App.Minor & "." & App.Revision
-    IniPath = App.Path & "\Data\"
-    SIniPath = App.Path & "\ServerData\"
-    CharPath = App.Path & "\Charfile\"
-
+    
     'Setup Map borders
     MinXBorder = XMinMapSize + (XWindow \ 2)
     MaxXBorder = XMaxMapSize - (XWindow \ 2)
     MinYBorder = YMinMapSize + (YWindow \ 2)
     MaxYBorder = YMaxMapSize - (YWindow \ 2)
-
-    'Resize our AI arrays
-    ReDim Nodes((XMaxMapSize - (MinXBorder * 2)) * (YMaxMapSize - (MinYBorder * 2)))
-    ReDim Field(MinXBorder To MaxXBorder, MinYBorder To MaxYBorder)
-    FieldSize = (Abs(MaxXBorder - MinXBorder) + 1) * (Abs(MaxYBorder - MinYBorder) + 1) 'Calculates the size of our 2d array
-
+    
     'Load Data Commands
     Server_InitDataCommands
 
@@ -945,7 +901,11 @@ Dim LoopC As Long
     Load_Quests
 
     '*** Listen ***
-    LocalSoxID = Sox.Listen(Var_Get(SIniPath & "Server.ini", "INIT", "IP"), 10200)
+    If DEBUG_PacketFlood Then
+        LocalSoxID = Sox.Listen("127.0.0.1", 10200)
+    Else
+        LocalSoxID = Sox.Listen(Var_Get(ServerDataPath & "Server.ini", "INIT", "IP"), 10200)
+    End If
     Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
 
     '*** Misc ***

@@ -146,7 +146,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
 
     'Check the HP Percent
     If LastHPPercent <> CByte((ModStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
-        LastHPPercent = (ModStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100
+        LastHPPercent = CByte((ModStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_CharHP
         ConBuf.Put_Byte LastHPPercent
@@ -155,8 +155,8 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     End If
 
     'Check the MP Percent
-    If LastMPPercent <> (ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100 Then
-        LastMPPercent = (ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100
+    If LastMPPercent <> CByte(ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100 Then
+        LastMPPercent = CByte(ModStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_CharMP
         ConBuf.Put_Byte LastMPPercent

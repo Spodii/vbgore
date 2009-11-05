@@ -1927,8 +1927,8 @@ End Sub
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     
     Cancel = 1
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "SETTILE", "X", frmSetTile.Left
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "SETTILE", "Y", frmSetTile.Top
+    Engine_Var_Write Data2Path & "MapEditor.ini", "SETTILE", "X", frmSetTile.Left
+    Engine_Var_Write Data2Path & "MapEditor.ini", "SETTILE", "Y", frmSetTile.Top
     HideFrmSetTile
     
 End Sub
@@ -1995,7 +1995,8 @@ Dim TempRect As RECT
 Dim i As Long
 Dim j As Byte
 On Error GoTo ErrOut
-
+    
+    'Check for a valid light value
     i = Val(LightTxt(Index).Text)
 
     DrawPreview

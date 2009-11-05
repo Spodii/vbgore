@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.1            ************
+'************            Official Release: Version 0.1.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "Declares"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/modules.php?name=Content&pa=showpage&pid=11  **
+'**        http://www.vbgore.com/en/index.php?title=Donate                    **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        create tutorials for the Knowledge Base. :)                        **
-'**  *Ads - Advertisements have been placed on the site for those who can     **
-'**        not or do not want to donate. Not donating is understandable - not **
-'**        everyone has access to credit cards / paypal or spair money laying **
-'**        around. These ads allow for a free way for you to help out the     **
-'**        site. Those who do donate have the option to hide/remove the ads.  **
+'**        help expend the wiki pages!                                        **
+'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
+'**        page or a link to vbGORE in a forum you visit, every link helps    **
+'**        spread the word of vbGORE's existance! Buttons and banners for     **
+'**        linking to vbGORE can be found on the following page:              **
+'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -75,11 +75,9 @@ Attribute VB_Name = "Declares"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
 '** Game Programming Wiki (All community): Help on many different subjects    **
 '**   http://wwww.gpwiki.org/                                                 **
-'** ORE Maraxus's Edition (Maraxus): Used the map editor from this project    **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'** Big thanks goes to Van, Nex666 and ChAsE01!                               **
 '**                                                                           **
 '** If you feel you belong in these credits, please contact Spodi (above).    **
 '*******************************************************************************
@@ -87,12 +85,12 @@ Attribute VB_Name = "Declares"
 
 Option Explicit
 
-
 '********** Debug/Display Settings ************
 'These are your key constants - reccomended you turn off ALL debug constants before
 ' compiling your code for public usage just speed reasons
 
 'These two are mostly used for checking to make sure the encryption works
+Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
 Public Const DEBUG_PrintPacket_In As Boolean = False     'Shows packets coming in in chat box
 Public Const DEBUG_PrintPacket_Out As Boolean = False    'Shows packets going out in chat box
 
@@ -253,6 +251,7 @@ Public Type DataCode
     Server_Ping As Byte
     Server_Help As Byte
     Server_Disconnect As Byte
+    Server_Connect As Byte
     Map_LoadMap As Byte                 'Load Map - "SCM"
     Map_DoneLoadingMap As Byte          'Done Loading Map - "DLM"
     Map_RequestUpdate As Byte           'Request Map Update - "RMU"
@@ -345,6 +344,7 @@ Public UserName As String
 Public Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 285  Code: 0  Total: 285 Lines
 ':) CommentOnly: 72 (25.3%)  Commented: 45 (15.8%)  Empty: 18 (6.3%)  Max Logic Depth: 1

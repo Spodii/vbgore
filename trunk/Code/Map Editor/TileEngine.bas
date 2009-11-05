@@ -228,14 +228,6 @@ Public Type DamageTxt
 End Type
 
 '********** Public VARS ***********
-'Paths
-Private GrhPath As String
-Public GrhMapPath As String
-Public IniPath As String
-Public Ini2Path As String
-Public MapPath As String
-Public MapEXPath As String
-Public SoundPath As String
 
 'Where the map borders are.. Set during load
 Public MinXBorder As Byte
@@ -850,25 +842,25 @@ Sub Engine_Init_BodyData()
 Dim LoopC As Long
 'Get number of bodies
 
-    NumBodies = CInt(Engine_Var_Get(IniPath & "Body.dat", "INIT", "NumBodies"))
+    NumBodies = CInt(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
     'Resize array
     ReDim BodyData(0 To NumBodies) As BodyData
     'Fill list
     For LoopC = 1 To NumBodies
-        Engine_Init_Grh BodyData(LoopC).Walk(1), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Walk1")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(2), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Walk2")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(3), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Walk3")), 0
-        Engine_Init_Grh BodyData(LoopC).Walk(4), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Walk4")), 0
+        Engine_Init_Grh BodyData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk1")), 0
+        Engine_Init_Grh BodyData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk2")), 0
+        Engine_Init_Grh BodyData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk3")), 0
+        Engine_Init_Grh BodyData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Walk4")), 0
         BodyData(LoopC).Walk(5) = BodyData(LoopC).Walk(1)
         BodyData(LoopC).Walk(6) = BodyData(LoopC).Walk(2)
         BodyData(LoopC).Walk(7) = BodyData(LoopC).Walk(3)
         BodyData(LoopC).Walk(8) = BodyData(LoopC).Walk(4)
-        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "HeadOffsetY"))
-        Engine_Init_Grh BodyData(LoopC).Attack(1), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Attack1")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(2), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Attack2")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(3), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Attack3")), 1
-        Engine_Init_Grh BodyData(LoopC).Attack(4), CInt(Engine_Var_Get(IniPath & "Body.dat", "Body" & LoopC, "Attack4")), 1
+        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "HeadOffsetY"))
+        Engine_Init_Grh BodyData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack1")), 1
+        Engine_Init_Grh BodyData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack2")), 1
+        Engine_Init_Grh BodyData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack3")), 1
+        Engine_Init_Grh BodyData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Body.dat", "Body" & LoopC, "Attack4")), 1
         BodyData(LoopC).Attack(5) = BodyData(LoopC).Attack(1)
         BodyData(LoopC).Attack(6) = BodyData(LoopC).Attack(2)
         BodyData(LoopC).Attack(7) = BodyData(LoopC).Attack(3)
@@ -957,13 +949,13 @@ Dim Frame As Long
 
     'Get Number of Graphics
     GrhPath = App.Path & "\Grh\"
-    NumGrhs = CInt(Engine_Var_Get(IniPath & "Grh.ini", "INIT", "NumGrhs"))
+    NumGrhs = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhs"))
     
     'Resize arrays
     ReDim GrhData(1 To NumGrhs) As GrhData
     
     'Open files
-    Open IniPath & "Grh.dat" For Binary As #1
+    Open DataPath & "Grh.dat" For Binary As #1
     Seek #1, 1
     
     'Fill Grh List
@@ -1046,13 +1038,13 @@ Dim LoopC As Long
 Dim i As Integer
 'Get Number of hairs
 
-    NumHairs = CInt(Engine_Var_Get(IniPath & "Hair.dat", "INIT", "NumHairs"))
+    NumHairs = CInt(Engine_Var_Get(DataPath & "Hair.dat", "INIT", "NumHairs"))
     'Resize array
     ReDim HairData(0 To NumHairs) As HairData
     'Fill List
     For LoopC = 1 To NumHairs
         For i = 1 To 8
-            Engine_Init_Grh HairData(LoopC).Hair(i), CInt(Engine_Var_Get(IniPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
+            Engine_Init_Grh HairData(LoopC).Hair(i), CInt(Engine_Var_Get(DataPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
         Next i
     Next LoopC
 
@@ -1068,16 +1060,16 @@ Dim LoopC As Long
 Dim i As Integer
 'Get Number of heads
 
-    NumHeads = CInt(Engine_Var_Get(IniPath & "Head.dat", "INIT", "NumHeads"))
+    NumHeads = CInt(Engine_Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
     'Resize array
     ReDim HeadData(0 To NumHeads) As HeadData
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(IniPath & "Head.dat", Str$(LoopC), "h" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(IniPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(IniPath & "Head.dat", Str$(LoopC), "ah" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(IniPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "h" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ah" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
         Next i
     Next LoopC
 
@@ -1090,7 +1082,7 @@ Sub Engine_Init_MapData()
 '*****************************************************************
 'Get Number of Maps
 
-    NumMaps = CInt(Engine_Var_Get(IniPath & "Map.dat", "INIT", "NumMaps"))
+    NumMaps = CInt(Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
 
 End Sub
 
@@ -1104,7 +1096,7 @@ Sub Engine_Init_ParticleEngine()
 Dim i As Byte
 
     'Set the particles texture
-    NumEffects = Engine_Var_Get(IniPath & "Game.ini", "INIT", "NumEffects")
+    NumEffects = Engine_Var_Get(DataPath & "Game.ini", "INIT", "NumEffects")
     ReDim Effect(1 To NumEffects)
     
     'Update effects list
@@ -1189,7 +1181,7 @@ Dim s As String
         s = s & Chr$(i)
     Next i
     lngTextHeight = Engine_GetTextSize(s).Y
-    SoundPath = Engine_Var_Get(IniPath & "Game.ini", "INIT", "SoundPath")
+    SfxPath = Engine_Var_Get(DataPath & "Game.ini", "INIT", "SoundPath")
 
     'Fill startup variables
     DisplayFormhWnd = setDisplayFormhWnd
@@ -1218,7 +1210,7 @@ Dim s As String
     ScrollPixelsPerFrameY = 24
 
     'Set the array sizes by the number of graphic files
-    NumGrhFiles = CInt(Engine_Var_Get(IniPath & "Grh.ini", "INIT", "NumGrhFiles"))
+    NumGrhFiles = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
     ReDim SurfaceDB(1 To NumGrhFiles)
     ReDim SurfaceSize(1 To NumGrhFiles)
     ReDim SurfaceTimer(1 To NumGrhFiles)
@@ -1311,29 +1303,29 @@ Sub Engine_Init_WeaponData()
 Dim LoopC As Long
 'Get number of weapons
 
-    NumWeapons = CInt(Engine_Var_Get(IniPath & "Weapon.dat", "INIT", "NumWeapons"))
+    NumWeapons = CInt(Engine_Var_Get(DataPath & "Weapon.dat", "INIT", "NumWeapons"))
     'Resize array
     ReDim WeaponData(0 To NumWeapons) As WeaponData
     'Fill listn
     For LoopC = 1 To NumWeapons
-        Engine_Init_Grh WeaponData(LoopC).Walk(1), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(2), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(3), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(4), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(5), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
-        WeaponData(LoopC).WeaponOffset.X = CLng(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetX"))
-        WeaponData(LoopC).WeaponOffset.Y = CLng(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetY"))
-        Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(4), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(5), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(6), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(7), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(8), CInt(Engine_Var_Get(IniPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
+        Engine_Init_Grh WeaponData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
+        WeaponData(LoopC).WeaponOffset.X = CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetX"))
+        WeaponData(LoopC).WeaponOffset.Y = CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetY"))
+        Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
     Next LoopC
 
 End Sub
@@ -2890,7 +2882,7 @@ Public Sub Engine_SortIntArray(TheArray() As Integer, TheIndex() As Integer, ByV
 Dim s(1 To 64) As Integer   'Stack space for pending Subarrays
 Dim indxt As Long   'Stored index
 Dim swp As Integer  'Swap variable
-Dim f As Integer    'Subarray Minimum
+Dim F As Integer    'Subarray Minimum
 Dim g As Integer    'Subarray Maximum
 Dim h As Integer    'Subarray Middle
 Dim i As Integer    'Subarray Low  Scan Index
@@ -2899,16 +2891,16 @@ Dim t As Integer    'Stack pointer
 
 'Set the array boundries to f and g
 
-    f = LowerBound
+    F = LowerBound
     g = UpperBound
 
     'Start the loop
     Do
 
-        For j = f + 1 To g
+        For j = F + 1 To g
             indxt = TheIndex(j)
             swp = TheArray(indxt)
-            For i = j - 1 To f Step -1
+            For i = j - 1 To F Step -1
                 If TheArray(TheIndex(i)) <= swp Then Exit For
                 TheIndex(i + 1) = TheIndex(i)
             Next i
@@ -2920,7 +2912,7 @@ Dim t As Integer    'Stack pointer
 
         'Pop stack and begin new partitioning round
         g = s(t)
-        f = s(t - 1)
+        F = s(t - 1)
         t = t - 2
 
     Loop

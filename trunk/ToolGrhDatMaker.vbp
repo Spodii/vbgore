@@ -1,5 +1,6 @@
 Type=Exe
 Module=General; Code\GrhDatMaker\General.bas
+Module=FilePaths; Code\Common Code\FilePaths.bas
 Startup="Sub Main"
 HelpFile=""
 Title="GrhDatMaker"
@@ -10,7 +11,7 @@ HelpContextID="0"
 CompatibleMode="0"
 MajorVer=0
 MinorVer=1
-RevisionVer=1
+RevisionVer=2
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"

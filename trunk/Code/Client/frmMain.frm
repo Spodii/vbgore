@@ -42,7 +42,7 @@ Begin VB.Form frmMain
    End
    Begin VB.Timer PingTmr 
       Enabled         =   0   'False
-      Interval        =   1000
+      Interval        =   2000
       Left            =   600
       Top             =   120
    End
@@ -760,7 +760,7 @@ End Sub
 
 Private Sub Sox_OnClose(inSox As Long)
 
-    IsUnloading = False
+    If SocketOpen = 1 Then IsUnloading = 1
 
 End Sub
 
@@ -809,6 +809,14 @@ Static x As Long
     Set rBuf = New DataBuffer
     rBuf.Set_Buffer inData
     BufUBound = UBound(inData)
+    
+    'Uncomment this to see packets going in to the client
+    'Dim i As Long
+    'Dim S As String
+    'For i = LBound(inData) To UBound(inData)
+    '    S = S & inData(i) & " "
+    'Next i
+    'Debug.Print S
 
     Do
         'Get the Command ID
@@ -818,8 +826,10 @@ Static x As Long
         With DataCode
             Select Case CommandID
             Case 0
-                x = x + 1
-                Debug.Print "---Blank Byte #" & x
+                If DEBUG_PrintPacketReadErrors Then
+                    x = x + 1
+                    Debug.Print "---Blank Byte #" & x & " - Previous CommandID was " & CommandID
+                End If
 
             Case .Comm_Talk: Data_Comm_Talk rBuf
             Case .Comm_UMsgbox: Data_Comm_UMsgBox rBuf
@@ -837,6 +847,7 @@ Static x As Long
             Case .Server_ChangeChar: Data_Server_ChangeChar rBuf
             Case .Server_CharHP: Data_Server_CharHP rBuf
             Case .Server_CharMP: Data_Server_CharMP rBuf
+            Case .Server_Connect: Data_Server_Connect
             Case .Server_Disconnect: Data_Server_Disconnect
             Case .Server_EraseChar: Data_Server_EraseChar rBuf
             Case .Server_EraseObject: Data_Server_EraseObject rBuf
@@ -875,66 +886,17 @@ Static x As Long
             Case .User_Target: Data_User_Target rBuf
             Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
 
-                'Case Else: Exit Sub 'Something went wrong or we hit the end, either way, RUN!!!!
+            Case Else
+                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " cause premature packet handling abortion!"
+                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
 
             End Select
         End With
 
         'Exit when the buffer runs out
-        If rBuf.Get_ReadPos >= BufUBound Then Exit Do
+        If rBuf.Get_ReadPos > BufUBound Then Exit Do
 
     Loop
-
-End Sub
-
-Private Sub Sox_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
-
-    If SocketOpen Then Exit Sub
-    If Sox.State(SoxID) = soxIdle Then
-        SocketOpen = 1
-        'Pre-saved character
-        If SendNewChar = False Then
-            sndBuf.Put_Byte DataCode.User_Login
-            sndBuf.Put_String UserName
-            sndBuf.Put_String UserPassword
-        Else
-            'New character
-            sndBuf.Put_Byte DataCode.User_NewLogin
-            sndBuf.Put_String UserName
-            sndBuf.Put_String UserPassword
-        End If
-        Data_Send
-
-        'Save Game.ini
-        If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
-        Engine_Var_Write IniPath & "Game.ini", "INIT", "Name", UserName
-        Engine_Var_Write IniPath & "Game.ini", "INIT", "Password", UserPassword
-
-        'Load user config
-        Game_Config_Load
-
-        'Unload the connect form
-        Unload frmConnect
-
-        'Load main form
-        frmMain.Visible = True
-        frmMain.Show
-        frmMain.SetFocus
-
-        'Load the engine
-        Engine_Init_TileEngine frmMain.hWnd, 32, 32, 18, 25, 10, 0.011
-
-        'Get the device
-        frmMain.SetFocus
-        DIDevice.Acquire
-
-        'Init the Ping timer
-        PingTmr.Enabled = True
-
-        'Send the data
-        Data_Send
-
-    End If
 
 End Sub
 
@@ -954,3 +916,33 @@ End Function
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 4  Code: 837  Total: 841 Lines
 ':) CommentOnly: 51 (6.1%)  Commented: 2 (0.2%)  Empty: 77 (9.2%)  Max Logic Depth: 7
+Private Sub Sox_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
+    
+    If inState = soxConnecting Then
+        If SocketOpen = 0 Then
+    
+            'Pre-saved character
+            If SendNewChar = False Then
+                sndBuf.Put_Byte DataCode.User_Login
+                sndBuf.Put_String UserName
+                sndBuf.Put_String UserPassword
+            Else
+                'New character
+                sndBuf.Put_Byte DataCode.User_NewLogin
+                sndBuf.Put_String UserName
+                sndBuf.Put_String UserPassword
+            End If
+        
+            'Save Game.ini
+            If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+            
+            'Send the data
+            Data_Send
+            DoEvents
+    
+        End If
+    End If
+
+End Sub

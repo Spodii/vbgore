@@ -292,7 +292,7 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
     'Cast on the target
     If TargetType = CharType_PC Then
         UserList(TargetIndex).Stats.ModStat(SID.MinHP) = UserList(TargetIndex).Stats.ModStat(SID.MinHP) + UserList(CasterIndex).Stats.ModStat(SID.DefensiveMag)
-    ElseIf TargetType = CharType_PC Then
+    ElseIf TargetType = CharType_NPC Then
         NPCList(TargetIndex).ModStat(SID.MinHP) = NPCList(TargetIndex).ModStat(SID.MinHP) + NPCList(CasterIndex).ModStat(SID.DefensiveMag)
     End If
 

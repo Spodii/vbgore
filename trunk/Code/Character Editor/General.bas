@@ -3,6 +3,8 @@ Option Explicit
 
 Public Sub Main()
 
+    InitFilePaths
+
     'Load the user
     If Command$ <> "" Then
         FilePath = Mid$(Command$, 2, Len(Command$) - 2) 'Retrieve the filepath from Command$ and crop off the "'s

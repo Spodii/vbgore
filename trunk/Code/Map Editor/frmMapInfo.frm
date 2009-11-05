@@ -158,8 +158,8 @@ Option Explicit
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     Cancel = 1
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "MAPINFO", "X", Me.Left
-    Engine_Var_Write Ini2Path & "MapEditor.ini", "MAPINFO", "Y", Me.Top
+    Engine_Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "X", Me.Left
+    Engine_Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "Y", Me.Top
     HideFrmMapInfo
 
 End Sub

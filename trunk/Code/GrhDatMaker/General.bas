@@ -9,7 +9,7 @@ Attribute VB_Name = "General"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.1            ************
+'************            Official Release: Version 0.1.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "General"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/modules.php?name=Content&pa=showpage&pid=11  **
+'**        http://www.vbgore.com/en/index.php?title=Donate                    **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        create tutorials for the Knowledge Base. :)                        **
-'**  *Ads - Advertisements have been placed on the site for those who can     **
-'**        not or do not want to donate. Not donating is understandable - not **
-'**        everyone has access to credit cards / paypal or spair money laying **
-'**        around. These ads allow for a free way for you to help out the     **
-'**        site. Those who do donate have the option to hide/remove the ads.  **
+'**        help expend the wiki pages!                                        **
+'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
+'**        page or a link to vbGORE in a forum you visit, every link helps    **
+'**        spread the word of vbGORE's existance! Buttons and banners for     **
+'**        linking to vbGORE can be found on the following page:              **
+'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -75,20 +75,15 @@ Attribute VB_Name = "General"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
 '** Game Programming Wiki (All community): Help on many different subjects    **
 '**   http://wwww.gpwiki.org/                                                 **
-'** ORE Maraxus's Edition (Maraxus): Used the map editor from this project    **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'** Big thanks goes to Van, Nex666 and ChAsE01!                               **
 '**                                                                           **
 '** If you feel you belong in these credits, please contact Spodi (above).    **
 '*******************************************************************************
 '*******************************************************************************
 
 Option Explicit
-
-Private IniPath As String
-Private Ini2Path As String
 
 Private Declare Function writeprivateprofilestring Lib "Kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Private Declare Function getprivateprofilestring Lib "Kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
@@ -151,24 +146,19 @@ Dim NumRawFile As Long
 Dim LastFile As Long
 Dim Lines As Integer
 
-'On Error GoTo ErrorHandler
-
-'Set ini path to app path
-
-    IniPath = App.Path & "\Data\"
-    Ini2Path = App.Path & "\Data2\"
+    InitFilePaths
 
     'Delete any old file
-    If FileExist(IniPath & "grh.dat", vbNormal) = True Then Kill IniPath & "grh.dat"
+    If FileExist(DataPath & "grh.dat", vbNormal) = True Then Kill DataPath & "grh.dat"
 
     'Open new file
-    Open IniPath & "grh.dat" For Binary As #1
+    Open DataPath & "grh.dat" For Binary As #1
     Seek #1, 1
 
-    RawFile = Dir$(Ini2Path & "grh*.raw", vbArchive)
+    RawFile = Dir$(Data2Path & "grh*.raw", vbArchive)
 
     Do While RawFile <> ""
-        Open Ini2Path & RawFile For Input As #2
+        Open Data2Path & RawFile For Input As #2
 
         'Set the buffer's initial size
         ReDim GrhBuffer(1 To 65535)
@@ -205,7 +195,7 @@ Dim Lines As Integer
 
         Close #2
 
-        Open Ini2Path & RawFile For Input As #2
+        Open Data2Path & RawFile For Input As #2
 
         'Clear variables
         sX = 0
@@ -286,22 +276,21 @@ Dim Lines As Integer
     Loop
     Close #1
 
-    WriteVar IniPath & "grh.ini", "INIT", "NumGrhFiles", CStr(LastFile)
-    WriteVar IniPath & "grh.ini", "INIT", "NumGrhs", CStr(LastGrh)
+    WriteVar DataPath & "grh.ini", "INIT", "NumGrhFiles", CStr(LastFile)
+    WriteVar DataPath & "grh.ini", "INIT", "NumGrhs", CStr(LastGrh)
 
     'Display finish box
     MsgBox "Finished.", vbOKOnly
 
     'Unload
     End
-
+    
 Exit Sub
-
 ErrorHandler:
-    Close #1
-    Close #2
 
-    MsgBox "Error while loading the grhX.raw! Stopped at GRH number: " & Grh
+    Close #2
+    Close #1
+    MsgBox "Error on Grh" & Grh & "!", vbOKOnly Or vbCritical
 
 End Sub
 

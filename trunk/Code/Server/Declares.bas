@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.1.1            ************
+'************            Official Release: Version 0.1.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "Declares"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/modules.php?name=Content&pa=showpage&pid=11  **
+'**        http://www.vbgore.com/en/index.php?title=Donate                    **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
-'**        create tutorials for the Knowledge Base. :)                        **
-'**  *Ads - Advertisements have been placed on the site for those who can     **
-'**        not or do not want to donate. Not donating is understandable - not **
-'**        everyone has access to credit cards / paypal or spair money laying **
-'**        around. These ads allow for a free way for you to help out the     **
-'**        site. Those who do donate have the option to hide/remove the ads.  **
+'**        help expend the wiki pages!                                        **
+'**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
+'**        page or a link to vbGORE in a forum you visit, every link helps    **
+'**        spread the word of vbGORE's existance! Buttons and banners for     **
+'**        linking to vbGORE can be found on the following page:              **
+'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -75,11 +75,9 @@ Attribute VB_Name = "Declares"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
 '** Game Programming Wiki (All community): Help on many different subjects    **
 '**   http://wwww.gpwiki.org/                                                 **
-'** ORE Maraxus's Edition (Maraxus): Used the map editor from this project    **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
-'** Big thanks goes to Van, Nex666 and ChAsE01!                               **
 '**                                                                           **
 '** If you feel you belong in these credits, please contact Spodi (above).    **
 '*******************************************************************************
@@ -92,8 +90,8 @@ Option Explicit
 ' compiling your code for public usage just speed reasons
 
 'These two are mostly used for checking to make sure the encryption works
-Public Const DEBUG_PrintPacket_In As Boolean = False     'Shows packets coming in in frmMain.txStatus
-Public Const DEBUG_PrintPacket_Out As Boolean = False    'Shows packets going out in frmMain.txStatus
+Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
+Public Const DEBUG_PacketFlood As Boolean = False           'Set to true when using ToolPacketSender
 
 '********** Emoticons ************
 Public Const NumEmotes As Byte = 10
@@ -287,7 +285,7 @@ End Type
 
 Type WorldPos
     Map As Integer  'Map
-    X As Integer    'X coordinate
+    x As Integer    'X coordinate
     Y As Integer    'Y coordinate
 End Type
 
@@ -517,13 +515,6 @@ End Type
 
 '********** Public VARS ***********
 
-'Paths
-Public IniPath As String
-Public SIniPath As String
-Public CharPath As String
-Public MapPath As String
-Public MapEXPath As String
-
 'Where the map borders are.. Set during load
 Public MinXBorder As Byte
 Public MaxXBorder As Byte
@@ -582,8 +573,8 @@ Public Type DataCode
     Server_EraseChar As Byte            'Erase Character From Map - "ERC"
     Server_MoveChar As Byte             'Move Character On Map - "MOC"
     Server_ChangeChar As Byte           'Change Character Apperance - "CHC"
-    Server_Obj_Makeect As Byte           'Create An Object On Map - "MOB"
-    Server_Obj_Eraseect As Byte          'Erase An Object On Map - "EOB"
+    Server_MakeObject As Byte           'Create An Object On Map - "MOB"
+    Server_EraseObject As Byte          'Erase An Object On Map - "EOB"
     Server_PlaySound As Byte            'Play A Sound On Client - "PLW"
     Server_Who As Byte                  'Who Is Currently Online - "/WHO"
     Server_CharHP As Byte
@@ -599,6 +590,7 @@ Public Type DataCode
     Server_Ping As Byte
     Server_Help As Byte
     Server_Disconnect As Byte
+    Server_Connect As Byte
     Map_LoadMap As Byte                 'Load Map - "SCM"
     Map_DoneLoadingMap As Byte          'Done Loading Map - "DLM"
     Map_RequestUpdate As Byte           'Request Map Update - "RMU"
@@ -644,7 +636,7 @@ Public Type DataCode
     Dev_SetObject As Byte
     Dev_SetMapInfo As Byte
     Dev_UpdateTile As Byte
-    Dev_Save_Map As Byte
+    Dev_SaveMap As Byte
     Dev_SetMode As Byte
     Dev_SetTile As Byte
     GM_Approach As Byte

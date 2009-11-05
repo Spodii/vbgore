@@ -1207,11 +1207,11 @@ Dim TempNum As Integer
         .Filter = "NPCs|*.npc"
         .DialogTitle = "Load"
         .FileName = ""
-        .InitDir = NPCPath
+        .InitDir = NPCsPath
         .Flags = cdlOFNFileMustExist
         .ShowOpen
     End With
-    FileName = Right$(frmMain.CD.FileName, Len(frmMain.CD.FileName) - Len(NPCPath))
+    FileName = Right$(frmMain.CD.FileName, Len(frmMain.CD.FileName) - Len(NPCsPath))
     Editor_OpenNPC Val(FileName)
     
 ErrOut:
@@ -1283,7 +1283,7 @@ Dim RetNumber As Integer
     If RetNumber = 0 Then Exit Sub
     
     'Check for overwrite
-    If Engine_FileExist(NPCPath & RetNumber & ".npc", vbNormal) Then
+    If Engine_FileExist(NPCsPath & RetNumber & ".npc", vbNormal) Then
         If MsgBox("NPC number " & RetNumber & " already exists, are you sure you wish to overwrite it?", vbYesNo) = vbNo Then Exit Sub
     End If
     
