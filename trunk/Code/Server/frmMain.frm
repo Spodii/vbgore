@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
-Object = "{FFB2E677-6800-4C2B-BB59-BA978B9A39D5}#1.0#0"; "GOREsockServer.ocx"
+Object = "{57B1A102-EC84-4617-AC39-415819BFEC5F}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -264,7 +264,8 @@ Dim i As Long
     
     'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
     Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
-        "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102,109,111,112,113,114,116,119,121,123,125,127"
+        "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102,109,111,112,113,114," & _
+        "116,119,121,123,125,127,130,131,132"
     
     'Make the server temp path
     MakeSureDirectoryPathExists ServerTempPath
@@ -604,7 +605,7 @@ Dim i As Byte
         With DataCode
         
             'Reset idle counter
-            If CommandID <> .Server_PTD Then UserList(Index).Counters.IdleCount = timeGetTime
+            UserList(Index).Counters.IdleCount = timeGetTime
 
             Select Case CommandID
             
@@ -635,7 +636,6 @@ Dim i As Byte
             Case .Server_MailDelete: Data_Server_MailDelete rBuf, Index
             Case .Server_MailItemTake: Data_Server_MailItemTake rBuf, Index
             Case .Server_MailMessage: Data_Server_MailMessage rBuf, Index
-            Case .Server_PTD: Data_Server_PTD Index
             Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf, Index
             Case .Server_Who: Data_Server_Who Index
 
@@ -672,7 +672,10 @@ Dim i As Byte
             Case .User_Rotate: Data_User_Rotate rBuf, Index
             Case .User_StartQuest: Data_User_StartQuest Index
             Case .User_Target: Data_User_Target rBuf, Index
+            Case .User_Trade_Accept: Data_User_Trade_Accept Index
             Case .User_Trade_BuyFromNPC: Data_User_Trade_BuyFromNPC rBuf, Index
+            Case .User_Trade_Finish: Data_User_Trade_Finish Index
+            Case .User_Trade_Cancel: Data_User_Trade_Cancel Index
             Case .User_Trade_RemoveItem: Data_User_Trade_RemoveItem rBuf, Index
             Case .User_Trade_SellToNPC: Data_User_Trade_SellToNPC rBuf, Index
             Case .User_Trade_Trade: Data_User_Trade_Trade rBuf, Index

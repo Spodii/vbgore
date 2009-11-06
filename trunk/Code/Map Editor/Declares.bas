@@ -38,7 +38,7 @@ Public ServerID As Byte
 
 'These values aren't used by the map editor, so ignore them
 Public Const ScreenWidth As Long = 800
-Public Const ScreenHeight As Long = 600
+Public Const ScreenHeight As Long = 632
 
 '********** Map display variables **********
 Public WeatherChkValue As Byte

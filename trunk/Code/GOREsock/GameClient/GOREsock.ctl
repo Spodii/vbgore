@@ -29,16 +29,7 @@ Option Explicit
 'This is the maximum size of data we will handle at once
 'If there is more data then this, we won't get it, which can be very, very bad
 'This is only used for receiving, not sending!
-Private Const BufferSize As Long = 1024
-
-'This is the maximum number of connections allowed per IP
-'Change to 0 to remove the limit
-'This is intended for two things:
-' - Prevent DOS attack by socket connection flooding from a single computer
-' - Prevent multi-logging (not a recommended reason)
-'Note that multiple people may play that are on the same network, so try to keep this
-' value at a decent height for those people
-Private Const MaxConnectionsPerIP As Long = 5
+Private Const BufferSize As Long = 16384
 
 Private WindowhWnd As Long
 
@@ -153,7 +144,7 @@ Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal s As Long, add
 Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal s As Long, ByVal backlog As Long) As Long
 Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, Name As typSocketAddr, ByVal namelen As Long) As Long
 Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal s As Long, addr As typSocketAddr, addrlen As Long) As Long
-Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
+Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
 Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
 Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
 Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
@@ -163,8 +154,8 @@ Private Declare Function apiNToHS Lib "WS2_32" Alias "ntohs" (ByVal netshort As 
 Private Declare Function apiIPToNL Lib "WS2_32" Alias "inet_addr" (ByVal cp As String) As Long
 Private Declare Function apiNLToIP Lib "WS2_32" Alias "inet_ntoa" (ByVal inn As Long) As Long
 Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal s As Long, ByVal how As Long) As Long
-Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function apiLStrLen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long
 Private Declare Function apiLstrCpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Private Declare Sub apiCopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, pSrc As Any, ByVal ByteLen As Long)
@@ -843,7 +834,7 @@ Private Function WinSockEvent(ByVal lParam As Long) As Integer 'WSAGETSELECTEVEN
 
 End Function
 
-Public Function WndProc(ByVal hWnd As Long, ByVal uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Function WndProc(ByVal hwnd As Long, ByVal uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 
     Select Case uMsg
     Case soxSERVER
@@ -905,7 +896,7 @@ Public Function WndProc(ByVal hWnd As Long, ByVal uMsg As Long, ByVal wParam As 
             End If
         End Select
     Case Else
-        Let WndProc = apiCallWindowProc(Portal.WndProc, hWnd, uMsg, wParam, lParam)
+        Let WndProc = apiCallWindowProc(Portal.WndProc, hwnd, uMsg, wParam, lParam)
     End Select
 
 End Function
@@ -933,13 +924,13 @@ End Sub
 
 Private Sub UserControl_Initialize()
 
-    WindowhWnd = hWnd
+    WindowhWnd = hwnd
     If Not InIDE Then
         Set GOREsockClient = Me
         If apiWSAStartup(&H101, WSAData) = -1 Then
             Call MsgBox("WinSock failed to initialize properly - Error#: " & Err.LastDllError, vbApplicationModal + vbCritical, "Critical Error")  'Creates an 'application instance' and memory space in the WinSock DLL (MUST be cleaned up later)
         Else
-            Let Portal.WndProc = apiSetWindowLong(UserControl.hWnd, GWL_WndProc, AddressOf WindowProc)
+            Let Portal.WndProc = apiSetWindowLong(UserControl.hwnd, GWL_WndProc, AddressOf WindowProc)
             Let Portal.Sockets = -1
         End If
     Else

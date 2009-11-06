@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{CFFD2C69-2D50-4C10-A50C-89488104482B}#1.0#0"; "GOREsockClient.ocx"
+Object = "{A7F49F54-BFA7-4512-8AB6-604DADC34515}#1.0#0"; "GOREsockClient.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -32,16 +32,10 @@ Begin VB.Form frmMain
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin GOREsock.GOREsockClient GOREsock 
-      Left            =   1080
+      Left            =   600
       Top             =   120
       _ExtentX        =   847
       _ExtentY        =   847
-   End
-   Begin VB.Timer PTDTmr 
-      Enabled         =   0   'False
-      Interval        =   1000
-      Left            =   600
-      Top             =   120
    End
    Begin VB.Timer ShutdownTimer 
       Enabled         =   0   'False
@@ -113,7 +107,7 @@ Dim OldMousePos As POINTAPI
                 MousePosAdd.Y = (DevData(LoopC).lData * MouseSpeed)
                 MousePos.Y = MousePos.Y + MousePosAdd.Y
                 If MousePos.Y < 0 Then MousePos.Y = 0
-                If MousePos.Y > frmMain.ScaleHeight Then MousePos.Y = frmMain.ScaleHeight
+                If MousePos.Y > ScreenHeight Then MousePos.Y = ScreenHeight
             End If
             Moved = 1
 
@@ -223,13 +217,6 @@ Private Sub Form_Resize()
     
 End Sub
 
-Private Sub PTDTmr_Timer()
-
-    sndBuf.Put_Byte DataCode.Server_PTD
-    PTDSTime = timeGetTime
-
-End Sub
-
 Private Sub ShutdownTimer_Timer()
 Static FailedUnloads As Long
 
@@ -294,7 +281,7 @@ Static X As Long
     '    End If
     'Next i
     'Debug.Print s
-
+    
     Do
         'Get the Command ID
         CommandID = rBuf.Get_Byte
@@ -340,7 +327,6 @@ Static X As Long
             Case .Server_MakeProjectile: Data_Server_MakeProjectile rBuf
             Case .Server_Message: Data_Server_Message rBuf
             Case .Server_MoveChar: Data_Server_MoveChar rBuf
-            Case .Server_PTD: Data_Server_PTD
             Case .Server_PlaySound: Data_Server_PlaySound rBuf
             Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
             Case .Server_SendQuestInfo: Data_Server_SendQuestInfo rBuf
@@ -365,6 +351,8 @@ Static X As Long
             Case .User_SetInventorySlot: Data_User_SetInventorySlot rBuf
             Case .User_SetWeaponRange: Data_User_SetWeaponRange rBuf
             Case .User_Target: Data_User_Target rBuf
+            Case .User_Trade_Accept: Data_User_Trade_Accept rBuf
+            Case .User_Trade_Cancel: Data_User_Trade_Cancel
             Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
             Case .User_Trade_Trade: Data_User_Trade_Trade rBuf
             Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf

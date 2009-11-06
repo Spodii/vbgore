@@ -166,7 +166,7 @@ Dim PutSlot As Byte
     If UserList(UserIndex).Object(Slot).Amount <= 0 Then
         
         'User depotted all the items, so remove it from the inventory
-        If UserList(UserIndex).Object(Slot).Equipped Then User_RemoveInvItem UserIndex, Slot, 0
+        If UserList(UserIndex).Object(Slot).Equipped Then User_RemoveInvItem UserIndex, Slot
         
         'Remove the item
         UserList(UserIndex).Object(Slot).ObjIndex = 0
@@ -1086,6 +1086,10 @@ Dim TargetIndex As Integer
                 'Woot, they want to trade with eachother - isn't that CUTE!!! ^_^
                 TradeTable_Create UserIndex, TargetIndex
                 
+                'Clear the tradewith flags
+                UserList(UserIndex).flags.TradeWith = 0
+                UserList(TargetIndex).flags.TradeWith = 0
+                
             Else
             
                 'Send the trade request message
@@ -1137,6 +1141,17 @@ Dim Amount As Long
     
     'Invalid values handled by the sub
     TradeTable_UpdateSlot UserIndex, InvSlot, Amount
+
+End Sub
+
+Sub Data_User_Trade_Cancel(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User wants to cancel a trade
+'<>
+'*****************************************************************
+
+    TradeTable_Close UserList(UserIndex).flags.TradeTable
 
 End Sub
 
@@ -1287,6 +1302,7 @@ Dim tIndex As Integer
             'Send to the sndIndex
         Case ToIndex
             Log "Send ToIndex(" & sndIndex & "): " & ByteArrayToStr(sndData), PacketOut '//\\LOGLINE//\\
+            If sndIndex < 1 Then Exit Sub
             If sndIndex > LastUser Then Exit Sub
             If UserList(sndIndex).flags.UserLogged = 0 Then Exit Sub
             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
@@ -2955,7 +2971,7 @@ Dim Slot As Byte
     With UserList(UserIndex).Object(Slot)
     
         'Give the money
-        AddMoney = ObjData.Price(.ObjIndex) * 0.5 * Amount
+        AddMoney = ObjData.Value(.ObjIndex) * 0.5 * Amount
         UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + AddMoney
         ConBuf.PreAllocate 9 + Len(ObjData.Name(.ObjIndex))
         ConBuf.Put_Byte DataCode.Server_Message
@@ -2978,6 +2994,28 @@ Dim Slot As Byte
     
     'Update the inventory slot
     User_UpdateInv False, UserIndex, Slot
+
+End Sub
+
+Sub Data_User_Trade_Accept(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User accepts the trade
+'<>
+'*****************************************************************
+
+    TradeTable_Accept UserIndex
+
+End Sub
+
+Sub Data_User_Trade_Finish(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User wants to finish the trade
+'<>
+'*****************************************************************
+
+    TradeTable_RequestFinish UserIndex
 
 End Sub
 
@@ -3051,7 +3089,7 @@ Dim Slot As Byte
     PurchaseObj = NPCList(NPCIndex).VendItems(Slot).ObjIndex
     
     'Check that the user has enough money
-    If UserList(UserIndex).Stats.BaseStat(SID.Gold) < ObjData.Price(PurchaseObj) * Amount Then
+    If UserList(UserIndex).Stats.BaseStat(SID.Gold) < ObjData.Value(PurchaseObj) * Amount Then
         ConBuf.PreAllocate 5 + Len(ObjData.Name(PurchaseObj))
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 65
@@ -3091,7 +3129,7 @@ Dim Slot As Byte
     If UserList(UserIndex).Object(UserSlot).ObjIndex = 0 Then UserList(UserIndex).Object(UserSlot).ObjIndex = NPCList(NPCIndex).VendItems(Slot).ObjIndex
 
     'Take the user's money
-    UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) - (ObjData.Price(PurchaseObj) * Amount)
+    UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) - (ObjData.Value(PurchaseObj) * Amount)
 
     'Give the user the items
     UserList(UserIndex).Object(UserSlot).Amount = UserList(UserIndex).Object(UserSlot).Amount + Amount
@@ -3101,7 +3139,7 @@ Dim Slot As Byte
     ConBuf.Put_Byte 67
     ConBuf.Put_Integer Amount
     ConBuf.Put_String ObjData.Name(PurchaseObj)
-    ConBuf.Put_Long (ObjData.Price(PurchaseObj) * Amount)
+    ConBuf.Put_Long (ObjData.Value(PurchaseObj) * Amount)
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     'Update the user's inventory
@@ -3695,7 +3733,7 @@ Dim i As Byte
     DB_RS.Close
 
     'Load character information from file
-    Load_User UserList(UserIndex), strName
+    Load_User UserIndex, strName
     
     'Clear the idle and last packet counter
     UserList(UserIndex).Counters.IdleCount = timeGetTime
@@ -3832,8 +3870,9 @@ Dim i As Byte
     'Check for a valid body and head
     If Head <> 1 Then Exit Sub
     If Body <> 1 Then Exit Sub
-    If Class < 1 Then Exit Sub
-    If Class > 3 Then Exit Sub
+    
+    'Check for valid starting classes
+    If Class <> ClassID.Mage And Class <> ClassID.Warrior And Class <> ClassID.Rogue Then Exit Sub
 
     'Check for valid name and password
     If Len(Name) > 10 Then
@@ -3975,20 +4014,5 @@ Dim i As Byte
     User_Connect UserIndex, Name, Password, True
     
 ErrOut:
-
-End Sub
-
-Sub Data_Server_PTD(ByVal UserIndex As Integer)
-
-'*****************************************************************
-'We got pinged on the packets! This will return the time it takes for the packets to make a cycle (not the same as ping!)
-'<>
-'*****************************************************************
-
-    Log "Call Data_Server_PTD(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
-
-    ConBuf.PreAllocate 1
-    ConBuf.Put_Byte DataCode.Server_PTD
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
 
 End Sub

@@ -227,11 +227,11 @@ Public Property Get ProjectileRotateSpeed(ByVal Index As Integer) As Byte
     End If
 End Property
 
-Public Property Get Price(ByVal Index As Integer) As Long
+Public Property Get Value(ByVal Index As Integer) As Long
     If Index > 0 Then
         If Index <= MaxDatas Then
             ReadyObj Index
-            Price = cData(ObjIndexToDataIndex(Index)).Price
+            Value = cData(ObjIndexToDataIndex(Index)).Value
         End If
     End If
 End Property

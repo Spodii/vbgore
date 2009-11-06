@@ -1,4 +1,5 @@
 VERSION 5.00
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "Comdlg32.ocx"
 Begin VB.Form frmMain 
    BorderStyle     =   1  'Fixed Single
    Caption         =   "File Processor - Bulk file compressing and encrypting"
@@ -524,6 +525,13 @@ Begin VB.Form frmMain
          Width           =   840
       End
    End
+   Begin MSComDlg.CommonDialog CD 
+      Left            =   0
+      Top             =   0
+      _ExtentX        =   847
+      _ExtentY        =   847
+      _Version        =   393216
+   End
 End
 Attribute VB_Name = "frmMain"
 Attribute VB_GlobalNameSpace = False
@@ -538,7 +546,7 @@ Private Const SaveKey As String = "fdkl@$09123kjdflqaqweo!013"
 Private Const SEP As String = "-----------------------------------------------------------------------------------"
 Private Const DONE As String = "All files have been processed! ^_^"
 
-Private Const NumAlgorithms As Long = 14
+Private Const NumAlgorithms As Long = 13
 Private Enum Algorithms
     eNone = 0
     eRLE = 1
@@ -546,16 +554,18 @@ Private Enum Algorithms
     eLZMA = 3
     ePAQ8l = 4
     eDeflate64 = 5
-    eXOR = 6
-    eRC4 = 7
-    eDES = 8
+    eMonkeyAudio = 6
+    eXOR = 7
+    eRC4 = 8
     eGOST = 9
     eSkipjack = 10
-    eTEA = 11
-    eTwofish = 12
-    eBlowfish = 13
-    eCryptAPI = 14
+    eTwofish = 11
+    eBlowfish = 12
+    eCryptAPI = 13
 End Enum
+#If False Then
+Private eNone, eRLE, eRLE_Looped, eLZMA, ePAQ8l, eDeflate64, eMonkeyAudio, eXOR, eRC4, eGOST, eSkipjack, eTwofish, eBlowfish, eCryptAPI
+#End If
 
 Private Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
@@ -588,6 +598,23 @@ Private Sub CompBtn_Click()
 
 End Sub
 
+Private Sub LockEditing(ByVal eEnabled As Boolean)
+Dim i As Long
+
+    For i = 0 To AlgCmb.UBound
+        ExTxt(i).Enabled = eEnabled
+        SubTxt(i).Enabled = eEnabled
+        AlgCmb(i).Enabled = eEnabled
+        AExTxt(i).Enabled = eEnabled
+        KeyTxt(i).Enabled = eEnabled
+    Next i
+    DirTxt.Enabled = eEnabled
+    KillSourceChk.Enabled = eEnabled
+    CompBtn.Enabled = eEnabled
+    DecompBtn.Enabled = eEnabled
+
+End Sub
+
 Private Sub RunMainLoop(ByVal Reverse As Boolean)
 Dim LastPercent As Single
 Dim StartTime As Long
@@ -597,8 +624,10 @@ Dim ListLoop As Long
 Dim FileLoop As Long
 Dim s As String
 
+    LockEditing False
+
     'Loop through all the algorithms in the list
-    For ListLoop = 0 To AlgCmb.ubound
+    For ListLoop = 0 To AlgCmb.UBound
     
         'Check if the algorithm is used
         If AlgCmb(ListLoop).ListIndex <> eNone Then
@@ -624,6 +653,7 @@ Dim s As String
                 Log "Processing files..."
                 
                 LastPercent = -1
+                DoEvents
                 StartTime = timeGetTime
                 
                 'Loop through all the files found
@@ -657,9 +687,19 @@ Dim s As String
                         SaveFile ChangeFileExtension(FileList(FileLoop), ExTxt(ListLoop).Text), FileData()
                     End If
                     
-                    'Delete the source file
+                    'Delete the source file only if dest <> source
                     If KillSourceChk.Value = 1 Then
-                        If Dir$(FileList(FileLoop), vbNormal) <> vbNullString Then Kill FileList(FileLoop)
+                        If Dir$(FileList(FileLoop), vbNormal) <> vbNullString Then
+                            If Not Reverse Then
+                                If ChangeFileExtension(FileList(FileLoop), AExTxt(ListLoop).Text) <> FileList(FileLoop) Then
+                                    Kill FileList(FileLoop)
+                                End If
+                            Else
+                                If ChangeFileExtension(FileList(FileLoop), ExTxt(ListLoop).Text) <> FileList(FileLoop) Then
+                                    Kill FileList(FileLoop)
+                                End If
+                            End If
+                        End If
                     End If
                 
                 Next FileLoop
@@ -679,6 +719,8 @@ NextListLoop:
     Log DONE
     Log SEP
     Log SEP
+    
+    LockEditing True
 
 End Sub
 
@@ -775,6 +817,12 @@ Private Sub RunAlgorithm(ByVal Algorithm As Algorithms, ByRef Bytes() As Byte, B
             Else
                 Compression_DeCompress_Deflate64 Bytes()
             End If
+        Case eMonkeyAudio
+            If Not Reverse Then
+                Compression_Compress_MonkeyAudio Bytes()
+            Else
+                Compression_DeCompress_MonkeyAudio Bytes()
+            End If
         Case eXOR
             If Not Reverse Then
                 Encryption_XOR_EncryptByte Bytes(), Key
@@ -799,12 +847,6 @@ Private Sub RunAlgorithm(ByVal Algorithm As Algorithms, ByRef Bytes() As Byte, B
             Else
                 Encryption_CryptAPI_DecryptByte Bytes(), Key
             End If
-        Case eDES
-            If Not Reverse Then
-                Encryption_DES_EncryptByte Bytes(), Key
-            Else
-                Encryption_DES_DecryptByte Bytes(), Key
-            End If
         Case eGOST
             If Not Reverse Then
                 Encryption_Gost_EncryptByte Bytes(), Key
@@ -816,12 +858,6 @@ Private Sub RunAlgorithm(ByVal Algorithm As Algorithms, ByRef Bytes() As Byte, B
                 Encryption_Skipjack_EncryptByte Bytes(), Key
             Else
                 Encryption_Skipjack_DecryptByte Bytes(), Key
-            End If
-        Case eTEA
-            If Not Reverse Then
-                Encryption_TEA_EncryptByte Bytes(), Key
-            Else
-                Encryption_TEA_DecryptByte Bytes(), Key
             End If
         Case eTwofish
             If Not Reverse Then
@@ -861,7 +897,7 @@ Dim j As Long
     DirTxt.SelStart = Len(DirTxt.Text)
 
     'Add the algorithms
-    For i = 0 To AlgCmb.ubound
+    For i = 0 To AlgCmb.UBound
         With AlgCmb(i)
             For j = 0 To NumAlgorithms
                 Select Case j
@@ -875,6 +911,8 @@ Dim j As Long
                         .AddItem "LZMA (Comp)"
                     Case eDeflate64
                         .AddItem "Deflate64 (Comp)"
+                    Case eMonkeyAudio
+                        .AddItem "MAC (wav only) (Comp)"
                     Case eXOR
                         .AddItem "XOR (Enc)"
                     Case eRC4
@@ -883,14 +921,10 @@ Dim j As Long
                         .AddItem "Blowfish (Enc)"
                     Case eCryptAPI
                         .AddItem "CryptAPI (Enc)"
-                    Case eDES
-                        .AddItem "DES (Enc)"
                     Case eGOST
                         .AddItem "GOST (Enc)"
                     Case eSkipjack
                         .AddItem "Skipjack (Enc)"
-                    Case eTEA
-                        .AddItem "TEA (Enc)"
                     Case eTwofish
                         .AddItem "Twofish (Enc)"
                     Case ePAQ8l
@@ -916,7 +950,7 @@ Dim i As Long
     Encryption_XOR_DecryptFile f, f, SaveKey
 
     'Saves the configuration
-    For i = 0 To AlgCmb.ubound
+    For i = 0 To AlgCmb.UBound
         Var_Write f, CStr(i), "BeforeExtension", ExTxt(i).Text
         Var_Write f, CStr(i), "AfterExtension", AExTxt(i).Text
         Var_Write f, CStr(i), "Algorithm", CStr(AlgCmb(i).ListIndex)
@@ -939,7 +973,7 @@ Dim i As Long
     Encryption_XOR_DecryptFile f, f, SaveKey
     
     'Load the saved configuration
-    For i = 0 To AlgCmb.ubound
+    For i = 0 To AlgCmb.UBound
         ExTxt(i).Text = Var_Get(f, CStr(i), "BeforeExtension")
         AExTxt(i).Text = Var_Get(f, CStr(i), "AfterExtension")
         AlgCmb(i).ListIndex = Val(Var_Get(f, CStr(i), "Algorithm"))

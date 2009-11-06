@@ -11,8 +11,8 @@ Public Enum LogType
 End Enum
 
 Public Type NPCTradeItems
-    name As String
-    Price As Long
+    Name As String
+    Value As Long
     GrhIndex As Long
 End Type
 
@@ -755,7 +755,7 @@ Dim b() As Byte
     Engine_BuildMiniMap
 
     'Clear out old mapinfo variables
-    MapInfo.name = vbNullString
+    MapInfo.Name = vbNullString
 
     'Set current map
     CurMap = Map
@@ -857,6 +857,7 @@ Sub Main()
 '*****************************************************************
 'Main
 '*****************************************************************
+Dim KeyClearTime As Long
 Dim PacketKeys() As String
 Dim LastUnloadTime As Long
 Dim StartTime As Long
@@ -961,6 +962,8 @@ Dim i As Integer
 
     'Display connect window
     frmConnect.Visible = True
+    
+    Input_Keys_ClearQueue
 
     'Main Loop
     Do
@@ -971,6 +974,12 @@ Dim i As Integer
     
         'Check if unloading
         If IsUnloading = 1 Then Exit Do
+        
+        'Clear the key cache
+        If KeyClearTime > timeGetTime Then
+            Input_Keys_ClearQueue
+            KeyClearTime = 500
+        End If
         
         'Don't draw frame is window is minimized or there is no map loaded
         If frmMain.WindowState <> 1 Then

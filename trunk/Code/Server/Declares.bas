@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.2            ************
+'************            Official Release: Version 0.5.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -223,7 +223,7 @@ Public Type udtObjData
     UseGrh As Long                  'Grh of the object when used (projectile for ranged, slash for melee, effects for use-once)
     UseSfx As Byte                  'Sound effect played when the object is used (based on the .wav's number)
     ProjectileRotateSpeed As Byte   'How fast the projectile rotates (if at all)
-    Price As Long                   'Price of the object
+    Value As Long                   'Value of the object
     RepHP As Long                   'How much HP to replenish
     RepMP As Long                   'How much MP to replenish
     RepSP As Long                   'How much SP to replenish
@@ -245,10 +245,10 @@ Public Type Obj 'Holds info about a object
 End Type
 '--------------------------------------------
 '************ Trading ************
-Public Const TRADESTATE_CLOSED As Byte = 0  'Trading is closed - table not used
-Public Const TRADESTATE_TRADING As Byte = 1 'Objects are still being placed, no confirm yet
-Public Const TRADESTATE_ACCEPT As Byte = 2  'The user has accepted what they have placed, no items can be added / removed
-Public Const TRADESTATE_CONFIRM As Byte = 3 'The user has confirmed the trade - can only happen after accepting
+Public Const TRADESTATE_CLOSED As Byte = 0      'Trading is closed - table not used
+Public Const TRADESTATE_TRADING As Byte = 1     'Objects are still being placed, no confirm yet
+Public Const TRADESTATE_ACCEPT As Byte = 2      'The user has accepted what they have placed, no items can be added / removed
+Public Const TRADESTATE_FINISHED As Byte = 3    'The user has confirmed the trade - can only happen after accepting
 Public Type TradeTableObj
     UserInvSlot As Byte
     Amount As Integer

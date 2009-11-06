@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.2            ************
+'************            Official Release: Version 0.5.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -191,7 +191,7 @@ Public Const ClientCharType_Slave As Byte = 4
 
 '********** Object info ************
 Public Type ObjData
-    name As String              'Name
+    Name As String              'Name
     ObjType As Byte             'Type (armor, weapon, item, etc)
     GrhIndex As Long            'Graphic index
     MinHP As Integer            'Bonus HP regenerated
@@ -202,20 +202,21 @@ Public Type ObjData
     ArmorIndex As Byte          'Index of the body sprite
     WeaponIndex As Byte         'Index of the weapon sprite
     WeaponType As Byte          'What type of weapon, if it is a weapon
-    Price As Long               'Price of the object
+    Value As Long               'Value of the object
 End Type
-'-----------------------------------------------------------
-'Info On the trade table
-'the gold is going to be considered slot 0 Don't think I need to change anything here
+
 '********** Trade table ************
 Public Type TradeObj
-    name As String
+    Name As String
     Grh As Long
     Amount As Integer
+    Value As Long
 End Type
 Public Type TradeTable
     User1Name As String              'The name of the table
     User2Name As String
+    User1Accepted As Byte
+    User2Accepted As Byte
     Trade1(1 To 9) As TradeObj  'The objects both indexes have entered
     Trade2(1 To 9) As TradeObj
     Gold1 As Long               'The gold both indexes have entered
@@ -223,7 +224,6 @@ Public Type TradeTable
     MyIndex As Byte             'States whether this client is index 1 or 2
 End Type
 Public TradeTable As TradeTable
-'-----------------------------------------------------------
 
 '********** Other stuff ************
 Public BaseStats(1 To NumStats) As Long
@@ -258,15 +258,16 @@ Public ActiveAsk As ActiveAsk
 'User's inventory
 Type Inventory
     ObjIndex As Long
-    name As String
+    Name As String
     GrhIndex As Long
     Amount As Integer
     Equipped As Boolean
+    Value As Long
 End Type
 
 'Quest information
 Type QuestInfo
-    name As String
+    Name As String
     Desc As String
 End Type
 Public QuestInfo() As QuestInfo
@@ -297,7 +298,6 @@ Public SendNewChar As Boolean
 
 Public sndBuf As DataBuffer
 Public ChatBufferChunk As Single
-Public PTD As Long
 Public SoxID As Long
 Public SocketMoveToIP As String
 Public SocketMoveToPort As Integer
@@ -318,8 +318,6 @@ Public Const BlockedEast As Byte = 2
 Public Const BlockedSouth As Byte = 4
 Public Const BlockedWest As Byte = 8
 Public Const BlockedAll As Byte = 15
-
-Public PTDSTime As Long
 
 Public UseSfx As Byte
 Public UseMusic As Byte

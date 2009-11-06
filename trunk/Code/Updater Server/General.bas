@@ -143,7 +143,13 @@ Dim b() As Byte
             DoEvents
             If Engine_FileExist(App.Path & "\_Compressed" & FileListShortName(i), vbNormal) Then Kill App.Path & "\_Compressed" & FileListShortName(i)
             MakeSureDirectoryPathExists App.Path & "\_Compressed" & FileListShortName(i)
-            Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), LZMA
+            
+            'Check whether to use normal compression or WAV-specific compression
+            If LCase$(Right$(FileListShortName(i), 4)) = ".wav" Then
+                Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), MonkeyAudio
+            Else
+                Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), LZMA
+            End If
             
             'Since the hash didn't match, we have to store the hash we have now
             Open App.Path & "\_Compressed" & FileListShortName(i) & ".md5" For Binary Access Write As #FileNum
@@ -158,7 +164,7 @@ Dim b() As Byte
     DoEvents
 
     'Start up the socket (change the ip to 0.0.0.0 or your internal IP)
-    LocalID = GOREsock_Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
+    LocalID = GOREsock_Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
     GOREsock_SetOption LocalID, soxSO_TCP_NODELAY, False
     
     If GOREsock_Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly

@@ -345,7 +345,7 @@ Dim UserIndex As Integer
                 'Check if it has been idle for too long
                 If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
                     Data_Send ToIndex, UserIndex, cMessage(85).Data
-                    Server_CloseSocket UserIndex
+                    UserList(UserIndex).flags.Disconnecting = 1
                     GoTo NextUser   'Skip to the next user
                 End If
                 

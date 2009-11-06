@@ -1,6 +1,241 @@
 Attribute VB_Name = "TradeTables"
 Option Explicit
 
+Private Function TradeTable_NumObjectsInTable(ByVal TradeTableIndex As Byte, ByVal UserTableIndex As Byte) As Byte
+
+'*****************************************************************
+'Returns the number of objects a table has in it for the specified user
+'*****************************************************************
+Dim i As Long
+
+    'UserTableIndex = 1
+    If UserTableIndex = 1 Then
+    
+        'Loop through the objects
+        For i = 1 To 9
+            If TradeTable(TradeTableIndex).Objs1(i).UserInvSlot > 0 Then
+                
+                'Used slot found
+                TradeTable_NumObjectsInTable = TradeTable_NumObjectsInTable + 1
+                
+            End If
+        Next i
+        
+    'UserTableIndex = 2
+    Else
+    
+        'Loop through the objects
+        For i = 1 To 9
+            If TradeTable(TradeTableIndex).Objs2(i).UserInvSlot > 0 Then
+                
+                'Used slot found
+                TradeTable_NumObjectsInTable = TradeTable_NumObjectsInTable + 1
+                
+            End If
+        Next i
+    End If
+    
+End Function
+
+Public Sub TradeTable_RequestFinish(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User wants to finish a trade
+'*****************************************************************
+Dim TradeTableIndex As Byte
+Dim UserTableIndex As Byte
+Dim i As Long
+
+    'Make sure the user has a trade table
+    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
+    
+    'Get the user's index in the table
+    UserTableIndex = TradeTable_GetUserTableIndex(TradeTableIndex, UserIndex)
+    If UserTableIndex = 0 Then Exit Sub 'Error!
+    
+    'Set the user's table state to FINISHED if not already
+    If UserTableIndex = 1 Then
+        If TradeTable(TradeTableIndex).User1State = TRADESTATE_ACCEPT Then
+            TradeTable(TradeTableIndex).User1State = TRADESTATE_FINISHED
+        Else
+            'If they're not on ACCEPT, theres no point on going on
+            Exit Sub
+        End If
+    Else
+        If TradeTable(TradeTableIndex).User2State = TRADESTATE_ACCEPT Then
+            TradeTable(TradeTableIndex).User2State = TRADESTATE_FINISHED
+        Else
+            'If they're not on ACCEPT, theres no point on going on
+            Exit Sub
+        End If
+    End If
+    
+    'Check if both users have finished
+    If TradeTable(TradeTableIndex).User1State = TRADESTATE_FINISHED And TradeTable(TradeTableIndex).User2State = TRADESTATE_FINISHED Then
+        
+        'Confirm the user 1 has enough free slots
+        If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User1) < TradeTable_NumObjectsInTable(TradeTableIndex, 1) Then
+            Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(131).Data()
+            Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(130).Data()
+            Exit Sub
+        End If
+        
+        'Confirm the user 2 has enough free slots
+        If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User2) < TradeTable_NumObjectsInTable(TradeTableIndex, 2) Then
+            Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(130).Data()
+            Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(131).Data()
+            Exit Sub
+        End If
+        
+        'Go to the finish routine
+        TradeTable_Finish TradeTableIndex
+        
+    End If
+
+End Sub
+
+Private Sub TradeTable_Finish(ByVal TradeTableIndex As Byte)
+
+'*****************************************************************
+'Ends a trade table with a successful trade
+'*****************************************************************
+Dim i As Long
+
+    'Give user 1 their items and gold
+    For i = 1 To 9
+        
+        'Check if the trade table slot has an object
+        If TradeTable(TradeTableIndex).Objs2(i).UserInvSlot > 0 Then
+        
+            'Give user 1 the object
+            User_GiveObj TradeTable(TradeTableIndex).User1, UserList(TradeTable(TradeTableIndex).User2).Object(TradeTable(TradeTableIndex).Objs2(i).UserInvSlot).ObjIndex, TradeTable(TradeTableIndex).Objs2(i).Amount, False
+            
+            'Lower user2's object count
+            With UserList(TradeTable(TradeTableIndex).User2).Object(TradeTable(TradeTableIndex).Objs2(i).UserInvSlot)
+                
+                'If they traded all of their items in that slot, remove the object, elsewise just lower the count
+                If .Amount <= TradeTable(TradeTableIndex).Objs2(i).Amount Then
+                    
+                    'Unequip the object from user2 if they have it equipped
+                    User_RemoveInvItem TradeTable(TradeTableIndex).User2, TradeTable(TradeTableIndex).Objs2(i).UserInvSlot, False
+                    
+                    'Delete the item from the user's inventory
+                    .Amount = 0
+                    .ObjIndex = 0
+                    .Equipped = 0
+                
+                Else
+                    
+                    'Just lower their amount count
+                    .Amount = .Amount - TradeTable(TradeTableIndex).Objs2(i).Amount
+                    
+                End If
+                
+            End With
+            
+        End If
+    Next i
+    
+    'Raise user 1's gold count, and lower user 2's
+    UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) + TradeTable(TradeTableIndex).Gold2
+    UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) - TradeTable(TradeTableIndex).Gold2
+    
+    'Do the same process, but the other way around, for user 2 to get their stuff
+    For i = 1 To 9
+        If TradeTable(TradeTableIndex).Objs1(i).UserInvSlot > 0 Then
+            User_GiveObj TradeTable(TradeTableIndex).User2, UserList(TradeTable(TradeTableIndex).User1).Object(TradeTable(TradeTableIndex).Objs1(i).UserInvSlot).ObjIndex, TradeTable(TradeTableIndex).Objs1(i).Amount, False
+            With UserList(TradeTable(TradeTableIndex).User1).Object(TradeTable(TradeTableIndex).Objs1(i).UserInvSlot)
+                If .Amount <= TradeTable(TradeTableIndex).Objs1(i).Amount Then
+                    User_RemoveInvItem TradeTable(TradeTableIndex).User1, TradeTable(TradeTableIndex).Objs1(i).UserInvSlot, False
+                    .ObjIndex = 0
+                    .Amount = 0
+                    .Equipped = 0
+                Else
+                    .Amount = .Amount - TradeTable(TradeTableIndex).Objs1(i).Amount
+                End If
+            End With
+        End If
+    Next i
+    UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) + TradeTable(TradeTableIndex).Gold1
+    UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) - TradeTable(TradeTableIndex).Gold1
+    
+    'Force a full inventory update
+    User_UpdateInv True, TradeTable(TradeTableIndex).User1, 0
+    User_UpdateInv True, TradeTable(TradeTableIndex).User2, 0
+    
+    'Close the table
+    TradeTable_Close TradeTableIndex
+    
+    'Send the "successful trade" message
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(132).Data()
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(132).Data()
+
+End Sub
+
+Public Sub TradeTable_Accept(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User accepts a trade - the stage before completing the trade
+'*****************************************************************
+Dim TradeTableIndex As Byte
+Dim UserTableIndex As Byte
+Dim SendPacket As Boolean
+
+    'Make sure the user has a trade table
+    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
+    
+    'Get the user's index in the table
+    UserTableIndex = TradeTable_GetUserTableIndex(TradeTableIndex, UserIndex)
+    If UserTableIndex = 0 Then Exit Sub 'Error!
+    
+    'Set the user's table state to accepted if not already
+    If UserTableIndex = 1 Then
+        If TradeTable(TradeTableIndex).User1State = TRADESTATE_TRADING Then
+            TradeTable(TradeTableIndex).User1State = TRADESTATE_ACCEPT
+            SendPacket = True
+        End If
+    Else
+        If TradeTable(TradeTableIndex).User2State = TRADESTATE_TRADING Then
+            TradeTable(TradeTableIndex).User2State = TRADESTATE_ACCEPT
+            SendPacket = True
+        End If
+    End If
+        
+    'If the state changed, we want to send a packet and let the clients know
+    If SendPacket Then
+        ConBuf.PreAllocate 2
+        ConBuf.Put_Byte DataCode.User_Trade_Accept
+        ConBuf.Put_Byte UserTableIndex
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+    End If
+        
+End Sub
+
+Public Sub TradeTable_Close(ByVal TradeTableIndex As Byte)
+
+'*****************************************************************
+'User wants to cancel a trade
+'*****************************************************************
+Dim UserTableIndex As Byte
+
+    'Make sure the user has a trade table
+    If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
+    If TradeTableIndex > UBound(TradeTable) Then Exit Sub
+
+    'Close the table
+    ConBuf.PreAllocate 1
+    ConBuf.Put_Byte DataCode.User_Trade_Cancel
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+    
+    'Clear the memory
+    ZeroMemory TradeTable(TradeTableIndex), Len(TradeTable(TradeTableIndex))
+
+End Sub
+
 Public Sub TradeTable_RemoveItem(ByVal UserIndex As Integer, ByVal TableSlot As Byte)
 
 '*****************************************************************
@@ -51,6 +286,13 @@ Dim i As Long
     'Get the user's index in the table
     UserTableIndex = TradeTable_GetUserTableIndex(TradeTableIndex, UserIndex)
     If UserTableIndex = 0 Then Exit Sub 'Error!
+    
+    'Check if they are in the updating stage
+    If UserTableIndex = 1 Then
+        If TradeTable(TradeTableIndex).User1State <> TRADESTATE_TRADING Then Exit Sub
+    Else
+        If TradeTable(TradeTableIndex).User2State <> TRADESTATE_TRADING Then Exit Sub
+    End If
     
     'If the invslot = 0, then we are updating the gold
     If InvSlot = 0 Then
@@ -186,7 +428,11 @@ Dim GrhIndex As Long
     ConBuf.Put_Long Amount
     
     'Put the object index only for an object
-    If TableSlot > 0 Then ConBuf.Put_Long GrhIndex
+    If TableSlot > 0 Then
+        ConBuf.Put_Long GrhIndex
+        ConBuf.Put_String ObjData.Name(ObjIndex)
+        ConBuf.Put_Long ObjData.Value(ObjIndex)
+    End If
     
     'Send the data to both the clients
     Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer

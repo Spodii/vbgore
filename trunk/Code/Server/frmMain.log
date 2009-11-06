@@ -1,1 +1,3 @@
-Line 31: Cannot load control GOREsock.
+Line 31: Class GOREsock.GOREsockServer of control GOREsock was not a loaded control class.
+Line 34: The property name _ExtentX in GOREsock is invalid.
+Line 35: The property name _ExtentY in GOREsock is invalid.

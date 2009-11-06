@@ -7,9 +7,10 @@ Public Enum CompressMethods
     LZMA = 3
     PAQ8l = 4
     Deflate64 = 5
+    MonkeyAudio = 6     '*.wav only
 End Enum
 #If False Then
-Private RLE, RLE_Loop, LZMA, PAQ8l, Deflate64
+Private RLE, RLE_Loop, LZMA, PAQ8l, Deflate64, MonkeyAudio
 #End If
 
 'Value between 0 and 9, higher requiring more RAM/CPU but better compression
@@ -228,6 +229,32 @@ Public Sub Compression_Compress_LZMA(ByteArray() As Byte)
         Kill App.Path & "\contemp.bin.7z"
     End If
     Kill App.Path & "\contemp.bin"
+
+End Sub
+
+Public Sub Compression_Compress_MonkeyAudio(ByteArray() As Byte)
+
+    '*.wav only
+    SaveBytes ByteArray(), App.Path & "\contemp.wav"
+    CommandLine DataPath & "mac.exe " & Chr$(34) & App.Path & "\contemp.wav" & Chr$(34) & " " & Chr$(34) & App.Path & "\contemp.wav.ape" & Chr$(34) & " -c5000"
+    If Dir$(App.Path & "\contemp.wav.ape") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.wav.ape"
+        Kill App.Path & "\contemp.wav.ape"
+    End If
+    Kill App.Path & "\contemp.wav"
+
+End Sub
+
+Public Sub Compression_DeCompress_MonkeyAudio(ByteArray() As Byte)
+
+    '*.wav only
+    SaveBytes ByteArray(), App.Path & "\contemp.wav.ape"
+    CommandLine DataPath & "mac.exe " & Chr$(34) & App.Path & "\contemp.wav.ape" & Chr$(34) & " " & Chr$(34) & App.Path & "\contemp.wav" & Chr$(34) & " -d"
+    If Dir$(App.Path & "\contemp.wav") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.wav"
+        Kill App.Path & "\contemp.wav"
+    End If
+    Kill App.Path & "\contemp.wav.ape"
 
 End Sub
 

@@ -1,7 +1,7 @@
 Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
 Reference=*\G{E1211242-8E94-11D1-8808-00C04FC2C603}#1.0#0#..\..\..\..\WINDOWS\system32\dx8vb.dll#DirectX 8 for Visual Basic Type Library
-Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\WINDOWS\system32\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
+Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\Program Files\Common Files\system\ado\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
 Object={F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0; Comdlg32.ocx
 Module=AllFilesInFolder; Code\Common Code\AllFilesInFolder.bas
 Module=Compressions; Code\Common Code\Compressions.bas
@@ -46,7 +46,7 @@ HelpContextID="0"
 CompatibleMode="0"
 MajorVer=0
 MinorVer=5
-RevisionVer=0
+RevisionVer=3
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"

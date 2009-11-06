@@ -1,7 +1,34 @@
 Attribute VB_Name = "Users"
 Option Explicit
 
+Public Function User_NumFreeInvSlots(ByVal UserIndex As Integer) As Byte
+
+'*****************************************************************
+'Returns the number of slots in a user's inventory that are unused
+'*****************************************************************
+Dim Slot As Long
+
+    'Confirm it is a valid user
+    If UserIndex > LastUser Then Exit Function
+
+    'Loop through all the user's slots
+    For Slot = 1 To MAX_INVENTORY_SLOTS
+        If UserList(UserIndex).Object(Slot).ObjIndex = 0 Then
+        
+            'The slot is free, add it to the count
+            User_NumFreeInvSlots = User_NumFreeInvSlots + 1
+            
+        End If
+    Next Slot
+
+End Function
+
 Public Sub User_AddObjToInv(ByVal UserIndex As Integer, ByRef Object As Obj)
+
+'*****************************************************************
+'Adds an object to the user's inventory
+'*****************************************************************
+
 Dim LoopC As Long
 Dim Map As Integer
 Dim NewX As Byte
@@ -526,7 +553,7 @@ Dim FlagSizes As Byte
 
 End Sub
 
-Private Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, Object As UserOBJ)
+Private Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, ByRef Object As UserOBJ)
 
 '*****************************************************************
 'Changes a user's inventory
@@ -555,6 +582,7 @@ Private Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, Objec
         ConBuf.Put_Long Object.Amount
         ConBuf.Put_Byte Object.Equipped
         ConBuf.Put_Long ObjData.GrhIndex(Object.ObjIndex)
+        ConBuf.Put_Long ObjData.Value(Object.ObjIndex)
     Else
         ConBuf.PreAllocate 6
         ConBuf.Put_Byte DataCode.User_SetInventorySlot
@@ -917,7 +945,7 @@ Public Function User_CorrectServer(ByVal UserName As String, ByVal UserIndex As 
 
 End Function
 
-Public Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer)
+Public Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer, Optional ByVal UpdateInv As Boolean = True)
 
 '*****************************************************************
 'Give the user an object
@@ -945,12 +973,22 @@ Dim Slot As Byte
         Exit Sub
     End If
 
-    'Check to see if User already has object type
+    'Check to see if User already has this object
     Slot = 1
-    Do Until UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
-        Slot = Slot + 1
-        If Slot > MAX_INVENTORY_SLOTS Then Exit Do
-    Loop
+    If ObjData.Stacking(ObjIndex) > 1 Then
+        Do Until UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
+            Slot = Slot + 1
+            If Slot > MAX_INVENTORY_SLOTS Then Exit Do
+        Loop
+    ElseIf ObjData.Stacking(ObjIndex) = 1 Then
+        Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
+            Slot = Slot + 1
+            If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
+        Loop
+    Else
+        'Error :x
+        Exit Sub
+    End If
 
     'Else check if there is a empty slot
     If Slot > MAX_INVENTORY_SLOTS Then
@@ -968,7 +1006,7 @@ Dim Slot As Byte
     End If
 
     'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + Amount <= ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) Then
+    If UserList(UserIndex).Object(Slot).Amount + Amount <= ObjData.Stacking(ObjIndex) Then
 
         'Tell the user they recieved the items
         ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
@@ -983,29 +1021,36 @@ Dim Slot As Byte
         UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + Amount
 
     Else
+    
         'Over MAX_INV_OBJS
         If Amount < UserList(UserIndex).Object(Slot).Amount Then
+        
             'Tell the user they recieved the items
             ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs(ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + Amount))
+            ConBuf.Put_Integer Abs(ObjData.Stacking(ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + Amount))
             ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Else
+        
             'Tell the user they recieved the items
             ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs((ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - Amount)
+            ConBuf.Put_Integer Abs((ObjData.Stacking(ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - Amount)
             ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        
         End If
-        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex)
+        
+        'Set the user's amount to the stacking max
+        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(ObjIndex)
+        
     End If
 
     'Update the user's inventory
-    User_UpdateInv False, UserIndex, Slot
+    If UpdateInv Then User_UpdateInv False, UserIndex, Slot
 
 End Sub
 
@@ -1339,8 +1384,7 @@ Dim CharIndex As Integer
 
     Log "Call User_MakeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
-'Place character on map
-
+    'Place character on map
     MapInfo(Map).Data(X, Y).UserIndex = UserIndex
 
     'Give it a char if needed
@@ -1599,7 +1643,7 @@ Dim Levels As Integer
 
 End Sub
 
-Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Optional ByVal UpdateInv As Byte = 1)
+Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Optional ByVal UpdateInv As Boolean = True)
 
 '*****************************************************************
 'Unequip a inventory item
@@ -1614,42 +1658,63 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
         Case OBJTYPE_WEAPON
             Log "User_RemoveInvItem: Object type OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
             
-            'Update the weapon distance on the client
-            ConBuf.PreAllocate 2
-            ConBuf.Put_Byte DataCode.User_SetWeaponRange
-            ConBuf.Put_Byte 0
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            If Slot = UserList(UserIndex).WeaponEqpSlot Then
             
-            'Set the equipted variables
-            UserList(UserIndex).Object(Slot).Equipped = 0
-            UserList(UserIndex).WeaponEqpObjIndex = 0
-            UserList(UserIndex).WeaponEqpSlot = 0
-            UserList(UserIndex).Char.Weapon = 0
-            UserList(UserIndex).WeaponType = Hand
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-    
+                'Update the weapon distance on the client
+                ConBuf.PreAllocate 2
+                ConBuf.Put_Byte DataCode.User_SetWeaponRange
+                ConBuf.Put_Byte 0
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                
+                'Set the equipted variables
+                UserList(UserIndex).Object(Slot).Equipped = 0
+                UserList(UserIndex).WeaponEqpObjIndex = 0
+                UserList(UserIndex).WeaponEqpSlot = 0
+                UserList(UserIndex).Char.Weapon = 0
+                UserList(UserIndex).WeaponType = Hand
+                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            
+                'Update user's stats and inventory
+                If UpdateInv Then User_UpdateInv False, UserIndex, Slot
+            
+            End If
+            
             'Check for armor
         Case OBJTYPE_ARMOR
             Log "User_RemoveInvItem: Object type OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
     
-            'Set the equipted variables
-            UserList(UserIndex).Object(Slot).Equipped = 0
-            UserList(UserIndex).ArmorEqpObjIndex = 0
-            UserList(UserIndex).ArmorEqpSlot = 0
-            UserList(UserIndex).Char.Body = 1
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            If Slot = UserList(UserIndex).ArmorEqpSlot Then
     
+                'Set the equipted variables
+                UserList(UserIndex).Object(Slot).Equipped = 0
+                UserList(UserIndex).ArmorEqpObjIndex = 0
+                UserList(UserIndex).ArmorEqpSlot = 0
+                UserList(UserIndex).Char.Body = 1
+                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+        
+                'Update user's stats and inventory
+                If UpdateInv Then User_UpdateInv False, UserIndex, Slot
+        
+            End If
+        
             'Check for wings
         Case OBJTYPE_WINGS
             Log "User_RemoveInvItem: Object type OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
         
-            'Set the equipted variables
-            UserList(UserIndex).Object(Slot).Equipped = 0
-            UserList(UserIndex).WingsEqpObjIndex = 0
-            UserList(UserIndex).WingsEqpSlot = 0
-            UserList(UserIndex).Char.Wings = 0
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-    
+            If Slot = UserList(UserIndex).WingsEqpSlot Then
+            
+                'Set the equipted variables
+                UserList(UserIndex).Object(Slot).Equipped = 0
+                UserList(UserIndex).WingsEqpObjIndex = 0
+                UserList(UserIndex).WingsEqpSlot = 0
+                UserList(UserIndex).Char.Wings = 0
+                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+        
+                'Update user's stats and inventory
+                If UpdateInv Then User_UpdateInv False, UserIndex, Slot
+        
+            End If
+        
         Case Else   '//\\LOGLINE//\\
             Log "User_RemoveInvItem: Unknown object type! Object type: " & ObjData.ObjType(UserList(UserIndex).Object(Slot).ObjIndex), CriticalError '//\\LOGLINE//\\
 
@@ -1657,9 +1722,6 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
     
     'Force update of the modstats
     UserList(UserIndex).Stats.Update = 1
-
-    'Update the user's stats
-    If UpdateInv = 1 Then User_UpdateInv False, UserIndex, Slot
 
 End Sub
 
@@ -1742,7 +1804,7 @@ Dim LoopC As Integer
         For LoopC = 1 To NPCList(NPCIndex).NumVendItems
             ConBuf.Put_Long ObjData.GrhIndex(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
             ConBuf.Put_String ObjData.Name(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
-            ConBuf.Put_Long ObjData.Price(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
+            ConBuf.Put_Long ObjData.Value(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
         Next LoopC
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         UserList(UserIndex).flags.TradeWithNPC = NPCIndex
@@ -1784,29 +1846,35 @@ Public Sub User_UpdateInv(ByVal UpdateAll As Boolean, ByVal UserIndex As Integer
 '*****************************************************************
 'Updates a user's inventory slot
 '*****************************************************************
-
 Dim NullObj As UserOBJ
 Dim LoopC As Long
 
     Log "Call User_UpdateInv(" & UpdateAll & "," & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
 
-'Update one slot
-
+    'Update one slot
     If Not UpdateAll Then
+    
         'Update User inventory
         If UserList(UserIndex).Object(Slot).ObjIndex > 0 Then
             User_ChangeInv UserIndex, Slot, UserList(UserIndex).Object(Slot)
         Else
             User_ChangeInv UserIndex, Slot, NullObj
         End If
+        
     Else
+    
         'Update every slot
         For LoopC = 1 To MAX_INVENTORY_SLOTS
+        
             'Update User inventory
             If UserList(UserIndex).Object(LoopC).ObjIndex Then
                 User_ChangeInv UserIndex, LoopC, UserList(UserIndex).Object(LoopC)
+            Else
+                User_ChangeInv UserIndex, LoopC, NullObj
             End If
+            
         Next LoopC
+        
     End If
 
 End Sub

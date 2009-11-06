@@ -107,9 +107,18 @@ Dim FileNum As Byte
         'Get our data, decompress it and save it to the file
         Data = Left$(Data, Len(Data) - 9)
         b() = StrConv(Data, vbFromUnicode)
-        If Len(Data) > 0 Then Compression_DeCompress_LZMA b()
+        
+        If Len(Data) > 0 Then
+            If LCase$(Right$(ServerFile(FileIndex).Path, 4)) = ".wav" Then
+                Compression_DeCompress_MonkeyAudio b()
+            Else
+                Compression_DeCompress_LZMA b()
+            End If
+        End If
+        
         FileNum = FreeFile
         MakeSureDirectoryPathExists ServerFile(FileIndex).Path
+        If Engine_FileExist(ServerFile(FileIndex).Path, vbNormal) Then Kill ServerFile(FileIndex).Path
         Open ServerFile(FileIndex).Path For Binary Access Write As #FileNum
             Put #FileNum, , b()
         Close #FileNum

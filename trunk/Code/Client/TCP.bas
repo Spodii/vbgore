@@ -52,12 +52,14 @@ End Sub
 Sub Data_User_Trade_UpdateTrade(ByRef rBuf As DataBuffer)
 '*********************************************
 'Update something about the trade currently taking place
-'<UserTableIndex(B)><TableSlot(B)><Amount(L)> (<GrhIndex(L)>)
+'<UserTableIndex(B)><TableSlot(B)><Amount(L)> (<GrhIndex(L)><ObjName(S)><ObjValue(L)>)
 '*********************************************
 Dim UserTableIndex As Byte
 Dim TableSlot As Byte
 Dim Amount As Long
 Dim GrhIndex As Long
+Dim ObjName As String
+Dim ObjValue As Long
 
     UserTableIndex = rBuf.Get_Byte
     TableSlot = rBuf.Get_Byte
@@ -74,14 +76,18 @@ Dim GrhIndex As Long
     'Update an item
     ElseIf TableSlot <= 9 Then
         GrhIndex = rBuf.Get_Long
+        ObjName = rBuf.Get_String
+        ObjValue = rBuf.Get_Long
         If TradeTable.MyIndex = UserTableIndex Then
             TradeTable.Trade1(TableSlot).Amount = Amount
             TradeTable.Trade1(TableSlot).Grh = GrhIndex
-            TradeTable.Trade1(TableSlot).name = "test"
+            TradeTable.Trade1(TableSlot).Name = ObjName
+            TradeTable.Trade1(TableSlot).Value = ObjValue
         Else
             TradeTable.Trade2(TableSlot).Amount = Amount
             TradeTable.Trade2(TableSlot).Grh = GrhIndex
-            TradeTable.Trade2(TableSlot).name = "test"
+            TradeTable.Trade2(TableSlot).Name = ObjName
+            TradeTable.Trade2(TableSlot).Value = ObjValue
         End If
     End If
 
@@ -605,13 +611,17 @@ Dim Byt1 As Byte
         Case 129
             Byt1 = rBuf.Get_Byte
             If Byt1 <= QuestInfoUBound Then
-                Str1 = QuestInfo(Byt1).name
+                Str1 = QuestInfo(Byt1).Name
                 QuestInfo(Byt1).Desc = vbNullString
-                QuestInfo(Byt1).name = vbNullString
+                QuestInfo(Byt1).Name = vbNullString
                 If Str1 <> vbNullString Then
                     Engine_AddToChatTextBuffer Replace$(Message(129), "<name>", Str1), FontColor_Quest
                 End If
             End If
+        Case 130
+            Engine_AddToChatTextBuffer Message(130), FontColor_Info
+        Case 131
+            Engine_AddToChatTextBuffer Message(131), FontColor_Info
     End Select
 
 End Sub
@@ -634,11 +644,11 @@ Sub Data_Server_Connect()
         Unload frmConnect
     
         'Load main form
-        frmMain.PTDTmr.Enabled = True
         Load frmMain
         frmMain.Visible = True
         frmMain.Show
         frmMain.SetFocus
+        Input_Keys_ClearQueue
         DoEvents
             
         'Load the engine
@@ -770,7 +780,7 @@ Sub Data_Map_SendName(ByRef rBuf As DataBuffer)
 '*********************************************
 Dim Music As Byte
 
-    MapInfo.name = rBuf.Get_String
+    MapInfo.Name = rBuf.Get_String
     MapInfo.Weather = rBuf.Get_Byte
     
     'Change the music file if we need to
@@ -781,7 +791,7 @@ Dim Music As Byte
             MapInfo.Music = Music
             Music_Load MusicPath & Music & ".mp3", 1
             Music_Play 1
-            Music_Volume 96, 1
+            Music_Volume 86, 1
         End If
     End If
     
@@ -897,7 +907,7 @@ Dim CharIndex As Integer
 Dim HP As Byte
 
     HP = rBuf.Get_Byte
-    CharIndex = rBuf.Get_Byte
+    CharIndex = rBuf.Get_Integer
 
     'If the char doesn't exist, request to create it
     If Not Engine_ValidChar(CharIndex) Then Exit Sub
@@ -917,7 +927,7 @@ Dim CharIndex As Integer
 Dim MP As Byte
 
     MP = rBuf.Get_Byte
-    CharIndex = rBuf.Get_Byte
+    CharIndex = rBuf.Get_Integer
 
     'If the char doesn't exist, request to create it
     If Not Engine_ValidChar(CharIndex) Then Exit Sub
@@ -1224,7 +1234,7 @@ Dim CharIndex As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim Speed As Byte
-Dim name As String
+Dim Name As String
 Dim Weapon As Integer
 Dim Hair As Integer
 Dim Wings As Integer
@@ -1242,7 +1252,7 @@ Dim OwnerChar As Integer
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
     Speed = rBuf.Get_Byte
-    name = rBuf.Get_String
+    Name = rBuf.Get_String
     Weapon = rBuf.Get_Integer
     Hair = rBuf.Get_Integer
     Wings = rBuf.Get_Integer
@@ -1255,7 +1265,7 @@ Dim OwnerChar As Integer
     If CharType = ClientCharType_Slave Then OwnerChar = rBuf.Get_Integer
     
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, CharType, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, Name, Weapon, Hair, Wings, ChatID, CharType, HP, MP
 
     'Apply the owner index value
     CharList(CharIndex).OwnerChar = OwnerChar
@@ -1328,17 +1338,6 @@ Dim Running As Byte
     
     'Move the character
     Engine_Char_Move_ByPos CharIndex, X, Y, Running
-
-End Sub
-
-Sub Data_Server_PTD()
-
-'*********************************************
-'We retrieved the PTD response, calculate how long it took
-'<>
-'*********************************************
-
-    PTD = timeGetTime - PTDSTime
 
 End Sub
 
@@ -2107,16 +2106,18 @@ Dim Slot As Byte
     
     'If the object index = 0, then we are deleting a slot, so the rest is null
     If UserInventory(Slot).ObjIndex = 0 Then
-        UserInventory(Slot).name = "(None)"
+        UserInventory(Slot).Name = "(None)"
         UserInventory(Slot).Amount = 0
         UserInventory(Slot).Equipped = 0
         UserInventory(Slot).GrhIndex = 0
+        UserInventory(Slot).Value = 0
     Else
         'Index <> 0, so we have to get the information
-        UserInventory(Slot).name = rBuf.Get_String
+        UserInventory(Slot).Name = rBuf.Get_String
         UserInventory(Slot).Amount = rBuf.Get_Long
         UserInventory(Slot).Equipped = rBuf.Get_Byte
         UserInventory(Slot).GrhIndex = rBuf.Get_Long
+        UserInventory(Slot).Value = rBuf.Get_Long
     End If
 
 End Sub
@@ -2190,11 +2191,43 @@ Dim Item As Integer
     NPCTradeItemArraySize = NumItems
     For Item = 1 To NumItems
         NPCTradeItems(Item).GrhIndex = rBuf.Get_Long
-        NPCTradeItems(Item).name = rBuf.Get_String
-        NPCTradeItems(Item).Price = rBuf.Get_Long
+        NPCTradeItems(Item).Name = rBuf.Get_String
+        NPCTradeItems(Item).Value = rBuf.Get_Long
     Next Item
     ShowGameWindow(ShopWindow) = 1
     LastClickedWindow = ShopWindow
+
+End Sub
+
+Sub Data_User_Trade_Accept(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'One of the users of the trade has pressed the accept button
+'<UserTableIndex(B)>
+'*********************************************
+Dim UserTableIndex As Byte
+
+    UserTableIndex = rBuf.Get_Byte
+    
+    'Find which name to high-light
+    If UserTableIndex = 1 Then
+        If TradeTable.MyIndex = 1 Then TradeTable.User1Accepted = 1 Else TradeTable.User2Accepted = 1
+    Else
+        If TradeTable.MyIndex = 2 Then TradeTable.User1Accepted = 1 Else TradeTable.User2Accepted = 1
+    End If
+
+End Sub
+
+Sub Data_User_Trade_Cancel()
+
+'*********************************************
+'Trade table was closed or canceled
+'<>
+'*********************************************
+
+    ShowGameWindow(TradeWindow) = 0
+    If LastClickedWindow = TradeWindow Then LastClickedWindow = 0
+    ZeroMemory TradeTable, Len(TradeTable)
 
 End Sub
 
@@ -2205,15 +2238,15 @@ Sub Data_Server_SendQuestInfo(ByRef rBuf As DataBuffer)
 '<QuestID(B)><Name(S)>(<Description(S-EX)>)
 '*********************************************
 Dim QuestID As Byte
-Dim name As String
+Dim Name As String
 Dim Desc As String
 Dim i As Long
 Dim Changed As Byte
 
     'Get the variables
     QuestID = rBuf.Get_Byte
-    name = rBuf.Get_String
-    If LenB(name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
+    Name = rBuf.Get_String
+    If LenB(Name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
 
     'Resize the questinfo array if needed
     If QuestID > QuestInfoUBound Then
@@ -2222,13 +2255,13 @@ Dim Changed As Byte
     End If
     
     'Store the information
-    QuestInfo(QuestID).name = name
+    QuestInfo(QuestID).Name = Name
     QuestInfo(QuestID).Desc = Desc
 
     'Loop through the quests, remove any unused slots on the end
     If QuestInfoUBound > 1 Then
         For i = QuestInfoUBound To 1 Step -1
-            If QuestInfo(i).name = vbNullString Then
+            If QuestInfo(i).Name = vbNullString Then
                 QuestInfoUBound = QuestInfoUBound - 1
                 Changed = 1
             Else
@@ -2244,7 +2277,7 @@ Dim Changed As Byte
             End If
         End If
     Else
-        If QuestInfo(1).name = vbNullString Then
+        If QuestInfo(1).Name = vbNullString Then
             Erase QuestInfo
             QuestInfoUBound = 0
         End If

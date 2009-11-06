@@ -31,8 +31,8 @@ ScreenX= 0
 ScreenY= 0
 
 [INVENTORY]
-ScreenX= 396
-ScreenY= 161
+ScreenX= 440
+ScreenY= 251
 
 [QUICKBAR]
 ScreenX= 0

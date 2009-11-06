@@ -27,7 +27,7 @@ Public Type TLVERTEX
     Z As Single
     Rhw As Single
     Color As Long
-    tu As Single
+    tU As Single
     tV As Single
 End Type
 
@@ -235,7 +235,7 @@ Public Type Char
     ScrollDirectionY As Integer
     BubbleStr As String
     BubbleTime As Long
-    name As String
+    Name As String
     NameOffset As Integer       'Used to acquire the center position for the name
     ActionIndex As Byte
     HealthPercent As Byte
@@ -265,7 +265,7 @@ End Type
 
 'Hold info about each map
 Public Type MapInfo
-    name As String
+    Name As String
     StartPos As WorldPos
     MapVersion As Integer
     Weather As Byte
@@ -983,7 +983,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2
-                        .tu = U
+                        .tU = U
                         .tV = V
                         .Rhw = 1
                     End With
@@ -991,7 +991,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
-                        .tu = U
+                        .tU = U
                         .tV = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
@@ -999,7 +999,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
-                        .tu = U + Font_Default.ColFactor
+                        .tU = U + Font_Default.ColFactor
                         .tV = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
@@ -1010,7 +1010,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2
-                        .tu = U + Font_Default.ColFactor
+                        .tU = U + Font_Default.ColFactor
                         .tV = V
                         .Rhw = 1
                     End With
@@ -1232,7 +1232,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -1271,8 +1271,8 @@ Dim EmptyChar As Char
     CharList(CharIndex).Active = 1
     
     'Calculate the name length so we can center the name above the head
-    CharList(CharIndex).name = name
-    CharList(CharIndex).NameOffset = Engine_GetTextWidth(name) * 0.5
+    CharList(CharIndex).Name = Name
+    CharList(CharIndex).NameOffset = Engine_GetTextWidth(Name) * 0.5
 
     'Set action index
     CharList(CharIndex).ActionIndex = 0
@@ -3040,7 +3040,7 @@ Dim V As Single
         With Font_Default.HeaderInfo.CharVA(LoopChar)
             .Vertex(0).Color = D3DColorARGB(255, 0, 0, 0)   'Black is the most common color
             .Vertex(0).Rhw = 1
-            .Vertex(0).tu = U
+            .Vertex(0).tU = U
             .Vertex(0).tV = V
             .Vertex(0).X = 0
             .Vertex(0).Y = 0
@@ -3048,7 +3048,7 @@ Dim V As Single
             
             .Vertex(1).Color = D3DColorARGB(255, 0, 0, 0)
             .Vertex(1).Rhw = 1
-            .Vertex(1).tu = U + Font_Default.ColFactor
+            .Vertex(1).tU = U + Font_Default.ColFactor
             .Vertex(1).tV = V
             .Vertex(1).X = Font_Default.HeaderInfo.CellWidth
             .Vertex(1).Y = 0
@@ -3056,7 +3056,7 @@ Dim V As Single
             
             .Vertex(2).Color = D3DColorARGB(255, 0, 0, 0)
             .Vertex(2).Rhw = 1
-            .Vertex(2).tu = U
+            .Vertex(2).tU = U
             .Vertex(2).tV = V + Font_Default.RowFactor
             .Vertex(2).X = 0
             .Vertex(2).Y = Font_Default.HeaderInfo.CellHeight
@@ -3064,7 +3064,7 @@ Dim V As Single
             
             .Vertex(3).Color = D3DColorARGB(255, 0, 0, 0)
             .Vertex(3).Rhw = 1
-            .Vertex(3).tu = U + Font_Default.ColFactor
+            .Vertex(3).tU = U + Font_Default.ColFactor
             .Vertex(3).tV = V + Font_Default.RowFactor
             .Vertex(3).X = Font_Default.HeaderInfo.CellWidth
             .Vertex(3).Y = Font_Default.HeaderInfo.CellHeight
@@ -3768,6 +3768,8 @@ Dim b As Byte
     ShowGameWindow(ViewMessageWindow) = 0
     ShowGameWindow(AmountWindow) = 0
     ShowGameWindow(BankWindow) = 0
+    If LastClickedWindow = MailboxWindow Or LastClickedWindow = ShopWindow Or LastClickedWindow = ViewMessageWindow Or _
+        LastClickedWindow = AmountWindow Or LastClickedWindow = BankWindow Then LastClickedWindow = 0
     AmountWindowUsage = 0
     AmountWindowItemIndex = 0
     AmountWindowValue = ""
@@ -4346,7 +4348,7 @@ Dim UpdateNameVB As Byte
     '***** Render Extras *****
 
     'Draw name over head
-    Engine_Render_Text CharList(CharIndex).name, PixelOffsetX + 16 - CharList(CharIndex).NameOffset, PixelOffsetY - 40, RenderColor(1)
+    Engine_Render_Text CharList(CharIndex).Name, PixelOffsetX + 16 - CharList(CharIndex).NameOffset, PixelOffsetY - 40, RenderColor(1)
 
     'Count the number of icons that will be needed to draw
     With CharList(CharIndex).CharStatus
@@ -4355,8 +4357,8 @@ Dim UpdateNameVB As Byte
     End With
     
     'Health/Mana bars
-    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 34, (CharList(CharIndex).HealthPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, HealthColor, HealthColor, HealthColor, HealthColor, 0
-    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 38, (CharList(CharIndex).ManaPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, ManaColor, ManaColor, ManaColor, ManaColor, 0
+    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 34, (CharList(CharIndex).HealthPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, HealthColor, HealthColor, HealthColor, HealthColor, 0, , False
+    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 38, (CharList(CharIndex).ManaPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, ManaColor, ManaColor, ManaColor, ManaColor, 0, , False
 
     'Draw the icons
     If IconCount > 0 Then
@@ -4466,9 +4468,9 @@ Dim i As Long
 
             'Create the source rectangle
             With SrcRect
-                .Left = ChatVA(i).tu * Font_Default.TextureSize.X
+                .Left = ChatVA(i).tU * Font_Default.TextureSize.X
                 .Top = ChatVA(i).tV * Font_Default.TextureSize.Y
-                .Right = ChatVA(i + 5).tu * Font_Default.TextureSize.X
+                .Right = ChatVA(i + 5).tU * Font_Default.TextureSize.X
                 .bottom = ChatVA(i + 5).tV * Font_Default.TextureSize.Y
             End With
             
@@ -4559,8 +4561,8 @@ Dim FileNum As Integer
     'Check for in-bounds
     If X + GrhData(CurrGrhIndex).pixelWidth > 0 Then
         If Y + GrhData(CurrGrhIndex).pixelHeight > 0 Then
-            If X < frmMain.ScaleWidth Then
-                If Y < frmMain.ScaleHeight Then
+            If X < ScreenWidth Then
+                If Y < ScreenHeight Then
                 
                     'Update the animation frame
                     If Animate Then
@@ -4585,7 +4587,7 @@ Dim FileNum As Integer
                     
                         'Render the texture with 2 triangles on a triangle strip
                         Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
-                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, CurrGrhIndex
+                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, CurrGrhIndex, False
                         
                     Else
                         
@@ -4813,6 +4815,8 @@ Private Sub Engine_Render_GUI_Window(ByVal WindowIndex As Byte)
 '*****************************************************************
 'Render a GUI window
 '*****************************************************************
+Dim User1RenderColor As Long
+Dim User2RenderColor As Long
 Dim TempGrh As Grh
 Dim TempGrh2 As Grh
 Dim t As String
@@ -4827,19 +4831,23 @@ Dim j As Long
         Case TradeWindow
             With GameWindow.Trade
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
-                Engine_Render_Text TradeTable.User1Name, .Screen.X + .User1Name.X, .Screen.Y + .User1Name.Y, D3DColorARGB(255, 255, 255, 255)
-                Engine_Render_Text TradeTable.User2Name, .Screen.X + .User2Name.X, .Screen.Y + .User2Name.Y, D3DColorARGB(255, 255, 255, 255)
+                
+                If TradeTable.User1Accepted Then User1RenderColor = D3DColorARGB(255, 0, 255, 0) Else User1RenderColor = D3DColorARGB(255, 255, 255, 255)
+                If TradeTable.User2Accepted Then User2RenderColor = D3DColorARGB(255, 0, 255, 0) Else User2RenderColor = D3DColorARGB(255, 255, 255, 255)
+
+                Engine_Render_Text TradeTable.User1Name, .Screen.X + .User1Name.X, .Screen.Y + .User1Name.Y, User1RenderColor
+                Engine_Render_Text TradeTable.User2Name, .Screen.X + .User2Name.X, .Screen.Y + .User2Name.Y, User2RenderColor
                 
                 For j = 1 To 9
                 
                     TempGrh.GrhIndex = TradeTable.Trade1(j).Grh
                     TempGrh2.GrhIndex = TradeTable.Trade2(j).Grh
                 
-                    Engine_Render_Grh TempGrh, .Screen.X + .Trade1(j).X, .Screen.Y + .Trade1(j).Y, 1, 0, False
-                    Engine_Render_Grh TempGrh2, .Screen.X + .Trade2(j).X, .Screen.Y + .Trade2(j).Y, 1, 0, False
+                    Engine_Render_Grh TempGrh, .Screen.X + .Trade1(j).X, .Screen.Y + .Trade1(j).Y, 1, 0, False, User1RenderColor, User1RenderColor, User1RenderColor, User1RenderColor
+                    Engine_Render_Grh TempGrh2, .Screen.X + .Trade2(j).X, .Screen.Y + .Trade2(j).Y, 1, 0, False, User2RenderColor, User2RenderColor, User2RenderColor, User2RenderColor
                     
-                    Engine_Render_Text TradeTable.Gold1, .Screen.X + .Gold1.X, .Screen.Y + .Gold1.Y, D3DColorARGB(255, 255, 255, 255)
-                    Engine_Render_Text TradeTable.Gold2, .Screen.X + .Gold2.X, .Screen.Y + .Gold2.Y, D3DColorARGB(255, 255, 255, 255)
+                    Engine_Render_Text TradeTable.Gold1, .Screen.X + .Gold1.X, .Screen.Y + .Gold1.Y, User1RenderColor
+                    Engine_Render_Text TradeTable.Gold2, .Screen.X + .Gold2.X, .Screen.Y + .Gold2.Y, User2RenderColor
                 
                 Next j
                         
@@ -4937,7 +4945,7 @@ Dim j As Long
                 Engine_Render_Text "Read", .Screen.X + .ReadLbl.X, .Screen.Y + .ReadLbl.Y, -1
                 Engine_Render_Text "Write", .Screen.X + .WriteLbl.X, .Screen.Y + .WriteLbl.Y, -1
                 Engine_Render_Text "Delete", .Screen.X + .DeleteLbl.X, .Screen.Y + .DeleteLbl.Y, -1
-                If SelMessage > 0 Then Engine_Render_Rectangle .Screen.X + .List.X, .Screen.Y + .List.Y + ((SelMessage - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight, 1, 1, 1, 1, 1, 1, 0, 0, 2097217280, 2097217280, 2097217280, 2097217280    'ARGB: 125/0/255/0
+                If SelMessage > 0 Then Engine_Render_Rectangle .Screen.X + .List.X, .Screen.Y + .List.Y + ((SelMessage - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight, 1, 1, 1, 1, 1, 1, 0, 0, 2097217280, 2097217280, 2097217280, 2097217280, , , False  'ARGB: 125/0/255/0
             End With
     
         Case ViewMessageWindow
@@ -5100,7 +5108,7 @@ Dim i As Byte
     If Y + (ItemDescLines * Font_Default.CharHeight) > ScreenHeight Then Y = ScreenHeight - (ItemDescLines * Font_Default.CharHeight)
 
     'Draw backdrop
-    Engine_Render_Rectangle X - 5, Y - 5, ItemDescWidth + 10, (Font_Default.CharHeight * ItemDescLines) + 10, 1, 1, 1, 1, 1, 1, 0, 0, -1761607681, -1761607681, -1761607681, -1761607681
+    Engine_Render_Rectangle X - 5, Y - 5, ItemDescWidth + 10, (Font_Default.CharHeight * ItemDescLines) + 10, 1, 1, 1, 1, 1, 1, 0, 0, -1761607681, -1761607681, -1761607681, -1761607681, , , False
 
     'Draw text
     For i = 1 To ItemDescLines
@@ -5144,14 +5152,12 @@ Private Sub Engine_ReadyTexture(ByVal TextureNum As Long)
 
 End Sub
 
-Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal GrhIndex As Long = 0)
+Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal GrhIndex As Long = 0, Optional ByVal InBoundsCheck As Boolean = True)
 
 '************************************************************
 'Render a square/rectangle based on the specified values then rotate it if needed
 '************************************************************
 Dim VertexArray(0 To 3) As TLVERTEX
-Dim WidthMod As Single
-Dim HeightMod As Single
 Dim RadAngle As Single 'The angle in Radians
 Dim CenterX As Single
 Dim CenterY As Single
@@ -5160,7 +5166,15 @@ Dim NewX As Single
 Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
-Dim ShadowAdd As Byte
+Dim ShadowAdd As Single
+
+    'Perform in-bounds check if needed
+    If InBoundsCheck Then
+        If X + SrcWidth <= 0 Then Exit Sub
+        If Y + SrcHeight <= 0 Then Exit Sub
+        If X >= ScreenWidth Then Exit Sub
+        If Y >= ScreenHeight Then Exit Sub
+    End If
 
     'Ready the texture
     Engine_ReadyTexture TextureNum
@@ -5168,61 +5182,102 @@ Dim ShadowAdd As Byte
     'Set the bitmap dimensions if needed
     If SrcBitmapWidth = -1 Then SrcBitmapWidth = SurfaceSize(TextureNum).X
     If SrcBitmapHeight = -1 Then SrcBitmapHeight = SurfaceSize(TextureNum).Y
-
-    'Set shadowed settings - shadows only change on the top 2 points
-    If Shadow Then
-
-        'Set the top-left corner
-        VertexArray(0).X = X + (Width * 0.5)
-        VertexArray(0).Y = Y - (Height * 0.5)
-
-        'Set the top-right corner
-        VertexArray(1).X = X + Width + (Width * 0.5)
-        VertexArray(1).Y = Y - (Height * 0.5)
-
-    Else
     
-        'Set the top-left corner
-        VertexArray(0).X = X
-        VertexArray(0).Y = Y
-
-        'Set the top-right corner
-        VertexArray(1).X = X + Width
-        VertexArray(1).Y = Y
-
-        ShadowAdd = 1
-
-    End If
-    
+    'Set the RHWs (must always be 1)
     VertexArray(0).Rhw = 1
     VertexArray(1).Rhw = 1
     VertexArray(2).Rhw = 1
     VertexArray(3).Rhw = 1
     
-    VertexArray(2).X = X
-    VertexArray(2).Y = Y + Height
-    VertexArray(3).X = X + Width
-    VertexArray(3).Y = Y + Height
-
+    'Apply the colors
     VertexArray(0).Color = Color0
     VertexArray(1).Color = Color1
     VertexArray(2).Color = Color2
     VertexArray(3).Color = Color3
 
-    VertexArray(0).tu = (SrcX / SrcBitmapWidth)
-    VertexArray(0).tV = (SrcY / SrcBitmapHeight)
-
-    VertexArray(1).tu = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
-    VertexArray(1).tV = VertexArray(0).tV
+    'We have to calculate shadows a bit differently, so use either one method or the other, not both on top of eachother
+    If Shadow Then
     
-    VertexArray(2).tu = VertexArray(0).tu
-    VertexArray(2).tV = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
+        'To make things easy, we just do a completely separate calculation the top two points
+        ' with an uncropped tU / tV algorithm
+        VertexArray(0).X = X + (Width * 0.5)
+        VertexArray(0).Y = Y - (Height * 0.5)
+        VertexArray(0).tU = (SrcX / SrcBitmapWidth)
+        VertexArray(0).tV = (SrcY / SrcBitmapHeight)
+        
+        VertexArray(1).X = VertexArray(0).X + Width
+        VertexArray(1).tU = ((SrcX + Width) / SrcBitmapWidth)
+        
+        If X < 0 Then
+            VertexArray(2).tU = ((SrcX - X) / SrcBitmapWidth)
+        Else
+            VertexArray(2).X = X
+            VertexArray(2).tU = (SrcX / SrcBitmapWidth)
+        End If
+        If X + Width > ScreenWidth Then
+            VertexArray(3).X = ScreenWidth
+            VertexArray(3).tU = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
+        Else
+            VertexArray(3).X = X + Width
+            VertexArray(3).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+        End If
 
-    VertexArray(3).tu = VertexArray(1).tu
+    Else
+    
+        'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it... :p)
+        ShadowAdd = 1
+
+        'Find the left side of the rectangle
+        If X < 0 Then
+            'VertexArray(0).X = 0 - No need to set - defaults at 0
+            VertexArray(0).tU = ((SrcX - X) / SrcBitmapWidth)
+        Else
+            VertexArray(0).X = X
+            VertexArray(0).tU = (SrcX / SrcBitmapWidth)
+        End If
+    
+        'Find the top side of the rectangle
+        If Y < 0 Then
+            'VertexArray(0).Y = 0 - No need to set - defaults at 0
+            VertexArray(0).tV = ((SrcY - Y) / SrcBitmapHeight)
+        Else
+            VertexArray(0).Y = Y
+            VertexArray(0).tV = (SrcY / SrcBitmapHeight)
+        End If
+        
+        'Find the right side of the rectangle
+        If X + Width > ScreenWidth Then
+            VertexArray(1).X = ScreenWidth
+            VertexArray(1).tU = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
+        Else
+            VertexArray(1).X = X + Width
+            VertexArray(1).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+        End If
+        
+        VertexArray(2).X = VertexArray(0).X
+        VertexArray(3).X = VertexArray(1).X
+
+    End If
+    
+    'Find the bottom of the rectangle
+    If Y + Height > ScreenHeight Then
+        VertexArray(2).Y = ScreenHeight
+        VertexArray(2).tV = ((SrcY + SrcHeight + ShadowAdd) - ((Y + Height) - ScreenHeight)) / SrcBitmapHeight
+    Else
+        VertexArray(2).Y = Y + Height
+        VertexArray(2).tV = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
+    End If
+    
+    'Because this is a perfect rectangle, all of the values below will equal one of the values we already got
+    VertexArray(1).Y = VertexArray(0).Y
+    VertexArray(1).tV = VertexArray(0).tV
+    VertexArray(2).tU = VertexArray(0).tU
+    VertexArray(3).Y = VertexArray(2).Y
+    VertexArray(3).tU = VertexArray(1).tU
     VertexArray(3).tV = VertexArray(2).tV
-
+    
     'Check if a rotation is required
-    If Degrees <> 0 Then
+    If Degrees <> 0 Or Degrees <> 360 Then
 
         'Converts the angle to rotate by into radians
         RadAngle = Degrees * DegreeToRadian
@@ -5812,13 +5867,13 @@ Dim bY As Single
             'Perform the zooming calculations
             ' * 1.333... maintains the aspect ratio
             ' ... / 1024 is to factor in the buffer size
-            BlurTA(0).tu = ZoomLevel * 1.333333333
+            BlurTA(0).tU = ZoomLevel * 1.333333333
             BlurTA(0).tV = ZoomLevel
-            BlurTA(1).tu = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
+            BlurTA(1).tU = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
             BlurTA(1).tV = ZoomLevel
-            BlurTA(2).tu = ZoomLevel * 1.333333333
+            BlurTA(2).tU = ZoomLevel * 1.333333333
             BlurTA(2).tV = ((ScreenHeight + 1) / 1024) - ZoomLevel
-            BlurTA(3).tu = BlurTA(1).tu
+            BlurTA(3).tU = BlurTA(1).tU
             BlurTA(3).tV = BlurTA(2).tV
             
             'Draw what we have drawn thus far since the last .Clear
@@ -5862,7 +5917,7 @@ Dim bY As Single
                             
                             'Part of the user's group
                             j = D3DColorARGB(200, 100, 220, 100)
-                            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , , False
                         
                         End If
                     Else
@@ -5887,7 +5942,7 @@ Dim bY As Single
                                         End If
                                         
                                         'Any character but one part of the user's group
-                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , , False
                                     
                                     End If
                                 End If
@@ -5902,10 +5957,9 @@ Dim bY As Single
         
     End If
 
-    'Show FPS & PTD (Packet Transfer Delay - time it takes from the packet to make a round trip, not the same as ping!)
+    'Show FPS
     Engine_Render_Text "FPS: " & FPS, ScreenWidth - 80, 2, -1
-    Engine_Render_Text "PTD: " & PTD & " ms", ScreenWidth - 80, 15, -1
-    
+
 End Sub
 
 Public Sub Engine_BuildMiniMap()
@@ -6346,12 +6400,12 @@ Private Sub Engine_NPCChat_AddText(ByVal CharIndex As Integer)
             'Find out the style used, and add the chat according to the style
             Select Case NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Style
                 Case NPCCHAT_STYLE_BUBBLE
-                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
+                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.Name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
                 Case NPCCHAT_STYLE_BOX
-                    Engine_AddToChatTextBuffer .name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
+                    Engine_AddToChatTextBuffer .Name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
                 Case NPCCHAT_STYLE_BOTH
-                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
-                    Engine_AddToChatTextBuffer .name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
+                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.Name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
+                    Engine_AddToChatTextBuffer .Name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
             End Select
             
         End If
@@ -6888,26 +6942,24 @@ Dim YOffset As Single
 
 End Function
 
-Public Sub Engine_SetItemDesc(ByVal name As String, Optional ByVal Amount As Integer = 0, Optional ByVal Price As Long = 0)
+Public Sub Engine_SetItemDesc(ByVal Name As String, Optional ByVal Amount As Integer = 0, Optional ByVal Value As Long = 0)
 
 '************************************************************
 'Set item description values
 '************************************************************
-
 Dim i As Byte
 Dim X As Long
 
-'Set the item values
-
-    ItemDescLine(1) = name
+    'Set the item values
+    ItemDescLine(1) = Name
     ItemDescLines = 1
     If Amount <> 0 Then
         ItemDescLines = ItemDescLines + 1
         ItemDescLine(ItemDescLines) = "Amount: " & Amount
     End If
-    If Price <> 0 Then
+    If Value <> 0 Then
         ItemDescLines = ItemDescLines + 1
-        ItemDescLine(ItemDescLines) = "Price: " & Price
+        ItemDescLine(ItemDescLines) = "Value: " & Value
     End If
 
     'Get the largest size

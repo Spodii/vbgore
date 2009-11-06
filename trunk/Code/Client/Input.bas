@@ -9,7 +9,27 @@ Public MouseEvent As Long
 Public MouseLeftDown As Byte
 Public MouseRightDown As Byte
 
+Public Sub Input_Keys_ClearQueue()
+
+'*****************************************************************
+'Clears the GetAsyncKeyState queue to prevent key presses from a long time
+' ago falling into "have been pressed"
+'*****************************************************************
+Dim i As Long
+
+    For i = 0 To 255
+        GetAsyncKeyState i
+    Next i
+
+End Sub
+
 Private Function Input_GetCommand(ByVal CommandString As String) As Boolean
+
+'*****************************************************************
+'Checks if "CommandString" is the command entered in the buffer
+'Partial matches return true, too, such as for example:
+'Entered: /quit                CommandString: /qui
+'*****************************************************************
 
     'Check for the command passed
     If UCase$(Left$(EnterTextBuffer, Len(CommandString))) = UCase$(CommandString) Then Input_GetCommand = True Else Input_GetCommand = False
@@ -17,10 +37,17 @@ Private Function Input_GetCommand(ByVal CommandString As String) As Boolean
 End Function
 
 Private Function Input_GetBufferArgs() As String
+
+'*****************************************************************
+'Returns the arguments for a command entered into the chat buffer
+' (basically cuts off the command and the space after it)
+'*****************************************************************
 Dim s() As String
 
-    'Return the arguments (remove the command)
+    'Split between the first space only
     s = Split(EnterTextBuffer, " ", 2)
+    
+    'Return the parameters if they exist
     If UBound(s) > 0 Then Input_GetBufferArgs = Trim$(s(1))
 
 End Function
@@ -58,6 +85,7 @@ Sub Input_Keys_Press(ByVal KeyAscii As Integer)
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
+Dim StartGold As Long
 Dim i As Long
 Dim b As Boolean
 
@@ -76,12 +104,12 @@ Dim b As Boolean
             AmountWindowValue = AmountWindowValue & Chr$(KeyAscii)
             If Val(AmountWindowValue) > MAXINT Then AmountWindowValue = Str(MAXINT)
         End If
-    
-    
+
     '*************************
     '***** Trade window ******
     '*************************
     ElseIf LastClickedWindow = TradeWindow Then
+        StartGold = TradeTable.Gold1
         'Backspace
         If KeyAscii = 8 Then
             If Len(Str$(TradeTable.Gold1)) > 0 Then
@@ -95,10 +123,21 @@ Dim b As Boolean
         'Number
         If IsNumeric(Chr$(KeyAscii)) Then
             If Len(Str$(TradeTable.Gold1) & Chr$(KeyAscii)) < Len(Str$(MAXLONG)) Then
-                TradeTable.Gold1 = Str$(TradeTable.Gold1) & Chr$(KeyAscii)
+                TradeTable.Gold1 = Val(Str$(TradeTable.Gold1) & Chr$(KeyAscii))
+                If TradeTable.Gold1 > MAXLONG Then TradeTable.Gold1 = MAXLONG
+            Else
+                TradeTable.Gold1 = MAXLONG
             End If
-        End If
+            If TradeTable.Gold1 > BaseStats(SID.Gold) Then TradeTable.Gold1 = BaseStats(SID.Gold)
 
+        End If
+        'Check if the gold has changed, if so update it on the server
+        If TradeTable.Gold1 <> StartGold Then
+            sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
+            sndBuf.Put_Byte 0
+            sndBuf.Put_Long TradeTable.Gold1
+        End If
+        
     '*****************************
     '***** Write mail window *****
     '*****************************
@@ -137,7 +176,7 @@ Dim b As Boolean
                 End If
             End Select
         End If
-    
+
     '*****************************
     '***** Text input buffer *****
     '*****************************
@@ -183,11 +222,11 @@ Dim b As Boolean
                 End If
             End If
         End If
+        
     End If
     
     'Clear the key
     KeyAscii = 0
-
 
 End Sub
 
@@ -293,6 +332,7 @@ Dim i As Integer
                                     Engine_ShowNPCChatWindow ActiveAsk.AskName, ActiveAsk.ChatIndex, i
                                 Else
                                     ShowGameWindow(NPCChatWindow) = 0
+                                    If LastClickedWindow = NPCChatWindow Then LastClickedWindow = 0
                                 End If
                             End If
                         End If
@@ -389,6 +429,7 @@ Dim j As Long
         If KeyCode = vbKeyW Then
             If ShowGameWindow(InventoryWindow) Then
                 ShowGameWindow(InventoryWindow) = 0
+                If LastClickedWindow = InventoryWindow Then LastClickedWindow = 0
             Else
                 ShowGameWindow(InventoryWindow) = 1
                 LastClickedWindow = InventoryWindow
@@ -396,6 +437,7 @@ Dim j As Long
         ElseIf KeyCode = vbKeyQ Then
             If ShowGameWindow(QuickBarWindow) Then
                 ShowGameWindow(QuickBarWindow) = 0
+                If LastClickedWindow = QuickBarWindow Then LastClickedWindow = 0
             Else
                 ShowGameWindow(QuickBarWindow) = 1
                 LastClickedWindow = QuickBarWindow
@@ -403,6 +445,7 @@ Dim j As Long
         ElseIf KeyCode = vbKeyC Then
             If ShowGameWindow(ChatWindow) Then
                 ShowGameWindow(ChatWindow) = 0
+                If LastClickedWindow = ChatWindow Then LastClickedWindow = 0
             Else
                 ShowGameWindow(ChatWindow) = 1
                 LastClickedWindow = ChatWindow
@@ -410,6 +453,7 @@ Dim j As Long
         ElseIf KeyCode = vbKeyS Then
             If ShowGameWindow(StatWindow) Then
                 ShowGameWindow(StatWindow) = 0
+                If LastClickedWindow = StatWindow Then LastClickedWindow = 0
             Else
                 ShowGameWindow(StatWindow) = 1
                 LastClickedWindow = StatWindow
@@ -433,7 +477,7 @@ Dim j As Long
                                 If WriteMailData.ObjIndex(j) = AmountWindowItemIndex Then
                                     ShowGameWindow(AmountWindow) = 0
                                     AmountWindowUsage = 0
-                                    LastClickedWindow = 0
+                                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
                                     Exit Sub
                                 End If
                             Next j
@@ -444,7 +488,7 @@ Dim j As Long
                                 If j > MaxMailObjs Then
                                     ShowGameWindow(AmountWindow) = 0
                                     AmountWindowUsage = 0
-                                    LastClickedWindow = 0
+                                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
                                     Exit Sub
                                 End If
                             Loop While WriteMailData.ObjIndex(j) > 0
@@ -492,23 +536,9 @@ Dim j As Long
                     End If
                     ShowGameWindow(AmountWindow) = 0
                     AmountWindowUsage = 0
-                    LastClickedWindow = 0
+                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
                 End If
             End If
-            
-            
-        '*************************
-        '***** Trade window ******
-        '*************************
-        '//!!
-        'ElseIf LastClickedWindow = TradeWindow Then
-        '    If TradeTable.Gold1 >= 0 Then
-        '        If IsNumeric(TradeTable.Gold1) Then
-        '            sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-        '            sndBuf.Put_Byte 0
-        '            sndBuf.Put_Long CLng(TradeTable.Gold1)
-        '        End If
-        '    End If
 
         '*****************************
         '***** Write mail window *****
@@ -543,27 +573,27 @@ Dim j As Long
                             WriteMailData.RecieverName = vbNullString
                             WriteMailData.Subject = vbNullString
                             ShowGameWindow(WriteMessageWindow) = 0
-                            LastClickedWindow = 0
+                            If LastClickedWindow = WriteMessageWindow Then LastClickedWindow = 0
                             LastMailSendTime = timeGetTime
                         End If
                     End If
                 End If
             End If
             
+        End If
+        
         '***********************
         '***** Chat screen *****
         '***********************
-        Else
+        If LastClickedWindow <> WriteMessageWindow And LastClickedWindow <> ViewMessageWindow And LastClickedWindow <> AmountWindow Then
             If EnterText = True Then
-                If EnterTextBuffer <> "" Then
-                    Input_HandleCommands
-                End If
-                
+                If EnterTextBuffer <> vbNullString Then Input_HandleCommands
                 EnterText = False
             Else
                 EnterText = True
             End If
         End If
+        
     End If
     
     '*****************************
@@ -573,7 +603,7 @@ Dim j As Long
         If LastClickedWindow = 0 Then
             If ShowGameWindow(MenuWindow) = 1 Then
                 ShowGameWindow(MenuWindow) = 0
-                LastClickedWindow = 0
+                If LastClickedWindow = MenuWindow Then LastClickedWindow = 0
             Else
                 If EnterText Then
                     EnterTextBuffer = vbNullString
@@ -734,11 +764,11 @@ Dim j As Long
                 'No valid number specified, give the list
                 Engine_AddToChatTextBuffer Message(104), FontColor_Quest
                 For i = 1 To QuestInfoUBound
-                    Engine_AddToChatTextBuffer "  " & i & ". " & QuestInfo(i).name, FontColor_Quest
+                    Engine_AddToChatTextBuffer "  " & i & ". " & QuestInfo(i).Name, FontColor_Quest
                 Next i
             Else
                 'Give the info on the specific quest
-                Engine_AddToChatTextBuffer QuestInfo(j).name & ":", FontColor_Quest
+                Engine_AddToChatTextBuffer QuestInfo(j).Name & ":", FontColor_Quest
                 Engine_AddToChatTextBuffer QuestInfo(j).Desc, FontColor_Quest
             End If
         End If
@@ -919,12 +949,16 @@ Sub Input_Keys_General()
     End If
 
     'Zoom in / out
-    If GetAsyncKeyState(vbKeyNumpad8) Then       'In
-        ZoomLevel = ZoomLevel + (ElapsedTime * 0.0003)
-        If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
-    ElseIf GetAsyncKeyState(vbKeyNumpad2) Then  'Out
-        ZoomLevel = ZoomLevel - (ElapsedTime * 0.0003)
-        If ZoomLevel < 0 Then ZoomLevel = 0
+    If LastClickedWindow <> TradeWindow Then
+        If LastClickedWindow <> ChatWindow Then
+            If GetAsyncKeyState(vbKeyNumpad8) Then       'In
+                ZoomLevel = ZoomLevel + (ElapsedTime * 0.0003)
+                If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
+            ElseIf GetAsyncKeyState(vbKeyNumpad2) Then  'Out
+                ZoomLevel = ZoomLevel - (ElapsedTime * 0.0003)
+                If ZoomLevel < 0 Then ZoomLevel = 0
+            End If
+        End If
     End If
 
     'Don't allow any these keys during movement..
@@ -1170,6 +1204,7 @@ Dim j As Byte
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                         Input_Mouse_LeftClick_Window = 1
                         LastClickedWindow = TradeWindow
+                        'Item window
                         For i = 1 To 9
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Trade1(i).X, .Screen.Y + .Trade1(i).Y, 32, 32) Then
                                 sndBuf.Allocate 2
@@ -1178,6 +1213,21 @@ Dim j As Byte
                                 Exit Function
                             End If
                         Next i
+                        'Accept button
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Accept.X, .Screen.Y + .Accept.Y, .Accept.Width, .Accept.Height) Then
+                            sndBuf.Put_Byte DataCode.User_Trade_Accept
+                            Exit Function
+                        End If
+                        'Finish button
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Trade.X, .Screen.Y + .Trade.Y, .Trade.Width, .Trade.Height) Then
+                            sndBuf.Put_Byte DataCode.User_Trade_Finish
+                            Exit Function
+                        End If
+                        'Cancel button
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Cancel.X, .Screen.Y + .Cancel.Y, .Cancel.Width, .Cancel.Height) Then
+                            sndBuf.Put_Byte DataCode.User_Trade_Cancel
+                            Exit Function
+                        End If
                         SelGameWindow = TradeWindow
                     End If
                 End With
@@ -1196,6 +1246,7 @@ Dim j As Byte
                                     Engine_ShowNPCChatWindow ActiveAsk.AskName, ActiveAsk.ChatIndex, j
                                 Else
                                     ShowGameWindow(NPCChatWindow) = 0
+                                    If LastClickedWindow = NPCChatWindow Then LastClickedWindow = 0
                                 End If
                                 Exit For
                             End If
@@ -1787,7 +1838,7 @@ Dim i As Long
             If CharList(i).Pos.Y = tY Then
                 If CharList(i).NPCChatIndex > 0 Then
                     If NPCChat(CharList(i).NPCChatIndex).Ask.StartAsk > 0 Then
-                        Engine_ShowNPCChatWindow CharList(i).name, CharList(i).NPCChatIndex, NPCChat(CharList(i).NPCChatIndex).Ask.StartAsk
+                        Engine_ShowNPCChatWindow CharList(i).Name, CharList(i).NPCChatIndex, NPCChat(CharList(i).NPCChatIndex).Ask.StartAsk
                     End If
                 End If
                 Exit For
@@ -1827,6 +1878,34 @@ Function Input_Mouse_RightClick_Window(ByVal WindowIndex As Byte) As Byte
 Dim i As Integer
 
     Select Case WindowIndex
+    
+        Case TradeWindow
+            If ShowGameWindow(TradeWindow) Then
+                With GameWindow.Trade
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        Input_Mouse_RightClick_Window = 1
+                        LastClickedWindow = TradeWindow
+                        'Item window for user 1
+                        For i = 1 To 9
+                            If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Trade1(i).X, .Screen.Y + .Trade1(i).Y, 32, 32) Then
+                                If TradeTable.Trade1(i).Grh > 0 Then
+                                    Engine_SetItemDesc TradeTable.Trade1(i).Name, TradeTable.Trade1(i).Amount, TradeTable.Trade1(i).Value
+                                    Exit Function
+                                End If
+                            End If
+                        Next i
+                        'Item window for user 2
+                        For i = 1 To 9
+                            If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Trade2(i).X, .Screen.Y + .Trade2(i).Y, 32, 32) Then
+                                If TradeTable.Trade2(i).Grh > 0 Then
+                                    Engine_SetItemDesc TradeTable.Trade2(i).Name, TradeTable.Trade2(i).Amount, TradeTable.Trade2(i).Value
+                                    Exit Function
+                                End If
+                            End If
+                        Next i
+                    End If
+                End With
+            End If
         
         Case QuickBarWindow
             If ShowGameWindow(QuickBarWindow) Then
@@ -1840,7 +1919,7 @@ Dim i As Integer
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                                 'An item in the quickbar was clicked - get description
                                 If QuickBarID(i).Type = QuickBarType_Item Then
-                                    Engine_SetItemDesc UserInventory(QuickBarID(i).ID).name, UserInventory(QuickBarID(i).ID).Amount
+                                    Engine_SetItemDesc UserInventory(QuickBarID(i).ID).Name, UserInventory(QuickBarID(i).ID).Amount
                                     'A skill in the quickbar was clicked - get the name
                                 ElseIf QuickBarID(i).Type = QuickBarType_Skill Then
                                     Engine_SetItemDesc Engine_SkillIDtoSkillName(QuickBarID(i).ID)
@@ -1866,7 +1945,7 @@ Dim i As Integer
                         For i = 1 To 49
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                                 If UserInventory(i).GrhIndex > 0 Then
-                                    Engine_SetItemDesc UserInventory(i).name, UserInventory(i).Amount
+                                    Engine_SetItemDesc UserInventory(i).Name, UserInventory(i).Amount, UserInventory(i).Value
                                     DragSourceWindow = InventoryWindow
                                     DragItemSlot = i
                                 End If
@@ -1892,7 +1971,7 @@ Dim i As Integer
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                                 If i <= NPCTradeItemArraySize Then
                                     If NPCTradeItems(i).GrhIndex > 0 Then
-                                        Engine_SetItemDesc NPCTradeItems(i).name, 0, NPCTradeItems(i).Price
+                                        Engine_SetItemDesc NPCTradeItems(i).Name, 0, NPCTradeItems(i).Value
                                         DragSourceWindow = ShopWindow
                                         DragItemSlot = i
                                     End If
@@ -1917,7 +1996,7 @@ Dim i As Integer
                         'Check if an item was clicked
                         For i = 1 To 49
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                                If UserBank(i).GrhIndex > 0 Then Engine_SetItemDesc UserBank(i).name, UserBank(i).Amount
+                                If UserBank(i).GrhIndex > 0 Then Engine_SetItemDesc UserBank(i).Name, UserBank(i).Amount
                                 DragSourceWindow = BankWindow
                                 DragItemSlot = i
                                 Exit Function
@@ -1961,7 +2040,7 @@ Dim i As Integer
                         'Click an item
                         For i = 1 To MaxMailObjs
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
-                                Engine_SetItemDesc UserInventory(WriteMailData.ObjIndex(i)).name, WriteMailData.ObjAmount(i)
+                                Engine_SetItemDesc UserInventory(WriteMailData.ObjIndex(i)).Name, WriteMailData.ObjAmount(i)
                                 Exit Function
                             End If
                         Next i

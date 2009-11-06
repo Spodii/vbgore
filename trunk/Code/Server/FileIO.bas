@@ -904,7 +904,7 @@ Dim FileNum As Byte
         With TempObjData
             Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
-            .Price = Val(DB_RS!Price)
+            .Value = Val(DB_RS!Price)
             .ClassReq = Val(DB_RS!ClassReq)
             .ObjType = Val(DB_RS!ObjType)
             .WeaponType = Val(DB_RS!WeaponType)
@@ -1099,7 +1099,7 @@ Dim k As Byte
 
 End Sub
 
-Public Sub Load_User(UserChar As User, ByVal UserName As String)
+Public Sub Load_User(ByVal UserIndex As Integer, ByVal UserName As String)
 Dim TempStr() As String
 Dim TempStr2() As String
 Dim InvStr As String
@@ -1108,6 +1108,9 @@ Dim BankStr As String
 Dim KSStr As String
 Dim CurQStr As String
 Dim CompQStr As String
+Dim tMinHP As Long
+Dim tMinSP As Long
+Dim tMinMP As Long
 Dim i As Long
 
     Log "Call Load_User(N/A," & UserName & ")", CodeTracker '//\\LOGLINE//\\
@@ -1123,50 +1126,53 @@ Dim i As Long
     
     'Loop through every field - match up the names then set the data accordingly
     With DB_RS
-        UserChar.Desc = Trim$(!Descr)
-        UserChar.flags.GMLevel = !gm
+        UserList(UserIndex).Desc = Trim$(!Descr)
+        UserList(UserIndex).flags.GMLevel = !gm
         InvStr = !inventory
         MailStr = !mail
         BankStr = !Bank
         KSStr = !KnownSkills
         CompQStr = Trim$(!CompletedQuests)
         CurQStr = Trim$(!currentquest)
-        UserChar.BankGold = Val(!BankGold)
-        UserChar.Class = Val(!Class)
-        UserChar.Pos.X = Val(!pos_x)
-        UserChar.Pos.Y = Val(!pos_y)
-        UserChar.Pos.Map = Val(!pos_map)
-        UserChar.Char.Hair = Val(!char_hair)
-        UserChar.Char.Head = Val(!char_head)
-        UserChar.Char.Body = Val(!char_body)
-        UserChar.Char.Weapon = Val(!char_weapon)
-        UserChar.Char.Wings = Val(!char_wings)
-        UserChar.Char.Heading = Val(!char_heading)
-        UserChar.Char.HeadHeading = Val(!char_headheading)
-        UserChar.WeaponEqpSlot = Val(!eq_weapon)
-        UserChar.ArmorEqpSlot = Val(!eq_armor)
-        UserChar.WingsEqpSlot = Val(!eq_wings)
-        UserChar.Stats.BaseStat(SID.Speed) = Val(!stat_speed)
-        UserChar.Stats.BaseStat(SID.Str) = Val(!stat_str)
-        UserChar.Stats.BaseStat(SID.Agi) = Val(!stat_agi)
-        UserChar.Stats.BaseStat(SID.Mag) = Val(!stat_mag)
-        UserChar.Stats.BaseStat(SID.DEF) = Val(!stat_def)
-        UserChar.Stats.BaseStat(SID.Gold) = Val(!stat_gold)
-        UserChar.Stats.BaseStat(SID.EXP) = Val(!stat_exp)
-        UserChar.Stats.BaseStat(SID.ELV) = Val(!stat_elv)
-        UserChar.Stats.BaseStat(SID.ELU) = Val(!stat_elu)
-        UserChar.Stats.BaseStat(SID.Points) = Val(!stat_points)
-        UserChar.Stats.BaseStat(SID.MinHIT) = Val(!stat_hit_min)
-        UserChar.Stats.BaseStat(SID.MaxHIT) = Val(!stat_hit_max)
-        UserChar.Stats.BaseStat(SID.MaxHP) = Val(!stat_hp_max) 'Max HP/SP/MP MUST be loaded before the mins!
-        UserChar.Stats.BaseStat(SID.MaxMAN) = Val(!stat_mp_max)
-        UserChar.Stats.BaseStat(SID.MaxSTA) = Val(!stat_sp_max)
-        UserChar.Stats.ModStat(SID.MaxHP) = UserChar.Stats.BaseStat(SID.MaxHP)
-        UserChar.Stats.ModStat(SID.MaxMAN) = UserChar.Stats.BaseStat(SID.MaxMAN)
-        UserChar.Stats.ModStat(SID.MaxSTA) = UserChar.Stats.BaseStat(SID.MaxSTA)
-        UserChar.Stats.BaseStat(SID.MinHP) = Val(!stat_hp_min)
-        UserChar.Stats.BaseStat(SID.MinMAN) = Val(!stat_mp_min)
-        UserChar.Stats.BaseStat(SID.MinSTA) = Val(!stat_sp_min)
+        UserList(UserIndex).BankGold = Val(!BankGold)
+        UserList(UserIndex).Class = Val(!Class)
+        UserList(UserIndex).Pos.X = Val(!pos_x)
+        UserList(UserIndex).Pos.Y = Val(!pos_y)
+        UserList(UserIndex).Pos.Map = Val(!pos_map)
+        UserList(UserIndex).Char.Hair = Val(!char_hair)
+        UserList(UserIndex).Char.Head = Val(!char_head)
+        UserList(UserIndex).Char.Body = Val(!char_body)
+        UserList(UserIndex).Char.Weapon = Val(!char_weapon)
+        UserList(UserIndex).Char.Wings = Val(!char_wings)
+        UserList(UserIndex).Char.Heading = Val(!char_heading)
+        UserList(UserIndex).Char.HeadHeading = Val(!char_headheading)
+        UserList(UserIndex).WeaponEqpSlot = Val(!eq_weapon)
+        UserList(UserIndex).ArmorEqpSlot = Val(!eq_armor)
+        UserList(UserIndex).WingsEqpSlot = Val(!eq_wings)
+        UserList(UserIndex).Stats.BaseStat(SID.Speed) = Val(!stat_speed)
+        UserList(UserIndex).Stats.BaseStat(SID.Str) = Val(!stat_str)
+        UserList(UserIndex).Stats.BaseStat(SID.Agi) = Val(!stat_agi)
+        UserList(UserIndex).Stats.BaseStat(SID.Mag) = Val(!stat_mag)
+        UserList(UserIndex).Stats.BaseStat(SID.DEF) = Val(!stat_def)
+        UserList(UserIndex).Stats.BaseStat(SID.Gold) = Val(!stat_gold)
+        UserList(UserIndex).Stats.BaseStat(SID.EXP) = Val(!stat_exp)
+        UserList(UserIndex).Stats.BaseStat(SID.ELV) = Val(!stat_elv)
+        UserList(UserIndex).Stats.BaseStat(SID.ELU) = Val(!stat_elu)
+        UserList(UserIndex).Stats.BaseStat(SID.Points) = Val(!stat_points)
+        UserList(UserIndex).Stats.BaseStat(SID.MinHIT) = Val(!stat_hit_min)
+        UserList(UserIndex).Stats.BaseStat(SID.MaxHIT) = Val(!stat_hit_max)
+        UserList(UserIndex).Stats.BaseStat(SID.MaxHP) = Val(!stat_hp_max) 'Max HP/SP/MP MUST be loaded before the mins!
+        UserList(UserIndex).Stats.BaseStat(SID.MaxMAN) = Val(!stat_mp_max)
+        UserList(UserIndex).Stats.BaseStat(SID.MaxSTA) = Val(!stat_sp_max)
+        UserList(UserIndex).Stats.ModStat(SID.MaxHP) = UserList(UserIndex).Stats.BaseStat(SID.MaxHP)
+        UserList(UserIndex).Stats.ModStat(SID.MaxMAN) = UserList(UserIndex).Stats.BaseStat(SID.MaxMAN)
+        UserList(UserIndex).Stats.ModStat(SID.MaxSTA) = UserList(UserIndex).Stats.BaseStat(SID.MaxSTA)
+        
+        'We have to wait until we know the modified max stats, we can set the minimum, or else the user will never be able to log
+        ' in with their stats full if they have +HP, +SP or +MP stat modifiers equipped
+        tMinHP = Val(!stat_hp_min)
+        tMinMP = Val(!stat_mp_min)
+        tMinSP = Val(!stat_sp_min)
         
         'Update the server the user is on
         !server = ServerID
@@ -1185,7 +1191,7 @@ Dim i As Long
             Log "Load_User: Splitting item data (" & TempStr(i) & ")", CodeTracker '//\\LOGLINE//\\
             TempStr2 = Split(TempStr(i), " ")   'Split up the slot, objindex, amount and equipted (in that order)
             If Val(TempStr2(0)) <= MAX_INVENTORY_SLOTS Then
-                With UserChar.Object(Val(TempStr2(0)))
+                With UserList(UserIndex).Object(Val(TempStr2(0)))
                     .ObjIndex = Val(TempStr2(1))
                     .Amount = Val(TempStr2(2))
                     .Equipped = Val(TempStr2(3))
@@ -1203,7 +1209,7 @@ Dim i As Long
         For i = 0 To UBound(TempStr)        'Loop through the slots
             TempStr2 = Split(TempStr(i), " ")   'Split up the slot, objindex and amount (in that order)
             If Val(TempStr2(0)) <= MAX_INVENTORY_SLOTS Then
-                With UserChar.Bank(Val(TempStr2(0)))
+                With UserList(UserIndex).Bank(Val(TempStr2(0)))
                     .ObjIndex = Val(TempStr2(1))
                     .Amount = Val(TempStr2(2))
                 End With
@@ -1219,7 +1225,7 @@ Dim i As Long
         TempStr = Split(MailStr, vbNewLine) 'Split up the mail indexes
         For i = 0 To UBound(TempStr)
             If i <= MaxMailPerUser Then
-                UserChar.MailID(i + 1) = Val(TempStr(i))
+                UserList(UserIndex).MailID(i + 1) = Val(TempStr(i))
             Else '//\\LOGLINE//\\
                 Log "Load_User: User has too many mails - tried applying slot " & i, CriticalError '//\\LOGLINE//\\
             End If
@@ -1231,7 +1237,7 @@ Dim i As Long
         TempStr = Split(KSStr, vbNewLine)   'Split up the known skill indexes
         For i = 0 To UBound(TempStr)
             If Val(TempStr(i)) <= NumSkills Then
-                UserChar.KnownSkills(Val(TempStr(i))) = 1
+                UserList(UserIndex).KnownSkills(Val(TempStr(i))) = 1
             Else '//\\LOGLINE//\\
                 Log "Load_User: User has too many skills - tried applying slot " & i, CriticalError '//\\LOGLINE//\\
             End If
@@ -1241,10 +1247,10 @@ Dim i As Long
     'Completed quests string
     If LenB(CompQStr) Then
         TempStr = Split(CompQStr, ",")
-        UserChar.NumCompletedQuests = UBound(TempStr) + 1
-        ReDim UserChar.CompletedQuests(1 To UserChar.NumCompletedQuests)
-        For i = 0 To UserChar.NumCompletedQuests - 1
-            UserChar.CompletedQuests(i + 1) = Int(TempStr(i))
+        UserList(UserIndex).NumCompletedQuests = UBound(TempStr) + 1
+        ReDim UserList(UserIndex).CompletedQuests(1 To UserList(UserIndex).NumCompletedQuests)
+        For i = 0 To UserList(UserIndex).NumCompletedQuests - 1
+            UserList(UserIndex).CompletedQuests(i + 1) = Int(TempStr(i))
         Next i
     End If
     
@@ -1254,8 +1260,8 @@ Dim i As Long
         For i = 0 To UBound(TempStr)
             If i + 1 < MaxQuests Then 'Make sure we are within limit
                 TempStr2 = Split(TempStr(i), " ")   'Split up the QuestID and NPCKills (in that order)
-                UserChar.Quest(i + 1) = Val(TempStr2(0))
-                UserChar.QuestStatus(i + 1).NPCKills = Val(TempStr2(1))
+                UserList(UserIndex).Quest(i + 1) = Val(TempStr2(0))
+                UserList(UserIndex).QuestStatus(i + 1).NPCKills = Val(TempStr2(1))
             Else '//\\LOGLINE//\\
                 Log "Load_User: User has too many quests - tried applying quest " & i + 1, CriticalError '//\\LOGLINE//\\
             End If
@@ -1263,15 +1269,23 @@ Dim i As Long
     End If
     
     'Equipt items
-    If UserChar.WeaponEqpSlot > 0 Then UserChar.WeaponEqpObjIndex = UserChar.Object(UserChar.WeaponEqpSlot).ObjIndex
-    If UserChar.ArmorEqpSlot > 0 Then UserChar.ArmorEqpObjIndex = UserChar.Object(UserChar.ArmorEqpSlot).ObjIndex
-    If UserChar.WingsEqpSlot > 0 Then UserChar.WingsEqpObjIndex = UserChar.Object(UserChar.WingsEqpSlot).ObjIndex
+    If UserList(UserIndex).WeaponEqpSlot > 0 Then UserList(UserIndex).WeaponEqpObjIndex = UserList(UserIndex).Object(UserList(UserIndex).WeaponEqpSlot).ObjIndex
+    If UserList(UserIndex).ArmorEqpSlot > 0 Then UserList(UserIndex).ArmorEqpObjIndex = UserList(UserIndex).Object(UserList(UserIndex).ArmorEqpSlot).ObjIndex
+    If UserList(UserIndex).WingsEqpSlot > 0 Then UserList(UserIndex).WingsEqpObjIndex = UserList(UserIndex).Object(UserList(UserIndex).WingsEqpSlot).ObjIndex
 
-    'Force stat updates
-    UserChar.Stats.ForceFullUpdate
+    'Update the user's mod stats first before setting the min (current) values
+    User_UpdateModStats UserIndex
 
+    'Force stat updates to the client
+    UserList(UserIndex).Stats.ForceFullUpdate
+
+    'We can finally set the min stats
+    UserList(UserIndex).Stats.BaseStat(SID.MinHP) = tMinHP
+    UserList(UserIndex).Stats.BaseStat(SID.MinSTA) = tMinSP
+    UserList(UserIndex).Stats.BaseStat(SID.MinMAN) = tMinMP
+    
     'Misc values
-    UserChar.Name = UserName
+    UserList(UserIndex).Name = UserName
     
 End Sub
 

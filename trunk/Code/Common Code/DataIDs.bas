@@ -89,7 +89,6 @@ Public Type DataCode
     Server_MakeSlash As Byte
     Server_MailObjUpdate As Byte
     Server_MakeEffect As Byte
-    Server_PTD As Byte
     Server_SendQuestInfo As Byte
     Server_ChangeCharType As Byte
     Map_LoadMap As Byte
@@ -118,8 +117,9 @@ Public Type DataCode
     User_Trade_Trade As Byte
     User_Trade_UpdateTrade As Byte
     User_Trade_Accept As Byte
-    User_Trade_Confirm As Byte
+    User_Trade_Finish As Byte
     User_Trade_RemoveItem As Byte
+    User_Trade_Cancel As Byte
     User_Bank_Open As Byte
     User_Bank_PutItem As Byte
     User_Bank_TakeItem As Byte
@@ -322,7 +322,7 @@ Public Sub InitDataCommands()
         .User_ConfirmPosition = 57
         .Server_Help = 58
         .User_Desc = 59
-        .Server_PTD = 60
+        .User_Trade_Cancel = 60
         .User_Target = 61
         .User_Trade_StartNPCTrade = 62
         .User_Trade_SellToNPC = 63
@@ -366,7 +366,7 @@ Public Sub InitDataCommands()
         .User_Trade_Trade = 101
         .User_Trade_UpdateTrade = 102
         .User_Trade_Accept = 104
-        .User_Trade_Confirm = 105
+        .User_Trade_Finish = 105
         .User_CancelQuest = 106
         .Combo_ProjectileSoundRotateDamage = 107
         .Combo_SoundRotateDamage = 108

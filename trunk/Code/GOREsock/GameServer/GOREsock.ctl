@@ -29,7 +29,7 @@ Option Explicit
 'This is the maximum size of data we will handle at once
 'If there is more data then this, we won't get it, which can be very, very bad
 'This is only used for receiving, not sending!
-Private Const BufferSize As Long = 1024
+Private Const BufferSize As Long = 3072
 
 'This is the maximum number of connections allowed per IP
 'Change to 0 to remove the limit

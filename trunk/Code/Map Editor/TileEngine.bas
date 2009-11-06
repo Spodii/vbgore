@@ -29,10 +29,21 @@ Public Type LightType
     Light(1 To 24) As Long
 End Type
 Public SaveLightBuffer() As LightType
-Public WeatherEffectIndex As Long   'Index returned by the weather effect initialization
-Public DoLightning As Byte          'Are we using lightning? 1 = Yes, 0 = No
+Public WeatherEffectIndex As Integer    'Index returned by the weather effect initialization
+Public WeatherDoLightning As Byte   'Are we using lightning? >1 = Yes, 0 = No
+Public WeatherFogX1 As Single       'Fog 1 position
+Public WeatherFogY1 As Single       'Fog 1 position
+Public WeatherFogX2 As Single       'Fog 2 position
+Public WeatherFogY2 As Single       'Fog 2 position
+Public WeatherDoFog As Byte         'Are we using fog? >1 = Yes, 0 = No
+Public WeatherFogCount As Byte      'How many fog effects there are
 Public LightningTimer As Single     'How long until our next lightning bolt strikes
 Public FlashTimer As Single         'How long until the flash goes away (being > 0 states flash is happening)
+Public LightningX As Integer        'Position of the lightning (top-left corner)
+Public LightningY As Integer
+Public WeatherSfx1 As DirectSoundSecondaryBuffer8   'Weather buffers - dont add more unless you need more for
+Public WeatherSfx2 As DirectSoundSecondaryBuffer8   ' one weather effect (ie rain, wind, lightning)
+Public LastWeather As Byte
 
 '********** TYPES ***********
 
@@ -309,7 +320,7 @@ Private MainFont As D3DXFont
 Private MainFontDesc As IFont
 
 'Describes a transformable lit vertex
-Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE Or D3DFVF_SPECULAR
+Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE
 
 Public Type TLVERTEX
     X As Single
@@ -317,12 +328,12 @@ Public Type TLVERTEX
     Z As Single
     Rhw As Single
     Color As Long
-    Specular As Long
     Tu As Single
     Tv As Single
 End Type
 
-Private VertexArray(0 To 3) As TLVERTEX
+'The size of a FVF vertex
+Public Const FVF_Size As Long = 28
 
 'Used to hold the graphic layers in a quick-to-draw format
 Public Type Tile
@@ -956,11 +967,6 @@ Dim i As Byte
     'Everything was successful
     Engine_Init_D3DDevice = 1
 
-    'The Rhw will always be 1, so set it now instead of every call
-    For i = 0 To 3
-        VertexArray(i).Rhw = 1
-    Next i
-
 Exit Function
 
 ErrOut:
@@ -1448,86 +1454,221 @@ Dim LoopC As Long
 
 End Sub
 
-Sub Engine_Init_Weather()
+Sub Engine_Weather_Update()
 
 '*****************************************************************
 'Initializes the weather effects
 '*****************************************************************
-Dim TempGrh As Grh
-Dim X As Byte
-Dim Y As Byte
-Dim i As Byte
 
-    Select Case MapInfo.Weather
-    Case 0  'None
-        If WeatherEffectIndex > 0 Then
-            If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
-        End If
-        
-    Case 1  'Snow (light fall)
-        If WeatherEffectIndex <= 0 Then
-            WeatherEffectIndex = Effect_Snow_Begin(1, 400)
-        ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Snow Then
-            Effect_Kill WeatherEffectIndex
-            WeatherEffectIndex = Effect_Snow_Begin(1, 400)
-        ElseIf Effect(WeatherEffectIndex).Used = False Then
-            WeatherEffectIndex = Effect_Snow_Begin(1, 400)
-        End If
-        DoLightning = 0
-        
-    Case 2  'Rain Storm (heavy rain + lightning)
-        If WeatherEffectIndex <= 0 Then
-            WeatherEffectIndex = Effect_Rain_Begin(9, 400)
-        ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Rain Then
-            Effect_Kill WeatherEffectIndex
-            WeatherEffectIndex = Effect_Rain_Begin(9, 400)
-        ElseIf Effect(WeatherEffectIndex).Used = False Then
-            WeatherEffectIndex = Effect_Rain_Begin(9, 400)
-        End If
-        DoLightning = 1 'We take our rain with a bit of lightning on top >:D
-        
-    End Select
+    'Check if we're using weather
+    'If UseWeather = 0 Then Exit Sub
+
+    'Only update the weather settings if it has changed!
+    If LastWeather <> MapInfo.Weather Then
     
-    'Update lightning
-    If DoLightning Then
+        'Set the lastweather to the current weather
+        LastWeather = MapInfo.Weather
         
-        'Check if we are in the middle of a flash
-        If FlashTimer > 0 Then
-            FlashTimer = FlashTimer - ElapsedTime
-            
-            'The flash has run out
-            If FlashTimer <= 0 Then
-            
-                'Change the light of all the tiles back
-                For X = 1 To MapInfo.Width
-                    For Y = 1 To MapInfo.Height
-                        For i = 1 To 4
-                            MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
-                        Next i
-                    Next Y
-                Next X
-            
+        'Erase sounds
+        'Sound_Erase WeatherSfx1
+        'Sound_Erase WeatherSfx2
+    
+        Select Case LastWeather
+        
+        Case 1  'Snow (light fall)
+            If WeatherEffectIndex <= 0 Then
+                WeatherEffectIndex = Effect_Snow_Begin(1, 400)
+            ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Snow Then
+                Effect_Kill WeatherEffectIndex
+                WeatherEffectIndex = Effect_Snow_Begin(1, 400)
+            ElseIf Not Effect(WeatherEffectIndex).Used Then
+                WeatherEffectIndex = Effect_Snow_Begin(1, 400)
             End If
+            WeatherDoLightning = 0
+            WeatherDoFog = 0
             
-        'Update the timer, see if it is time to flash
-        Else
-            LightningTimer = LightningTimer - ElapsedTime
+        Case 2  'Rain Storm (heavy rain + lightning)
+            If WeatherEffectIndex <= 0 Then
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
+            ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Rain Then
+                Effect_Kill WeatherEffectIndex
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
+            ElseIf Not Effect(WeatherEffectIndex).Used Then
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
+            End If
+            WeatherDoLightning = 1  'We take our rain with a bit of lightning on top >:D
+            WeatherDoFog = 0
+            'Sound_Set WeatherSfx1, 3
+            'Sound_Set WeatherSfx2, 2
+            'Sound_Play WeatherSfx1, DSBPLAY_LOOPING
             
-            'Flash me, baby!
-            If LightningTimer <= 0 Then
-                LightningTimer = 15000 + (Rnd * 15000)  'Reset timer (flash every 15 to 30 seconds)
-                FlashTimer = 250    'How long the flash is (miliseconds)
+        Case 3  'Inside of a house in a storm (lightning + muted rain sound)
+            If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
+                If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
+            End If
+            WeatherDoLightning = 1
+            WeatherDoFog = 0
+            'Sound_Set WeatherSfx1, 4
+            'Sound_Set WeatherSfx2, 6
+            'Sound_Play WeatherSfx1, DSBPLAY_LOOPING
+            
+        Case 4  'Inside of a cave in a storm (lightning + muted rain sound + fog)
+            If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
+                If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
+            End If
+            WeatherDoLightning = 1
+            WeatherDoFog = 10    'This will make it nice and spooky! >:D
+            'Sound_Set WeatherSfx1, 4
+            'Sound_Set WeatherSfx2, 6
+            'Sound_Play WeatherSfx1, DSBPLAY_LOOPING
+            
+        Case Else   'None
+            If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
+                If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
+                'Sound_Erase WeatherSfx1  'Remove the sounds
+                'Sound_Erase WeatherSfx2
+            End If
+            WeatherDoLightning = 0
+            WeatherDoFog = 0
+            
+        End Select
+        
+    End If
+    
+    'Update fog
+    If WeatherDoFog Then Engine_Weather_UpdateFog
 
-                'Change the light of all the tiles to white
-                For X = 1 To MapInfo.Width
-                    For Y = 1 To MapInfo.Height
-                        For i = 1 To 4
-                            MapData(X, Y).Light(i) = -1
-                        Next i
-                    Next Y
-                Next X
-                
-            End If
+    'Update lightning
+    If WeatherDoLightning Then Engine_Weather_UpdateLightning
+
+End Sub
+
+Sub Engine_Weather_UpdateFog()
+
+'*****************************************************************
+'Update the fog effects
+'*****************************************************************
+Dim TempGrh As Grh
+Dim i As Long
+Dim X As Long
+Dim Y As Long
+Dim c As Long
+
+    'Make sure we have the fog value
+    If WeatherFogCount = 0 Then WeatherFogCount = 13
+    
+    'Update the fog's position
+    WeatherFogX1 = WeatherFogX1 + (ElapsedTime * (0.018 + Rnd * 0.01)) + (LastOffsetX - ParticleOffsetX)
+    WeatherFogY1 = WeatherFogY1 + (ElapsedTime * (0.013 + Rnd * 0.01)) + (LastOffsetY - ParticleOffsetY)
+    Do While WeatherFogX1 < -512
+        WeatherFogX1 = WeatherFogX1 + 512
+    Loop
+    Do While WeatherFogY1 < -512
+        WeatherFogY1 = WeatherFogY1 + 512
+    Loop
+    Do While WeatherFogX1 > 0
+        WeatherFogX1 = WeatherFogX1 - 512
+    Loop
+    Do While WeatherFogY1 > 0
+        WeatherFogY1 = WeatherFogY1 - 512
+    Loop
+    
+    WeatherFogX2 = WeatherFogX2 - (ElapsedTime * (0.037 + Rnd * 0.01)) + (LastOffsetX - ParticleOffsetX)
+    WeatherFogY2 = WeatherFogY2 - (ElapsedTime * (0.021 + Rnd * 0.01)) + (LastOffsetY - ParticleOffsetY)
+    Do While WeatherFogX2 < -512
+        WeatherFogX2 = WeatherFogX2 + 512
+    Loop
+    Do While WeatherFogY2 < -512
+        WeatherFogY2 = WeatherFogY2 + 512
+    Loop
+    Do While WeatherFogX2 > 0
+        WeatherFogX2 = WeatherFogX2 - 512
+    Loop
+    Do While WeatherFogY2 > 0
+        WeatherFogY2 = WeatherFogY2 - 512
+    Loop
+
+    TempGrh.FrameCounter = 1
+    
+    'Render fog 2
+    TempGrh.GrhIndex = 4
+    X = 2
+    Y = -1
+    c = D3DColorARGB(100, 255, 255, 255)
+    For i = 1 To WeatherFogCount
+        Engine_Render_Grh TempGrh, (X * 512) + WeatherFogX2, (Y * 512) + WeatherFogY2, 0, 0, False, c, c, c, c
+        X = X + 1
+        If X > (1 + (ScreenWidth \ 512)) Then
+            X = 0
+            Y = Y + 1
+        End If
+    Next i
+            
+    'Render fog 1
+    TempGrh.GrhIndex = 3
+    X = 0
+    Y = 0
+    c = D3DColorARGB(75, 255, 255, 255)
+    For i = 1 To WeatherFogCount
+        Engine_Render_Grh TempGrh, (X * 512) + WeatherFogX1, (Y * 512) + WeatherFogY1, 0, 0, False, c, c, c, c
+        X = X + 1
+        If X > (2 + (ScreenWidth \ 512)) Then
+            X = 0
+            Y = Y + 1
+        End If
+    Next i
+
+End Sub
+
+Sub Engine_Weather_UpdateLightning()
+
+'*****************************************************************
+'Updates the lightning count-down and creates the flash if its ready
+'*****************************************************************
+Dim X As Long
+Dim Y As Long
+Dim i As Long
+
+    'Check if we are in the middle of a flash
+    If FlashTimer > 0 Then
+        FlashTimer = FlashTimer - ElapsedTime
+        
+        'The flash has run out
+        If FlashTimer <= 0 Then
+        
+            'Change the light of all the tiles back
+            For X = 1 To MapInfo.Width
+                For Y = 1 To MapInfo.Height
+                    For i = 1 To 24
+                        MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
+                    Next i
+                Next Y
+            Next X
+        
+        End If
+        
+    'Update the timer, see if it is time to flash
+    Else
+        LightningTimer = LightningTimer - ElapsedTime
+        
+        'Flash me, baby!
+        If LightningTimer <= 0 Then
+            LightningTimer = 15000 + (Rnd * 15000)  'Reset timer (flash every 15 to 30 seconds)
+            FlashTimer = 250    'How long the flash is (miliseconds)
+            
+            'Randomly place the lightning
+            LightningX = 50 + Rnd * 700
+            LightningY = Rnd * -200
+            'Sound_Play WeatherSfx2, DSBPLAY_DEFAULT  'BAM!
+            
+            'Change the light of all the tiles to white
+            For X = 1 To MapInfo.Width
+                For Y = 1 To MapInfo.Height
+                    For i = 1 To 24
+                        MapData(X, Y).Light(i) = -1
+                    Next i
+                Next Y
+            Next X
             
         End If
         
@@ -2361,7 +2502,7 @@ Dim FileNum As Integer
                 
                     'Check the rendering method to use
                     'If AlternateRender = 0 Then
-                    
+                      
                         'Render the texture with 2 triangles on a triangle strip
                         Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
                             GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow
@@ -2385,6 +2526,7 @@ Sub Engine_Render_FullTexture(ByVal hWnd As Long, ByVal TextureNum As Integer)
 '************************************************************
 'Does whatever the hell I want it to! >:D
 '************************************************************
+Dim VertexArray(0 To 3) As TLVERTEX
 Dim RadAngle As Single 'The angle in Radians
 Dim CenterX As Single
 Dim CenterY As Single
@@ -2423,6 +2565,7 @@ Dim SrcBitmapHeight As Long
         .Tv = 0
         .X = 0
         .Y = 0
+        .Rhw = 1
     End With
 
     'Set the top-right corner
@@ -2432,6 +2575,7 @@ Dim SrcBitmapHeight As Long
         .Tv = 0
         .X = SrcBitmapWidth
         .Y = 0
+        .Rhw = 1
     End With
 
     'Set the bottom-left corner
@@ -2441,6 +2585,7 @@ Dim SrcBitmapHeight As Long
         .Color = -1
         .Tu = 0
         .Tv = 1
+        .Rhw = 1
     End With
 
     'Set the bottom-right corner
@@ -2450,19 +2595,44 @@ Dim SrcBitmapHeight As Long
         .Color = -1
         .Tu = 1
         .Tv = 1
+        .Rhw = 1
     End With
 
     'Render the texture to the device
-    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
 
 End Sub
 
-Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0)
+Private Sub Engine_ReadyTexture(ByVal TextureNum As Long)
+
+'************************************************************
+'Gets a texture ready to for usage
+'************************************************************
+
+    'Load the surface into memory if it is not in memory and reset the timer
+    If TextureNum > 0 Then
+        If SurfaceTimer(TextureNum) < timeGetTime Then Engine_Init_Texture TextureNum
+        SurfaceTimer(TextureNum) = timeGetTime + SurfaceTimerMax
+    End If
+    
+    'Set the texture
+    If TextureNum <= 0 Then
+        D3DDevice.SetTexture 0, Nothing
+    Else
+        If LastTexture <> TextureNum Then
+            D3DDevice.SetTexture 0, SurfaceDB(TextureNum)
+            LastTexture = TextureNum
+        End If
+    End If
+
+End Sub
+
+Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal GrhIndex As Long = 0, Optional ByVal InBoundsCheck As Boolean = True)
 
 '************************************************************
 'Render a square/rectangle based on the specified values then rotate it if needed
 '************************************************************
-
+Dim VertexArray(0 To 3) As TLVERTEX
 Dim RadAngle As Single 'The angle in Radians
 Dim CenterX As Single
 Dim CenterY As Single
@@ -2471,76 +2641,118 @@ Dim NewX As Single
 Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
-Dim ShadowAdd As Byte
+Dim ShadowAdd As Single
 
-    'Load the surface into memory if it is not in memory and reset the timer
-    If TextureNum > 0 Then
-        If SurfaceTimer(TextureNum) = 0 Then Engine_Init_Texture TextureNum
-        SurfaceTimer(TextureNum) = SurfaceTimerMax
+    'Perform in-bounds check if needed
+    If InBoundsCheck Then
+        If X + SrcWidth <= 0 Then Exit Sub
+        If Y + SrcHeight <= 0 Then Exit Sub
+        If X >= ScreenWidth Then Exit Sub
+        If Y >= ScreenHeight Then Exit Sub
     End If
 
-    'Set the texture
-    If LastTexture <> TextureNum Then
-        If TextureNum <= 0 Then
-            D3DDevice.SetTexture 0, Nothing
-        Else
-            D3DDevice.SetTexture 0, SurfaceDB(TextureNum)
-        End If
-        LastTexture = TextureNum
-    End If
+    'Ready the texture
+    Engine_ReadyTexture TextureNum
 
     'Set the bitmap dimensions if needed
     If SrcBitmapWidth = -1 Then SrcBitmapWidth = SurfaceSize(TextureNum).X
     If SrcBitmapHeight = -1 Then SrcBitmapHeight = SurfaceSize(TextureNum).Y
+    
+    'Set the RHWs (must always be 1)
+    VertexArray(0).Rhw = 1
+    VertexArray(1).Rhw = 1
+    VertexArray(2).Rhw = 1
+    VertexArray(3).Rhw = 1
+    
+    'Apply the colors
+    VertexArray(0).Color = Color0
+    VertexArray(1).Color = Color1
+    VertexArray(2).Color = Color2
+    VertexArray(3).Color = Color3
 
-    'Set shadowed settings - shadows only change on the top 2 points
+    'We have to calculate shadows a bit differently, so use either one method or the other, not both on top of eachother
     If Shadow Then
-
-        'Set the top-left corner
+    
+        'To make things easy, we just do a completely separate calculation the top two points
+        ' with an uncropped tU / tV algorithm
         VertexArray(0).X = X + (Width * 0.5)
         VertexArray(0).Y = Y - (Height * 0.5)
-
-        'Set the top-right corner
-        VertexArray(1).X = X + Width + (Width * 0.5)
-        VertexArray(1).Y = Y - (Height * 0.5)
+        VertexArray(0).Tu = (SrcX / SrcBitmapWidth)
+        VertexArray(0).Tv = (SrcY / SrcBitmapHeight)
+        
+        VertexArray(1).X = VertexArray(0).X + Width
+        VertexArray(1).Tu = ((SrcX + Width) / SrcBitmapWidth)
+        
+        If X < 0 Then
+            VertexArray(2).Tu = ((SrcX - X) / SrcBitmapWidth)
+        Else
+            VertexArray(2).X = X
+            VertexArray(2).Tu = (SrcX / SrcBitmapWidth)
+        End If
+        If X + Width > ScreenWidth Then
+            VertexArray(3).X = ScreenWidth
+            VertexArray(3).Tu = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
+        Else
+            VertexArray(3).X = X + Width
+            VertexArray(3).Tu = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+        End If
 
     Else
     
-        'Set the top-left corner
-        VertexArray(0).X = X
-        VertexArray(0).Y = Y
-
-        'Set the top-right corner
-        VertexArray(1).X = X + Width
-        VertexArray(1).Y = Y
-
+        'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it... :p)
         ShadowAdd = 1
 
-    End If
-
-    VertexArray(0).Color = Color0
-    VertexArray(1).Color = Color1
-    VertexArray(2).X = X
-    VertexArray(2).Y = Y + Height
-    VertexArray(2).Color = Color2
-    VertexArray(3).X = X + Width
-    VertexArray(3).Y = Y + Height
-    VertexArray(3).Color = Color3
-
-    VertexArray(0).Tu = (SrcX / SrcBitmapWidth)
-    VertexArray(0).Tv = (SrcY / SrcBitmapHeight)
-
-    VertexArray(1).Tu = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
-    VertexArray(1).Tv = VertexArray(0).Tv
+        'Find the left side of the rectangle
+        If X < 0 Then
+            'VertexArray(0).X = 0 - No need to set - defaults at 0
+            VertexArray(0).Tu = ((SrcX - X) / SrcBitmapWidth)
+        Else
+            VertexArray(0).X = X
+            VertexArray(0).Tu = (SrcX / SrcBitmapWidth)
+        End If
     
-    VertexArray(2).Tu = VertexArray(0).Tu
-    VertexArray(2).Tv = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
+        'Find the top side of the rectangle
+        If Y < 0 Then
+            'VertexArray(0).Y = 0 - No need to set - defaults at 0
+            VertexArray(0).Tv = ((SrcY - Y) / SrcBitmapHeight)
+        Else
+            VertexArray(0).Y = Y
+            VertexArray(0).Tv = (SrcY / SrcBitmapHeight)
+        End If
+        
+        'Find the right side of the rectangle
+        If X + Width > ScreenWidth Then
+            VertexArray(1).X = ScreenWidth
+            VertexArray(1).Tu = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
+        Else
+            VertexArray(1).X = X + Width
+            VertexArray(1).Tu = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+        End If
+        
+        VertexArray(2).X = VertexArray(0).X
+        VertexArray(3).X = VertexArray(1).X
 
+    End If
+    
+    'Find the bottom of the rectangle
+    If Y + Height > ScreenHeight Then
+        VertexArray(2).Y = ScreenHeight
+        VertexArray(2).Tv = ((SrcY + SrcHeight + ShadowAdd) - ((Y + Height) - ScreenHeight)) / SrcBitmapHeight
+    Else
+        VertexArray(2).Y = Y + Height
+        VertexArray(2).Tv = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
+    End If
+    
+    'Because this is a perfect rectangle, all of the values below will equal one of the values we already got
+    VertexArray(1).Y = VertexArray(0).Y
+    VertexArray(1).Tv = VertexArray(0).Tv
+    VertexArray(2).Tu = VertexArray(0).Tu
+    VertexArray(3).Y = VertexArray(2).Y
     VertexArray(3).Tu = VertexArray(1).Tu
     VertexArray(3).Tv = VertexArray(2).Tv
-
+    
     'Check if a rotation is required
-    If Degrees <> 0 Then
+    If Degrees <> 0 Or Degrees <> 360 Then
 
         'Converts the angle to rotate by into radians
         RadAngle = Degrees * DegreeToRadian
@@ -2569,7 +2781,7 @@ Dim ShadowAdd As Byte
     End If
 
     'Render the texture to the device
-    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
 
 End Sub
 
@@ -3010,7 +3222,7 @@ Dim Layer As Byte
     If WeatherChkValue = 1 Then
     
         'Make sure the right weather is going on
-        Engine_Init_Weather
+        Engine_Weather_Update
     
         'Update the weather
         If WeatherEffectIndex Then

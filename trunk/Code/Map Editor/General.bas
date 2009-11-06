@@ -3,16 +3,16 @@ Option Explicit
 
 Public Type STGG
     GrhIndex As Long
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
     Width As Long
     Height As Long
 End Type
 Public Type STGA
     GrhIndex As Long
     Grh As Grh
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
     Width As Long
     Height As Long
 End Type
@@ -31,6 +31,20 @@ Public STAWidth As Long
 Public STAHeight As Long
 
 Public PreviewGrh As Grh
+
+Public Sub Input_Keys_ClearQueue()
+
+'*****************************************************************
+'Clears the GetAsyncKeyState queue to prevent key presses from a long time
+' ago falling into "have been pressed"
+'*****************************************************************
+Dim i As Long
+
+    For i = 0 To 255
+        GetAsyncKeyState i
+    Next i
+
+End Sub
 
 Sub SetInfo(ByVal s As String, Optional ByVal Critical As Byte = 0)
     
@@ -192,8 +206,8 @@ Dim l2(1 To 4) As Byte
 Dim l3(1 To 4) As Byte
 Dim i As Integer
 Dim b As Byte
-Dim x As Byte
-Dim y As Byte
+Dim X As Byte
+Dim Y As Byte
 Dim AB As Byte
 Dim AC As Byte
 
@@ -318,14 +332,14 @@ Dim AC As Byte
             If Not Shift Then
                 If frmExit.SetOpt.Value = True Then
                     MapData(tX, tY).TileExit.Map = Val(frmExit.MapTxt.Text)
-                    MapData(tX, tY).TileExit.x = Val(frmExit.XTxt.Text)
-                    MapData(tX, tY).TileExit.y = Val(frmExit.YTxt.Text)
+                    MapData(tX, tY).TileExit.X = Val(frmExit.XTxt.Text)
+                    MapData(tX, tY).TileExit.Y = Val(frmExit.YTxt.Text)
                     AB = 1
                 End If
                 If frmExit.EraseOpt.Value = True Then
                     MapData(tX, tY).TileExit.Map = 0
-                    MapData(tX, tY).TileExit.x = 0
-                    MapData(tX, tY).TileExit.y = 0
+                    MapData(tX, tY).TileExit.X = 0
+                    MapData(tX, tY).TileExit.Y = 0
                     AB = 1
                 End If
             End If
@@ -374,8 +388,8 @@ Dim AC As Byte
                             For i = 0 To Effect(frmParticles.ParticlesList.ListIndex + 1).ParticleCount
                                 Effect(frmParticles.ParticlesList.ListIndex + 1).Particles(i).sngA = 0
                             Next i
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).x = HoverX - (ParticleOffsetX - 288)
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).y = HoverY - (ParticleOffsetY - 288)
+                            Effect(frmParticles.ParticlesList.ListIndex + 1).X = HoverX - (ParticleOffsetX - 288)
+                            Effect(frmParticles.ParticlesList.ListIndex + 1).Y = HoverY - (ParticleOffsetY - 288)
                         End If
                     End If
                 End If
@@ -396,8 +410,8 @@ Dim SrcBitmapHeight As Long
     Engine_Init_Texture TextureNum
     
     'Set the bitmap dimensions if needed
-    SrcBitmapWidth = SurfaceSize(TextureNum).x + 8  'Compensates for border sizes
-    SrcBitmapHeight = SurfaceSize(TextureNum).y + 28
+    SrcBitmapWidth = SurfaceSize(TextureNum).X + 8  'Compensates for border sizes
+    SrcBitmapHeight = SurfaceSize(TextureNum).Y + 28
     
     frm.Caption = "Texture: " & TextureNum
     frm.Show
@@ -428,8 +442,8 @@ Dim XOffset As Long
             ShownTextureGrhs.NumGrhs = ShownTextureGrhs.NumGrhs + 1
             ReDim Preserve ShownTextureGrhs.Grh(1 To ShownTextureGrhs.NumGrhs)
             With ShownTextureGrhs.Grh(ShownTextureGrhs.NumGrhs)
-                .x = GrhData(i).sX
-                .y = GrhData(i).sY
+                .X = GrhData(i).sX
+                .Y = GrhData(i).sY
                 .Width = GrhData(i).pixelWidth
                 .Height = GrhData(i).pixelHeight
                 .GrhIndex = i
@@ -452,10 +466,10 @@ Dim XOffset As Long
                         ReDim Preserve ShownTextureAnims.Grh(1 To ShownTextureAnims.NumGrhs)
                         Debug.Print ShownTextureAnims.NumGrhs
                         With ShownTextureAnims.Grh(ShownTextureAnims.NumGrhs)
-                            .x = XOffset
+                            .X = XOffset
                             .Width = GrhData(GrhData(i).Frames(j)).pixelWidth
                             .Height = GrhData(GrhData(i).Frames(j)).pixelHeight
-                            .y = 0
+                            .Y = 0
                             .GrhIndex = i
                             Engine_Init_Grh .Grh, i
                             XOffset = XOffset + .Width
@@ -541,8 +555,8 @@ Dim InfNum As Byte
 Dim TempInt As Integer
 Dim TempNPC As NPC
 Dim i As Integer
-Dim y As Byte
-Dim x As Byte
+Dim Y As Byte
+Dim X As Byte
 
     'Make sure the map exists
     If Engine_FileExist(MapPath & Map & ".map", vbNormal) = False Then
@@ -608,129 +622,129 @@ Dim x As Byte
     ReDim MapData(1 To MapInfo.Width, 1 To MapInfo.Height) As MapBlock
     
     'Load arrays
-    For y = 1 To MapInfo.Height
-        For x = 1 To MapInfo.Width
+    For Y = 1 To MapInfo.Height
+        For X = 1 To MapInfo.Width
 
             'Clear the graphic layers
             For i = 1 To 6
-                MapData(x, y).Graphic(i).GrhIndex = 0
+                MapData(X, Y).Graphic(i).GrhIndex = 0
             Next i
 
             'Get tile's flags
             Get #MapNum, , ByFlags
 
             'Blocked
-            If ByFlags And 1 Then Get #MapNum, , MapData(x, y).Blocked Else MapData(x, y).Blocked = 0
+            If ByFlags And 1 Then Get #MapNum, , MapData(X, Y).Blocked Else MapData(X, Y).Blocked = 0
             
             'Graphic layers
             If ByFlags And 2 Then
-                Get #MapNum, , MapData(x, y).Graphic(1).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(1), MapData(x, y).Graphic(1).GrhIndex
+                Get #MapNum, , MapData(X, Y).Graphic(1).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(1), MapData(X, Y).Graphic(1).GrhIndex
                 
                 'Find the size of the largest tile used
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(1).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(1).GrhIndex).pixelWidth
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth
                 End If
                 
             End If
             If ByFlags And 4 Then
-                Get #MapNum, , MapData(x, y).Graphic(2).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(2), MapData(x, y).Graphic(2).GrhIndex
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(2).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(2).GrhIndex).pixelWidth
+                Get #MapNum, , MapData(X, Y).Graphic(2).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(2), MapData(X, Y).Graphic(2).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth
                 End If
             End If
             If ByFlags And 8 Then
-                Get #MapNum, , MapData(x, y).Graphic(3).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(3), MapData(x, y).Graphic(3).GrhIndex
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(3).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(3).GrhIndex).pixelWidth
+                Get #MapNum, , MapData(X, Y).Graphic(3).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(3), MapData(X, Y).Graphic(3).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth
                 End If
             End If
             If ByFlags And 16 Then
-               Get #MapNum, , MapData(x, y).Graphic(4).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(4), MapData(x, y).Graphic(4).GrhIndex
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(4).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(4).GrhIndex).pixelWidth
+               Get #MapNum, , MapData(X, Y).Graphic(4).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(4), MapData(X, Y).Graphic(4).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth
                 End If
             End If
             If ByFlags And 32 Then
-                Get #MapNum, , MapData(x, y).Graphic(5).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(5), MapData(x, y).Graphic(5).GrhIndex
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(5).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(5).GrhIndex).pixelWidth
+                Get #MapNum, , MapData(X, Y).Graphic(5).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(5), MapData(X, Y).Graphic(5).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth
                 End If
             End If
             If ByFlags And 64 Then
-                Get #MapNum, , MapData(x, y).Graphic(6).GrhIndex
-                Engine_Init_Grh MapData(x, y).Graphic(6), MapData(x, y).Graphic(6).GrhIndex
-                If LargestTileSize < GrhData(MapData(x, y).Graphic(6).GrhIndex).pixelWidth Then
-                    LargestTileSize = GrhData(MapData(x, y).Graphic(6).GrhIndex).pixelWidth
+                Get #MapNum, , MapData(X, Y).Graphic(6).GrhIndex
+                Engine_Init_Grh MapData(X, Y).Graphic(6), MapData(X, Y).Graphic(6).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth
                 End If
             End If
             
             'Set light to default (-1) - it will be set again if it is not -1 from the code below
             For i = 1 To 24
-                MapData(x, y).Light(i) = -1
+                MapData(X, Y).Light(i) = -1
             Next i
             
             'Get lighting values
             If ByFlags And 128 Then
                 For i = 1 To 4
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 256 Then
                 For i = 5 To 8
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 512 Then
                 For i = 9 To 12
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 1024 Then
                 For i = 13 To 16
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 2048 Then
                 For i = 17 To 20
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 4096 Then
                 For i = 21 To 24
-                    Get #MapNum, , MapData(x, y).Light(i)
+                    Get #MapNum, , MapData(X, Y).Light(i)
                 Next i
             End If
             
             'Store the lighting in the SaveLightBuffer
             For i = 1 To 24
-                SaveLightBuffer(x, y).Light(i) = MapData(x, y).Light(i)
+                SaveLightBuffer(X, Y).Light(i) = MapData(X, Y).Light(i)
             Next i
 
             'Mailbox
-            If ByFlags And 8192 Then MapData(x, y).Mailbox = 1 Else MapData(x, y).Mailbox = 0
+            If ByFlags And 8192 Then MapData(X, Y).Mailbox = 1 Else MapData(X, Y).Mailbox = 0
             
             'Shadows
-            If ByFlags And 16384 Then MapData(x, y).Shadow(1) = 1 Else MapData(x, y).Shadow(1) = 0
-            If ByFlags And 32768 Then MapData(x, y).Shadow(2) = 1 Else MapData(x, y).Shadow(2) = 0
-            If ByFlags And 65536 Then MapData(x, y).Shadow(3) = 1 Else MapData(x, y).Shadow(3) = 0
-            If ByFlags And 131072 Then MapData(x, y).Shadow(4) = 1 Else MapData(x, y).Shadow(4) = 0
-            If ByFlags And 262144 Then MapData(x, y).Shadow(5) = 1 Else MapData(x, y).Shadow(5) = 0
-            If ByFlags And 524288 Then MapData(x, y).Shadow(6) = 1 Else MapData(x, y).Shadow(6) = 0
+            If ByFlags And 16384 Then MapData(X, Y).Shadow(1) = 1 Else MapData(X, Y).Shadow(1) = 0
+            If ByFlags And 32768 Then MapData(X, Y).Shadow(2) = 1 Else MapData(X, Y).Shadow(2) = 0
+            If ByFlags And 65536 Then MapData(X, Y).Shadow(3) = 1 Else MapData(X, Y).Shadow(3) = 0
+            If ByFlags And 131072 Then MapData(X, Y).Shadow(4) = 1 Else MapData(X, Y).Shadow(4) = 0
+            If ByFlags And 262144 Then MapData(X, Y).Shadow(5) = 1 Else MapData(X, Y).Shadow(5) = 0
+            If ByFlags And 524288 Then MapData(X, Y).Shadow(6) = 1 Else MapData(X, Y).Shadow(6) = 0
             
             'Sfx
-            MapData(x, y).Sfx = 0
-            If ByFlags And 1048576 Then Get #MapNum, , MapData(x, y).Sfx
+            MapData(X, Y).Sfx = 0
+            If ByFlags And 1048576 Then Get #MapNum, , MapData(X, Y).Sfx
             
             'Blocked attack tiles
-            If ByFlags And 2097152 Then MapData(x, y).BlockedAttack = 1 Else MapData(x, y).BlockedAttack = 0
+            If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
             
             'Sign
-            If ByFlags And 4194304 Then Get #MapNum, , MapData(x, y).Sign Else MapData(x, y).Sign = 0
+            If ByFlags And 4194304 Then Get #MapNum, , MapData(X, Y).Sign Else MapData(X, Y).Sign = 0
             
             '*** Inf File ***
 
@@ -739,13 +753,13 @@ Dim x As Byte
             
             'Load Tile Exit
             If BxFlags And 1 Then
-                Get #InfNum, , MapData(x, y).TileExit.Map
-                Get #InfNum, , MapData(x, y).TileExit.x
-                Get #InfNum, , MapData(x, y).TileExit.y
+                Get #InfNum, , MapData(X, Y).TileExit.Map
+                Get #InfNum, , MapData(X, Y).TileExit.X
+                Get #InfNum, , MapData(X, Y).TileExit.Y
             Else
-                MapData(x, y).TileExit.Map = 0
-                MapData(x, y).TileExit.x = 0
-                MapData(x, y).TileExit.y = 0
+                MapData(X, Y).TileExit.Map = 0
+                MapData(X, Y).TileExit.X = 0
+                MapData(X, Y).TileExit.Y = 0
             End If
             
             'Load NPC
@@ -754,20 +768,20 @@ Dim x As Byte
 
                 'Set up pos and startup pos
                 DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & TempInt, DB_Conn, adOpenStatic, adLockOptimistic
-                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, x, y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, X, Y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
                 DB_RS.Close
         
             End If
 
-        Next x
-    Next y
+        Next X
+    Next Y
     
     'Get the number of effects
-    Get #MapNum, , y
+    Get #MapNum, , Y
     
     'Store the individual particle effect types
-    If y > 0 Then
-        For x = 1 To y
+    If Y > 0 Then
+        For X = 1 To Y
             Get #MapNum, , GetEffectNum
             Get #MapNum, , GetX
             Get #MapNum, , GetY
@@ -775,7 +789,7 @@ Dim x As Byte
             Get #MapNum, , GetGfx
             Get #MapNum, , GetDirection
             Effect_Begin GetEffectNum, GetX, GetY, GetGfx, GetParticleCount, GetDirection
-        Next x
+        Next X
     End If
     
     'Close the map and inf files
@@ -830,8 +844,8 @@ Dim FileNumInf As Byte
 Dim ByFlags As Long
 Dim BxFlags As Byte
 Dim LoopC As Long
-Dim y As Byte
-Dim x As Byte
+Dim Y As Byte
+Dim X As Byte
 Dim i As Integer
 
     'Check for bright mode
@@ -841,16 +855,16 @@ Dim i As Integer
     End If
     
     'Check for any NPCs on blocked tiles
-    For x = 1 To MapInfo.Width
-        For y = 1 To MapInfo.Height
-            If MapData(x, y).NPCIndex > 0 Then
-                If MapData(x, y).Blocked > 0 Then
+    For X = 1 To MapInfo.Width
+        For Y = 1 To MapInfo.Height
+            If MapData(X, Y).NPCIndex > 0 Then
+                If MapData(X, Y).Blocked > 0 Then
                     MsgBox "Warning! You have a NPC placed on a blocked tile, which can lead to problem!" & vbNewLine & "Please correct this error if possible!", vbOKOnly
                     GoTo SkipCheck  'Only show the error once
                 End If
             End If
-        Next y
-    Next x
+        Next Y
+    Next X
 
 SkipCheck:
 
@@ -877,8 +891,8 @@ SkipCheck:
     Put #FileNumMap, , MapInfo.Height
 
     'Write .map file
-    For y = 1 To MapInfo.Height
-        For x = 1 To MapInfo.Width
+    For Y = 1 To MapInfo.Height
+        For X = 1 To MapInfo.Width
             '#######################
             '.map file
             '#######################
@@ -891,63 +905,63 @@ SkipCheck:
             ByFlags = 0
             
             'Blocked
-            If MapData(x, y).Blocked > 0 Then ByFlags = ByFlags Or 1
+            If MapData(X, Y).Blocked > 0 Then ByFlags = ByFlags Or 1
             
             'Graphic layers
-            If MapData(x, y).Graphic(1).GrhIndex Then ByFlags = ByFlags Or 2
-            If MapData(x, y).Graphic(2).GrhIndex Then ByFlags = ByFlags Or 4
-            If MapData(x, y).Graphic(3).GrhIndex Then ByFlags = ByFlags Or 8
-            If MapData(x, y).Graphic(4).GrhIndex Then ByFlags = ByFlags Or 16
-            If MapData(x, y).Graphic(5).GrhIndex Then ByFlags = ByFlags Or 32
-            If MapData(x, y).Graphic(6).GrhIndex Then ByFlags = ByFlags Or 64
+            If MapData(X, Y).Graphic(1).GrhIndex Then ByFlags = ByFlags Or 2
+            If MapData(X, Y).Graphic(2).GrhIndex Then ByFlags = ByFlags Or 4
+            If MapData(X, Y).Graphic(3).GrhIndex Then ByFlags = ByFlags Or 8
+            If MapData(X, Y).Graphic(4).GrhIndex Then ByFlags = ByFlags Or 16
+            If MapData(X, Y).Graphic(5).GrhIndex Then ByFlags = ByFlags Or 32
+            If MapData(X, Y).Graphic(6).GrhIndex Then ByFlags = ByFlags Or 64
             
             'Light 1-4 used
             For i = 1 To 4
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 128
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 128
             Next i
             'Light 5-8 used
             For i = 5 To 8
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 256
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 256
             Next i
             'Light 9-12 used
             For i = 9 To 12
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 512
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 512
             Next i
             'Light 13-16 used
             For i = 13 To 16
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 1024
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 1024
             Next i
             'Light 17-20 used
             For i = 17 To 20
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 2048
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 2048
             Next i
             'Light 21-24 used
             For i = 21 To 24
-                If MapData(x, y).Light(i) <> -1 Then ByFlags = ByFlags Or 4096
+                If MapData(X, Y).Light(i) <> -1 Then ByFlags = ByFlags Or 4096
             Next i
             
             'Mailbox
-            If MapData(x, y).Mailbox = 1 Then ByFlags = ByFlags Or 8192
+            If MapData(X, Y).Mailbox = 1 Then ByFlags = ByFlags Or 8192
 
             'Shadows
-            If MapData(x, y).Shadow(1) = 1 Then ByFlags = ByFlags Or 16384
-            If MapData(x, y).Shadow(2) = 1 Then ByFlags = ByFlags Or 32768
-            If MapData(x, y).Shadow(3) = 1 Then ByFlags = ByFlags Or 65536
-            If MapData(x, y).Shadow(4) = 1 Then ByFlags = ByFlags Or 131072
-            If MapData(x, y).Shadow(5) = 1 Then ByFlags = ByFlags Or 262144
-            If MapData(x, y).Shadow(6) = 1 Then ByFlags = ByFlags Or 524288
+            If MapData(X, Y).Shadow(1) = 1 Then ByFlags = ByFlags Or 16384
+            If MapData(X, Y).Shadow(2) = 1 Then ByFlags = ByFlags Or 32768
+            If MapData(X, Y).Shadow(3) = 1 Then ByFlags = ByFlags Or 65536
+            If MapData(X, Y).Shadow(4) = 1 Then ByFlags = ByFlags Or 131072
+            If MapData(X, Y).Shadow(5) = 1 Then ByFlags = ByFlags Or 262144
+            If MapData(X, Y).Shadow(6) = 1 Then ByFlags = ByFlags Or 524288
             
             'Sfx
-            If MapData(x, y).Sfx > 0 Then ByFlags = ByFlags Or 1048576
+            If MapData(X, Y).Sfx > 0 Then ByFlags = ByFlags Or 1048576
             
             'Blocked attack tile
-            If MapData(x, y).BlockedAttack = 1 Then ByFlags = ByFlags Or 2097152
+            If MapData(X, Y).BlockedAttack = 1 Then ByFlags = ByFlags Or 2097152
             
             'Signs
-            If MapData(x, y).Sign > 0 Then ByFlags = ByFlags Or 4194304
+            If MapData(X, Y).Sign > 0 Then ByFlags = ByFlags Or 4194304
             
             'If there is a warp
-            If MapData(x, y).TileExit.Map > 0 Then ByFlags = ByFlags Or 8388608
+            If MapData(X, Y).TileExit.Map > 0 Then ByFlags = ByFlags Or 8388608
 
             '**********************
             'Store data
@@ -956,52 +970,52 @@ SkipCheck:
             Put #FileNumMap, , ByFlags
             
             'Save blocked value
-            If MapData(x, y).Blocked > 0 Then Put #FileNumMap, , MapData(x, y).Blocked
+            If MapData(X, Y).Blocked > 0 Then Put #FileNumMap, , MapData(X, Y).Blocked
 
             'Save needed grh indexes
             For LoopC = 1 To 6
-                If MapData(x, y).Graphic(LoopC).GrhIndex > 0 Then
-                    Put #FileNumMap, , MapData(x, y).Graphic(LoopC).GrhIndex
+                If MapData(X, Y).Graphic(LoopC).GrhIndex > 0 Then
+                    Put #FileNumMap, , MapData(X, Y).Graphic(LoopC).GrhIndex
                 End If
             Next LoopC
             
             'Save needed lights
             If ByFlags And 128 Then
                 For i = 1 To 4
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 256 Then
                 For i = 5 To 8
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 512 Then
                 For i = 9 To 12
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 1024 Then
                 For i = 13 To 16
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 2048 Then
                 For i = 17 To 20
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             If ByFlags And 4096 Then
                 For i = 21 To 24
-                    Put #FileNumMap, , MapData(x, y).Light(i)
+                    Put #FileNumMap, , MapData(X, Y).Light(i)
                 Next i
             End If
             
             'Save Sfx
-            If ByFlags And 1048576 Then Put #FileNumMap, , MapData(x, y).Sfx
+            If ByFlags And 1048576 Then Put #FileNumMap, , MapData(X, Y).Sfx
             
             'Save sign
-            If ByFlags And 4194304 Then Put #FileNumMap, , MapData(x, y).Sign
+            If ByFlags And 4194304 Then Put #FileNumMap, , MapData(X, Y).Sign
 
             '#######################
             '.inf file
@@ -1013,13 +1027,13 @@ SkipCheck:
             BxFlags = 0
             
             'Tile Exit
-            If MapData(x, y).TileExit.Map Then BxFlags = BxFlags Or 1
+            If MapData(X, Y).TileExit.Map Then BxFlags = BxFlags Or 1
             
             'NPC
-            If MapData(x, y).NPCIndex Then BxFlags = BxFlags Or 2
+            If MapData(X, Y).NPCIndex Then BxFlags = BxFlags Or 2
             
             'Item
-            If MapData(x, y).ObjInfo.ObjIndex Then BxFlags = BxFlags Or 4
+            If MapData(X, Y).ObjInfo.ObjIndex Then BxFlags = BxFlags Or 4
 
             '**********************
             'Store data
@@ -1028,47 +1042,47 @@ SkipCheck:
             Put #FileNumInf, , BxFlags
 
             'Save Tile exits
-            If MapData(x, y).TileExit.Map Then
-                Put #FileNumInf, , MapData(x, y).TileExit.Map
-                Put #FileNumInf, , MapData(x, y).TileExit.x
-                Put #FileNumInf, , MapData(x, y).TileExit.y
+            If MapData(X, Y).TileExit.Map Then
+                Put #FileNumInf, , MapData(X, Y).TileExit.Map
+                Put #FileNumInf, , MapData(X, Y).TileExit.X
+                Put #FileNumInf, , MapData(X, Y).TileExit.Y
             End If
 
             'Save NPCs
-            If MapData(x, y).NPCIndex Then
-                Put #FileNumInf, , CharList(MapData(x, y).NPCIndex).NPCNumber
+            If MapData(X, Y).NPCIndex Then
+                Put #FileNumInf, , CharList(MapData(X, Y).NPCIndex).NPCNumber
             End If
             
-        Next x
-    Next y
+        Next X
+    Next Y
     
     'Get the number of map-bound effects and store that number
-    y = 0
-    For x = 1 To NumEffects
-        If Effect(x).Used Then
-            If Effect(x).BoundToMap = 1 Then y = y + 1
+    Y = 0
+    For X = 1 To NumEffects
+        If Effect(X).Used Then
+            If Effect(X).BoundToMap = 1 Then Y = Y + 1
         End If
-    Next x
-    Put #FileNumMap, , y
+    Next X
+    Put #FileNumMap, , Y
 
     'Store the individual particle effect types
-    For x = 1 To NumEffects
-        If Effect(x).Used Then
-            If Effect(x).BoundToMap Then
-                If Effect(x).EffectNum = EffectNum_Waterfall Or Effect(x).EffectNum = EffectNum_Fire Then
-                    Put #FileNumMap, , Effect(x).EffectNum
-                    i = Effect(x).x + ParticleOffsetX   'Store as integer instead of single to save room
+    For X = 1 To NumEffects
+        If Effect(X).Used Then
+            If Effect(X).BoundToMap Then
+                If Effect(X).EffectNum = EffectNum_Waterfall Or Effect(X).EffectNum = EffectNum_Fire Then
+                    Put #FileNumMap, , Effect(X).EffectNum
+                    i = Effect(X).X + ParticleOffsetX   'Store as integer instead of single to save room
                     Put #FileNumMap, , i
-                    i = Effect(x).y + ParticleOffsetY   'Store as integer instead of single to save room
+                    i = Effect(X).Y + ParticleOffsetY   'Store as integer instead of single to save room
                     Put #FileNumMap, , i
-                    Put #FileNumMap, , Effect(x).ParticleCount
-                    Put #FileNumMap, , Effect(x).Gfx
-                    i = Effect(x).Direction  'Store as integer instead of single to save room
+                    Put #FileNumMap, , Effect(X).ParticleCount
+                    Put #FileNumMap, , Effect(X).Gfx
+                    i = Effect(X).Direction  'Store as integer instead of single to save room
                     Put #FileNumMap, , i
                 End If
             End If
         End If
-    Next x
+    Next X
 
     'Close the map and inf files
     Close #FileNumMap
@@ -1135,6 +1149,8 @@ Dim i As Integer
     Do While prgRun
     
         StartTime = timeGetTime
+        
+        Input_Keys_ClearQueue
 
         'Don't draw frame is window is minimized or there is no map loaded
         If frmMain.WindowState <> 1 Then
@@ -1251,7 +1267,7 @@ Dim HighIndex As Long
             If i = WeatherEffectIndex Then
                 frmParticles.ParticlesList.AddItem "Reserved for weather"
             Else
-                frmParticles.ParticlesList.AddItem "ID: " & Effect(i).EffectNum & " X: " & Effect(i).x + ParticleOffsetX & " Y: " & Effect(i).y + ParticleOffsetY & " P: " & Effect(i).ParticleCount
+                frmParticles.ParticlesList.AddItem "ID: " & Effect(i).EffectNum & " X: " & Effect(i).X + ParticleOffsetX & " Y: " & Effect(i).Y + ParticleOffsetY & " P: " & Effect(i).ParticleCount
             End If
         End If
     Next i
