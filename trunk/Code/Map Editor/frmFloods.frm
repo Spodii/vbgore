@@ -3,18 +3,31 @@ Begin VB.Form frmFloods
    BackColor       =   &H00808080&
    BorderStyle     =   0  'None
    Caption         =   "Floods"
-   ClientHeight    =   1620
+   ClientHeight    =   1185
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   1395
+   ClientWidth     =   1410
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmFloods.frx":0000
-   ScaleHeight     =   108
+   ScaleHeight     =   79
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   93
+   ScaleWidth      =   94
    ShowInTaskbar   =   0   'False
+   Begin MapEditor.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   4
+      Top             =   0
+      Width           =   135
+      _ExtentX        =   238
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      Caption         =   "Floods"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.Label ScreenLbl 
       Alignment       =   2  'Center
       AutoSize        =   -1  'True
@@ -34,7 +47,7 @@ Begin VB.Form frmFloods
       Left            =   240
       TabIndex        =   3
       ToolTipText     =   "Flood all the tiles shown on the screen only"
-      Top             =   1320
+      Top             =   840
       Width           =   900
    End
    Begin VB.Label AllLbl 
@@ -56,7 +69,7 @@ Begin VB.Form frmFloods
       Left            =   240
       TabIndex        =   2
       ToolTipText     =   "Flood the whole map, border and non-border"
-      Top             =   1080
+      Top             =   600
       Width           =   900
    End
    Begin VB.Label InnerLbl 
@@ -78,7 +91,7 @@ Begin VB.Form frmFloods
       Left            =   240
       TabIndex        =   1
       ToolTipText     =   "Flood the inner map - the whole map except for the border"
-      Top             =   840
+      Top             =   360
       Width           =   900
    End
    Begin VB.Label BorderLbl 
@@ -100,7 +113,7 @@ Begin VB.Form frmFloods
       Left            =   240
       TabIndex        =   0
       ToolTipText     =   "Flood the border of the map only - this area is always blocked off"
-      Top             =   600
+      Top             =   120
       Width           =   900
    End
 End
@@ -149,32 +162,20 @@ Dim Y As Byte
 
 End Sub
 
+Private Sub Form_Load()
+
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
+    
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     Cancel = 1
-    Engine_Var_Write Data2Path & "MapEditor.ini", "FLOODS", "X", Me.Left
-    Engine_Var_Write Data2Path & "MapEditor.ini", "FLOODS", "Y", Me.Top
+    Var_Write Data2Path & "MapEditor.ini", "FLOODS", "X", Me.Left
+    Var_Write Data2Path & "MapEditor.ini", "FLOODS", "Y", Me.Top
     HideFrmFloods
-
-End Sub
-
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
 
 End Sub
 

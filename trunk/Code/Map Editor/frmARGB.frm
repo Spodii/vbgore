@@ -3,19 +3,32 @@ Begin VB.Form frmARGB
    BackColor       =   &H00808080&
    BorderStyle     =   0  'None
    Caption         =   "ARGB"
-   ClientHeight    =   1650
+   ClientHeight    =   1260
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2535
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmARGB.frx":0000
-   ScaleHeight     =   110
+   ScaleHeight     =   84
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   169
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin MapEditor.cForm cForm 
+      Height          =   135
+      Left            =   0
+      TabIndex        =   11
+      Top             =   0
+      Width           =   135
+      _ExtentX        =   238
+      _ExtentY        =   238
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      Caption         =   "ARGB Conversion"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.TextBox BTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -25,7 +38,7 @@ Begin VB.Form frmARGB
       TabIndex        =   6
       Text            =   "255"
       ToolTipText     =   "Blue value of the light (0 to 255)"
-      Top             =   1320
+      Top             =   960
       Width           =   375
    End
    Begin VB.TextBox GTxt 
@@ -37,7 +50,7 @@ Begin VB.Form frmARGB
       TabIndex        =   5
       Text            =   "255"
       ToolTipText     =   "Green value of the light (0 to 255)"
-      Top             =   1320
+      Top             =   960
       Width           =   375
    End
    Begin VB.TextBox RTxt 
@@ -49,7 +62,7 @@ Begin VB.Form frmARGB
       TabIndex        =   4
       Text            =   "255"
       ToolTipText     =   "Red value of the light (0 to 255)"
-      Top             =   1320
+      Top             =   960
       Width           =   375
    End
    Begin VB.TextBox ATxt 
@@ -61,19 +74,19 @@ Begin VB.Form frmARGB
       TabIndex        =   3
       Text            =   "255"
       ToolTipText     =   "Alpha value of the light (0 to 255)"
-      Top             =   1320
+      Top             =   960
       Width           =   375
    End
    Begin VB.TextBox LongTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   120
       TabIndex        =   2
       Text            =   "-1"
       ToolTipText     =   "Long value of the ARGB light"
-      Top             =   840
+      Top             =   360
       Width           =   2295
    End
    Begin VB.Label MiscLbl 
@@ -94,7 +107,7 @@ Begin VB.Form frmARGB
       Index           =   5
       Left            =   75
       TabIndex        =   10
-      Top             =   1320
+      Top             =   990
       Width           =   135
    End
    Begin VB.Label MiscLbl 
@@ -115,7 +128,7 @@ Begin VB.Form frmARGB
       Index           =   4
       Left            =   1275
       TabIndex        =   9
-      Top             =   1320
+      Top             =   990
       Width           =   150
    End
    Begin VB.Label MiscLbl 
@@ -136,7 +149,7 @@ Begin VB.Form frmARGB
       Index           =   3
       Left            =   675
       TabIndex        =   8
-      Top             =   1320
+      Top             =   990
       Width           =   150
    End
    Begin VB.Label MiscLbl 
@@ -157,7 +170,7 @@ Begin VB.Form frmARGB
       Index           =   2
       Left            =   1875
       TabIndex        =   7
-      Top             =   1320
+      Top             =   990
       Width           =   135
    End
    Begin VB.Label MiscLbl 
@@ -178,7 +191,7 @@ Begin VB.Form frmARGB
       Index           =   1
       Left            =   120
       TabIndex        =   1
-      Top             =   1080
+      Top             =   720
       Width           =   1110
    End
    Begin VB.Label MiscLbl 
@@ -199,7 +212,7 @@ Begin VB.Form frmARGB
       Index           =   0
       Left            =   120
       TabIndex        =   0
-      Top             =   600
+      Top             =   120
       Width           =   1935
    End
 End
@@ -222,24 +235,12 @@ Private Sub BTxt_Change()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_Load()
 
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
-
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
+    
 End Sub
 
 Private Sub GTxt_Change()

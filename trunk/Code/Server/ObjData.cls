@@ -64,7 +64,7 @@ Dim i As Integer
                 ObjTimer(cData(i).Pointer) = 0
                 cData(i).Pointer = 0
                 cDataUnused = cDataUnused + 1
-                
+
             End If
         
         End If
@@ -286,6 +286,15 @@ Public Property Get RepSPP(ByVal Index As Integer) As Integer
         If Index <= MaxDatas Then
             ReadyObj Index
             RepSPP = cData(ObjIndexToDataIndex(Index)).RepSPP
+        End If
+    End If
+End Property
+
+Public Property Get UseSfx(ByVal Index As Integer) As Byte
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            UseSfx = cData(ObjIndexToDataIndex(Index)).UseSfx
         End If
     End If
 End Property

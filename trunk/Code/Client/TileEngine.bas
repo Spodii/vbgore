@@ -228,10 +228,10 @@ Public Type MapBlock
     Graphic(1 To 6) As Grh
     Light(1 To 24) As Long
     Shadow(1 To 6) As Byte
-    CharIndex As Integer
     Sign As Integer
     Blocked As Byte
     Mailbox As Byte
+    Warp As Byte
     Sfx As DirectSoundSecondaryBuffer8
 End Type
 
@@ -384,7 +384,7 @@ Public Const AW_ShopToInv As Byte = 5
 Public Const AW_BankToInv As Byte = 6
 
 Private Type QuickBarIDData
-Type As Byte    'Type of information in the quick bar (Item, Skill, etc)
+    Type As Byte    'Type of information in the quick bar (Item, Skill, etc)
     ID As Byte      'The ID of whatever is being held (Item = Inventory Slot, Skill = SkillID)
 End Type
 Public QuickBarID(1 To 12) As QuickBarIDData
@@ -551,7 +551,6 @@ Public MouseRightDown As Byte
 
 'Describes a transformable lit vertex
 Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE
-
 Public Type TLVERTEX
     X As Single
     Y As Single
@@ -561,10 +560,21 @@ Public Type TLVERTEX
     tu As Single
     tv As Single
 End Type
+
+'The size of a FVF vertex
+Public Const FVF_Size As Long = 28
+
+'Holds the general purpose vertex array (for building rectangles only)
 Private VertexArray(0 To 3) As TLVERTEX
-Private ChatArray() As TLVERTEX
+
+'Holds the temp vertex array to build vertex buffers
+Private tVA() As TLVERTEX
+
+'Chat vertex buffer information
+Private ChatArrayUbound As Long
 Private ChatVB As Direct3DVertexBuffer8
 
+'Projectile information
 Public Type Projectile
     X As Single
     Y As Single
@@ -575,6 +585,7 @@ Public Type Projectile
     Grh As Grh
 End Type
 
+'Texture information
 Public Type TexInfo
     X As Long
     Y As Long
@@ -618,6 +629,17 @@ Private NotFirstRender As Byte
 
 Public ShownText As String
 Public LineBreakChr As String * 1
+
+'Mini-map tiles
+Public Type MiniMapTile
+    X As Single         'X and Y index of the tile (using the tile position, not pixel position)
+    Y As Single
+    Color As Long       'The color of the tile
+    RoundCorner As Byte 'What corner to round (0 = none, 1 = top-left, 2 = top-right, 3 = bottom-left, 4 = bottom-right)
+End Type
+Public MiniMapVBSize As Long    'Size of the vertex buffer (number of verticies, or Tiles x 8)
+Public MiniMapVB As Direct3DVertexBuffer8   'Holds the information needed to render the mini-map (not including characters)
+Public ShowMiniMap As Byte
 
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
@@ -798,6 +820,7 @@ Dim Y As Single
 Dim Y2 As Single
 Dim i As Long
 Dim j As Long
+Dim s As String
 Dim Size As Integer
 Dim KeyPhrase As Byte
 Dim ResetColor As Byte
@@ -812,8 +835,16 @@ Dim TempColor As Long
     For LoopC = (Chunk * ChatBufferChunk) - 11 To Chunk * ChatBufferChunk
         If LoopC > ChatTextBufferSize Then Exit For
         Size = Size + Len(ChatTextBuffer(LoopC).Text)
+        
+        'Remove the "|"'s from the count
+        For i = 1 To Size
+            If Mid$(ChatTextBuffer(LoopC).Text, i, 1) = "|" Then j = j + 1
+        Next i
+        
     Next LoopC
-    ReDim ChatArray(Size * 4)   'Size our array to fix the 4 verticies of each character
+    Size = Size - j
+    ChatArrayUbound = Size * 6 - 1
+    ReDim tVA(0 To ChatArrayUbound) 'Size our array to fix the 6 verticies of each character
 
     'Set the base position
     X = GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X
@@ -829,11 +860,11 @@ Dim TempColor As Long
         
         'Set the Y position to be used
         Y2 = Y - (LoopC * 10) + (Chunk * ChatBufferChunk * 10)
-    
+        
         'Loop through each line if there are line breaks (vbCrLf)
         Count = 0   'Counts the offset value we are on
         If ChatTextBuffer(LoopC).Text <> "" Then 'Dont bother with empty strings
-        
+            
             'Loop through the characters
             For j = 1 To Len(ChatTextBuffer(LoopC).Text)
             
@@ -845,52 +876,65 @@ Dim TempColor As Long
                     KeyPhrase = (Not KeyPhrase)
                     If KeyPhrase Then TempColor = D3DColorARGB(255, 255, 0, 0) Else ResetColor = 1
                 Else
-                    
+                
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
                     u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
                     V = Row * Font_Default.RowFactor
-                
+
                     'Set up the verticies
-                    With ChatArray(0 + (4 * Pos))
+                    '    4____5
+                    ' 1|\\    |  1 = 4
+                    '  | \\   |  3 = 6
+                    '  |  \\  |
+                    '  |   \\ |
+                    ' 2|____\\|
+                    '       3 6
+                    
+                    'Triangle 1
+                    With tVA(0 + (6 * Pos))   'Top-left corner
                         .Color = TempColor
                         .X = X + Count
-                        .Y = Y2 + (Font_Default.CharHeight * i)
+                        .Y = Y2
                         .tu = u
                         .tv = V
                         .Rhw = 1
                     End With
-                    With ChatArray(1 + (4 * Pos))
-                        .Color = TempColor
-                        .X = X + Count + Font_Default.HeaderInfo.CellWidth
-                        .Y = Y2 + (Font_Default.CharHeight * i)
-                        .tu = u + Font_Default.ColFactor
-                        .tv = V
-                        .Rhw = 1
-                    End With
-                    With ChatArray(2 + (4 * Pos))
+                    With tVA(1 + (6 * Pos))   'Bottom-left corner
                         .Color = TempColor
                         .X = X + Count
-                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u
                         .tv = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
-                    With ChatArray(3 + (4 * Pos))
+                    With tVA(2 + (6 * Pos))   'Bottom-right corner
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
-                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u + Font_Default.ColFactor
                         .tv = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
+                    
+                    'Triangle 2 (only one new verticy is needed)
+                    tVA(3 + (6 * Pos)) = tVA(0 + (6 * Pos)) 'Top-left corner
+                    With tVA(4 + (6 * Pos))   'Top-right corner
+                        .Color = TempColor
+                        .X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        .Y = Y2
+                        .tu = u + Font_Default.ColFactor
+                        .tv = V
+                        .Rhw = 1
+                    End With
+                    tVA(5 + (6 * Pos)) = tVA(2 + (6 * Pos))
+
+                    'Update the character we are on
+                    Pos = Pos + 1
     
                     'Shift over the the position to render the next character
                     Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
-                    
-                    'Update the character we are on
-                    Pos = Pos + 1
-                    
+
                 End If
                 
                 'Check to reset the color
@@ -904,17 +948,12 @@ Dim TempColor As Long
         End If
 
     Next LoopC
-    
+
     'Set the vertex array to the vertex buffer
-    If Pos = 0 Then Pos = 1
+    If Pos <= 0 Then Pos = 1
     If ObjPtr(D3DDevice) Then   'Make sure the D3DDevice exists - this will only return false if we received messages before it had time to load
-        
-        'Check if we have the device
-        If D3DDevice.TestCooperativeLevel = D3D_OK Then
-            Set ChatVB = D3DDevice.CreateVertexBuffer(Len(ChatArray(0)) * Pos * 4, 0, FVF, D3DPOOL_MANAGED)
-            D3DVertexBuffer8SetData ChatVB, 0, Len(ChatArray(0)) * Pos * 4, 0, ChatArray(0)
-        End If
-        
+        Set ChatVB = D3DDevice.CreateVertexBuffer(FVF_Size * Pos * 6, 0, FVF, D3DPOOL_MANAGED)
+        D3DVertexBuffer8SetData ChatVB, 0, FVF_Size * Pos * 6, 0, tVA(0)
     End If
     
 End Sub
@@ -1265,38 +1304,20 @@ End Sub
 Sub Engine_ClearMapArray()
 
 '*****************************************************************
-'Clears all layers
+'Clears all the map information
 '*****************************************************************
 
-Dim i As Integer
-Dim Y As Byte
-Dim X As Byte
-
-    For Y = YMinMapSize To YMaxMapSize
-        For X = XMinMapSize To XMaxMapSize
-
-            'Change blockes status
-            MapData(X, Y).Blocked = 0
-
-            'Erase layer 1 and 4
-            MapData(X, Y).Graphic(1).GrhIndex = 0
-            MapData(X, Y).Graphic(2).GrhIndex = 0
-            MapData(X, Y).Graphic(3).GrhIndex = 0
-            MapData(X, Y).Graphic(4).GrhIndex = 0
-
-        Next X
-    Next Y
+    'Clear the map
+    ZeroMemory MapData(1, 1), Len(MapData(1, 1)) * XMaxMapSize * YMaxMapSize    'Width * Height * Size
 
     'Erase characters
-    For i = 1 To LastChar
-        If CharList(i).Active Then Engine_Char_Erase i
-    Next i
+    LastChar = 0
+    Erase CharList
 
     'Erase objects
-    For i = 1 To LastObj
-        If OBJList(i).Grh.GrhIndex Then Engine_OBJ_Erase i
-    Next i
-
+    LastObj = 0
+    Erase OBJList
+    
 End Sub
 
 Sub Engine_ConvertCPtoTP(ByVal StartPixelLeft As Integer, ByVal StartPixelTop As Integer, ByVal cx As Integer, ByVal cy As Integer, ByRef tX As Integer, ByRef tY As Integer)
@@ -1401,8 +1422,10 @@ Dim ProjectileIndex As Integer
         
     Loop While ProjectileList(ProjectileIndex).Grh.GrhIndex > 0
     
+    'Figure out the initial rotation value
+    ProjectileList(ProjectileIndex).Rotate = Engine_GetAngle(CharList(AttackerIndex).Pos.X, CharList(AttackerIndex).Pos.Y, CharList(TargetIndex).Pos.X, CharList(TargetIndex).Pos.Y)
+    
     'Fill in the values
-    ProjectileList(ProjectileIndex).Rotate = 0
     ProjectileList(ProjectileIndex).tX = CharList(TargetIndex).Pos.X * 32
     ProjectileList(ProjectileIndex).tY = CharList(TargetIndex).Pos.Y * 32
     ProjectileList(ProjectileIndex).RotateSpeed = Rotation
@@ -1938,9 +1961,12 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 '************************************************************
 Dim SX As Integer
 Dim SY As Integer
- 
+
     'Make sure we have the UserCharIndex, or else we cant play the sound! :o
     If UserCharIndex = 0 Then Exit Sub
+
+    'Check for a valid sound
+    If SoundID <= 0 Then Exit Sub
 
     'Create the buffer if needed
     If SoundBufferTimer(SoundID) <= 0 Then
@@ -2042,14 +2068,14 @@ Dim i As Byte
     'Set format for windowed mode
     If Windowed Then
         D3DWindow.Windowed = 1  'State that using windowed mode
-        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC
+        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         D3DWindow.BackBufferFormat = DispMode.Format    'Use format just retrieved
     Else
         DispMode.Format = DispMode.Format
         DispMode.Width = 800
         DispMode.Height = 600
-        DispMode.Format = D3DFMT_X8R8G8B8
-        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC
+        DispMode.Format = D3DFMT_R5G6B5
+        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         D3DWindow.BackBufferCount = 1
         D3DWindow.BackBufferFormat = DispMode.Format
         D3DWindow.BackBufferWidth = 800
@@ -3127,19 +3153,19 @@ Dim i As Byte
             ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Snow Then
                 Effect_Kill WeatherEffectIndex
                 WeatherEffectIndex = Effect_Snow_Begin(1, 400)
-            ElseIf Effect(WeatherEffectIndex).Used = False Then
+            ElseIf Not Effect(WeatherEffectIndex).Used Then
                 WeatherEffectIndex = Effect_Snow_Begin(1, 400)
             End If
             DoLightning = 0
             
         Case 2  'Rain Storm (heavy rain + lightning)
             If WeatherEffectIndex <= 0 Then
-                WeatherEffectIndex = Effect_Rain_Begin(9, 600)
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
             ElseIf Effect(WeatherEffectIndex).EffectNum <> EffectNum_Rain Then
                 Effect_Kill WeatherEffectIndex
-                WeatherEffectIndex = Effect_Rain_Begin(9, 600)
-            ElseIf Effect(WeatherEffectIndex).Used = False Then
-                WeatherEffectIndex = Effect_Rain_Begin(9, 400)
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
+            ElseIf Not Effect(WeatherEffectIndex).Used Then
+                WeatherEffectIndex = Effect_Rain_Begin(9, 300)
             End If
             DoLightning = 1 'We take our rain with a bit of lightning on top >:D
             Engine_Sound_Set WeatherSfx1, 3
@@ -5217,29 +5243,18 @@ Private Sub Engine_Render_ChatTextBuffer()
 'Update and render the chat text buffer
 '************************************************************
 
-Dim LoopC As Integer
-Dim Chunk As Integer
-
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
-
-    If ChatBufferChunk = 0 Then ChatBufferChunk = 1
-    Chunk = 12
     
     'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
     D3DDevice.SetTexture 0, Font_Default.Texture
     LastTexture = 0
-    
-    'Set up the vertex buffer (This isn't working right for some reason -.-)
+
+    'Set up the vertex buffer
     If ShowGameWindow(ChatWindow) Then
-        If UBound(ChatArray) > 0 Then
-            'I cant get the batching to work, I am soooo noob :(
-            D3DDevice.SetStreamSource 0, ChatVB, Len(ChatArray(0))
-            '// D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, (UBound(ChatArray) + 1) \ 2
-            'Resort to the crappy method - rendering square by square
-            For LoopC = 0 To ((UBound(ChatArray) + 1) \ 4)
-                D3DDevice.DrawPrimitive D3DPT_TRIANGLESTRIP, LoopC * 4, 2
-            Next LoopC
+        If ChatArrayUbound > 0 Then
+            D3DDevice.SetStreamSource 0, ChatVB, FVF_Size
+            D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, ChatArrayUbound \ 3
         End If
     End If
 
@@ -5411,7 +5426,7 @@ Dim NewY As Single
                     End If
                 
                     'Render the texture to the device
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
                 
                 End If
             End If
@@ -5552,7 +5567,7 @@ Dim FileNum As Integer
                     VertexArray(3).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(FileNum).Y
 
                     'Render the texture to the device
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
                 
                 End If
             End If
@@ -6086,7 +6101,7 @@ Dim CosRad As Single
     End If
 
     'Render the texture to the device
-    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
 
 End Sub
 
@@ -6514,7 +6529,7 @@ Dim Angle As Single
             End If
         End If
     End If
-    
+
     '************** Chat bubbles **************
     'Loop through the chars
     For j = 1 To LastChar
@@ -6589,11 +6604,300 @@ Dim Angle As Single
             Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
         End If
     End If
+    
+    '************** Mini-map **************
+    Const tS As Single = 5  'Size of the mini-map dots
+    
+    'Check if the mini-map is being shown
+    If ShowMiniMap Then
+    
+        'Make sure the mini-map vertex buffer is valid
+        If MiniMapVBSize > 0 Then
+            
+            'Clear the texture
+            LastTexture = 0
+            D3DDevice.SetTexture 0, Nothing
+            
+            'Draw the map outline
+            D3DDevice.SetStreamSource 0, MiniMapVB, FVF_Size
+            D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, MiniMapVBSize \ 3
+  
+            'Draw the characters
+            For X = 1 To LastChar
+                If CharList(X).Pos.X > ScreenMinX Then
+                    If CharList(X).Pos.X < ScreenMaxX Then
+                        If CharList(X).Pos.Y > ScreenMinY Then
+                            If CharList(X).Pos.Y < ScreenMaxY Then
+                                If X = UserCharIndex Then j = D3DColorARGB(200, 0, 255, 0) Else j = D3DColorARGB(200, 0, 255, 255)
+                                Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                            End If
+                        End If
+                    End If
+                End If
+            Next X
+            
+        End If
+        
+    End If
 
     'Show FPS & Lag
     Engine_Render_Text "FPS: " & FPS, 720, 2, -1
     Engine_Render_Text "PTD: " & PTD & " ms", 720, 15, -1
     
+End Sub
+
+Public Sub Engine_BuildMiniMap()
+
+'***************************************************
+'Builds the array for the minimap. Theres multiple styles available, but only one
+'is used in the demo, so experiment with them and check which one you like!
+'***************************************************
+Dim NumMiniMapTiles As Integer      'UBound of the MiniMapTile array
+Dim MiniMapTile() As MiniMapTile    'Color of each tile and their position
+Dim MMC_Blocked As Long
+Dim MMC_Exit As Long
+Dim MMC_Sign As Long
+Dim Offset As Long
+Dim X As Long
+Dim Y As Long
+Dim j As Long
+
+    'Change to the type of map you want
+    Const UseOption As Byte = 2
+    
+    'The size of the tiles
+    Const MiniMapSize As Single = 5
+
+    'Create the colors (character colors are defined in Engine_RenderScreen when it is rendered)
+    MMC_Blocked = D3DColorARGB(75, 255, 255, 255)   'Blocked tiles
+    MMC_Exit = D3DColorARGB(150, 255, 0, 0)         'Exit tiles (warps)
+    MMC_Sign = D3DColorARGB(125, 255, 255, 0)       'Tiles with a sign
+    
+    'Clear the old array by resizing to the largest array we can possibly use
+    ReDim MiniMapTile(1 To CInt(XMaxMapSize) * CInt(YMaxMapSize)) As MiniMapTile
+    NumMiniMapTiles = 0
+    
+    Select Case UseOption
+        
+        '***** Option 1 *****
+        Case 1
+
+            For Y = YMinMapSize To YMaxMapSize
+                For X = XMinMapSize To XMaxMapSize
+                    
+                    'Check for signs
+                    If MapData(X, Y).Sign > 1 Then
+                        NumMiniMapTiles = NumMiniMapTiles + 1
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
+                        MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
+                    Else
+                    
+                        'Check for exits
+                        If MapData(X, Y).Warp = 1 Then
+                            NumMiniMapTiles = NumMiniMapTiles + 1
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
+                            MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
+                        Else
+                            
+                            'Check for blocked tiles
+                            If MapData(X, Y).Blocked = 0 Then
+                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                MiniMapTile(NumMiniMapTiles).X = X
+                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                            End If
+                        End If
+                    End If
+                    
+                Next X
+            Next Y
+                
+        '***** Option 2 *****
+        Case 2
+
+            For Y = YMinMapSize To YMaxMapSize
+                j = 0   'Clear the row settings
+                For X = XMinMapSize To XMaxMapSize
+                    
+                    'Check if there is a sign
+                    If MapData(X, Y).Sign > 1 Then
+                        NumMiniMapTiles = NumMiniMapTiles + 1
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
+                        MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
+                    Else
+                    
+                        'Check if there is an exit
+                        If MapData(X, Y).Warp = 1 Then
+                            NumMiniMapTiles = NumMiniMapTiles + 1
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
+                            MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
+                        Else
+                            
+                            'Only check blocked tiles
+                            If MapData(X, Y).Blocked > 0 Then
+        
+                                'If the row is set to draw, just keep drawing
+                                If j = 1 Then
+                                    NumMiniMapTiles = NumMiniMapTiles + 1
+                                    MiniMapTile(NumMiniMapTiles).X = X
+                                    MiniMapTile(NumMiniMapTiles).Y = Y
+                                    MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                    
+                                'The row isn't drawing, check if it is time to draw it
+                                Else
+        
+                                    'If the next tile is not blocked, this one will be (to draw an outline)
+                                    If j = 0 Then
+                                        If X + 1 <= XMaxMapSize Then
+                                            If MapData(X + 1, Y).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                    'If the tile above or below is blocked, draw the tile
+                                    If j = 0 Then
+                                        If Y > YMinMapSize Then
+                                            If MapData(X, Y - 1).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    If j = 0 Then
+                                        If Y < YMaxMapSize Then
+                                            If MapData(X, Y + 1).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                    'If we STILL haven't drawn the tile, check to the diagonals (this makes corners smoothed)
+                                    If j = 0 Then
+                                        If Y > YMinMapSize Then
+                                            If Y < YMaxMapSize Then
+                                                If X > XMinMapSize Then
+                                                    If X < XMaxMapSize Then
+                                                        If MapData(X - 1, Y - 1).Blocked = 0 Or MapData(X - 1, Y + 1).Blocked = 0 Or MapData(X + 1, Y - 1).Blocked = 0 Or MapData(X + 1, Y + 1).Blocked = 0 Then
+                                                            NumMiniMapTiles = NumMiniMapTiles + 1
+                                                            MiniMapTile(NumMiniMapTiles).X = X
+                                                            MiniMapTile(NumMiniMapTiles).Y = Y
+                                                            MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                            j = 1
+                                                        End If
+                                                    End If
+                                                End If
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                End If
+                                
+                                'If the next tile isn't blocked, we remove the row drawing
+                                If j = 1 Then
+                                    If X < XMaxMapSize Then
+                                        If MapData(X + 1, Y).Blocked > 0 Then j = 0
+                                    End If
+                                End If
+                                
+                            End If
+                        End If
+                    End If
+                Next X
+            Next Y
+
+    End Select
+    
+    'Resize the array to fit the amount of data we have
+    If NumMiniMapTiles = 0 Then
+        Erase MiniMapTile
+        Exit Sub
+    Else
+        ReDim Preserve MiniMapTile(1 To NumMiniMapTiles)
+    End If
+    
+    '***** Build the vertex buffer according to the information we gathered in the MiniMapTile array *****
+    
+    'Create the temp vertex array large enough to fit every tile (2 triangles per tile, 3 points per triangle)
+    ReDim tVA(0 To (NumMiniMapTiles * 6) - 1) As TLVERTEX
+    
+    'Start our offset at -6 so the first offset is 0
+    Offset = -6
+    
+    'Fill the temp vertex array
+    For j = 1 To NumMiniMapTiles
+    
+        'Raise the offset count
+        Offset = Offset + 6
+    
+        '*** Triangle 1 ***
+        
+        'Top-left corner
+        With tVA(0 + Offset)
+            .X = MiniMapTile(j).X * MiniMapSize
+            .Y = MiniMapTile(j).Y * MiniMapSize
+            .Color = MiniMapTile(j).Color
+            .Rhw = 1
+        End With
+        
+        'Top-right corner
+        With tVA(1 + Offset)
+            .X = MiniMapTile(j).X * MiniMapSize + MiniMapSize
+            .Y = MiniMapTile(j).Y * MiniMapSize
+            .Color = MiniMapTile(j).Color
+            .Rhw = 1
+        End With
+        
+        'Bottom-left corner
+        With tVA(2 + Offset)
+            .X = MiniMapTile(j).X * MiniMapSize
+            .Y = MiniMapTile(j).Y * MiniMapSize + MiniMapSize
+            .Color = MiniMapTile(j).Color
+            .Rhw = 1
+        End With
+        
+        '*** Triangle 2 ***
+        
+        'Top-right corner
+        tVA(3 + Offset) = tVA(1 + Offset)
+        
+        'Bottom-right corner
+        With tVA(4 + Offset)
+            .X = MiniMapTile(j).X * MiniMapSize + MiniMapSize
+            .Y = MiniMapTile(j).Y * MiniMapSize + MiniMapSize
+            .Color = MiniMapTile(j).Color
+            .Rhw = 1
+        End With
+        
+        'Bottom-left corner
+        tVA(5 + Offset) = tVA(2 + Offset)
+        
+    Next j
+    
+    'Build the vertex buffer
+    MiniMapVBSize = Offset + 6
+    Set MiniMapVB = D3DDevice.CreateVertexBuffer(FVF_Size * MiniMapVBSize, 0, FVF, D3DPOOL_MANAGED)
+    D3DVertexBuffer8SetData MiniMapVB, 0, FVF_Size * MiniMapVBSize, 0, tVA(0)
+    
+    'Clear the temp arrays
+    Erase tVA
+    Erase MiniMapTile
+
 End Sub
 
 Private Function Engine_NPCChat_MeetsConditions(ByVal NPCIndex As Integer, ByVal LineIndex As Byte, Optional ByVal SayLine As String = "") As Byte
@@ -7250,7 +7554,7 @@ Dim ResetColor As Byte
                     VertexArray(3).tv = V + Font_Default.RowFactor
                 
                     'Render
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
                     
                     'Shift over the the position to render the next character
                     Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)

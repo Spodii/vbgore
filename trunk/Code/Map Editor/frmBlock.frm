@@ -1,23 +1,36 @@
 VERSION 5.00
 Begin VB.Form frmBlock 
-   BackColor       =   &H000000FF&
+   BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Blocks"
-   ClientHeight    =   2850
+   ClientHeight    =   2220
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   1455
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmBlock.frx":0000
-   ScaleHeight     =   190
+   ScaleHeight     =   148
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   97
    ShowInTaskbar   =   0   'False
+   Begin MapEditor.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   10
+      Top             =   0
+      Width           =   135
+      _ExtentX        =   238
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      Caption         =   "Blocks"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.CheckBox SetAttackChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Caption         =   "Set attack"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -33,12 +46,12 @@ Begin VB.Form frmBlock
       Left            =   120
       TabIndex        =   9
       ToolTipText     =   "Set the attacking block value on click"
-      Top             =   840
+      Top             =   360
       Width           =   1215
    End
    Begin VB.CheckBox SetWalkChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Caption         =   "Set walk"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -54,36 +67,36 @@ Begin VB.Form frmBlock
       Left            =   120
       TabIndex        =   8
       ToolTipText     =   "Set the walking block values on click"
-      Top             =   600
+      Top             =   120
       Width           =   1215
    End
    Begin VB.CheckBox BlockAttackChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
       Left            =   1080
       TabIndex        =   7
       ToolTipText     =   "Can not attack through the tile"
-      Top             =   2370
+      Top             =   1890
       Width           =   200
    End
    Begin VB.CheckBox BlockAllChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
-      ForeColor       =   &H80000008&
+      ForeColor       =   &H00000000&
       Height          =   255
       Left            =   630
       TabIndex        =   4
       ToolTipText     =   "Block/Unblock all directions"
-      Top             =   1680
+      Top             =   1200
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -91,12 +104,12 @@ Begin VB.Form frmBlock
       Left            =   390
       TabIndex        =   3
       ToolTipText     =   "Block movement going West"
-      Top             =   1680
+      Top             =   1200
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -104,12 +117,12 @@ Begin VB.Form frmBlock
       Left            =   630
       TabIndex        =   2
       ToolTipText     =   "Block movement going South"
-      Top             =   1920
+      Top             =   1440
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -117,12 +130,12 @@ Begin VB.Form frmBlock
       Left            =   870
       TabIndex        =   1
       ToolTipText     =   "Block movement going East"
-      Top             =   1680
+      Top             =   1200
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H00C0C0C0&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -130,7 +143,7 @@ Begin VB.Form frmBlock
       Left            =   630
       TabIndex        =   0
       ToolTipText     =   "Block movement going North"
-      Top             =   1440
+      Top             =   960
       Width           =   200
    End
    Begin VB.Label Label1 
@@ -153,7 +166,7 @@ Begin VB.Form frmBlock
       Index           =   1
       Left            =   120
       TabIndex        =   6
-      Top             =   2400
+      Top             =   1920
       Width           =   870
    End
    Begin VB.Label Label1 
@@ -176,7 +189,7 @@ Begin VB.Form frmBlock
       Index           =   0
       Left            =   360
       TabIndex        =   5
-      Top             =   1200
+      Top             =   720
       Width           =   750
    End
 End
@@ -197,32 +210,20 @@ Dim i As Byte
 
 End Sub
 
+Private Sub Form_Load()
+
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
+    
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     Cancel = 1
-    Engine_Var_Write Data2Path & "MapEditor.ini", "BLOCK", "X", Me.Left
-    Engine_Var_Write Data2Path & "MapEditor.ini", "BLOCK", "Y", Me.Top
+    Var_Write Data2Path & "MapEditor.ini", "BLOCK", "X", Me.Left
+    Var_Write Data2Path & "MapEditor.ini", "BLOCK", "Y", Me.Top
     HideFrmBlock
-
-End Sub
-
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
 
 End Sub
 

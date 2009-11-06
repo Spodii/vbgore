@@ -9,9 +9,31 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.3            ************
+'************            Official Release: Version 0.4.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
+'*******************************************************************************
+'***** License Information For General Users: **********************************
+'*******************************************************************************
+'** vbGORE comes completely free. You may charge for people to play your game **
+'** along with you may accept donations for your game. The only rules you     **
+'** must follow when using vbGORE are:                                        **
+'**  - You may not claim the engine as your own creation.                     **
+'**  - You may not sell the code to vbGORE in any way or form, whether it is  **
+'**    the original vbGORE code or a modified version of it. Selling your game**
+'**    may be an exception - if you wish to do this, you must first acquire   **
+'**    permission from Spodi directly.                                        **
+'**  - If you are distributing vbGORE or modified code of it, read the        **
+'**    section "Source Distrubution Information" below.                       **
+'**  - If you are told by Spodi to take down an engine or game created with   **
+'**    vbGORE, you must do so. You do have the right to question the decision **
+'**    but if the result does not change, the product must be removed. You    **
+'**    shouldn't need to worry about this unless you do something "borderline"**
+'**    to infringement on this license.                                       **
+'** This license is subject to change at any time. Only the most current      **
+'** version of the license applies, not the copy of the license that came with**
+'** your copy of vbGORE. This means if rules are added for version 1.0, you   **
+'** can not avoid them by using a previous version such as 0.3.               **
 '*******************************************************************************
 '***** Source Distribution Information: ****************************************
 '*******************************************************************************
@@ -51,6 +73,8 @@ Attribute VB_Name = "Declares"
 '**        spread the word of vbGORE's existance! Buttons and banners for     **
 '**        linking to vbGORE can be found on the following page:              **
 '**        http://www.vbgore.com/index.php?title=Buttons_and_Banners          **
+'**  *Spread The Word - The more people who know about vbGORE, the more people**
+'**        there is to report bugs and suggestions to improve the engine!     **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -106,7 +130,7 @@ Public Const RunHighPriority As Byte = 1
 Public Const GroundObjLife As Long = 300000 '5 minutes
 
 'How long an object can remain in memory unused
-Public Const ObjMemoryLife As Long = 600000 '10 minutes
+Public Const ObjMemoryLife As Long = 300000 '5 minutes
 
 'How long the maps last in memory when no users are on it
 Public Const EmptyMapLife As Long = 1800    '3 minutes
@@ -134,17 +158,10 @@ Public Const AGGRESSIVEFACETIME = 4000
 'Calculate the data in/out per sec or ont
 Public Const CalcTraffic As Boolean = True
 
-'Message of the day
-Public Const MOTD1 As String = "Welcome to vbGORE Version 0.3.3!"
-Public Const MOTD2 As String = "For help, please type |/help|"
-Public Const MOTD3 As String = "|Ctrl+W| for inventory, |Ctrl+S| for stats."
-Public Const MOTD4 As String = "Please visit our site at www.vbgore.com"
-Public Const MOTD5 As String = "Questions, code, help, etc can be found there. :)"
-Public Const MOTD6 As String = "Remember to go under the |waterfall| to fight some enemies!"
-
-'Sound constants
-Public Const SOUND_SWING As Byte = 7
-Public Const SOUND_WARP As Byte = 1
+'Help (/help) and MOTD buffer
+'These are filled in on frmMain.StartServer - it holds all the strings combined for faster sending
+Public HelpBuffer() As Byte
+Public MOTDBuffer() As Byte
 
 'Stat constants
 Public Const STAT_ATTACKWAIT As Long = 1000 'How many ms a user has to wait till he can attack again
@@ -154,6 +171,9 @@ Public Const MaxQuests As Byte = 5
 
 'Time that must elapse for NPC to make another action (in miliseconds) after attacking
 Public Const NPCDelayFight As Long = 1000
+
+'ID of the sound effect used when no weapon is equipted and the user attacks
+Public Const UnequiptedSwingSfx As Byte = 1
 
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1
@@ -181,7 +201,7 @@ End Type
 Public Const MAX_INVENTORY_OBJS As Integer = 9999   'Maximum number of objects per slot (same obj)
 Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of slots
 Public Type udtObjData
-    name As String                  'Name
+    Name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
     GrhIndex As Long                'Graphic index
     SpriteBody As Integer           'Index of the body sprite to change to
@@ -192,6 +212,7 @@ Public Type udtObjData
     WeaponType As Byte              'What type of weapon, if it is a weapon
     WeaponRange As Byte             'Range of the weapon (only applicable if a ranged WeaponType)
     UseGrh As Long                  'Grh of the object when used (projectile for ranged, slash for melee, effects for use-once)
+    UseSfx As Byte                  'Sound effect played when the object is used (based on the .wav's number)
     ProjectileRotateSpeed As Byte   'How fast the projectile rotates (if at all)
     Price As Long                   'Price of the object
     RepHP As Long                   'How much HP to replenish
@@ -233,7 +254,7 @@ Type ObjBlock   'Information on an object on a map block
 End Type
 Type MapInfo    'Map information
     NumUsers As Integer     'Number of users on the map
-    name As String          'Name of the map
+    Name As String          'Name of the map
     MapVersion As Integer   'Version of the map
     Weather As Byte         'What weather effects the map has going
     Music As Byte           'The music file number of the map
@@ -265,7 +286,7 @@ Public CharList() As CharData
 
 '************ Quest ************
 Public Type Quest
-    name As String                  'The quest's name
+    Name As String                  'The quest's name
     StartTxt As String              'What the NPC says to the player to explain the crisis
     AcceptTxt As String             'What the NPC says when the player accepts the quest
     IncompleteTxt As String         'What the NPC says to the player when they return without completing the quest
@@ -356,7 +377,7 @@ Type KnownSkills    'Known skills by the user
     Spike As Byte
 End Type
 Type User   'Holds data for a user
-    name As String          'Name of the user
+    Name As String          'Name of the user
     Char As Char            'Defines users looks
     Desc As String          'User's description
     Pos As WorldPos         'User's current position
@@ -408,7 +429,7 @@ Type NPCCounters    'Counters for a NPC
     ActionDelay As Long         'How long until the NPC can perform another action
 End Type
 Type NPC    'Holds all the NPC variables
-    name As String  'Name of the NPC
+    Name As String  'Name of the NPC
     Char As Char    'Defines NPC looks
     Desc As String  'Description
     Pos As WorldPos         'Current NPC Postion
@@ -424,6 +445,7 @@ Type NPC    'Holds all the NPC variables
     Quest As Integer        'Quest index
     AttackRange As Byte     'The NPC's attack range
     AttackGrh As Long       'Grh used when the NPC attacks
+    AttackSfx As Byte       'Sound effect played when the NPC attacks
     ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
     flags As NPCFlags               'Declares the NPC's Flags
@@ -445,6 +467,20 @@ Public Type NPCBytes
     Vend As Byte
     Drop As Byte
 End Type
+
+'Server information
+Public Type ServerInfo
+    IIP As String           'Internal IP of the server (used to bind to the correct IP)
+    EIP As String           'External IP of the server (used to identify the server from another server)
+    ServerPort As String    'Port used to communicate between servers (server <-> server)
+    Port As Integer         'Port used to communicate to clients (server <-> client)
+End Type
+Public ServerInfo() As ServerInfo
+Public LocalSocketID As Long    'Index of the socket ID of this server
+Public MaxUsers As Integer      'Max users allowed on this server
+Public ServerMap() As Byte      'Points to the server that is uses the map
+Public NumServers As Byte       'Total number of servers
+Public ServerID As Byte         'The ID of this server (ServerID in Server.ini file)
 
 '***********************************
 '********** Misc Values ************
@@ -509,7 +545,6 @@ Public NumObjDatas As Integer
 
 Public IdleLimit As Long
 Public LastPacket As Long
-Public MaxUsers As Integer
 
 'All the users located on a map
 Public Type MapUsersType
@@ -528,9 +563,6 @@ Public ServerStartTime As Long
 
 'States the server is running
 Public ServerRunning As Byte
-
-'ID of the local socket
-Public LocalSoxID As Long
 
 'Buffer used for conversions to send to Data_Send
 Public ConBuf As DataBuffer
@@ -557,10 +589,6 @@ Public NumBytesForSkills As Long
 'Server is unloading
 Public UnloadServer As Byte
 
-'Help variables
-Public Const NumHelpLines As Byte = 3
-Public HelpLine(1 To NumHelpLines) As String    'These are filled in on frmMain.StartServer
-
 'Packet messages that are cached so they don't have to built real-time
 Public Type CachedMessage
     Data() As Byte
@@ -575,7 +603,8 @@ Public LastTimeGetTime As Long
 '********** EXTERNAL FUNCTIONS ***********
 Public Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
-Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
+Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
+Public Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (ByRef Destination As Any, ByVal Length As Long, ByVal Fill As Byte)

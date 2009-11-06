@@ -1,216 +1,143 @@
 VERSION 5.00
 Begin VB.Form frmMain 
-   BackColor       =   &H00000000&
+   BackColor       =   &H00FFFFFF&
    BorderStyle     =   0  'None
    Caption         =   "Color Conversion"
-   ClientHeight    =   1830
+   ClientHeight    =   1170
    ClientLeft      =   0
    ClientTop       =   -105
-   ClientWidth     =   5745
+   ClientWidth     =   6045
+   FillColor       =   &H00FFFFFF&
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmMain.frx":030A
-   ScaleHeight     =   122
+   ScaleHeight     =   78
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   383
+   ScaleWidth      =   403
    StartUpPosition =   2  'CenterScreen
+   Begin ColorCon.cButton cButton1 
+      Height          =   375
+      Left            =   1560
+      TabIndex        =   8
+      Top             =   720
+      Width           =   1455
+      _ExtentX        =   2778
+      _ExtentY        =   661
+      Caption         =   "ARGB -> Long"
+   End
+   Begin ColorCon.cForm cForm 
+      Height          =   375
+      Left            =   5160
+      TabIndex        =   7
+      Top             =   600
+      Width           =   375
+      _ExtentX        =   661
+      _ExtentY        =   661
+      MaximizeBtn     =   0   'False
+      Caption         =   "Color Conversion"
+      CaptionTop      =   0
+   End
    Begin VB.TextBox LongTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   3960
       TabIndex        =   5
       Text            =   "0"
-      Top             =   840
-      Width           =   1575
+      Top             =   360
+      Width           =   1935
    End
    Begin VB.PictureBox PreviewPic 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   2880
       ScaleHeight     =   255
       ScaleWidth      =   705
       TabIndex        =   6
-      Top             =   840
+      Top             =   360
       Width           =   735
    End
    Begin VB.TextBox BTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   2040
       MaxLength       =   3
       TabIndex        =   4
       Text            =   "0"
-      Top             =   840
+      Top             =   360
       Width           =   495
    End
    Begin VB.TextBox GTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   1440
       MaxLength       =   3
       TabIndex        =   3
       Text            =   "0"
-      Top             =   840
+      Top             =   360
       Width           =   495
    End
    Begin VB.TextBox RTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   840
       MaxLength       =   3
       TabIndex        =   2
       Text            =   "0"
-      Top             =   840
+      Top             =   360
       Width           =   495
    End
    Begin VB.TextBox ATxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
+      BackColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   240
       MaxLength       =   3
       TabIndex        =   1
       Text            =   "0"
-      Top             =   840
+      Top             =   360
       Width           =   495
    End
-   Begin VB.Label Label2 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Long -> ARGB"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   3120
-      TabIndex        =   10
-      Top             =   1440
-      Width           =   1470
-   End
-   Begin VB.Label Command4 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Long -> RGB"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   3120
+   Begin ColorCon.cButton cButton2 
+      Height          =   375
+      Left            =   120
       TabIndex        =   9
-      Top             =   1200
-      Width           =   1320
-   End
-   Begin VB.Label Command2 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
+      Top             =   720
+      Width           =   1455
+      _ExtentX        =   2778
+      _ExtentY        =   661
       Caption         =   "RGB -> Long"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   840
-      TabIndex        =   8
-      Top             =   1200
-      Width           =   1320
    End
-   Begin VB.Label Command1 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "ARGB -> Long"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   720
-      TabIndex        =   7
-      Top             =   1440
-      Width           =   1470
+   Begin ColorCon.cButton cButton3 
+      Height          =   375
+      Left            =   4440
+      TabIndex        =   10
+      Top             =   720
+      Width           =   1455
+      _ExtentX        =   2778
+      _ExtentY        =   661
+      Caption         =   "Long -> ARGB"
+   End
+   Begin ColorCon.cButton cButton4 
+      Height          =   375
+      Left            =   3000
+      TabIndex        =   11
+      Top             =   720
+      Width           =   1455
+      _ExtentX        =   2778
+      _ExtentY        =   661
+      Caption         =   "Long -> RGB"
    End
    Begin VB.Label Label1 
       AutoSize        =   -1  'True
@@ -225,11 +152,11 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H00000000&
       Height          =   240
       Left            =   120
       TabIndex        =   0
-      Top             =   600
+      Top             =   120
       Width           =   5220
    End
 End
@@ -240,8 +167,6 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
-Private Declare Sub ReleaseCapture Lib "user32" ()
-Private Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lparam As Any) As Long
 
 Private Sub ATxt_Change()
 
@@ -255,8 +180,9 @@ End Sub
 Private Sub ATxt_GotFocus()
 
     On Error Resume Next
-        ATxt.SelStart = 0
-        ATxt.SelLength = Len(ATxt.Text)
+    
+    ATxt.SelStart = 0
+    ATxt.SelLength = Len(ATxt.Text)
 
 End Sub
 
@@ -266,6 +192,7 @@ Private Sub BTxt_Change()
         BTxt.Text = ""
         Exit Sub
     End If
+    
     UpdatePreview
 
 End Sub
@@ -273,49 +200,66 @@ End Sub
 Private Sub BTxt_GotFocus()
 
     On Error Resume Next
-        BTxt.SelStart = 0
-        BTxt.SelLength = Len(BTxt.Text)
+    
+    BTxt.SelStart = 0
+    BTxt.SelLength = Len(BTxt.Text)
 
 End Sub
 
-Private Sub Command1_Click()
+Private Sub cButton1_Click()
 
     On Error Resume Next
-        LongTxt.Text = D3DColorARGB(ATxt.Text, RTxt.Text, GTxt.Text, BTxt.Text)
+    
+    LongTxt.Text = D3DColorARGB(ATxt.Text, RTxt.Text, GTxt.Text, BTxt.Text)
 
 End Sub
 
-Private Sub Command2_Click()
+Private Sub cButton2_Click()
 
     On Error Resume Next
-        LongTxt.Text = RGB(RTxt.Text, GTxt.Text, BTxt.Text)
-
+    
+    LongTxt.Text = RGB(RTxt.Text, GTxt.Text, BTxt.Text)
+    
 End Sub
 
-Private Sub Command4_Click()
+Private Sub cButton3_Click()
+Dim Dest(3) As Byte
+
+    On Error Resume Next
+    
+    CopyMemory Dest(0), CLng(LongTxt.Text), 4
+    ATxt.Text = Dest(3)
+    RTxt.Text = Dest(2)
+    GTxt.Text = Dest(1)
+    BTxt.Text = Dest(0)
+        
+End Sub
+
+Private Sub cButton4_Click()
 
     SplitRGB LongTxt.Text, RTxt.Text, GTxt.Text, BTxt.Text
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_Load()
 
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
 
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
+End Sub
+
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim c As Control
+    
+    For Each c In Me
+        If TypeName(c) = "cButton" Then
+            c.Refresh
+            c.DrawState = 0
         End If
-    End If
-
+    Next c
+    Set c = Nothing
+    
 End Sub
 
 Private Sub GTxt_Change()
@@ -331,28 +275,18 @@ End Sub
 Private Sub GTxt_GotFocus()
 
     On Error Resume Next
-        GTxt.SelStart = 0
-        GTxt.SelLength = Len(GTxt.Text)
+    
+    GTxt.SelStart = 0
+    GTxt.SelLength = Len(GTxt.Text)
 
-End Sub
-
-Private Sub Label2_Click()
-Dim Dest(3) As Byte
-
-    On Error Resume Next
-        CopyMemory Dest(0), CLng(LongTxt.Text), 4
-        ATxt.Text = Dest(3)
-        RTxt.Text = Dest(2)
-        GTxt.Text = Dest(1)
-        BTxt.Text = Dest(0)
-        
 End Sub
 
 Private Sub LongTxt_GotFocus()
 
     On Error Resume Next
-        LongTxt.SelStart = 0
-        LongTxt.SelLength = Len(LongTxt.Text)
+    
+    LongTxt.SelStart = 0
+    LongTxt.SelLength = Len(LongTxt.Text)
 
 End Sub
 
@@ -369,8 +303,9 @@ End Sub
 Private Sub RTxt_GotFocus()
 
     On Error Resume Next
-        RTxt.SelStart = 0
-        RTxt.SelLength = Len(RTxt.Text)
+    
+    RTxt.SelStart = 0
+    RTxt.SelLength = Len(RTxt.Text)
 
 End Sub
 
@@ -385,9 +320,8 @@ End Sub
 Private Sub UpdatePreview()
 
     On Error Resume Next
-        PreviewPic.BackColor = RGB(RTxt.Text, GTxt.Text, BTxt.Text)
+    
+    PreviewPic.BackColor = RGB(RTxt.Text, GTxt.Text, BTxt.Text)
 
 End Sub
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:50)  Decl: 57  Code: 117  Total: 174 Lines
-':) CommentOnly: 55 (31.6%)  Commented: 0 (0%)  Empty: 29 (16.7%)  Max Logic Depth: 2

@@ -1,3 +1,5 @@
-Line 29: Class SoxOCXBinary.SoxBinary of control Socket was not a loaded control class.
-Line 35: The property name _ExtentX in Socket is invalid.
-Line 36: The property name _ExtentY in Socket is invalid.
+Line 30: Class MSWinsockLib.Winsock of control ServerSocket was not a loaded control class.
+Line 34: The property name _ExtentX in ServerSocket is invalid.
+Line 35: The property name _ExtentY in ServerSocket is invalid.
+Line 36: The property name _Version in ServerSocket is invalid.
+Line 37: The property name LocalPort in ServerSocket is invalid.

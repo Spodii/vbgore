@@ -259,7 +259,10 @@ Dim FileNum As Byte
 Dim i As Long
 
     'Don't load a loaded map
-    If MapInfo(MapNum).DataLoaded = 1 Then Exit Sub Else MapInfo(MapNum).DataLoaded = 1
+    If MapInfo(MapNum).DataLoaded = 1 Then Exit Sub
+    
+    'Set the data as loaded
+    MapInfo(MapNum).DataLoaded = 1
 
     'Create the data arrays
     ReDim MapInfo(MapNum).Data(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
@@ -499,17 +502,17 @@ Sub Unload_Map(ByVal MapNum As Integer)
 Dim i As Long
 
     'Don't unload an unloaded map
-    If MapInfo(MapNum).DataLoaded = 0 Then
+    If MapInfo(MapNum).DataLoaded = 1 Then
     
         'Check the map life time
         If MapInfo(MapNum).UnloadTimer = 0 Then
-            MapInfo(MapNum).UnloadTimer = EmptyMapLife + CurrentTime
+            MapInfo(MapNum).UnloadTimer = EmptyMapLife + timeGetTime
             Exit Sub
         End If
         
         'Check if to remove the map
-        If MapInfo(MapNum).UnloadTimer + EmptyMapLife > CurrentTime Then
-        
+        If MapInfo(MapNum).UnloadTimer + EmptyMapLife > timeGetTime Then
+
             'Set the map as unloaded
             MapInfo(MapNum).DataLoaded = 0
             MapInfo(MapNum).UnloadTimer = 0
@@ -556,6 +559,9 @@ Dim Map As Long
     For LoopC = 1 To NumMaps
         ReDim MapUsers(LoopC).Index(0)
     Next LoopC
+    
+    'Load the server settings (this has to be done right here)
+    Load_ServerIni
 
     For Map = 1 To NumMaps
     
@@ -571,7 +577,7 @@ Dim Map As Long
         'Create the temp maps
         Load_Maps_Data Map
         Save_Maps_Temp Map
-
+        
     Next Map
     
 End Sub
@@ -619,6 +625,7 @@ Dim j As Byte
             .Desc = Trim$(DB_RS!Descr)
             .AttackGrh = Val(DB_RS!AttackGrh)
             .AttackRange = Val(DB_RS!AttackRange)
+            .AttackSfx = Val(DB_RS!AttackSfx)
             .AI = Val(DB_RS!AI)
             .ChatID = Val(DB_RS!Chat)
             .RespawnWait = Val(DB_RS!RespawnWait)
@@ -660,8 +667,8 @@ Dim j As Byte
                 .NumVendItems = j + 1
                 For i = 0 To j
                     Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
-                    ItemSplit = Split(TempSplit(i), " ")
-                    If j = 1 Then   'If ubound <> 1, we have an invalid item entry
+                    ItemSplit = Split(Trim$(TempSplit(i)), " ")
+                    If UBound(ItemSplit) = 1 Then   'If ubound <> 1, we have an invalid item entry
                         .VendItems(i + 1).ObjIndex = Val(ItemSplit(0))
                         .VendItems(i + 1).Amount = Val(ItemSplit(1))
                     Else
@@ -673,15 +680,15 @@ Dim j As Byte
             'Create the drop list
             If LenB(DropStr) Then
                 Log "Load_NPC: Splitting DropStr (" & DropStr & ")", CodeTracker '//\\LOGLINE//\\
-                TempSplit = Split(DropStr, vbNewLine)
+                TempSplit = Split(Trim$(DropStr), vbNewLine)
                 j = UBound(TempSplit)
-                ReDim .DropItems(1 To j + 1)
-                ReDim .DropRate(1 To j + 1)
                 .NumDropItems = j + 1
+                ReDim .DropItems(1 To .NumDropItems)
+                ReDim .DropRate(1 To .NumDropItems)
                 For i = 0 To j
                     Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
-                    ItemSplit = Split(TempSplit(i), " ")
-                    If j = 2 Then   'If ubound <> 2, we have an invalid item entry
+                    ItemSplit = Split(Trim$(TempSplit(i)), " ")
+                    If UBound(ItemSplit) = 2 Then   'If ubound <> 2, we have an invalid item entry
                         .DropItems(i + 1).ObjIndex = Val(ItemSplit(0))
                         .DropItems(i + 1).Amount = Val(ItemSplit(1))
                         .DropRate(i + 1) = Val(ItemSplit(2))
@@ -829,7 +836,7 @@ Dim b As Byte
                 Erase .DropRate
             End If
             If ObjNums.Vend > 0 Then
-                ReDim VendArray(1 To ObjNums.Vend) As Obj
+                ReDim vendarray(1 To ObjNums.Vend) As Obj
             Else
                 Erase .VendItems
             End If
@@ -879,6 +886,7 @@ Dim FileNum As Byte
             .WeaponRange = Val(DB_RS!WeaponRange)
             .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
             .UseGrh = Val(DB_RS!UseGrh)
+            .UseSfx = Val(DB_RS!UseSfx)
             .GrhIndex = Val(DB_RS!GrhIndex)
             .SpriteBody = Val(DB_RS!sprite_body)
             .SpriteWeapon = Val(DB_RS!sprite_weapon)
@@ -978,8 +986,24 @@ Public Sub Load_ServerIni()
 'Loads the Server.ini
 '*****************************************************************
 Dim TempSplit() As String
+Dim ts() As String
+Dim i As Byte
+Dim s As String
+Dim j As Long
+Dim k As Byte
 
     Log "Call Load_ServerIni", CodeTracker '//\\LOGLINE//\\
+
+    'Get the ID of this server
+    'Check first if an ID is specified in the ID (ie 1.exe overwrites to ID = 1)
+    TempSplit = Split(App.EXEName, ".")
+    If IsNumeric(TempSplit(0)) Then
+        If Val(TempSplit(0)) > 0 Then
+            ServerID = Val(TempSplit(0))
+        End If
+    End If
+    'No server ID defined in the EXE name, get it from the file
+    If ServerID = 0 Then ServerID = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "ServerID"))
 
     'Misc
     IdleLimit = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "IdleLimit"))
@@ -996,10 +1020,41 @@ Dim TempSplit() As String
     ResPos.Map = Val(TempSplit(0))
     ResPos.X = Val(TempSplit(1))
     ResPos.Y = Val(TempSplit(2))
-
-    'Max users
-    MaxUsers = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "MaxUsers"))
-    ReDim UserList(1 To MaxUsers) As User
+    
+    'Get the total number of servers
+    NumServers = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "Servers"))
+    ReDim ServerInfo(1 To NumServers)
+    
+    'Get the list of servers
+    ReDim ServerMap(1 To NumMaps)
+    For i = 1 To NumServers
+        With ServerInfo(i)
+             
+            'Get the general information
+            .IIP = Trim$(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "IP"))
+            .EIP = Trim$(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "ExIP"))
+            .Port = Val(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "Port"))
+            .ServerPort = Val(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "ServerPort"))
+            If i = ServerID Then MaxUsers = Val(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "MaxUsers"))
+            
+            'Get the map information
+            s = Trim$(Var_Get(ServerDataPath & "Server.ini", "SERVER" & i, "Map"))
+            TempSplit() = Split(s, ",")
+            For j = 0 To UBound(TempSplit)
+               If Trim$(TempSplit(j)) = "*" Then
+                   FillMemory ServerMap(1), NumMaps + 1, i
+               Else
+                   If InStr(1, TempSplit(j), "-") Then
+                       ts() = Split(Trim$(TempSplit(j)), "-")
+                       FillMemory ServerMap(Val(ts(0))), Val(ts(1)) - Val(ts(0)) + 1, i
+                   Else
+                       If Val(TempSplit(j)) > 0 Then ServerMap(Val(TempSplit(j))) = i
+                   End If
+               End If
+            Next j
+            
+        End With
+    Next i
 
 End Sub
 
@@ -1070,11 +1125,9 @@ Dim i As Long
         UserChar.Stats.BaseStat(SID.MinMAN) = Val(!stat_mp_min)
         UserChar.Stats.BaseStat(SID.MinSTA) = Val(!stat_sp_min)
         
-        'Update the user as being online
-        If MySQLUpdate_Online Then
-            !online = 1
-            .Update
-        End If
+        'Update the server the user is on
+        !server = ServerID
+        .Update
     
         'Close the recordset
         .Close
@@ -1263,8 +1316,11 @@ Dim i As Long
         'Build mail string
         For i = 1 To MaxMailPerUser
             If .MailID(i) > 0 Then
-                If MailStr <> "" Then MailStr = MailStr & vbNewLine
-                MailStr = MailStr & .MailID(i)
+                If LenB(MailStr) Then
+                    MailStr = MailStr & vbNewLine & .MailID(i)
+                Else
+                    MailStr = MailStr & .MailID(i)
+                End If
             End If
         Next i
         Log "Save_User: Built mail string (" & MailStr & ")", CodeTracker '//\\LOGLINE//\\
@@ -1272,8 +1328,11 @@ Dim i As Long
         'Build known skills string
         For i = 1 To NumSkills
             If .KnownSkills(i) > 0 Then
-                If KSStr <> "" Then KSStr = KSStr & vbNewLine
-                KSStr = KSStr & i
+                If LenB(KSStr) Then
+                    KSStr = KSStr & vbNewLine & i
+                Else
+                    KSStr = KSStr & i
+                End If
             End If
         Next i
         Log "Save_User: Built known skills string (" & KSStr & ")", CodeTracker '//\\LOGLINE//\\
@@ -1291,8 +1350,11 @@ Dim i As Long
         'Build current quest string
         For i = 1 To MaxQuests
             If .Quest(i) > 0 Then
-                If CurQStr <> "" Then CurQStr = CurQStr & vbNewLine
-                CurQStr = CurQStr & .Quest(i) & " " & .QuestStatus(i).NPCKills
+                If LenB(CurQStr) Then
+                    CurQStr = CurQStr & vbNewLine & .Quest(i) & " " & .QuestStatus(i).NPCKills
+                Else
+                    CurQStr = CurQStr & .Quest(i) & " " & .QuestStatus(i).NPCKills
+                End If
             End If
         Next i
         Log "Save_User: Built current quest string (" & CurQStr & ")", CodeTracker '//\\LOGLINE//\\
@@ -1300,12 +1362,15 @@ Dim i As Long
         'Build the bank string
         For i = 1 To MAX_INVENTORY_SLOTS
             If .Bank(i).ObjIndex > 0 Then
-                If BankStr <> "" Then BankStr = BankStr & vbNewLine
-                BankStr = BankStr & i & " " & .Bank(i).ObjIndex & " " & .Bank(i).Amount
+                If LenB(BankStr) Then
+                    BankStr = BankStr & vbNewLine & i & " " & .Bank(i).ObjIndex & " " & .Bank(i).Amount
+                Else
+                    BankStr = BankStr & i & " " & .Bank(i).ObjIndex & " " & .Bank(i).Amount
+                End If
             End If
         Next i
         Log "Save_User: Built bank string (" & BankStr & ")", CodeTracker '//\\LOGLINE//\\
-
+        
         'Check whether we have to make a new entry or can update an old one
         If NewUser Then
         
@@ -1367,7 +1432,7 @@ Dim i As Long
         DB_RS!stat_mp_max = .Stats.BaseStat(SID.MaxMAN)
         DB_RS!stat_sp_min = .Stats.BaseStat(SID.MinSTA)
         DB_RS!stat_sp_max = .Stats.BaseStat(SID.MaxSTA)
-        DB_RS!online = 0
+        DB_RS!server = 0
             
     End With
     

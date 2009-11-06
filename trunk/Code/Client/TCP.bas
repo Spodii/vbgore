@@ -429,7 +429,7 @@ Dim Byt1 As Byte
             TempStr = Replace$(Message(76), "<name>", Str1)
             TempStr = Replace$(TempStr, "<message>", Str2)
             Engine_AddToChatTextBuffer TempStr, FontColor_Info
-            Engine_MakeChatBubble TempInt, Engine_WordWrap(TempStr, BubbleMaxWidth)
+            If TempInt > 0 Then Engine_MakeChatBubble TempInt, Engine_WordWrap(TempStr, BubbleMaxWidth)
         Case 77
             Str1 = rBuf.Get_String
             Str2 = rBuf.Get_String
@@ -502,29 +502,33 @@ Sub Data_Server_Connect()
     'Set the socket state
     SocketOpen = 1
 
-    'Load user config
-    Game_Config_Load
-
-    'Unload the connect form
-    Unload frmConnect
-
-    'Load main form
-    frmMain.PTDTmr.Enabled = True
-    Load frmMain
-    frmMain.Visible = True
-    frmMain.Show
-    frmMain.SetFocus
-    DoEvents
-
-    'Load the engine
-    Engine_Init_TileEngine
-
-    'Get the device
-    frmMain.Show
-    frmMain.SetFocus
-    DoEvents
-    DIDevice.Acquire
-
+    If EngineRun = False Then
+    
+        'Load user config
+        Game_Config_Load
+    
+        'Unload the connect form
+        Unload frmConnect
+    
+        'Load main form
+        frmMain.PTDTmr.Enabled = True
+        Load frmMain
+        frmMain.Visible = True
+        frmMain.Show
+        frmMain.SetFocus
+        DoEvents
+            
+        'Load the engine
+        Engine_Init_TileEngine
+    
+        'Get the device
+        frmMain.Show
+        frmMain.SetFocus
+        DoEvents
+        DIDevice.Acquire
+    
+    End If
+    
     'Send the data
     Data_Send
 
@@ -610,11 +614,12 @@ Dim Weather As Byte
 Dim TempInt As Integer
 
     EngineRun = False
-
     DownloadingMap = True
+    
     MapNumInt = rBuf.Get_Integer
     SSV = rBuf.Get_Integer
     Weather = rBuf.Get_Byte
+    
     If Engine_FileExist(MapPath & MapNumInt & ".map", vbNormal) Then  'Get Version Num
         Open MapPath & MapNumInt & ".map" For Binary As #1
         Seek #1, 1
@@ -624,7 +629,6 @@ Dim TempInt As Integer
             Game_Map_Switch MapNumInt
             sndBuf.Put_Byte DataCode.Map_DoneLoadingMap 'Tell the server we are done loading map
             MapInfo.Weather = Weather
-
         Else
             'Not correct version
             MsgBox "Error! Your map version is not up to date with the server's map! Please run the updater!", vbOKOnly Or vbCritical
@@ -648,7 +652,7 @@ Sub Data_Map_SendName(ByRef rBuf As DataBuffer)
 '*********************************************
 Dim Music As Byte
 
-    MapInfo.name = rBuf.Get_String
+    MapInfo.Name = rBuf.Get_String
     MapInfo.Weather = rBuf.Get_Byte
     
     'Change the music file if we need to
@@ -1176,7 +1180,7 @@ Dim CharIndex As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim Speed As Byte
-Dim name As String
+Dim Name As String
 Dim Weapon As Integer
 Dim Hair As Integer
 Dim Wings As Integer
@@ -1193,7 +1197,7 @@ Dim ChatID As Byte
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
     Speed = rBuf.Get_Byte
-    name = rBuf.Get_String
+    Name = rBuf.Get_String
     Weapon = rBuf.Get_Integer
     Hair = rBuf.Get_Integer
     Wings = rBuf.Get_Integer
@@ -1202,7 +1206,7 @@ Dim ChatID As Byte
     ChatID = rBuf.Get_Byte
     
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, Name, Weapon, Hair, Wings, ChatID, HP, MP
 
 End Sub
 
@@ -2020,13 +2024,13 @@ Dim Slot As Byte
     
     'If the object index = 0, then we are deleting a slot, so the rest is null
     If UserInventory(Slot).ObjIndex = 0 Then
-        UserInventory(Slot).name = "(None)"
+        UserInventory(Slot).Name = "(None)"
         UserInventory(Slot).Amount = 0
         UserInventory(Slot).Equipped = 0
         UserInventory(Slot).GrhIndex = 0
     Else
         'Index <> 0, so we have to get the information
-        UserInventory(Slot).name = rBuf.Get_String
+        UserInventory(Slot).Name = rBuf.Get_String
         UserInventory(Slot).Amount = rBuf.Get_Long
         UserInventory(Slot).Equipped = rBuf.Get_Byte
         UserInventory(Slot).GrhIndex = rBuf.Get_Long
@@ -2057,6 +2061,41 @@ Sub Data_User_Target(ByRef rBuf As DataBuffer)
 
 End Sub
 
+Sub Data_User_ChangeServer(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Changes a user to a different server
+'<Port(I)><IP(S)>
+'*********************************************
+Dim Port As Integer
+Dim IP As String
+
+    'Get the values
+    Port = rBuf.Get_Integer
+    IP = rBuf.Get_String
+
+    'Clean out the socket so we can make a fresh new connection
+    SocketOpen = 0
+    GOREsock_Shut SoxID
+    GOREsock_Terminate
+    CurMap = 0
+        
+    'Set up the socket
+    DoEvents
+    GOREsock_Initialize frmMain.hWnd
+    DoEvents
+    SoxID = GOREsock_Connect(IP, Port)
+    
+    'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
+    If SoxID = -1 Then
+        MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
+        IsUnloading = 1
+    Else
+        GOREsock_SetOption SoxID, soxSO_TCP_NODELAY, True
+    End If
+
+End Sub
+
 Sub Data_User_Trade_StartNPCTrade(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -2075,7 +2114,7 @@ Dim Item As Integer
     NPCTradeItemArraySize = NumItems
     For Item = 1 To NumItems
         NPCTradeItems(Item).GrhIndex = rBuf.Get_Long
-        NPCTradeItems(Item).name = rBuf.Get_String
+        NPCTradeItems(Item).Name = rBuf.Get_String
         NPCTradeItems(Item).Price = rBuf.Get_Long
     Next Item
     ShowGameWindow(ShopWindow) = 1
@@ -2096,15 +2135,15 @@ Sub Data_Server_SendQuestInfo(ByRef rBuf As DataBuffer)
 '<QuestID(B)><Name(S)>(<Description(S-EX)>)
 '*********************************************
 Dim QuestID As Byte
-Dim name As String
+Dim Name As String
 Dim Desc As String
 Dim i As Long
 Dim Changed As Byte
 
     'Get the variables
     QuestID = rBuf.Get_Byte
-    name = rBuf.Get_String
-    If LenB(name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
+    Name = rBuf.Get_String
+    If LenB(Name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
 
     'Resize the questinfo array if needed
     If QuestID > QuestInfoUBound Then
@@ -2113,13 +2152,13 @@ Dim Changed As Byte
     End If
     
     'Store the information
-    QuestInfo(QuestID).name = name
+    QuestInfo(QuestID).Name = Name
     QuestInfo(QuestID).Desc = Desc
 
     'Loop through the quests, remove any unused slots on the end
     If QuestInfoUBound > 1 Then
         For i = QuestInfoUBound To 1 Step -1
-            If QuestInfo(i).name = vbNullString Then
+            If QuestInfo(i).Name = vbNullString Then
                 QuestInfoUBound = QuestInfoUBound - 1
                 Changed = 1
             Else
@@ -2135,7 +2174,7 @@ Dim Changed As Byte
             End If
         End If
     Else
-        If QuestInfo(1).name = vbNullString Then
+        If QuestInfo(1).Name = vbNullString Then
             Erase QuestInfo
             QuestInfoUBound = 0
         End If
@@ -2239,6 +2278,7 @@ Static X As Long
             Case .User_BaseStat: Data_User_BaseStat rBuf
             Case .User_Blink: Data_User_Blink rBuf
             Case .User_CastSkill: Data_User_CastSkill rBuf
+            Case .User_ChangeServer: Data_User_ChangeServer rBuf
             Case .User_Emote: Data_User_Emote rBuf
             Case .User_KnownSkills: Data_User_KnownSkills rBuf
             Case .User_LookLeft: Data_User_LookLeft rBuf

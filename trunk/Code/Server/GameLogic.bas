@@ -120,7 +120,7 @@ Sub Obj_Make(Obj As Obj, ByVal ObjSlot As Byte, ByVal Map As Integer, ByVal X As
     
     'Add the object to the map slot
     MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot) = Obj
-    MapInfo(Map).ObjTile(X, Y).ObjLife(ObjSlot) = CurrentTime
+    MapInfo(Map).ObjTile(X, Y).ObjLife(ObjSlot) = timeGetTime
     
     'Clean the map tile just in case
     Obj_CleanMapTile Map, X, Y
@@ -617,11 +617,17 @@ Dim NewPos As WorldPos
         TempPos.Map = MapInfo(Map).Data(X, Y).TileExitMap
         Log "Server_DoTileEvents: Tile exist exists, warps to (" & TempPos.Map & "," & TempPos.X & "," & TempPos.Y & ")", CodeTracker '//\\LOGLINE//\\
 
-        'Get the closest legal position
-        Server_ClosestLegalPos TempPos, NewPos
+        'Check if it is a new map - if so, load the new map if needed
+        If TempPos.Map <> Map Then Load_Maps_Temp TempPos.Map
 
-        'If the position is legal, then warp the user there
-        If Server_LegalPos(NewPos.Map, NewPos.X, NewPos.Y, 0) Then User_WarpChar UserIndex, NewPos.Map, NewPos.X, NewPos.Y
+        'Get the closest legal position
+        If ServerMap(TempPos.Map) = ServerID Then
+            Server_ClosestLegalPos TempPos, NewPos
+            If Server_LegalPos(NewPos.Map, NewPos.X, NewPos.Y, 0) Then User_WarpChar UserIndex, NewPos.Map, NewPos.X, NewPos.Y
+        Else
+            NewPos = TempPos
+            User_WarpChar UserIndex, NewPos.Map, NewPos.X, NewPos.Y
+        End If
         
     End If
 
@@ -990,13 +996,13 @@ Dim i As Long
 
     'Check for a writing delay
     If WriterIndex > 0 Then
-        If UserList(WriterIndex).Counters.DelayTimeMail > CurrentTime Then
+        If UserList(WriterIndex).Counters.DelayTimeMail > timeGetTime Then
             'Not enough time has passed by - goodbye! :)
             Log "Server_WriteMail: Not enough time elapsed since last mail write for user " & WriterIndex & " (" & UserList(WriterIndex).Name & ")", CodeTracker '//\\LOGLINE//\\
             Exit Function
         Else
             'Set the delay
-            UserList(WriterIndex).Counters.DelayTimeMail = CurrentTime + DelayTimeMail
+            UserList(WriterIndex).Counters.DelayTimeMail = timeGetTime + DelayTimeMail
         End If
     End If
     
@@ -1294,14 +1300,30 @@ Dim TargetIndex As Integer
     
     'Check for a valid target
     If Engine_ClearPath(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) Then
+    
+        If UserList(UserIndex).WeaponEqpObjIndex > 0 Then
+            
+            'Play attack sound of the weapon (if the weapon makes an attack sound)
+            If ObjData.UseSfx(UserList(UserIndex).WeaponEqpObjIndex) > 0 Then
+                ConBuf.PreAllocate 4
+                ConBuf.Put_Byte DataCode.Server_PlaySound3D
+                ConBuf.Put_Byte ObjData.UseSfx(UserList(UserIndex).WeaponEqpObjIndex)
+                ConBuf.Put_Byte UserList(UserIndex).Pos.X
+                ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+            End If
+            
+        Else
+        
+            'Play the sound of no weapon attacking
+            ConBuf.PreAllocate 4
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
+            ConBuf.Put_Byte UnequiptedSwingSfx  'Index of the unequipted swing sound
+            ConBuf.Put_Byte UserList(UserIndex).Pos.X
+            ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
                 
-        'Play attack sound
-        ConBuf.PreAllocate 4
-        ConBuf.Put_Byte DataCode.Server_PlaySound3D
-        ConBuf.Put_Byte SOUND_SWING
-        ConBuf.Put_Byte UserList(UserIndex).Pos.X
-        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
-        Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+        End If
         
         'Get the new heading
         NewHeading = Server_FindDirection(UserList(UserIndex).Pos, TargetPos)
@@ -1374,7 +1396,7 @@ Dim AttackPos As WorldPos
         Log "User_Attack: MinSTA <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Counters.AttackCounter > CurrentTime - STAT_ATTACKWAIT Then
+    If UserList(UserIndex).Counters.AttackCounter > timeGetTime - STAT_ATTACKWAIT Then
         Log "User_Attack: Not enough time elapsed since last attack - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -1383,7 +1405,7 @@ Dim AttackPos As WorldPos
     If Heading > 8 Then Exit Sub
 
     'Update counters
-    UserList(UserIndex).Counters.AttackCounter = CurrentTime
+    UserList(UserIndex).Counters.AttackCounter = timeGetTime
 
     'Check for ranged attack
     If UserList(UserIndex).WeaponEqpObjIndex > 0 Then
@@ -1418,24 +1440,35 @@ Dim AttackPos As WorldPos
     If MapInfo(AttackPos.Map).Data(AttackPos.X, AttackPos.Y).UserIndex > 0 Then
         Log "User_Attack: Found a user to attack", CodeTracker '//\\LOGLINE//\\
 
-        'Play attack sound
-        If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
+        'Play attack sound of the weapon (if the weapon makes an attack sound)
+        If ObjData.UseSfx(UserList(UserIndex).WeaponEqpObjIndex) > 0 Then
+            
+            'User is using a weapon (search for sfx)
             ConBuf.PreAllocate 11
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte ObjData.UseSfx(UserList(UserIndex).WeaponEqpObjIndex)
             ConBuf.Put_Byte UserList(UserIndex).Pos.X
             ConBuf.Put_Byte UserList(UserIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeSlash
             ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
             ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+            
         Else
-            ConBuf.PreAllocate 4
+            
+            'User is not using a weapon (don't search for a sfx)
+            ConBuf.PreAllocate 11
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte UnequiptedSwingSfx  'Index of the unequipted swing sound
             ConBuf.Put_Byte UserList(UserIndex).Pos.X
             ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+            ConBuf.Put_Byte DataCode.Server_MakeSlash
+            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+            ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+            
         End If
-        Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+
 
         'Go to the user attacking user sub
         User_AttackUser UserIndex, MapInfo(AttackPos.Map).Data(AttackPos.X, AttackPos.Y).UserIndex
@@ -1457,25 +1490,31 @@ Dim AttackPos As WorldPos
                 Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
                 Exit Sub
             End If
-
+                
+            'Check if the user's weapon has a swing graphic
             If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
+            
                 'Play attack sound and create the graphic
                 ConBuf.PreAllocate 11
                 ConBuf.Put_Byte DataCode.Server_PlaySound3D
-                ConBuf.Put_Byte SOUND_SWING
+                ConBuf.Put_Byte ObjData.UseSfx(UserList(UserIndex).WeaponEqpObjIndex)
                 ConBuf.Put_Byte UserList(UserIndex).Pos.X
                 ConBuf.Put_Byte UserList(UserIndex).Pos.Y
                 ConBuf.Put_Byte DataCode.Server_MakeSlash
                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                 ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+                
             Else
+            
                 'Play sound only
                 ConBuf.PreAllocate 4
                 ConBuf.Put_Byte DataCode.Server_PlaySound3D
-                ConBuf.Put_Byte SOUND_SWING
+                ConBuf.Put_Byte UnequiptedSwingSfx  'Sound value of an unequipted swing
                 ConBuf.Put_Byte UserList(UserIndex).Pos.X
                 ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+                
             End If
+            
             Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
             'Go to user attacking npc sub
@@ -1500,23 +1539,22 @@ Private Sub User_AttackNPC(ByVal UserIndex As Integer, ByVal NPCIndex As Integer
 '*****************************************************************
 'Have a User attack a NPC
 '*****************************************************************
-
-Dim HitSkill As Long    'User hit skill
-Dim Hit As Integer      'Hit damage
+Dim HitRate As Long 'User hit skill
+Dim Hit As Integer  'Hit damage
 
     Log "Call User_AttackNPC(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
-
-    'Get the user hit skill
-    HitSkill = UserList(UserIndex).Stats.ModStat(SID.Agi) * 2 + UserList(UserIndex).Stats.ModStat(SID.Str)
 
     'Display the attack
     ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.User_Attack
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+    
+    'Update the hit rate
+    HitRate = UserList(UserIndex).Stats.ModStat(SID.Agi) + (UserList(UserIndex).Stats.ModStat(SID.str) * 0.25) + 50
 
     'Calculate if they hit
-    If Server_RandomNumber(1, 100) >= ((HitSkill + 50) - NPCList(NPCIndex).ModStat(SID.Agi)) Then
+    If Server_RandomNumber(1, 100) >= (HitRate - NPCList(NPCIndex).ModStat(SID.Agi)) Then
         Log "User_AttackNPC: Attack chance did not pass, registering as a miss", CodeTracker '//\\LOGLINE//\\
         ConBuf.PreAllocate 5
         ConBuf.Put_Byte DataCode.Server_SetCharDamage
@@ -1535,7 +1573,7 @@ Dim Hit As Integer      'Hit damage
         ConBuf.Put_Byte 1
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
     End If
-    UserList(UserIndex).Counters.AggressiveCounter = CurrentTime + AGGRESSIVEFACETIME
+    UserList(UserIndex).Counters.AggressiveCounter = timeGetTime + AGGRESSIVEFACETIME
 
     'Calculate hit
     Hit = Server_RandomNumber(UserList(UserIndex).Stats.ModStat(SID.MinHIT), UserList(UserIndex).Stats.ModStat(SID.MaxHIT))
@@ -1553,7 +1591,7 @@ Private Sub User_AttackUser(ByVal AttackerIndex As Integer, ByVal VictimIndex As
 '*****************************************************************
 'Have a user attack a user
 '*****************************************************************
-
+Dim HitRate As Long
 Dim Hit As Integer
 
     Log "Call User_AttackUser(" & AttackerIndex & "," & VictimIndex & ")", CodeTracker '//\\LOGLINE//\\
@@ -1563,20 +1601,45 @@ Dim Hit As Integer
         Log "User_AttackUser: Victim switching maps - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    
-    'Calculate hit
-    Hit = Server_RandomNumber(UserList(AttackerIndex).Stats.ModStat(SID.MinHIT), UserList(AttackerIndex).Stats.ModStat(SID.MaxHIT))
-    Hit = Hit - (UserList(VictimIndex).Stats.ModStat(SID.DEF) \ 2)
-    If Hit < 1 Then Hit = 1
-
-    'Hit User
-    UserList(VictimIndex).Stats.BaseStat(SID.MinHP) = UserList(VictimIndex).Stats.BaseStat(SID.MinHP) - Hit
 
     'Play the attack animation
     ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.User_Attack
     ConBuf.Put_Integer UserList(AttackerIndex).Char.CharIndex
     Data_Send ToPCArea, AttackerIndex, ConBuf.Get_Buffer
+    
+    'Update the hit rate
+    HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.str) * 0.25) + 50
+
+    'Calculate if they hit
+    If Server_RandomNumber(1, 100) >= (HitRate - UserList(VictimIndex).Stats.ModStat(SID.Agi)) Then
+        Log "User_AttackUser: Attack chance did not pass, registering as a miss", CodeTracker '//\\LOGLINE//\\
+        ConBuf.PreAllocate 5
+        ConBuf.Put_Byte DataCode.Server_SetCharDamage
+        ConBuf.Put_Integer UserList(VictimIndex).Char.CharIndex
+        ConBuf.Put_Integer -1
+        Data_Send ToPCArea, VictimIndex, ConBuf.Get_Buffer
+        Exit Sub
+    End If
+    
+    'Update aggressive-face
+    If UserList(AttackerIndex).Counters.AggressiveCounter <= 0 Then
+        Log "User_AttackNPC: Making the user aggressive-faced", CodeTracker '//\\LOGLINE//\\
+        ConBuf.PreAllocate 4
+        ConBuf.Put_Byte DataCode.User_AggressiveFace
+        ConBuf.Put_Integer UserList(AttackerIndex).Char.CharIndex
+        ConBuf.Put_Byte 1
+        Data_Send ToMap, AttackerIndex, ConBuf.Get_Buffer, UserList(AttackerIndex).Pos.Map
+    End If
+    UserList(AttackerIndex).Counters.AggressiveCounter = timeGetTime + AGGRESSIVEFACETIME
+    
+    'Calculate hit
+    Hit = Server_RandomNumber(UserList(AttackerIndex).Stats.ModStat(SID.MinHIT), UserList(AttackerIndex).Stats.ModStat(SID.MaxHIT))
+    Hit = Hit - (UserList(VictimIndex).Stats.ModStat(SID.DEF) * 0.5)
+    If Hit < 1 Then Hit = 1
+    
+    'Hit User
+    UserList(VictimIndex).Stats.BaseStat(SID.MinHP) = UserList(VictimIndex).Stats.BaseStat(SID.MinHP) - Hit
 
     'User Die
     If UserList(VictimIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
@@ -2094,6 +2157,41 @@ Dim i As Long
 ErrOut:
 
 End Sub
+
+Public Function User_CorrectServer(ByVal UserName As String, ByVal UserIndex As Integer, Optional ByVal UserMap As Integer = 0) As Byte
+
+'*****************************************************************
+'Checks if the user is on the right server - if not, moves them to the right one
+'*****************************************************************
+
+    'Get the user's map
+    If UserList(UserIndex).Pos.Map = 0 Then
+        DB_RS.Open "SELECT pos_map FROM users WHERE `name`='" & UserName & "'", DB_Conn, adOpenStatic, adLockOptimistic
+        UserMap = DB_RS(0)
+        DB_RS.Close
+    Else
+        UserMap = UserList(UserIndex).Pos.Map
+    End If
+    
+    'Check if this is the right server for the map
+    If ServerID <> ServerMap(UserMap) Then
+    
+        'Incorrect server, tell the user to change
+        ConBuf.PreAllocate 4
+        ConBuf.Put_Byte DataCode.User_ChangeServer
+        ConBuf.Put_Integer ServerInfo(ServerMap(UserMap)).Port
+        ConBuf.Put_String ServerInfo(ServerMap(UserMap)).EIP
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send_Buffer UserIndex
+        
+    Else
+    
+        'Everything was good, return a true
+        User_CorrectServer = 1
+
+    End If
+
+End Function
 
 Public Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer)
 
@@ -2639,7 +2737,7 @@ Dim i As Long
     UserList(UserIndex).flags.TradeWithNPC = 0
 
     'Get the new time
-    UserList(UserIndex).Counters.MoveCounter = CurrentTime + Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed) + Running * RunningSpeed)
+    UserList(UserIndex).Counters.MoveCounter = timeGetTime + Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed) + Running * RunningSpeed)
 
     'Get the new position
     nPos = UserList(UserIndex).Pos
@@ -3122,11 +3220,10 @@ Dim i As Integer
             Log "User_UpdateModStats: Updating effects of skill/spell WarCurse", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.Agi) = .ModStat(SID.Agi) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.DEF) = .ModStat(SID.DEF) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.Str) = .ModStat(SID.Str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.str) = .ModStat(SID.str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.Mag) = .ModStat(SID.Mag) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.WeaponSkill) = .ModStat(SID.WeaponSkill) - (UserList(UserIndex).Skills.WarCurse * 0.25)
         End If
         
         'Strengthen
@@ -3147,7 +3244,7 @@ Dim i As Integer
             Log "User_UpdateModStats: Updating effects of skill/spell Bless", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless * 0.5
-            .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless * 0.5
+            .ModStat(SID.str) = .ModStat(SID.str) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Bless * 0.25
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Bless * 0.25
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Bless * 0.25
@@ -3161,6 +3258,10 @@ Dim i As Integer
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - UserList(UserIndex).Skills.IronSkin * 1.5
         End If
         
+        'Min/max hit (damage) modification from strength and agility
+        .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .ModStat(SID.str) + (.ModStat(SID.Agi) * 0.25)
+        .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .ModStat(SID.str) + (.ModStat(SID.Agi) * 0.25)
+
     End With
     
 End Sub
@@ -3235,13 +3336,23 @@ Dim ObjIndex As Integer
             If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
             User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
             
-            'Create the use-once effect
+            'Create the graphic effect
             If ObjData.UseGrh(ObjIndex) > 0 Then
                 ConBuf.PreAllocate 7
                 ConBuf.Put_Byte DataCode.Server_MakeEffect
                 ConBuf.Put_Byte UserList(UserIndex).Pos.X
                 ConBuf.Put_Byte UserList(UserIndex).Pos.Y
                 ConBuf.Put_Long ObjData.UseGrh(ObjIndex)
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+            End If
+            
+            'Create the sound effect
+            If ObjData.UseSfx(ObjIndex) > 0 Then
+                ConBuf.PreAllocate 4
+                ConBuf.Put_Byte DataCode.Server_PlaySound3D
+                ConBuf.Put_Byte UserList(UserIndex).Pos.X
+                ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+                ConBuf.Put_Byte ObjData.UseSfx(ObjIndex)
                 Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
             End If
             
@@ -3343,7 +3454,7 @@ Public Sub User_WarpChar(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal
 '*****************************************************************
 'Warps user to another spot
 '*****************************************************************
-
+Dim CorrectServer As Byte
 Dim OldMap As Integer
 Dim LoopC As Long
 
@@ -3367,16 +3478,21 @@ Dim LoopC As Long
     If (OldMap <> Map) Or ForceSwitch = True Then
         Log "User_WarpChar: Switching maps", CodeTracker '//\\LOGLINE//\\
         
-        'Check if it's the first user on the map
-        MapInfo(Map).NumUsers = MapInfo(Map).NumUsers + 1
-        If MapInfo(Map).NumUsers = 1 Then
-            Load_Maps_Temp Map
-            ReDim MapUsers(Map).Index(1 To 1)
-        Else
-            ReDim Preserve MapUsers(Map).Index(1 To MapInfo(Map).NumUsers)
+        'Check if the user is on the correct server, or needs to be switched
+        CorrectServer = User_CorrectServer(UserList(UserIndex).Name, UserIndex, Map)
+        
+        'Check if it's the first user on the map and is the correct server
+        If CorrectServer = 1 Then
+            MapInfo(Map).NumUsers = MapInfo(Map).NumUsers + 1
+            If MapInfo(Map).NumUsers = 1 Then
+                Load_Maps_Temp Map
+                ReDim MapUsers(Map).Index(1 To 1)
+            Else
+                ReDim Preserve MapUsers(Map).Index(1 To MapInfo(Map).NumUsers)
+            End If
+            MapUsers(Map).Index(MapInfo(Map).NumUsers) = UserIndex
         End If
-        MapUsers(Map).Index(MapInfo(Map).NumUsers) = UserIndex
-
+        
         'Update old Map Users
         MapInfo(OldMap).NumUsers = MapInfo(OldMap).NumUsers - 1
         If MapInfo(OldMap).NumUsers Then
@@ -3392,7 +3508,7 @@ Dim LoopC As Long
             ReDim Preserve MapUsers(OldMap).Index(1 To MapInfo(OldMap).NumUsers)
         Else
             Unload_Map OldMap
-            ReDim MapUsers(OldMap).Index(0)
+            Erase MapUsers(OldMap).Index()
         End If
             
         'Set the new position
@@ -3401,36 +3517,52 @@ Dim LoopC As Long
         UserList(UserIndex).Pos.Y = Y
         UserList(UserIndex).Pos.Map = Map
         
-        'Set switchingmap flag
-        UserList(UserIndex).flags.SwitchingMaps = 1
+        'Check if the user is on the correct server
+        If CorrectServer = 0 Then
 
-        'Tell client to try switching maps
-        ConBuf.PreAllocate 6
-        ConBuf.Put_Byte DataCode.Map_LoadMap
-        ConBuf.Put_Integer Map
-        ConBuf.Put_Integer MapInfo(Map).MapVersion
-        ConBuf.Put_Byte MapInfo(Map).Weather
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'Show Character to others
-        User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+            'Disconnect the user
+            UserList(UserIndex).flags.Disconnecting = 1
         
-        'Check to update the database
-        If MySQLUpdate_UserMap Then
-            Log "User_WarpChar: Updating database with new map", CodeTracker '//\\LOGLINE//\\
-            DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
-            DB_RS!pos_map = Map
-            DB_RS.Update
-            DB_RS.Close
+        'User is already on the correct server
+        Else
+        
+            'Check if it is a new map - if so, load the new map if needed
+            If OldMap <> Map Then Load_Maps_Temp Map
+            
+            'Set switchingmap flag
+            UserList(UserIndex).flags.SwitchingMaps = 1
+    
+            'Tell client to try switching maps
+            ConBuf.PreAllocate 6
+            ConBuf.Put_Byte DataCode.Map_LoadMap
+            ConBuf.Put_Integer Map
+            ConBuf.Put_Integer MapInfo(Map).MapVersion
+            ConBuf.Put_Byte MapInfo(Map).Weather
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+            'Show Character to others
+            User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+            
+            'Check to update the database
+            If MySQLUpdate_UserMap Then
+                Log "User_WarpChar: Updating database with new map", CodeTracker '//\\LOGLINE//\\
+                DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+                DB_RS!pos_map = Map
+                DB_RS.Update
+                DB_RS.Close
+            End If
+            
         End If
-        
+            
     Else
+    
         Log "User_WarpChar: Moving user, map is not changing", CodeTracker '//\\LOGLINE//\\
         User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
         ConBuf.PreAllocate 3
         ConBuf.Put_Byte DataCode.Server_UserCharIndex
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        
     End If
 
 End Sub

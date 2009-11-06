@@ -9,7 +9,7 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
     
         'Copy the base stats to the mod stats (we can use copymemory since we dont have to give item bonuses)
         CopyMemory .ModStat(FirstModStat), .BaseStat(FirstModStat), ((NumStats - FirstModStat) + 1) * 4 '* 4 since we are using longs (4 bytes)
-            
+         
         'War curse
         If .Skills.WarCurse > 0 Then
             Log "NPC_UpdateModStats: Updating modstats with effects from WarCurse", CodeTracker '//\\LOGLINE//\\
@@ -19,7 +19,6 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
             .ModStat(SID.Mag) = .ModStat(SID.Mag) - (.Skills.WarCurse * 0.25)
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (.Skills.WarCurse * 0.25)
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.WeaponSkill) = .ModStat(SID.WeaponSkill) - (.Skills.WarCurse * 0.25)
         End If
             
         'Strengthen
@@ -53,7 +52,7 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - .Skills.IronSkin * 1.5
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - .Skills.IronSkin * 1.5
         End If
-        
+
     End With
 
 End Sub
@@ -163,7 +162,7 @@ Dim i As Integer
             'Attack
             If NPCList(NPCIndex).Hostile Then b = NPC_AI_Attack(NPCIndex)
             If b = 1 Then
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                 Exit Sub
             End If
             
@@ -179,7 +178,7 @@ Dim i As Integer
             'Attack
             If NPCList(NPCIndex).Hostile Then b = NPC_AI_Attack(NPCIndex)
             If b = 1 Then
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                 Exit Sub
             End If
             
@@ -188,7 +187,7 @@ Dim i As Integer
             
             'If no users are nearby, then put a moderate delay to lighten the CPU load
             If X = 0 Then
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
             
             Else
@@ -230,7 +229,7 @@ Dim i As Integer
                     'Do the alternate movement
                     If NPC_MoveChar(NPCIndex, t1) = 0 Then
                         If NPC_MoveChar(NPCIndex, t2) = 0 Then
-                            NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000   'Nowhere to go, so wait a while to try again
+                            NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000   'Nowhere to go, so wait a while to try again
                         End If
                     End If
                 
@@ -246,7 +245,7 @@ Dim i As Integer
             'Look for a user
             X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
             If X = 0 Then
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
             Else
             
@@ -311,7 +310,7 @@ Dim i As Integer
                                 If NPC_MoveChar(NPCIndex, t3) = 0 Then
                                     If NPC_MoveChar(NPCIndex, t4) = 0 Then  'If this doesn't happen, then we're out of stuff to do, so attack
                                         NPC_AI_Attack NPCIndex
-                                        NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+                                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                                     End If
                                 End If
                             End If
@@ -323,12 +322,12 @@ Dim i As Integer
                 'Attack
                 b = NPC_AI_Attack(NPCIndex)
                 If b Then
-                    NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+                    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                     Exit Sub
                 End If
                 
                 'Nothing to do, so put on a delay
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 
             End If
             
@@ -338,7 +337,7 @@ Dim i As Integer
             'Look for a user
             X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
             If X = 0 Then
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
             Else
             
@@ -403,7 +402,7 @@ Dim i As Integer
                                 If NPC_MoveChar(NPCIndex, t3) = 0 Then
                                     If NPC_MoveChar(NPCIndex, t4) = 0 Then  'If this doesn't happen, then we're out of stuff to do, so attack
                                         NPC_AI_Attack NPCIndex
-                                        NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+                                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                                     End If
                                 End If
                             End If
@@ -413,8 +412,8 @@ Dim i As Integer
                 End If
                     
                 'Heal
-                If NPCList(NPCIndex).Counters.ActionDelay < CurrentTime Then
-                    If NPCList(NPCIndex).Counters.SpellExhaustion < CurrentTime Then
+                If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then
+                    If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
                 
                         'Loop through the NPCs in range
                         For tX = 1 To MaxServerDistanceX - 1
@@ -429,7 +428,7 @@ Dim i As Integer
                                                             i = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
                                                             If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
                                                                 If Skill_Heal_NPCtoNPC(NPCIndex, i) Then
-                                                                    NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + Heal_Exhaust
+                                                                    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Heal_Exhaust
                                                                     Exit Sub
                                                                 End If
                                                             End If
@@ -442,11 +441,11 @@ Dim i As Integer
                                 Next X
                             Next tY
                         Next tX
-                        NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 1000
+                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                         
                     End If
                 End If
-                NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 750
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 750
                 
             End If
             
@@ -548,14 +547,14 @@ Private Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer
 '*****************************************************************
 'Have a NPC attack a User
 '*****************************************************************
-
+Dim HitRate As Long
 Dim Hit As Integer
 
     Log "Call NPC_AttackUser(" & NPCIndex & "," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for an action delay
-    If NPCList(NPCIndex).Counters.ActionDelay > CurrentTime Then
-        Log "NPC_AttackUser: NPC action delay > CurrentTime - aborting", CodeTracker '//\\LOGLINE//\\
+    If NPCList(NPCIndex).Counters.ActionDelay > timeGetTime Then
+        Log "NPC_AttackUser: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
 
@@ -572,7 +571,7 @@ Dim Hit As Integer
     End If
 
     'Set the action delay
-    NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
+    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
     
     'Create the sound effect and make the attack grh
     If NPCList(NPCIndex).AttackGrh > 0 Then
@@ -580,7 +579,7 @@ Dim Hit As Integer
             'Play sound effect and make projectile
             ConBuf.PreAllocate 14
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
             ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
             ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeProjectile
@@ -593,7 +592,7 @@ Dim Hit As Integer
             'Play sound effect and make slash
             ConBuf.PreAllocate 11
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
             ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
             ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeSlash
@@ -602,9 +601,12 @@ Dim Hit As Integer
             Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
         End If
     End If
+    
+    'Update the hit rate
+    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + (NPCList(NPCIndex).ModStat(SID.Str) * 0.25) + 50
 
     'Calculate if they hit
-    If Server_RandomNumber(1, 100) >= ((NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50) - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
+    If Server_RandomNumber(1, 100) >= (HitRate - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
         Log "NPC_AttackUser: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
         ConBuf.PreAllocate 5
         ConBuf.Put_Byte DataCode.Server_SetCharDamage
@@ -859,7 +861,7 @@ Dim i As Integer
         ConBuf.Put_Byte 1
         Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
     End If
-    NPCList(NPCIndex).Counters.AggressiveCounter = CurrentTime + AGGRESSIVEFACETIME
+    NPCList(NPCIndex).Counters.AggressiveCounter = timeGetTime + AGGRESSIVEFACETIME
 
     'Display the damage on the client screen
     ConBuf.PreAllocate 5
@@ -994,7 +996,7 @@ Public Sub NPC_Kill(ByVal NPCIndex As Integer)
     NPC_EraseChar NPCIndex
 
     'Set death time for respawn wait
-    NPCList(NPCIndex).Counters.RespawnCounter = CurrentTime + NPCList(NPCIndex).RespawnWait
+    NPCList(NPCIndex).Counters.RespawnCounter = timeGetTime + NPCList(NPCIndex).RespawnWait
 
 End Sub
 
@@ -1063,7 +1065,7 @@ Dim nPos As WorldPos
     If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading) Then
 
         'Set the move delay (we set the lag buffer to 0 since NPCs don't lag)
-        NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed), 0)
+        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed), 0)
 
         'Send the movement update packet
         ConBuf.PreAllocate 6

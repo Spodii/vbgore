@@ -438,11 +438,7 @@ Dim X As Byte
             Next i
 
             'Mailbox
-            If ByFlags And 8192 Then
-                MapData(X, Y).Mailbox = 1
-            Else
-                MapData(X, Y).Mailbox = 0
-            End If
+            If ByFlags And 8192 Then MapData(X, Y).Mailbox = 1 Else MapData(X, Y).Mailbox = 0
 
             'Shadows
             If ByFlags And 16384 Then MapData(X, Y).Shadow(1) = 1 Else MapData(X, Y).Shadow(1) = 0
@@ -469,6 +465,9 @@ Dim X As Byte
             
             'Sign
             If ByFlags And 4194304 Then Get #MapNum, , MapData(X, Y).Sign Else MapData(X, Y).Sign = 0
+            
+            'If there is a warp
+            If ByFlags And 8388608 Then MapData(X, Y).Warp = 1 Else MapData(X, Y).Warp = 0
 
         Next X
     Next Y
@@ -490,6 +489,9 @@ Dim X As Byte
     End If
     
     Close #MapNum
+    
+    'Create the minimap
+    Engine_BuildMiniMap
 
     'Clear out old mapinfo variables
     MapInfo.name = vbNullString

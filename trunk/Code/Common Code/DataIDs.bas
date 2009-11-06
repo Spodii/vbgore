@@ -106,6 +106,9 @@ Public Type DataCode
     User_SetWeaponRange As Byte
     User_RequestMakeChar As Byte
     User_RequestUserCharIndex As Byte
+    User_ChangeServer As Byte
+    User_AddFriend As Byte
+    User_RemoveFriend As Byte
     GM_Approach As Byte
     GM_Summon As Byte
     GM_Kick As Byte
@@ -119,7 +122,7 @@ End Type
 Public DataCode As DataCode
 
 '********** Character Stats/Skills ************
-Public Const NumStats As Byte = 19
+Public Const NumStats As Byte = 18
 Public Const NumSkills As Byte = 7
 Public Const FirstModStat As Byte = 9   'The lowest number of the first stat that can be modded
 Public Type StatOrder
@@ -142,7 +145,6 @@ Public Type StatOrder
     Str As Byte
     Agi As Byte
     Mag As Byte
-    WeaponSkill As Byte
     Speed As Byte   'Speed works as + (Speed / 2) on the client since just + Speed would be too drastic (8 would double the normal speed)
 End Type
 Public SID As StatOrder 'Stat ID
@@ -201,11 +203,10 @@ Public Sub InitDataCommands()
         .MaxSTA = 12
         .MinHIT = 13
         .DEF = 14
-        .WeaponSkill = 15
-        .Agi = 16
-        .Mag = 17
-        .Str = 18
-        .Speed = 19
+        .Agi = 15
+        .Mag = 16
+        .Str = 17
+        .Speed = 18
     End With
 
     With DataCode
@@ -302,7 +303,8 @@ Public Sub InitDataCommands()
         .GM_BanIP = 91
         .GM_UnBanIP = 92
         .Server_SendQuestInfo = 93
-        
+        .User_ChangeServer = 94
+
         'Value 128 can be used over again since this does not count as an ID in itself - just ignore this variable! ;)
         .Comm_UseBubble = 128
         

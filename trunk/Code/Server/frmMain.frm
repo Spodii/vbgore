@@ -1,4 +1,5 @@
 VERSION 5.00
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -26,6 +27,14 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   326
    StartUpPosition =   2  'CenterScreen
+   Begin MSWinsockLib.Winsock ServerSocket 
+      Index           =   0
+      Left            =   120
+      Top             =   120
+      _ExtentX        =   741
+      _ExtentY        =   741
+      _Version        =   393216
+   End
    Begin VB.Menu mnu 
       Caption         =   "menu"
       Begin VB.Menu mnudebug 
@@ -223,6 +232,10 @@ Dim i As Long
 
     Log "Call StartServer", CodeTracker '//\\LOGLINE//\\
     
+    'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
+    Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
+        "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102"
+    
     'Make the server temp path
     MakeSureDirectoryPathExists ServerTempPath
     
@@ -257,24 +270,38 @@ Dim i As Long
     
     'Load Data Commands
     InitDataCommands
-
-    'Reset User connections
-    For LoopC = 1 To MaxUsers
-        UserList(LoopC).ConnID = -1
+    
+    '*** Build help messages ***
+    
+    'Get the number of lines
+    i = Val(Var_Get(ServerDataPath & "Help.ini", "INIT", "NumHelp"))
+    
+    'Put all the strings together so it can be sent in one string to the client
+    ConBuf.Clear
+    For LoopC = 1 To i
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "Help.ini", "INIT", str$(LoopC)))
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
     Next LoopC
-
-    'Set up the help lines - if you add/remove lines, make sure you update NumHelpLines!
-    HelpLine(1) = "To move, use W A S D or arrow keys."
-    HelpLine(2) = "To attack, use Ctrl, and get objects with Alt."
-    HelpLine(3) = "As many help lines as you want can be added..."
+    HelpBuffer = ConBuf.Get_Buffer
+    
+    '*** Build MOTD messages ***
+    
+    'Get the number of lines
+    i = Val(Var_Get(ServerDataPath & "MOTD.ini", "INIT", "NumLines"))
+    
+    'Put all the strings together so it can be sent in one string to the client
+    ConBuf.Clear
+    For LoopC = 1 To i
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "MOTD.ini", "INIT", str$(LoopC)))
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    Next LoopC
+    MOTDBuffer = ConBuf.Get_Buffer
     
     '*** Build cached messages ***
     frmMain.Caption = "Caching constant packets..."
     frmMain.Refresh
-    
-    'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
-    Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
-                                "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102"
     
     'Split up the messages
     s = Split(cMessages, ",")
@@ -294,9 +321,9 @@ Dim i As Long
     Next LoopC
 
     '*** Load data ***
-    frmMain.Caption = "Loading configuration..."
+    frmMain.Caption = "Loading maps..."
     frmMain.Refresh
-    Load_ServerIni
+    Load_Maps
     
     frmMain.Caption = "Loading objects..."
     frmMain.Refresh
@@ -306,32 +333,53 @@ Dim i As Long
     frmMain.Refresh
     Load_Quests
     
-    frmMain.Caption = "Loading maps..."
-    frmMain.Refresh
-    Load_Maps
-    
     frmMain.Caption = "Creating npc files..."
     frmMain.Refresh
     Save_NPCs_Temp
     Load_NPC_Names
     
-    '*** Listen ***
+    '*** Listen (Client-To-Server) ***
     frmMain.Caption = "Loading sockets..."
     frmMain.Refresh
     
     GOREsock_Initialize Me.hwnd
     
-    'Change the 127.0.0.1 to 0.0.0.0 or your internal IP to make the server public
-    LocalSoxID = GOREsock_Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
-    GOREsock_SetOption LocalSoxID, soxSO_TCP_NODELAY, True
+    'Change the listen settings in the Server.ini file
+    LocalSocketID = GOREsock_Listen(ServerInfo(ServerID).IIP, ServerInfo(ServerID).Port)
+    GOREsock_SetOption LocalSocketID, soxSO_TCP_NODELAY, True
 
+    '*** Listen (Server-To-Server) ***
+    If NumServers > 1 Then
+    
+        'Create the listen socket so we can accept connections from other servers
+        ServerSocket(0).RemoteHost = ServerInfo(ServerID).IIP
+        ServerSocket(0).LocalPort = ServerInfo(ServerID).ServerPort
+        ServerSocket(0).Listen
+        
+        'Loop through all the servers (skip the ID of this one)
+        For i = 1 To NumServers
+            If i <> ServerID Then
+            
+                'Load the socket object
+                Load ServerSocket(i)
+                
+                'Create the connect to the server (if this fails, ie server is not loaded yet, it will connect later)
+                ServerSocket(i).RemotePort = ServerInfo(i).ServerPort
+                ServerSocket(i).RemoteHost = ServerInfo(i).EIP
+                Server_ConnectToServer i
+                
+            End If
+        Next i
+
+    End If
+    
     '*** Misc ***
 
-    'Show local IP/Port
-    If GOREsock_Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbNewLine & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbNewLine & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
+    'Check for a valid connection
+    If GOREsock_Address(LocalSocketID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbNewLine & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbNewLine & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     'Set the starting time
-    ServerStartTime = CurrentTime
+    ServerStartTime = timeGetTime
 
     'Set the caption
     Me.Caption = "vbGORE v." & App.Major & "." & App.Minor & "." & App.Revision
@@ -344,5 +392,64 @@ Dim i As Long
     
     'Start the main server loop
     Server_Update
+
+End Sub
+
+Private Sub ServerSocket_ConnectionRequest(Index As Integer, ByVal requestID As Long)
+Dim i As Byte
+
+    'Check for a valid server
+    For i = 1 To NumServers
+        If i <> ServerID Then
+        
+            'If the IP and port match, we got a valid connection
+            If ServerSocket(i).RemoteHost = ServerInfo(i).EIP Then
+                If ServerSocket(i).RemotePort = ServerInfo(i).ServerPort Then
+                    
+                    'Match according to the corresponding server so the socket index = the server ID
+                    ServerSocket(Index).Close
+                    ServerSocket(i).Close
+                    ServerSocket(i).Accept requestID
+                    Exit For
+                
+                End If
+            End If
+            
+        End If
+    Next i
+
+End Sub
+
+Private Sub ServerSocket_DataArrival(Index As Integer, ByVal bytesTotal As Long)
+Dim Data() As Byte
+Dim rBuf As New DataBuffer
+Dim CommandID As Byte
+Dim BufUBound As Long
+
+    'Get the data
+    ServerSocket(Index).GetData Data, vbByte, bytesTotal
+    
+    'Put the data into the buffer
+    rBuf.Set_Buffer Data()
+    
+    'Hold the buffer ubound
+    BufUBound = UBound(Data)
+    
+    'Loop through the packet and get the commands, just like with the GOREsock DataArrival
+    Do
+    
+        CommandID = rBuf.Get_Byte
+        
+        With DataCode
+            Select Case CommandID
+                Case .Comm_Shout: Data_Comm_Shout_ServerToServer rBuf
+                Case .Comm_Whisper: Data_Comm_Whisper_ServerToServer rBuf
+            End Select
+        End With
+        
+        'Check if the buffer ran out
+        If rBuf.Get_ReadPos > BufUBound Then Exit Sub
+        
+    Loop
 
 End Sub

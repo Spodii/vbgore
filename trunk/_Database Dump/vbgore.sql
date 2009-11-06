@@ -4,7 +4,7 @@ Source Host: localhost
 Source Database: vbgore
 Target Host: localhost
 Target Database: vbgore
-Date: 3/3/2007 2:01:48 AM
+Date: 3/13/2007 11:44:16 PM
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -52,6 +52,7 @@ CREATE TABLE `npcs` (
   `attackable` tinyint(3) unsigned NOT NULL default '0' COMMENT 'If the NPC is attackable (1 = yes, 0 = no)',
   `attackgrh` int(11) NOT NULL default '0' COMMENT 'Grh the NPC uses when attacking (works like UseGrh)',
   `attackrange` tinyint(3) unsigned NOT NULL default '0' COMMENT 'If the NPC has a ranged attack (0 or 1 for melee)',
+  `attacksfx` tinyint(3) unsigned NOT NULL,
   `projectilerotatespeed` tinyint(3) unsigned NOT NULL default '0' COMMENT 'If a ranged attack, how fast the projectile rotates',
   `hostile` tinyint(3) unsigned NOT NULL default '0' COMMENT 'If the NPC is hostile (1 = yes, 0 = no)',
   `quest` smallint(6) NOT NULL default '0' COMMENT 'ID of the quest the NPC gives',
@@ -89,6 +90,7 @@ CREATE TABLE `objects` (
   `weaponrange` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Range of the weapon''s attack (if ranged)',
   `grhindex` int(11) NOT NULL COMMENT 'Index of the object graphic (by Grh value)',
   `usegrh` int(11) NOT NULL default '0' COMMENT 'Grh for the weapon''s attack',
+  `usesfx` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Sound played when the object is used (0 for none)',
   `projectilerotatespeed` tinyint(3) unsigned NOT NULL COMMENT 'If a projectile, how fast it rotates (0 for no rotate)',
   `sprite_body` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling body changed to upon usage (-1 for no change)',
   `sprite_weapon` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling weapon changed to upon usage (-1 for no change)',
@@ -155,12 +157,12 @@ CREATE TABLE `users` (
   `gm` tinyint(3) unsigned NOT NULL default '0',
   `password` varchar(255) NOT NULL COMMENT 'Password',
   `descr` varchar(255) NOT NULL COMMENT 'Description',
-  `inventory` mediumtext NOT NULL,
-  `bank` mediumtext NOT NULL COMMENT 'List of the user''s bank items',
-  `mail` mediumtext NOT NULL,
+  `inventory` text NOT NULL,
+  `bank` text NOT NULL COMMENT 'List of the user''s bank items',
+  `mail` text NOT NULL,
   `knownskills` text NOT NULL COMMENT 'Skills known by the user (1 = known, 0 = unknown)',
-  `completedquests` mediumtext NOT NULL COMMENT 'Defines the quests completed (not recommended to edit)',
-  `currentquest` mediumtext NOT NULL COMMENT 'Quest(s) the user is currently on (do not edit)',
+  `completedquests` text NOT NULL COMMENT 'Defines the quests completed (not recommended to edit)',
+  `currentquest` text NOT NULL COMMENT 'Quest(s) the user is currently on (do not edit)',
   `date_create` date NOT NULL COMMENT 'The date the account was created',
   `date_lastlogin` date NOT NULL COMMENT 'The date the user last logged in',
   `pos_x` tinyint(3) unsigned NOT NULL COMMENT 'X position',
@@ -194,34 +196,34 @@ CREATE TABLE `users` (
   `stat_mp_max` int(11) NOT NULL default '0' COMMENT 'Base maximum mana',
   `stat_sp_min` int(11) NOT NULL default '0' COMMENT 'Current stamina',
   `stat_sp_max` int(11) NOT NULL default '0' COMMENT 'Base maximum stamina',
-  `online` tinyint(4) unsigned NOT NULL default '0' COMMENT 'States if the user is online or not (1 for yes, 0 for no)',
+  `server` tinyint(4) unsigned NOT NULL default '0' COMMENT 'States what server the user is on (0 = not online)',
   PRIMARY KEY  (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ----------------------------
 -- Records 
 -- ----------------------------
-INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-03-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 58.15027', '1', '7 9\r\n2 2\r\n1 2\r\n3 2\r\n7 9');
-INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-03-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 72.94109', '1', '7 9\r\n2 2\r\n1 2\r\n3 2\r\n7 9');
-INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-03-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 14.50004', '1', '7 9\r\n2 2\r\n1 2\r\n3 2\r\n7 9');
-INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-03-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 25.779', '1', '7 9\r\n2 2\r\n1 2\r\n3 2\r\n7 9');
-INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-03-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 2.824694', '1', '7 9\r\n2 2\r\n1 2\r\n3 2\r\n7 9');
+INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-03-13', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 4.535275', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-03-13', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 41.40327', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-03-13', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 86.26193', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-03-13', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 79.048', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-03-13', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 37.35362', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
 INSERT INTO `mail_lastid` VALUES ('5');
-INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '3', '0', '0', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
-INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '2', '5000', '1', '26', '0', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '3', '1', '2', '15', '2', '2');
-INSERT INTO `npcs` VALUES ('3', 'Shopkeeper', 'Just a humble shopkeeper.', '0', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '1 -1\r\n2 -1\r\n3 -1\r\n4 -1\r\n5 -1\r\n6 -1\r\n7 -1', '1', '1', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
-INSERT INTO `npcs` VALUES ('4', 'Ninja', 'A sneaky little ninja with a hand full of ninja stars', '4', '2', '10000', '1', '11', '10', '100', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '25', '20', '', '0', '1', '1', '1', '1', '3', '3', '0', '0', '5', '2', '4', '10', '10', '10');
-INSERT INTO `npcs` VALUES ('5', 'Cleric', 'Holy practicer of the church\'s arts', '5', '2', '15000', '1', '26', '0', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '50', '50', '', '1', '1', '1', '0', '1', '3', '3', '1', '0', '3', '1', '1', '10', '50', '10');
-INSERT INTO `npcs` VALUES ('6', 'Banker', 'A wealthy little bank owner', '6', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '', '1', '1', '1', '0', '1', '3', '3', '0', '0', '0', '1', '1', '10', '10', '10');
-INSERT INTO `npcs` VALUES ('7', 'Crazy man', 'Crazy man rambling about everything and nothing', '2', '1', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '', '1', '1', '1', '0', '0', '3', '3', '0', '0', '0', '1', '1', '10', '10', '10');
-INSERT INTO `objects` VALUES ('1', 'Tiny Healing Potion', '10', '1', '0', '0', '38', '0', '0', '-1', '-1', '-1', '-1', '-1', '10', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('2', 'Mini Healing Potion', '10', '1', '0', '0', '38', '0', '0', '-1', '-1', '-1', '-1', '-1', '20', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('3', 'Small Healing Potion', '10', '1', '0', '0', '38', '0', '0', '-1', '-1', '-1', '-1', '-1', '30', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('4', 'Healing Potion', '10', '1', '0', '0', '38', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('5', 'Newbie Armor', '10', '3', '0', '0', '1000', '0', '0', '2', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('6', 'Newbie Dagger', '30', '2', '1', '0', '1300', '26', '0', '-1', '1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', '4', '0', '0', '0');
-INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '0', '1200', '0', '0', '-1', '-1', '-1', '-1', '1', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '0', '1', '1', '20', '10', '10');
-INSERT INTO `objects` VALUES ('8', 'Ninja Stars', '100', '2', '4', '10', '11', '11', '100', '-1', '0', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '6', '0', '0', '0');
-INSERT INTO `objects` VALUES ('9', 'Big Star', '15', '1', '0', '0', '27', '14', '0', '-1', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '3', '0', '0', '0', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '2', '5000', '1', '26', '0', '1', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '3', '1', '2', '15', '2', '2');
+INSERT INTO `npcs` VALUES ('3', 'Shopkeeper', 'Just a humble shopkeeper.', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '1 -1\r\n2 -1\r\n3 -1\r\n4 -1\r\n5 -1\r\n6 -1\r\n7 -1', '1', '1', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('4', 'Ninja', 'A sneaky little ninja with a hand full of ninja stars', '4', '2', '10000', '1', '11', '10', '7', '100', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '25', '20', '', '0', '1', '1', '1', '1', '3', '3', '0', '0', '5', '2', '4', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('5', 'Cleric', 'Holy practicer of the church\'s arts', '5', '2', '15000', '1', '26', '0', '0', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '50', '50', '', '1', '1', '1', '0', '1', '3', '3', '1', '0', '3', '1', '1', '10', '50', '10');
+INSERT INTO `npcs` VALUES ('6', 'Banker', 'A wealthy little bank owner', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '', '1', '1', '1', '0', '1', '3', '3', '0', '0', '0', '1', '1', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('7', 'Crazy man', 'Crazy man rambling about everything and nothing', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '', '1', '1', '1', '0', '0', '3', '3', '0', '0', '0', '1', '1', '10', '10', '10');
+INSERT INTO `objects` VALUES ('1', 'Tiny Healing Potion', '10', '1', '0', '0', '38', '0', '0', '0', '-1', '-1', '-1', '-1', '-1', '10', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('2', 'Mini Healing Potion', '10', '1', '0', '0', '38', '0', '0', '0', '-1', '-1', '-1', '-1', '-1', '20', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('3', 'Small Healing Potion', '10', '1', '0', '0', '38', '0', '0', '0', '-1', '-1', '-1', '-1', '-1', '30', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('4', 'Healing Potion', '10', '1', '0', '0', '38', '0', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('5', 'Newbie Armor', '10', '3', '0', '0', '1000', '0', '0', '0', '2', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('6', 'Newbie Dagger', '30', '2', '1', '0', '1300', '26', '1', '0', '-1', '1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', '4', '0', '0', '0');
+INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '0', '1200', '0', '0', '0', '-1', '-1', '-1', '-1', '1', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '0', '1', '1', '20', '10', '10');
+INSERT INTO `objects` VALUES ('8', 'Ninja Stars', '100', '2', '4', '10', '11', '11', '7', '100', '-1', '0', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '6', '0', '0', '0');
+INSERT INTO `objects` VALUES ('9', 'Big Star', '15', '1', '0', '0', '27', '14', '0', '0', '-1', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
 INSERT INTO `quests` VALUES ('1', 'Kill Bandits', '1', 'Help me get revenge!', 'Thanks for the help! Kill 3 bandits that hide in the waterfall!', 'Just because I have no head doesn\'t mean I have no brain...', 'Sweet d00d, that\'ll show them whos boss! ^_^', 'The Headless Man has told you about some dangerous bandits that have nested in the cave under the |waterfall| in the west side of the island, outside of town. They have been stealing junk from the only two houses on this pathetic island, and it is important that we get it back, since without our junk, we are useless.\r\n\r\nTalk to the Headless Man after you kill the 3 bandits for your reward.', '1', '0', '0', '50', '45', '0', '0', '1', '0', '0', '2', '3', '200', '400', '2', '60', '2');
-INSERT INTO `users` VALUES ('Spodi', '127.0.0.1', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '2007-03-03', '2007-03-03', '41', '35', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '64', '50', '60', '50', '2', '50', '0');
+INSERT INTO `users` VALUES ('Spodi', '127.0.0.1', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '2007-03-13', '2007-03-13', '42', '34', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '60', '50', '60', '50', '4', '50', '0');

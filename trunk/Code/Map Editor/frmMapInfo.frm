@@ -1,20 +1,33 @@
 VERSION 5.00
 Begin VB.Form frmMapInfo 
-   BackColor       =   &H00000000&
+   BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Map Info"
-   ClientHeight    =   1650
+   ClientHeight    =   945
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   3375
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmMapInfo.frx":0000
-   ScaleHeight     =   110
+   ScaleHeight     =   63
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   225
    ShowInTaskbar   =   0   'False
+   Begin MapEditor.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   8
+      Top             =   0
+      Width           =   255
+      _ExtentX        =   450
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      Caption         =   "Map Information"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.TextBox MusicTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -24,7 +37,7 @@ Begin VB.Form frmMapInfo
       TabIndex        =   3
       Text            =   "0"
       ToolTipText     =   "ID of the music file to be played in the map. 0 for nothing."
-      Top             =   1200
+      Top             =   600
       Width           =   495
    End
    Begin VB.TextBox WeatherTxt 
@@ -36,7 +49,7 @@ Begin VB.Form frmMapInfo
       TabIndex        =   2
       Text            =   "0"
       ToolTipText     =   "What kind of weather goes on on the map - 0 for none"
-      Top             =   960
+      Top             =   360
       Width           =   495
    End
    Begin VB.TextBox VersionTxt 
@@ -48,7 +61,7 @@ Begin VB.Form frmMapInfo
       TabIndex        =   1
       Text            =   "1"
       ToolTipText     =   "Version of the map - if the client's version does not match the server's version, the map will be automatically updated"
-      Top             =   960
+      Top             =   360
       Width           =   735
    End
    Begin VB.TextBox MapNameTxt 
@@ -60,7 +73,7 @@ Begin VB.Form frmMapInfo
       TabIndex        =   0
       Text            =   "Name"
       ToolTipText     =   "Name of the map"
-      Top             =   720
+      Top             =   120
       Width           =   1815
    End
    Begin VB.Label MiscLbl 
@@ -81,7 +94,7 @@ Begin VB.Form frmMapInfo
       Index           =   3
       Left            =   240
       TabIndex        =   7
-      Top             =   1200
+      Top             =   600
       Width           =   570
    End
    Begin VB.Label MiscLbl 
@@ -102,7 +115,7 @@ Begin VB.Form frmMapInfo
       Index           =   2
       Left            =   1800
       TabIndex        =   6
-      Top             =   960
+      Top             =   360
       Width           =   795
    End
    Begin VB.Label MiscLbl 
@@ -123,7 +136,7 @@ Begin VB.Form frmMapInfo
       Index           =   1
       Left            =   240
       TabIndex        =   5
-      Top             =   960
+      Top             =   360
       Width           =   705
    End
    Begin VB.Label MiscLbl 
@@ -144,7 +157,7 @@ Begin VB.Form frmMapInfo
       Index           =   0
       Left            =   240
       TabIndex        =   4
-      Top             =   720
+      Top             =   120
       Width           =   975
    End
 End
@@ -155,32 +168,20 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub Form_Load()
+
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
+    
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     Cancel = 1
-    Engine_Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "X", Me.Left
-    Engine_Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "Y", Me.Top
+    Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "X", Me.Left
+    Var_Write Data2Path & "MapEditor.ini", "MAPINFO", "Y", Me.Top
     HideFrmMapInfo
-
-End Sub
-
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
 
 End Sub
 

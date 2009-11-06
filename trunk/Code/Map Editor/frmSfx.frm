@@ -1,20 +1,33 @@
 VERSION 5.00
 Begin VB.Form frmSfx 
-   BackColor       =   &H00000000&
+   BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Add Sfx"
-   ClientHeight    =   915
+   ClientHeight    =   420
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   1815
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmSfx.frx":0000
-   ScaleHeight     =   61
+   ScaleHeight     =   28
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   121
    ShowInTaskbar   =   0   'False
+   Begin MapEditor.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   2
+      Top             =   0
+      Width           =   255
+      _ExtentX        =   450
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      Caption         =   "Add Sfx"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.TextBox SfxTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -24,7 +37,7 @@ Begin VB.Form frmSfx
       TabIndex        =   0
       Text            =   "0"
       ToolTipText     =   "The number of the .wav file that will be looped on the tile for stuff like waterfalls, birds, etc - set to 0 for nothing"
-      Top             =   600
+      Top             =   120
       Width           =   975
    End
    Begin VB.Label MiscLbl 
@@ -45,7 +58,7 @@ Begin VB.Form frmSfx
       Index           =   0
       Left            =   120
       TabIndex        =   1
-      Top             =   600
+      Top             =   120
       Width           =   540
    End
 End
@@ -59,30 +72,19 @@ Option Explicit
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     Cancel = 1
-    Engine_Var_Write Data2Path & "MapEditor.ini", "SFX", "X", Me.Left
-    Engine_Var_Write Data2Path & "MapEditor.ini", "SFX", "Y", Me.Top
+    Var_Write Data2Path & "MapEditor.ini", "SFX", "X", Me.Left
+    Var_Write Data2Path & "MapEditor.ini", "SFX", "Y", Me.Top
     HideFrmSfx
 
 End Sub
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
+Private Sub Form_Load()
 
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
+    cForm.LoadSkin Me
+    Skin_Set Me
 
 End Sub
+
 Private Sub SfxTxt_Change()
 Dim i As Integer
 

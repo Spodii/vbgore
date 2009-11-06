@@ -71,10 +71,14 @@ End Type
 
 Private Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
-Private Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
-Private Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Private Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpString As String, ByVal lpFileName As String) As Long
+Private Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpDefault As String, ByVal lpReturnedString As String, ByVal nSize As Long, ByVal lpFileName As String) As Long
 
 Sub Main()
+
+    Load frmMain
+    frmMain.Show
+    DoEvents
 
     'Set the timer resolution
     timeBeginPeriod 1
@@ -273,7 +277,7 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
     szReturn = vbNullString
 
     sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
+    GetPrivateProfileString Main, Var, szReturn, sSpaces, Len(sSpaces), File
     Engine_Var_Get = RTrim$(sSpaces)
     If Len(Engine_Var_Get) > 0 Then
         Engine_Var_Get = Left$(Engine_Var_Get, Len(Engine_Var_Get) - 1)

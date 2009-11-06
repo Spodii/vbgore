@@ -15,7 +15,7 @@ Begin VB.Form frmTileSelect
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   353
    ShowInTaskbar   =   0   'False
-   StartUpPosition =   3  'Windows Default
+   StartUpPosition =   2  'CenterScreen
    WindowState     =   2  'Maximized
    Begin VB.PictureBox RightPic 
       AutoRedraw      =   -1  'True

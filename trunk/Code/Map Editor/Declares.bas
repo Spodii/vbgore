@@ -26,6 +26,9 @@ Public prgRun As Boolean 'When true the program ends
 'Tells us which box we are going to set the value we get from SetTile to
 Public stBoxID As Byte
 
+'Dummy for the MySQL module
+Public ServerID As Byte
+
 '********** Map display variables **********
 Public WeatherChkValue As Byte
 Public CharsChkValue As Byte

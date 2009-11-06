@@ -8,13 +8,13 @@ Private Type Effect
     Gfx As Byte                 'Particle texture used
     Used As Boolean             'If the effect is in use
     EffectNum As Byte           'What number of effect that is used
-    Modifier As Integer
-    FloatSize As Long
-    Direction As Integer
+    Modifier As Integer         'Misc variable (depends on the effect)
+    FloatSize As Long           'The size of the particles
+    Direction As Integer        'Misc variable (depends on the effect)
     Particles() As Particle     'Information on each particle
-    Progression As Single
+    Progression As Single       'Misc variable (depends on the effect)
     PartVertex() As TLVERTEX    'Used to point render particles
-    PreviousFrame As Long
+    PreviousFrame As Long       'Tick time of the last frame
     ParticleCount As Integer    'Number of particles total
     ParticlesLeft As Integer    'Number of particles left - only for non-repetitive effects
     BindToChar As Integer       'Setting this value will bind the effect to move towards the character
@@ -118,7 +118,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -275,7 +275,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -400,7 +400,7 @@ Dim LoopC As Long
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -556,7 +556,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -754,11 +754,11 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
     End If
 
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -815,18 +815,18 @@ Public Sub Effect_Render(ByVal EffectIndex As Byte)
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
-    'Set The Render State To Point Blitting
+    'Set the render state to point blitting
     D3DDevice.SetRenderState D3DRS_POINTSIZE, Effect(EffectIndex).FloatSize
     D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
 
-    'Set The Texture
+    'Set the texture
     D3DDevice.SetTexture 0, ParticleTexture(Effect(EffectIndex).Gfx)
     LastTexture = -1
 
-    'Draw All The Particles At Once
+    'Draw all the particles at once
     D3DDevice.DrawPrimitiveUP D3DPT_POINTLIST, Effect(EffectIndex).ParticleCount, Effect(EffectIndex).PartVertex(0), Len(Effect(EffectIndex).PartVertex(0))
 
-    'Reset The Render State Back To Normal
+    'Reset the render state back to normal
     D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
 
 End Sub
@@ -836,8 +836,7 @@ Function Effect_Snow_Begin(ByVal Gfx As Integer, ByVal Particles As Integer) As 
 Dim EffectIndex As Byte
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -868,7 +867,7 @@ Dim LoopC As Long
         Effect_Snow_Reset EffectIndex, LoopC, 1
     Next LoopC
 
-    'Set The Initial Time
+    'Set the initial time
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
 End Function
@@ -900,16 +899,15 @@ Private Sub Effect_Snow_Update(ByVal EffectIndex As Byte)
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
-'Calculate The Time Difference
-
+    'Calculate the time difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
-        'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        'Check if particle is in use
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
@@ -931,7 +929,7 @@ Dim LoopC As Long
 
             Else
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -953,15 +951,14 @@ Function Effect_Strengthen_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx
 Dim EffectIndex As Byte
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
     'Return the index of the used slot
     Effect_Strengthen_Begin = EffectIndex
 
-    'Set The Effect's Variables
+    'Set the effect's variables
     Effect(EffectIndex).EffectNum = EffectNum_Strengthen    'Set the effect number
     Effect(EffectIndex).ParticleCount = Particles           'Set the number of particles
     Effect(EffectIndex).Used = True             'Enabled the effect
@@ -1000,8 +997,7 @@ Dim a As Single
 Dim X As Single
 Dim Y As Single
 
-'Get the positions
-
+    'Get the positions
     a = Rnd * 360 * DegreeToRadian
     X = Effect(EffectIndex).X - (Sin(a) * Effect(EffectIndex).Modifier)
     Y = Effect(EffectIndex).Y + (Cos(a) * Effect(EffectIndex).Modifier)
@@ -1021,8 +1017,7 @@ Dim TargetY As Integer
 Dim TargetI As Integer  'Bound character's index
 Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate the time difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
@@ -1052,13 +1047,13 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
     End If
 
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
-        'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        'Check if particle is in use
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
-            'Update The Particle
+            'Update the particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
 
             'Random clear
@@ -1095,7 +1090,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
                 Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
                 Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -1109,15 +1104,13 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 End Sub
 
 Sub Effect_UpdateAll()
-
 Dim LoopC As Long
 
-'Update Every Effect In Use
-
+    'Update every effect in use
     For LoopC = 1 To NumEffects
 
-        'Make Sure The Effect Is In Use
-        If Effect(LoopC).Used = True Then
+        'Make sure the effect is in use
+        If Effect(LoopC).Used Then
 
             'Find out which effect is selected, then update it
             If Effect(LoopC).EffectNum = EffectNum_Fire Then Effect_Fire_Update LoopC
@@ -1152,7 +1145,7 @@ Dim LoopC As Long
     'Return the index of the used slot
     Effect_Rain_Begin = EffectIndex
 
-    'Set The Effect's Variables
+    'Set the effect's variables
     Effect(EffectIndex).EffectNum = EffectNum_Rain      'Set the effect number
     Effect(EffectIndex).ParticleCount = Particles       'Set the number of particles
     Effect(EffectIndex).Used = True     'Enabled the effect
@@ -1208,28 +1201,27 @@ Private Sub Effect_Rain_Update(ByVal EffectIndex As Byte)
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
-'Calculate The Time Difference
-
+    'Calculate the time difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
-        'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
+        'Check if the particle is in use
+        If Effect(EffectIndex).Particles(LoopC).Used Then
 
-            'Update The Particle
+            'Update the particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
+            
+            'Apply shift values
+            Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
+            Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + Effect(EffectIndex).ShiftY
 
             'Check if to reset the particle
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngX > 1200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngY > 800 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-
-            'Apply shift values
-            Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
-            Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + Effect(EffectIndex).ShiftY
 
             'Time for a reset, baby!
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
@@ -1239,7 +1231,7 @@ Dim LoopC As Long
 
             Else
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -1287,7 +1279,7 @@ Dim LoopC As Long
     'Return the index of the used slot
     Effect_Waterfall_Begin = EffectIndex
 
-    'Set The Effect's Variables
+    'Set the effect's variables
     Effect(EffectIndex).EffectNum = EffectNum_Waterfall     'Set the effect number
     Effect(EffectIndex).ParticleCount = Particles           'Set the number of particles
     Effect(EffectIndex).Used = True             'Enabled the effect
@@ -1339,8 +1331,7 @@ Dim TargetY As Integer
 Dim TargetI As Integer  'Bound character's index
 Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
@@ -1351,62 +1342,43 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
     Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
 
-    'Update position through character binding
-    If Effect(EffectIndex).BindToChar Then
-        TargetI = Effect(EffectIndex).BindToChar
-        TargetX = CharList(TargetI).RealPos.X
-        TargetY = CharList(TargetI).RealPos.Y
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
-        'Unbind when character is reached
-        If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-            If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                Effect(EffectIndex).BindToChar = 0
-                Effect(EffectIndex).Progression = 0
-            End If
-        End If
-
-    End If
-
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
+    
+        With Effect(EffectIndex).Particles(LoopC)
+    
+            'Check if the particle is in use
+            If .Used Then
+    
+                'Update The Particle
+                .UpdateParticle ElapsedTime
+    
+                'Random clear
+                If Int(Rnd * 10000 * ElapsedTime) = 0 Then .sngA = 0
+    
+                'Check if the particle is ready to die
+                If (.sngY > Effect(EffectIndex).Y + 140) Or (.sngA = 0) Then
+    
+                    'Reset the particle
+                    Effect_Waterfall_Reset EffectIndex, LoopC
+    
+                Else
+                
+                    'Set the shifting values for if the screen moves
+                    .sngX = .sngX + (LastOffsetX - ParticleOffsetX)
+                    .sngY = .sngY + (LastOffsetY - ParticleOffsetY)
 
-        'Check If Particle Is In Use
-        If Effect(EffectIndex).Particles(LoopC).Used = True Then
-
-            'Update The Particle
-            Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
-
-            'Random clear
-            If Int(Rnd * 10000 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-
-            'Check if the particle is ready to die
-            If (Effect(EffectIndex).Particles(LoopC).sngY > Effect(EffectIndex).Y + 140) Or (Effect(EffectIndex).Particles(LoopC).sngA = 0) Then
-
-                'Reset the particle
-                Effect_Waterfall_Reset EffectIndex, LoopC
-
-            Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
-
-                'Set The Particle Information On The Particle Vertex
-                Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
-                Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
-                Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
-
+                    'Set the particle information on the particle vertex
+                    Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(.sngR, .sngG, .sngB, .sngA)
+                    Effect(EffectIndex).PartVertex(LoopC).X = .sngX
+                    Effect(EffectIndex).PartVertex(LoopC).Y = .sngY
+    
+                End If
+    
             End If
-
-        End If
+            
+        End With
 
     Next LoopC
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 18:13)  Decl: 31  Code: 949  Total: 980 Lines
-':) CommentOnly: 164 (16.7%)  Commented: 77 (7.9%)  Empty: 295 (30.1%)  Max Logic Depth: 5
-

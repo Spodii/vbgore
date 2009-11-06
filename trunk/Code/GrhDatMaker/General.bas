@@ -42,7 +42,7 @@ Private Sub Main()
 'Loads GrhRaw.txt, parses and outputs Grh.dat
 '*****************************************************************
 
-Dim GrhBuffer() As Integer  'Holds all the entered Grh values
+Dim GrhBuffer() As Long  'Holds all the entered Grh values
 
 Dim sX As Integer
 Dim sY As Integer

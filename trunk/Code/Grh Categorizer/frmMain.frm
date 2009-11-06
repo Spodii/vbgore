@@ -1,24 +1,50 @@
 VERSION 5.00
 Begin VB.Form frmMain 
    AutoRedraw      =   -1  'True
-   BackColor       =   &H00FFFFFF&
+   BackColor       =   &H00C0C0C0&
+   BorderStyle     =   0  'None
    Caption         =   "Grh Categorizer"
-   ClientHeight    =   4905
-   ClientLeft      =   60
-   ClientTop       =   450
-   ClientWidth     =   5040
+   ClientHeight    =   4935
+   ClientLeft      =   0
+   ClientTop       =   0
+   ClientWidth     =   5205
    LinkTopic       =   "Form1"
-   ScaleHeight     =   327
+   ScaleHeight     =   329
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   336
+   ScaleWidth      =   347
+   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin ToolGrhCategorizer.cButton NextBtn 
+      Height          =   375
+      Left            =   4200
+      TabIndex        =   13
+      Top             =   4440
+      Width           =   735
+      _ExtentX        =   1296
+      _ExtentY        =   661
+      Caption         =   "Next"
+   End
+   Begin ToolGrhCategorizer.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   12
+      Top             =   0
+      Width           =   255
+      _ExtentX        =   450
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      Caption         =   "Grh Categorizer"
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.Timer RenderTmr 
       Interval        =   50
       Left            =   4320
       Top             =   600
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Misc (Hidden)"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -29,6 +55,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   7
       Left            =   2160
@@ -37,7 +64,8 @@ Begin VB.Form frmMain
       Width           =   1575
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Misc (Displayed)"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -48,6 +76,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   6
       Left            =   2160
@@ -56,7 +85,8 @@ Begin VB.Form frmMain
       Width           =   1815
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Inside Objects"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -67,6 +97,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   5
       Left            =   2160
@@ -75,7 +106,8 @@ Begin VB.Form frmMain
       Width           =   1575
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Outside Objects"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -86,6 +118,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   2160
@@ -94,7 +127,8 @@ Begin VB.Form frmMain
       Width           =   1695
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Buildings"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -105,6 +139,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   240
@@ -113,7 +148,8 @@ Begin VB.Form frmMain
       Width           =   1095
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Vegetation"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -124,6 +160,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   240
@@ -132,7 +169,8 @@ Begin VB.Form frmMain
       Width           =   1335
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Inside Tiles"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -143,6 +181,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   240
@@ -151,7 +190,8 @@ Begin VB.Form frmMain
       Width           =   1335
    End
    Begin VB.CheckBox CatChk 
-      BackColor       =   &H00FFFFFF&
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
       Caption         =   "Outside Tiles"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -162,6 +202,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   240
@@ -198,7 +239,7 @@ Begin VB.Form frmMain
       EndProperty
       Height          =   195
       Left            =   3360
-      TabIndex        =   12
+      TabIndex        =   11
       Top             =   45
       Width           =   1590
    End
@@ -208,7 +249,7 @@ Begin VB.Form frmMain
       Caption         =   "Info:"
       Height          =   195
       Left            =   120
-      TabIndex        =   11
+      TabIndex        =   10
       Top             =   45
       Width           =   315
    End
@@ -219,28 +260,9 @@ Begin VB.Form frmMain
       Caption         =   "Value: 0"
       Height          =   195
       Left            =   4305
-      TabIndex        =   10
+      TabIndex        =   9
       Top             =   3720
       Width           =   585
-   End
-   Begin VB.Label NextLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Next"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   12
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   300
-      Left            =   4320
-      TabIndex        =   9
-      Top             =   4560
-      Width           =   555
    End
 End
 Attribute VB_Name = "frmMain"
@@ -256,16 +278,14 @@ Option Explicit
 '    MsgBox s
 
 Private Const HighlightColor As Long = 65280
-Private Const NormalColor As Long = 0
 Private BckClr As Long
 
 Private Sub ClearColors()
 Dim i As Long
 
     For i = CatChk.lbound To CatChk.UBound
-        CatChk(i).ForeColor = NormalColor
+        CatChk(i).ForeColor = pSkin.LabelColor
     Next i
-    NextLbl.ForeColor = NormalColor
 
 End Sub
 
@@ -323,17 +343,33 @@ Dim s As String
     End If
     
     'Move on if a right-click
-    If Button = vbRightButton Then NextLbl_Click
+    If Button = vbRightButton Then NextBtn_Click
     
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_Load()
+    
+    cForm.LoadSkin Me
+    Skin_Set Me
 
+End Sub
+
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim c As Control
+    
+    For Each c In Me
+        If TypeName(c) = "cButton" Then
+            c.Refresh
+            c.DrawState = 0
+        End If
+    Next c
+    Set c = Nothing
+    
     ClearColors
 
 End Sub
 
-Private Sub NextLbl_Click()
+Private Sub NextBtn_Click()
 Dim i As Long
 
     'Get the next grh
@@ -347,11 +383,10 @@ Dim i As Long
 
 End Sub
 
-Private Sub NextLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub NextBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     ClearColors
-    NextLbl.ForeColor = HighlightColor
-
+    
 End Sub
 
 Private Sub PreviewPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)

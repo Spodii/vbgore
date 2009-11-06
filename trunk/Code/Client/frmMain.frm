@@ -112,7 +112,18 @@ Dim Moved As Byte
                     Engine_Input_Mouse_RightClick
                 End If
             End If
-
+        
+        Case DIMOFS_Z
+            If ShowGameWindow(ChatWindow) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
+                    If DevData(LoopC).lData > 0 Then
+                        ChatBufferChunk = ChatBufferChunk + 0.25
+                    ElseIf DevData(LoopC).lData < 0 Then
+                        ChatBufferChunk = ChatBufferChunk - 0.25
+                    End If
+                    Engine_UpdateChatArray
+                End If
+            End If
         End Select
 
         'Update movement
@@ -145,7 +156,6 @@ Private Sub Form_Click()
 End Sub
 
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
-
 Dim TempS() As String
 Dim s As String
 Dim s2 As String
@@ -169,6 +179,11 @@ Dim j As Long
     '*************************
     '***** General input *****
     '*************************
+    
+    'Hide/show Mini-map
+    If KeyCode = vbKeyTab Then
+        If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0
+    End If
     
     'Get object off ground (alt)
     If KeyCode = 18 Then
@@ -214,14 +229,14 @@ Dim j As Long
     'Chat buffer stuff
     If KeyCode = vbKeyPageUp Then
         If ShowGameWindow(ChatWindow) Then
-            ChatBufferChunk = ChatBufferChunk + 1
+            ChatBufferChunk = ChatBufferChunk + 0.5
             Engine_UpdateChatArray
         End If
     End If
     If KeyCode = vbKeyPageDown Then
         If ShowGameWindow(ChatWindow) Then
             If ChatBufferChunk > 1 Then
-                ChatBufferChunk = ChatBufferChunk - 1
+                ChatBufferChunk = ChatBufferChunk - 0.5
                 Engine_UpdateChatArray
             End If
         End If
@@ -394,21 +409,33 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.Server_Who
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/SH" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.Comm_Shout
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/TELL" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
+                        TempS() = Split(s, " ", 2)
+                        If UBound(TempS) < 1 Then Exit Sub
+                        If Not LenB(Trim$(TempS(0))) Then Exit Sub
                         sndBuf.Put_Byte DataCode.Comm_Whisper
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String Trim$(TempS(0))
+                        sndBuf.Put_String Trim$(TempS(1))
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/ME" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.Comm_Emote
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/EM" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.Comm_Emote
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
-                        
+                        sndBuf.Put_String s
+
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
                         s = LCase$(SplitCommandFromString(EnterTextBuffer))
                         If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
@@ -483,22 +510,29 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.User_StartQuest
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/DESC" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
                         sndBuf.Put_Byte DataCode.User_Desc
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(EnterTextBuffer) = "/HELP" Then
                         sndBuf.Put_Byte DataCode.Server_Help
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/APPR" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.GM_Approach
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/SUM" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.GM_Summon
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/SETGM" Then
-                        TempS = Split(SplitCommandFromString(EnterTextBuffer), " ")
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
+                        TempS = Split(s, " ")
                         If UBound(TempS) > 0 Then
                             If IsNumeric(TempS(1)) Then
                                 sndBuf.Allocate 3 + Len(TempS(0))
@@ -560,8 +594,10 @@ Dim j As Long
                         sndBuf.Put_String Trim$(s)
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/KICK" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
                         sndBuf.Put_Byte DataCode.GM_Kick
-                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String s
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/RAISE" Then
                         TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
@@ -576,12 +612,14 @@ Dim j As Long
                         
                     Else
                         '*** No commands sent, send as text ***
+                        EnterTextBuffer = Trim$(EnterTextBuffer)
                         sndBuf.Allocate 2 + Len(EnterTextBuffer)
                         sndBuf.Put_Byte DataCode.Comm_Talk
                         sndBuf.Put_String EnterTextBuffer
                         
                         'We just sent a chat message, so check if it had triggers!
                         Engine_NPCChat_CheckForChatTriggers EnterTextBuffer
+                        
                     End If
                     EnterTextBuffer = vbNullString
                     EnterTextBufferWidth = 10
@@ -754,48 +792,53 @@ Dim i As Integer
         If Not LastClickedWindow = WriteMessageWindow Then
             If Not LastClickedWindow = AmountWindow Then
                 If Not ShowGameWindow(WriteMessageWindow) Then
-                    Select Case KeyCode
-                    Case vbKey1
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Dots
-                    Case vbKey2
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Exclimation
-                    Case vbKey3
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Question
-                    Case vbKey4
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Surprised
-                    Case vbKey5
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Heart
-                    Case vbKey6
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Hearts
-                    Case vbKey7
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.HeartBroken
-                    Case vbKey8
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Utensils
-                    Case vbKey9
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.Meat
-                    Case vbKey0
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Emote
-                        sndBuf.Put_Byte EmoID.ExcliQuestion
-                    End Select
+                    If EmoticonDelay < timeGetTime Then
+                        EmoticonDelay = timeGetTime + 1000  'Wait 1000ms (one second) between emoticon usages
+                        
+                        Select Case KeyCode
+                        Case vbKey1
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Dots
+                        Case vbKey2
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Exclimation
+                        Case vbKey3
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Question
+                        Case vbKey4
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Surprised
+                        Case vbKey5
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Heart
+                        Case vbKey6
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Hearts
+                        Case vbKey7
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.HeartBroken
+                        Case vbKey8
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Utensils
+                        Case vbKey9
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.Meat
+                        Case vbKey0
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Emote
+                            sndBuf.Put_Byte EmoID.ExcliQuestion
+                        End Select
+                        
+                    End If
                 End If
             End If
         End If

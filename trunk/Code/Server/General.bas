@@ -4,6 +4,7 @@ Option Explicit
 'How much time between the server loops - this is to let some slack on the CPU as to not overwork it
 ' The server will stop sleeping if the elapsed time for the loop is > this value. It is suggested
 ' you don't change this value lower than 5 (unless you hate your server computer and want it to die).
+' Try to keep this value below the lowest common denominator of all the timers (in this case, 50).
 Private Const GameLoopTime As Long = 10
 
 'Adjust these values accordingly depending on how often you want routines to update
@@ -14,7 +15,7 @@ Private Const UpdateRate_UserCounters As Long = 200     'Updating user counters 
 Private Const UpdateRate_UserSendBuffer As Long = 50    'Check to send the user's buffer
 Private Const UpdateRate_NPCAI As Long = 50             'Updating NPC AI
 Private Const UpdateRate_NPCCounters As Long = 200      'Updating NPC counters
-Private Const UpdateRate_Maps As Long = 30000           'Updating map ground objects / unloading maps from memory
+Private Const UpdateRate_Maps As Long = 30000           'Updating map ground objects (to remove them) / unloading maps from memory
 Private Const UpdateRate_Bandwidth As Long = 1000       'Updating bandwidth in/out information
 Private Const UpdateRate_UnloadObjs As Long = 120000    'Unloading objects from memory
 
@@ -57,8 +58,22 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
     'Loop until ServerRunning = 0
     Do While ServerRunning
     
+        'Make sure that the system's clock didn't reset (check the sub for more details)
+        ValidateTime
+        
         'Get the start time so we know how long the loop took
-        LoopStartTime = CurrentTime
+        LoopStartTime = timeGetTime
+
+        '*** Unload ***
+        'Note that we have to put this in the loop in case the socket fails to unload
+        'The socket is going to fail to unload once if theres connections made to it
+        'Check if we're unloading the server
+        If UnloadServer Then
+            
+            'Close the server
+            Server_Unload
+            
+        End If
 
         '*** Check for updating flags ***
         
@@ -144,18 +159,7 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
                 Sleep Int(GameLoopTime - Elapsed)
             End If
         End If
-        
-        '*** Unload ***
-        'Note that we have to put this in the loop in case the socket fails to unload
-        'The socket is going to fail to unload once if theres connections made to it
-        'Check if we're unloading the server
-        If UnloadServer Then
-            
-            'Close the server
-            Server_Unload
-            
-        End If
-        
+
         '*** Update FPS ***
         If DEBUG_MapFPS Then
             FPS = FPS + 1
@@ -185,6 +189,9 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
         End If
         
     Loop
+    
+    'If for some reason the loop stops, unload the server
+    Server_Unload
         
 End Sub
 
@@ -242,7 +249,7 @@ Dim NPCIndex As Integer
                     '*** Update counters ***
                     If UpdateNPCCounters Then   'Update aggressive-face timer
                         If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
-                            If NPCList(NPCIndex).Counters.AggressiveCounter < CurrentTime Then
+                            If NPCList(NPCIndex).Counters.AggressiveCounter < timeGetTime Then
                                 NPCList(NPCIndex).Counters.AggressiveCounter = 0
                                 ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.User_AggressiveFace
@@ -252,7 +259,7 @@ Dim NPCIndex As Integer
                             End If
                         End If                  'Update warcurse time
                         If NPCList(NPCIndex).Skills.WarCurse > 0 Then
-                            If NPCList(NPCIndex).Counters.WarCurseCounter < CurrentTime Then
+                            If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
                                 NPCList(NPCIndex).Counters.WarCurseCounter = 0
                                 NPCList(NPCIndex).Skills.WarCurse = 0
                                 ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
@@ -268,7 +275,7 @@ Dim NPCIndex As Integer
                             End If
                         End If                  'Update spell exhaustion
                         If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
-                            If NPCList(NPCIndex).Counters.SpellExhaustion < CurrentTime Then
+                            If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
                                 NPCList(NPCIndex).Counters.SpellExhaustion = 0
                                 ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
@@ -281,7 +288,7 @@ Dim NPCIndex As Integer
 
                     '*** NPC AI ***
                     If UpdateNPCAI Then
-                        If NPCList(NPCIndex).Counters.ActionDelay < CurrentTime Then NPC_AI NPCIndex
+                        If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then NPC_AI NPCIndex
                     End If
 
                 End If
@@ -290,7 +297,7 @@ Dim NPCIndex As Integer
                 
                 '*** Respawn NPC ***
                 'Check if it's time to respawn
-                If NPCList(NPCIndex).Counters.RespawnCounter < CurrentTime Then NPC_Spawn NPCIndex
+                If NPCList(NPCIndex).Counters.RespawnCounter < timeGetTime Then NPC_Spawn NPCIndex
 
             End If
             
@@ -319,14 +326,14 @@ Dim UserIndex As Integer
 
             '*** Disconnection timers ***
             'Check if it has been idle for too long
-            If UserList(UserIndex).Counters.IdleCount <= CurrentTime - IdleLimit Then
+            If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
                 Data_Send ToIndex, UserIndex, cMessage(85).Data
                 Server_CloseSocket UserIndex
                 GoTo NextUser   'Skip to the next user
             End If
             
             'Check if the user was possible disconnected (or extremely laggy)
-            If UserList(UserIndex).Counters.LastPacket <= CurrentTime - LastPacket Then
+            If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
                 Data_Send ToIndex, UserIndex, cMessage(85).Data
                 Server_CloseSocket UserIndex
                 GoTo NextUser   'Skip to the next user
@@ -334,21 +341,23 @@ Dim UserIndex As Integer
             
             '*** Recover stats ***
             If RecoverUserStats Then    'HP
-                If UserList(UserIndex).Stats.BaseStat(SID.MinHP) < UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) + 1 + UserList(UserIndex).Stats.ModStat(SID.Str) * 0.5
-                End If                  'SP
-                If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) < UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinSTA) = UserList(UserIndex).Stats.BaseStat(SID.MinSTA) + 1 + UserList(UserIndex).Stats.ModStat(SID.Agi) * 0.5
-                End If                  'MP
-                If UserList(UserIndex).Stats.BaseStat(SID.MinMAN) < UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinMAN) = UserList(UserIndex).Stats.BaseStat(SID.MinMAN) + 1 + UserList(UserIndex).Stats.ModStat(SID.Mag) * 0.5
-                End If
+                With UserList(UserIndex).Stats
+                    If .BaseStat(SID.MinHP) < .ModStat(SID.MaxHP) Then
+                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.str) * 0.5)
+                    End If                  'SP
+                    If .BaseStat(SID.MinSTA) < .ModStat(SID.MaxSTA) Then
+                        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) * 0.5)
+                    End If                  'MP
+                    If .BaseStat(SID.MinMAN) < .ModStat(SID.MaxMAN) Then
+                        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + 1 + (.ModStat(SID.Mag) * 0.5)
+                    End If
+                End With
             End If
 
             '*** Update the counters ***
             If UpdateUserCounters Then  'Bless
                 If UserList(UserIndex).Counters.BlessCounter > 0 Then
-                    If UserList(UserIndex).Counters.BlessCounter < CurrentTime Then
+                    If UserList(UserIndex).Counters.BlessCounter < timeGetTime Then
                         UserList(UserIndex).Skills.Bless = 0
                         ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconBlessed
@@ -358,7 +367,7 @@ Dim UserIndex As Integer
                     End If
                 End If                  'Protection
                 If UserList(UserIndex).Counters.ProtectCounter > 0 Then
-                    If UserList(UserIndex).Counters.ProtectCounter < CurrentTime Then
+                    If UserList(UserIndex).Counters.ProtectCounter < timeGetTime Then
                         UserList(UserIndex).Skills.Protect = 0
                         ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconProtected
@@ -368,7 +377,7 @@ Dim UserIndex As Integer
                     End If
                 End If                  'Strengthen
                 If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
-                    If UserList(UserIndex).Counters.StrengthenCounter < CurrentTime Then
+                    If UserList(UserIndex).Counters.StrengthenCounter < timeGetTime Then
                         UserList(UserIndex).Skills.Strengthen = 0
                         ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconStrengthened
@@ -378,7 +387,7 @@ Dim UserIndex As Integer
                     End If
                 End If                  'Spell exhaustion
                 If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
-                    If UserList(UserIndex).Counters.SpellExhaustion < CurrentTime Then
+                    If UserList(UserIndex).Counters.SpellExhaustion < timeGetTime Then
                         UserList(UserIndex).Counters.SpellExhaustion = 0
                         ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
@@ -388,7 +397,7 @@ Dim UserIndex As Integer
                     End If
                 End If                  'Aggressive face
                 If UserList(UserIndex).Counters.AggressiveCounter > 0 Then
-                    If UserList(UserIndex).Counters.AggressiveCounter < CurrentTime Then
+                    If UserList(UserIndex).Counters.AggressiveCounter < timeGetTime Then
                         UserList(UserIndex).Counters.AggressiveCounter = 0
                         ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.User_AggressiveFace
@@ -404,7 +413,7 @@ Dim UserIndex As Integer
 
                 'Check if the packet wait time has passed
                 If UserList(UserIndex).HasBuffer Then
-                    If UserList(UserIndex).PacketWait < CurrentTime Then
+                    If UserList(UserIndex).PacketWait < timeGetTime Then
     
                         'Send the packet buffer to the user
                         If UserList(UserIndex).PPValue = PP_High Then
@@ -415,7 +424,7 @@ Dim UserIndex As Integer
                         ElseIf UserList(UserIndex).PPValue = PP_Low Then
                             
                             'Low priority - check counter for sending
-                            If UserList(UserIndex).PPCount < CurrentTime Then Data_Send_Buffer UserIndex
+                            If UserList(UserIndex).PPCount < timeGetTime Then Data_Send_Buffer UserIndex
                         
                         End If
                         
@@ -467,7 +476,7 @@ Dim Y As Byte
                         For ObjIndex = 1 To MapInfo(MapIndex).ObjTile(X, Y).NumObjs
                             
                             'Check if it is time to remove the object
-                            If MapInfo(MapIndex).ObjTile(X, Y).ObjLife(ObjIndex) < CurrentTime - GroundObjLife Then
+                            If MapInfo(MapIndex).ObjTile(X, Y).ObjLife(ObjIndex) < timeGetTime - GroundObjLife Then
                                 Obj_Erase MapInfo(MapIndex).ObjTile(X, Y).ObjInfo(ObjIndex).Amount, ObjIndex, MapIndex, X, Y
                             End If
                             
@@ -480,8 +489,8 @@ Dim Y As Byte
         Else
             
             '*** Unloading maps from memory ***
-            'The map is empty, check if it is being counted down to being unloaded
-            If MapInfo(MapIndex).UnloadTimer > 0 Then Unload_Map MapIndex
+            'The map is empty, see if it needs to be unloaded (don't worry if it is already unloaded)
+            Unload_Map MapIndex
         
         End If
         
@@ -1146,7 +1155,7 @@ ErrOut:
 
 End Function
 
-Public Function Server_RandomNumber(ByVal LowerBound As Long, ByVal UpperBound As Long) As Integer
+Public Function Server_RandomNumber(ByVal LowerBound As Long, ByVal UpperBound As Long) As Long
 
 '*****************************************************************
 'Find a Random number between a range
@@ -1168,15 +1177,18 @@ Public Function Server_BuildToolTipString() As String
 Dim kBpsIn As Single
 Dim kBpsOut As Single
 
+    'Get the number of connections
+    Server_UpdateConnections
+
     'Display statistics (Kilobytes)
     On Error Resume Next
-        kBpsIn = Round((DataKBIn + (DataIn * 0.0009765625)) / ((CurrentTime - ServerStartTime) * 0.001), 5)
-        kBpsOut = Round((DataKBOut + (DataOut * 0.0009765625)) / ((CurrentTime - ServerStartTime) * 0.001), 5)
+        kBpsIn = Round((DataKBIn + (DataIn * 0.0009765625)) / ((timeGetTime - ServerStartTime) * 0.001), 5)
+        kBpsOut = Round((DataKBOut + (DataOut * 0.0009765625)) / ((timeGetTime - ServerStartTime) * 0.001), 5)
     On Error GoTo 0
 
     'Display statistics (Bytes)
-    'kBpsIn = Round(((DataKBIn * 1024) + DataIn) / ((CurrentTime - ServerStartTime) / 1000), 5)
-    'kBpsOut = Round(((DataKBOut * 1024) + DataOut) / ((CurrentTime - ServerStartTime) / 1000), 5)
+    'kBpsIn = Round(((DataKBIn * 1024) + DataIn) / ((timeGetTime - ServerStartTime) / 1000), 5)
+    'kBpsOut = Round(((DataKBOut * 1024) + DataOut) / ((timeGetTime - ServerStartTime) / 1000), 5)
     
     'Build the string
     Server_BuildToolTipString = "Connections: " & CurrConnections & vbNewLine & _
@@ -1185,53 +1197,54 @@ Dim kBpsOut As Single
 
 End Function
 
-Public Function Server_BuildUserList() As String
+Public Sub Server_UpdateConnections()
 
 '*****************************************************************
-'Builds a string of the users
+'Find the number of users connected
 '*****************************************************************
 
 Dim LoopC As Long
 
-    Log "Call Server_RefreshUserListBox", CodeTracker '//\\LOGLINE//\\
+    Log "Call Server_UpdateConnections", CodeTracker '//\\LOGLINE//\\
+
+    'Clear the connections
+    CurrConnections = 0
 
     'No users
     If LastUser <= 0 Then
-        Log "Server_RefreshUserListBox: No users to update", CodeTracker '//\\LOGLINE//\\
-        Exit Function
+        Log "Server_UpdateConnections: No users to update", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
     End If
 
-    'Create the string
-    CurrConnections = 0
-    Log "Server_RefreshUserListBox: Updating " & LastUser & " users", CodeTracker '//\\LOGLINE//\\
+    'Loop through all the users
+    Log "Server_UpdateConnections: Updating " & LastUser & " users", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To LastUser
         If LenB(UserList(LoopC).Name) Then
-            If LenB(Server_BuildUserList) Then Server_BuildUserList = Server_BuildUserList & vbNewLine
-            Server_BuildUserList = Server_BuildUserList & UserList(LoopC).Name
-            CurrConnections = CurrConnections + 1
+            If UserList(LoopC).flags.UserLogged Then
+                CurrConnections = CurrConnections + 1
+            End If
         End If
     Next LoopC
 
-End Function
+End Sub
 
-Public Function CurrentTime() As Long
+Public Sub ValidateTime()
 
 '*****************************************************************
-'Call this instead of timeGetTime - its a little slower, but it will
-' turn off the server if there is a counter rollover (since a counter
-' roll-over will ruin every timer currently active)
+'This will validate that the timer hasn't rolled over
+'If the timer does roll over, everything time-based will go out of
+'wack, so we just turn off the server and let it reset
+'This only happens after the server computer is on for 596.5 hours
+'after turning on, then every 1193 hours after that
 '*****************************************************************
+
+    'Check if there was a roll-over (current time < last check)
+    If timeGetTime < LastTimeGetTime Then UnloadServer = 1
     
-    'Get the time
-    CurrentTime = timeGetTime
+    'Set the last check to now since we just checked it
+    LastTimeGetTime = timeGetTime
     
-    'Check if there was a roll-over
-    If CurrentTime < LastTimeGetTime Then UnloadServer = 1
-    
-    'Set the time check
-    LastTimeGetTime = CurrentTime
-    
-End Function
+End Sub
 
 Public Function Server_IPisBanned(ByVal IP As String, ByRef ReturnReason As String) As Boolean
 
@@ -1252,6 +1265,32 @@ Public Function Server_IPisBanned(ByVal IP As String, ByRef ReturnReason As Stri
     DB_RS.Close
 
 End Function
+
+Public Sub Server_ConnectToServer(ByVal ServerIndex As Byte)
+
+'*****************************************************************
+'Connects this server to another server (only used for multiple servers)
+'*****************************************************************
+
+    'Make sure it isn't THIS server
+    If ServerIndex = ServerID Then Exit Sub
+
+    Select Case frmMain.ServerSocket(ServerIndex).State
+    
+        'Make sure the socket state is valid (not Error, Disconnected or Closing)
+        Case sckConnected: Exit Sub
+        Case sckConnecting: Exit Sub
+        Case sckListening: Exit Sub
+
+    End Select
+    
+    'Make the connection
+    frmMain.ServerSocket(ServerIndex).Close
+    frmMain.ServerSocket(ServerIndex).LocalPort = 0
+    frmMain.ServerSocket(ServerIndex).Connect
+    DoEvents
+    
+End Sub
 
 Public Sub Server_Unload()
 
@@ -1309,7 +1348,7 @@ Dim s As String
         Erase CharList
         Erase NPCName
         Erase QuestData
-        Erase HelpLine
+        Erase HelpBuffer
         Erase DebugPacketsOut
         Erase DebugPacketsIn
         Erase MapUsers

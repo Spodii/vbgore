@@ -185,9 +185,9 @@ Sub ShowFrmTSOpt()
     frmTSOpt.Visible = True
     frmTSOpt.Show , frmMain
     frmTileSelect.Enabled = False
-    frmTSOpt.WidthTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W")
-    frmTSOpt.HeightTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H")
-    frmTSOpt.StartTxt.Text = Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S")
+    frmTSOpt.WidthTxt.Text = Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W")
+    frmTSOpt.HeightTxt.Text = Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H")
+    frmTSOpt.StartTxt.Text = Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S")
 End Sub
 
 Sub HideFrmTSOpt()
@@ -613,9 +613,9 @@ Dim X As Byte
     Close #InfNum
 
     'Get info
-    MapInfo.Name = Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Name")
-    MapInfo.Weather = Val(Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
-    MapInfo.Music = Val(Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
+    MapInfo.Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+    MapInfo.Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
+    MapInfo.Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
     
     'Display info
     With frmMapInfo
@@ -630,6 +630,9 @@ Dim X As Byte
     
     'Update effects
     UpdateEffectList
+    
+    'Build the mini-map
+    Engine_BuildMiniMap
 
 End Sub
 
@@ -746,6 +749,9 @@ Dim i As Integer
             
             'Signs
             If MapData(X, Y).Sign > 0 Then ByFlags = ByFlags Or 4194304
+            
+            'If there is a warp
+            If MapData(X, Y).TileExit.Map > 0 Then ByFlags = ByFlags Or 8388608
 
             '**********************
             'Store data
@@ -873,15 +879,15 @@ Dim i As Integer
     Close #FileNumInf
     
     'Update the NumMaps file
-    i = Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps")
+    i = Var_Get(DataPath & "Map.dat", "INIT", "NumMaps")
     If MapNum > i Then
-        Engine_Var_Write DataPath & "Map.dat", "INIT", "NumMaps", CStr(MapNum)
+        Var_Write DataPath & "Map.dat", "INIT", "NumMaps", CStr(MapNum)
     End If
 
     'Write .dat file
-    Engine_Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo.Name
-    Engine_Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo.Weather)
-    Engine_Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo.Music)
+    Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo.Name
+    Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo.Weather)
+    Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo.Music)
 
     'Map saved
     MsgBox "Map #" & MapNum & " (" & MapInfo.Name & ") successfully saved!", vbOKOnly
@@ -897,11 +903,8 @@ Dim FilePath As String
 Dim i As Integer
 
     'Init vars
-    DataPath = App.Path & "\Data\"
-    Data2Path = App.Path & "\Data2\"
-    MapPath = App.Path & "\Maps\"
-    MapEXPath = App.Path & "\MapsEX\"
-    
+    InitFilePaths
+
     'Load MySQL
     MySQL_Init
     

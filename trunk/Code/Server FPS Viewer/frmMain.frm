@@ -2,12 +2,12 @@ VERSION 5.00
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    AutoRedraw      =   -1  'True
-   BackColor       =   &H80000005&
-   Caption         =   "vbGORE Server FPS Viewer"
-   ClientHeight    =   5565
+   BackColor       =   &H00FFFFFF&
+   Caption         =   "vbGORE Server FPS / Population Viewer"
+   ClientHeight    =   3960
    ClientLeft      =   60
    ClientTop       =   450
-   ClientWidth     =   6030
+   ClientWidth     =   6495
    BeginProperty Font 
       Name            =   "MS Sans Serif"
       Size            =   8.25
@@ -18,10 +18,11 @@ Begin VB.Form frmMain
       Strikethrough   =   0   'False
    EndProperty
    ForeColor       =   &H00000000&
+   Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
-   ScaleHeight     =   371
+   ScaleHeight     =   264
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   402
+   ScaleWidth      =   433
    StartUpPosition =   2  'CenterScreen
    Begin VB.PictureBox Graph 
       Appearance      =   0  'Flat
@@ -166,7 +167,23 @@ Private Sub Form_Load()
 
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim c As Control
+    
+    For Each c In Me
+        If TypeName(c) = "cButton" Then
+            c.Refresh
+            c.DrawState = 0
+        End If
+    Next c
+    Set c = Nothing
+    
+End Sub
+
 Private Sub DrawData()
+
+On Error Resume Next
+
 Const Start As Long = 25
 Dim X1 As Long
 Dim Y1 As Long
@@ -178,7 +195,7 @@ Dim b As Byte
 
     'Calculate the width
     gWidth = Graph.ScaleWidth / (Val(EndTxt.Text) - Val(StartTxt.Text))
-
+    
     'Clear the old graph
     Graph.Cls
     
@@ -353,7 +370,7 @@ Private Sub Form_Resize()
     Graph.Width = Me.ScaleWidth
     Graph.Height = Me.ScaleHeight
     DrawData
-    
+
 End Sub
 
 Private Sub FPSChk_Click()
@@ -363,6 +380,15 @@ Private Sub FPSChk_Click()
 End Sub
 
 Private Sub Graph_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim c As Control
+    
+    For Each c In Me
+        If TypeName(c) = "cButton" Then
+            c.Refresh
+            c.DrawState = 0
+        End If
+    Next c
+    Set c = Nothing
     
     MouseX = X
     MouseY = Y

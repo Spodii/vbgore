@@ -9,9 +9,31 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.3            ************
+'************            Official Release: Version 0.4.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
+'*******************************************************************************
+'***** License Information For General Users: **********************************
+'*******************************************************************************
+'** vbGORE comes completely free. You may charge for people to play your game **
+'** along with you may accept donations for your game. The only rules you     **
+'** must follow when using vbGORE are:                                        **
+'**  - You may not claim the engine as your own creation.                     **
+'**  - You may not sell the code to vbGORE in any way or form, whether it is  **
+'**    the original vbGORE code or a modified version of it. Selling your game**
+'**    may be an exception - if you wish to do this, you must first acquire   **
+'**    permission from Spodi directly.                                        **
+'**  - If you are distributing vbGORE or modified code of it, read the        **
+'**    section "Source Distrubution Information" below.                       **
+'**  - If you are told by Spodi to take down an engine or game created with   **
+'**    vbGORE, you must do so. You do have the right to question the decision **
+'**    but if the result does not change, the product must be removed. You    **
+'**    shouldn't need to worry about this unless you do something "borderline"**
+'**    to infringement on this license.                                       **
+'** This license is subject to change at any time. Only the most current      **
+'** version of the license applies, not the copy of the license that came with**
+'** your copy of vbGORE. This means if rules are added for version 1.0, you   **
+'** can not avoid them by using a previous version such as 0.3.               **
 '*******************************************************************************
 '***** Source Distribution Information: ****************************************
 '*******************************************************************************
@@ -51,6 +73,8 @@ Attribute VB_Name = "Declares"
 '**        spread the word of vbGORE's existance! Buttons and banners for     **
 '**        linking to vbGORE can be found on the following page:              **
 '**        http://www.vbgore.com/index.php?title=Buttons_and_Banners          **
+'**  *Spread The Word - The more people who know about vbGORE, the more people**
+'**        there is to report bugs and suggestions to improve the engine!     **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -228,7 +252,7 @@ Public ClearPathToTarget As Byte
 Public SendNewChar As Boolean
 
 Public sndBuf As DataBuffer
-Public ChatBufferChunk As Integer
+Public ChatBufferChunk As Single
 Public PTD As Long
 Public SoxID As Long
 Public SocketOpen As Byte
@@ -270,6 +294,9 @@ Public Const MaxZoomLevel As Single = 0.4
 'Cursor flash rate
 Public Const CursorFlashRate As Long = 450
 
+'Emoticon delay
+Public EmoticonDelay As Long
+
 'Maximum variable sizes
 Public Const MAXLONG As Long = 2147483647
 Public Const MAXINT As Integer = 32767
@@ -280,3 +307,5 @@ Public Declare Function GetKeyState Lib "User32" (ByVal nVirtKey As Long) As Int
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
+

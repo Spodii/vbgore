@@ -1,22 +1,20 @@
 VERSION 5.00
 Begin VB.Form frmMain 
-   BackColor       =   &H00000000&
-   BorderStyle     =   0  'None
+   BackColor       =   &H80000005&
    Caption         =   "Update Server"
-   ClientHeight    =   4125
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientHeight    =   3765
+   ClientLeft      =   60
+   ClientTop       =   450
    ClientWidth     =   3855
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   Picture         =   "frmMain.frx":1708A
-   ScaleHeight     =   275
+   ScaleHeight     =   251
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   257
    StartUpPosition =   2  'CenterScreen
    Begin VB.Frame Frame3 
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Connection Information"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -27,11 +25,11 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   975
       Left            =   120
       TabIndex        =   8
-      Top             =   480
+      Top             =   120
       Width           =   3615
       Begin VB.Timer SecondTmr 
          Interval        =   1000
@@ -42,7 +40,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "None"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1680
          TabIndex        =   22
@@ -54,7 +52,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "Status :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   9
          Left            =   1035
@@ -67,7 +65,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "Connections :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   0
          Left            =   615
@@ -79,7 +77,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1680
          TabIndex        =   11
@@ -91,7 +89,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "Upload Rate (Kb/s) :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   1
          Left            =   0
@@ -103,7 +101,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1680
          TabIndex        =   9
@@ -112,7 +110,7 @@ Begin VB.Form frmMain
       End
    End
    Begin VB.Frame Frame2 
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Current Transfer"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -123,17 +121,17 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   1215
       Left            =   120
       TabIndex        =   3
-      Top             =   1560
+      Top             =   1200
       Width           =   3615
       Begin VB.Label ClientIDLbl 
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1080
          TabIndex        =   16
@@ -144,7 +142,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0.0.0.0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1080
          TabIndex        =   15
@@ -155,7 +153,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0%"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1080
          TabIndex        =   14
@@ -166,7 +164,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "None"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1080
          TabIndex        =   13
@@ -177,7 +175,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Client ID :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   8
          Left            =   0
@@ -189,7 +187,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Client IP :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   7
          Left            =   0
@@ -201,7 +199,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Percentage :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   6
          Left            =   0
@@ -213,7 +211,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "File Name :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   5
          Left            =   0
@@ -223,7 +221,7 @@ Begin VB.Form frmMain
       End
    End
    Begin VB.Frame Frame1 
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Totals"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -234,17 +232,17 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   1095
       Left            =   120
       TabIndex        =   0
-      Top             =   2880
+      Top             =   2520
       Width           =   3615
       Begin VB.Label MBoutTxt 
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1920
          TabIndex        =   20
@@ -255,7 +253,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Data Out (Mb) :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   2
          Left            =   0
@@ -267,7 +265,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1920
          TabIndex        =   18
@@ -278,7 +276,7 @@ Begin VB.Form frmMain
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
          Caption         =   "0"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   1920
          TabIndex        =   17
@@ -289,7 +287,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Connections Established :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   4
          Left            =   0
@@ -301,7 +299,7 @@ Begin VB.Form frmMain
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
          Caption         =   "Files Uploaded :"
-         ForeColor       =   &H00FFFFFF&
+         ForeColor       =   &H80000008&
          Height          =   195
          Index           =   3
          Left            =   0
@@ -339,26 +337,6 @@ Private Sub Form_DblClick()
 
     'Send to system tray
     Me.WindowState = vbMinimized
-
-End Sub
-
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
 
 End Sub
 

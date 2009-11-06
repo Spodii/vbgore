@@ -9,12 +9,12 @@ Begin VB.Form frmMain
    ClientTop       =   0
    ClientWidth     =   12000
    Icon            =   "frmMain.frx":0000
+   KeyPreview      =   -1  'True
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   696
-   ScaleMode       =   3  'Pixel
-   ScaleWidth      =   800
+   ScaleHeight     =   10440
+   ScaleWidth      =   12000
    Begin VB.PictureBox L2Pic 
       Appearance      =   0  'Flat
       BackColor       =   &H00404040&
@@ -52,7 +52,7 @@ Begin VB.Form frmMain
    End
    Begin VB.PictureBox ToolbarPic 
       Appearance      =   0  'Flat
-      BackColor       =   &H00202020&
+      BackColor       =   &H00E0E0E0&
       BorderStyle     =   0  'None
       ForeColor       =   &H80000008&
       Height          =   1440
@@ -604,8 +604,8 @@ Private Sub ExitPic_Click()
     IsUnloading = 1
     
     'Save positions
-    Engine_Var_Write Data2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
-    Engine_Var_Write Data2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
+    Var_Write Data2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
+    Var_Write Data2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
 
 End Sub
 
@@ -619,32 +619,32 @@ End Sub
 
 Private Sub Form_Load()
 
-    GrhMapPath = App.Path & "\GrhMapEditor\"
+    GrhMapPath = App.Path & "\FormSkins\" & Skin_GetCurrent & "\mapeditor\"
 
     'Load preferences
-    frmMain.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAIN", "X"))
-    frmMain.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAIN", "Y"))
-    frmTile.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TILE", "X"))
-    frmTile.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TILE", "Y"))
-    frmSetTile.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "X"))
-    frmSetTile.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "Y"))
-    frmNPCs.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "NPCS", "X"))
-    frmNPCs.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "NPCS", "Y"))
-    frmMapInfo.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "X"))
-    frmMapInfo.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "Y"))
-    frmParticles.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "PART", "X"))
-    frmParticles.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "PART", "Y"))
-    frmFloods.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "X"))
-    frmFloods.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "Y"))
-    frmExit.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "X"))
-    frmExit.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "Y"))
-    frmBlock.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "X"))
-    frmBlock.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "Y"))
-    frmSfx.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SFX", "X"))
-    frmSfx.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "SFX", "Y"))
-    tsTileWidth = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W"))
-    tsTileHeight = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H"))
-    tsStart = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S"))
+    frmMain.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "MAIN", "X"))
+    frmMain.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "MAIN", "Y"))
+    frmTile.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "TILE", "X"))
+    frmTile.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "TILE", "Y"))
+    frmSetTile.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "X"))
+    frmSetTile.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "SETTILE", "Y"))
+    frmNPCs.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "NPCS", "X"))
+    frmNPCs.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "NPCS", "Y"))
+    frmMapInfo.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "X"))
+    frmMapInfo.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "MAPINFO", "Y"))
+    frmParticles.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "PART", "X"))
+    frmParticles.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "PART", "Y"))
+    frmFloods.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "X"))
+    frmFloods.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "Y"))
+    frmExit.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "EXIT", "X"))
+    frmExit.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "EXIT", "Y"))
+    frmBlock.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "X"))
+    frmBlock.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "Y"))
+    frmSfx.Left = Val(Var_Get(Data2Path & "MapEditor.ini", "SFX", "X"))
+    frmSfx.Top = Val(Var_Get(Data2Path & "MapEditor.ini", "SFX", "Y"))
+    tsTileWidth = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W"))
+    tsTileHeight = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H"))
+    tsStart = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S"))
     
     'Set the toolbar
     ToolbarPic.Picture = LoadPicture(GrhMapPath & "toolbar.bmp")

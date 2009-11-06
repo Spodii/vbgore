@@ -1,17 +1,28 @@
 VERSION 5.00
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
+   BorderStyle     =   0  'None
    Caption         =   "Particle Editor"
    ClientHeight    =   7650
-   ClientLeft      =   60
-   ClientTop       =   450
+   ClientLeft      =   0
+   ClientTop       =   0
    ClientWidth     =   7500
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   510
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   500
+   ShowInTaskbar   =   0   'False
    StartUpPosition =   1  'CenterOwner
+   Begin vbGOREPE.cForm cForm 
+      Height          =   375
+      Left            =   4920
+      TabIndex        =   1
+      Top             =   600
+      Width           =   375
+      _ExtentX        =   661
+      _ExtentY        =   661
+   End
    Begin VB.CheckBox LoopChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -41,8 +52,14 @@ Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 
 Private Sub Form_Load()
 
-'Init particle engine
-
+    cForm.LoadSkin Me
+    Skin_Set Me
+    Me.Refresh
+    
+    'Force the text white since the background is always black
+    LoopChk.ForeColor = &HFFFFFF
+    
+    'Init particle engine
     Me.Show
     Engine_Init_TileEngine Me.hWnd, 32, 32, 1, 1, 1, 0.011
 

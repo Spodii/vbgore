@@ -371,6 +371,18 @@ Public Type POINTAPI
     Y As Long
 End Type
 
+'Mini-map tiles
+Public NumMiniMapTiles As Integer   'UBound of the MiniMapTile array
+Public Type MiniMapTile
+    X As Byte
+    Y As Byte
+    Color As Long
+    Caption As String
+End Type
+Public MiniMapTile() As MiniMapTile 'Color of each tile and their position
+Public ShowMiniMap As Byte
+Public LastTabPress As Long
+
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
@@ -847,17 +859,17 @@ Dim LoopC As Long
 Dim j As Long
 'Get number of bodies
 
-    NumBodies = CInt(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
+    NumBodies = CInt(Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
     'Resize array
     ReDim BodyData(0 To NumBodies) As BodyData
     'Fill list
     For LoopC = 1 To NumBodies
         For j = 1 To 8
-            Engine_Init_Grh BodyData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str$(LoopC), Str$(j))), 0
-            Engine_Init_Grh BodyData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str$(LoopC), "a" & j)), 1
+            Engine_Init_Grh BodyData(LoopC).Walk(j), CInt(Var_Get(DataPath & "Body.dat", Str$(LoopC), Str$(j))), 0
+            Engine_Init_Grh BodyData(LoopC).Attack(j), CInt(Var_Get(DataPath & "Body.dat", Str$(LoopC), "a" & j)), 1
         Next j
-        BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetY"))
+        BodyData(LoopC).HeadOffset.X = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetY"))
     Next LoopC
 
 End Sub
@@ -871,7 +883,7 @@ Dim LoopC As Long
 Dim j As Long
 
     'Get number of wings
-    NumWings = CInt(Engine_Var_Get(DataPath & "Wing.dat", "INIT", "NumWings"))
+    NumWings = CInt(Var_Get(DataPath & "Wing.dat", "INIT", "NumWings"))
     
     'Resize array
     ReDim WingData(0 To NumWings) As WingData
@@ -879,8 +891,8 @@ Dim j As Long
     'Fill list
     For LoopC = 1 To NumWings
         For j = 1 To 8
-            Engine_Init_Grh WingData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
-            Engine_Init_Grh WingData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
+            Engine_Init_Grh WingData(LoopC).Walk(j), CInt(Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh WingData(LoopC).Attack(j), CInt(Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
         Next j
     Next LoopC
 
@@ -969,7 +981,7 @@ Dim j As String
 
     'Get Number of Graphics
     GrhPath = App.Path & "\Grh\"
-    NumGrhs = CLng(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhs"))
+    NumGrhs = CLng(Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhs"))
     
     'Resize arrays
     ReDim GrhData(1 To NumGrhs) As GrhData
@@ -1088,13 +1100,13 @@ Dim LoopC As Long
 Dim i As Integer
 'Get Number of hairs
 
-    NumHairs = CInt(Engine_Var_Get(DataPath & "Hair.dat", "INIT", "NumHairs"))
+    NumHairs = CInt(Var_Get(DataPath & "Hair.dat", "INIT", "NumHairs"))
     'Resize array
     ReDim HairData(0 To NumHairs) As HairData
     'Fill List
     For LoopC = 1 To NumHairs
         For i = 1 To 8
-            Engine_Init_Grh HairData(LoopC).Hair(i), CInt(Engine_Var_Get(DataPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
+            Engine_Init_Grh HairData(LoopC).Hair(i), CInt(Var_Get(DataPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
         Next i
     Next LoopC
 
@@ -1110,16 +1122,16 @@ Dim LoopC As Long
 Dim i As Integer
 'Get Number of heads
 
-    NumHeads = CInt(Engine_Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
+    NumHeads = CInt(Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
     'Resize array
     ReDim HeadData(0 To NumHeads) As HeadData
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
-            Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
+            Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
         Next i
     Next LoopC
 
@@ -1132,7 +1144,7 @@ Sub Engine_Init_MapData()
 '*****************************************************************
 'Get Number of Maps
 
-    NumMaps = CInt(Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
+    NumMaps = CInt(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
 
 End Sub
 
@@ -1146,7 +1158,7 @@ Sub Engine_Init_ParticleEngine()
 Dim i As Byte
 
     'Set the particles texture
-    NumEffects = Engine_Var_Get(DataPath & "Game.ini", "INIT", "NumEffects")
+    NumEffects = Var_Get(DataPath & "Game.ini", "INIT", "NumEffects")
     ReDim Effect(1 To NumEffects)
     
     'Update effects list
@@ -1231,7 +1243,7 @@ Dim s As String
         s = s & Chr$(i)
     Next i
     lngTextHeight = Engine_GetTextSize(s).Y
-    SfxPath = Engine_Var_Get(DataPath & "Game.ini", "INIT", "SoundPath")
+    SfxPath = Var_Get(DataPath & "Game.ini", "INIT", "SoundPath")
 
     'Fill startup variables
     DisplayFormhWnd = setDisplayFormhWnd
@@ -1260,7 +1272,7 @@ Dim s As String
     ScrollPixelsPerFrameY = 36
 
     'Set the array sizes by the number of graphic files
-    NumGrhFiles = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
+    NumGrhFiles = CInt(Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
     ReDim SurfaceDB(1 To NumGrhFiles)
     ReDim SurfaceSize(1 To NumGrhFiles)
     ReDim SurfaceTimer(1 To NumGrhFiles)
@@ -1354,27 +1366,27 @@ Sub Engine_Init_WeaponData()
 Dim LoopC As Long
 'Get number of weapons
 
-    NumWeapons = CInt(Engine_Var_Get(DataPath & "Weapon.dat", "INIT", "NumWeapons"))
+    NumWeapons = CInt(Var_Get(DataPath & "Weapon.dat", "INIT", "NumWeapons"))
     'Resize array
     ReDim WeaponData(0 To NumWeapons) As WeaponData
     'Fill listn
     For LoopC = 1 To NumWeapons
-        Engine_Init_Grh WeaponData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
-        Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
+        Engine_Init_Grh WeaponData(LoopC).Walk(1), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(2), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(3), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(4), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(5), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
+        Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(4), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(5), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(6), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(7), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(8), CInt(Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
     Next LoopC
 
 End Sub
@@ -1500,6 +1512,14 @@ End Function
 
 Sub Engine_Input_CheckKeys()
 
+    'Mini-map
+    If LastTabPress < timeGetTime Then
+        If GetAsyncKeyState(vbKeyTab) Then
+            If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0
+            LastTabPress = timeGetTime + 300
+        End If
+    End If
+    
     'Don't allow any these keys during movement..
     If UserMoving = 0 Then
     
@@ -2394,6 +2414,184 @@ Dim CosRad As Single
 
 End Sub
 
+Public Sub Engine_BuildMiniMap()
+
+'***************************************************
+'Builds the array for the minimap. Theres multiple styles available, but only one
+'is used in the demo, so experiment with them and check which one you like!
+'***************************************************
+Const UseOption As Byte = 2 'Change to the type of map you want
+Dim MMC_Blocked As Long
+Dim MMC_Exit As Long
+Dim MMC_Sign As Long
+Dim X As Byte
+Dim Y As Byte
+Dim j As Byte
+
+    'Create the colors (character colors are defined in Engine_RenderScreen when it is rendered)
+    MMC_Blocked = D3DColorARGB(75, 255, 255, 255)   'Blocked tiles
+    MMC_Exit = D3DColorARGB(150, 255, 0, 0)         'Exit tiles (warps)
+    MMC_Sign = D3DColorARGB(125, 255, 255, 0)       'Tiles with a sign
+    
+    'Clear the old array by resizing to the largest array we can possibly use
+    ReDim MiniMapTile(1 To CInt(XMaxMapSize) * CInt(YMaxMapSize)) As MiniMapTile
+    NumMiniMapTiles = 0
+    
+    Select Case UseOption
+        
+        '***** Option 1 *****
+        Case 1
+
+            For Y = YMinMapSize To YMaxMapSize
+                For X = XMinMapSize To XMaxMapSize
+                    
+                    'Check for signs
+                    If MapData(X, Y).Sign > 1 Then
+                        NumMiniMapTiles = NumMiniMapTiles + 1
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
+                        MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
+                    Else
+                    
+                        'Check for exits
+                        If MapData(X, Y).TileExit.Map > 0 Then
+                            NumMiniMapTiles = NumMiniMapTiles + 1
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
+                            MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
+                        Else
+                            
+                            'Check for blocked tiles
+                            If MapData(X, Y).Blocked = 0 Then
+                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                MiniMapTile(NumMiniMapTiles).X = X
+                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                            End If
+                        End If
+                    End If
+                    
+                Next X
+            Next Y
+                
+        '***** Option 2 *****
+        Case 2
+
+            For Y = YMinMapSize To YMaxMapSize
+                j = 0   'Clear the row settings
+                For X = XMinMapSize To XMaxMapSize
+                    
+                    'Check if there is a sign
+                    If MapData(X, Y).Sign > 1 Then
+                        NumMiniMapTiles = NumMiniMapTiles + 1
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
+                        MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
+                    Else
+                    
+                        'Check if there is an exit
+                        If MapData(X, Y).TileExit.Map > 0 Then
+                            NumMiniMapTiles = NumMiniMapTiles + 1
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
+                            MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
+                        Else
+                            
+                            'Only check blocked tiles
+                            If MapData(X, Y).Blocked > 0 Then
+        
+                                'If the row is set to draw, just keep drawing
+                                If j = 1 Then
+                                    NumMiniMapTiles = NumMiniMapTiles + 1
+                                    MiniMapTile(NumMiniMapTiles).X = X
+                                    MiniMapTile(NumMiniMapTiles).Y = Y
+                                    MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                    
+                                'The row isn't drawing, check if it is time to draw it
+                                Else
+        
+                                    'If the next tile is not blocked, this one will be (to draw an outline)
+                                    If j = 0 Then
+                                        If X + 1 <= XMaxMapSize Then
+                                            If MapData(X + 1, Y).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                    'If the tile above or below is blocked, draw the tile
+                                    If j = 0 Then
+                                        If Y > YMinMapSize Then
+                                            If MapData(X, Y - 1).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    If j = 0 Then
+                                        If Y < YMaxMapSize Then
+                                            If MapData(X, Y + 1).Blocked = 0 Then
+                                                NumMiniMapTiles = NumMiniMapTiles + 1
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
+                                                MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                j = 1
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                    'If we STILL haven't drawn the tile, check to the diagonals (this makes corners smoothed)
+                                    If j = 0 Then
+                                        If Y > YMinMapSize Then
+                                            If Y < YMaxMapSize Then
+                                                If X > XMinMapSize Then
+                                                    If X < XMaxMapSize Then
+                                                        If MapData(X - 1, Y - 1).Blocked = 0 Or MapData(X - 1, Y + 1).Blocked = 0 Or MapData(X + 1, Y - 1).Blocked = 0 Or MapData(X + 1, Y + 1).Blocked = 0 Then
+                                                            NumMiniMapTiles = NumMiniMapTiles + 1
+                                                            MiniMapTile(NumMiniMapTiles).X = X
+                                                            MiniMapTile(NumMiniMapTiles).Y = Y
+                                                            MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
+                                                            j = 1
+                                                        End If
+                                                    End If
+                                                End If
+                                            End If
+                                        End If
+                                    End If
+                                    
+                                End If
+                                
+                                'If the next tile isn't blocked, we remove the row drawing
+                                If j = 1 Then
+                                    If X < XMaxMapSize Then
+                                        If MapData(X + 1, Y).Blocked > 0 Then j = 0
+                                    End If
+                                End If
+                                
+                            End If
+                        End If
+                    End If
+                Next X
+            Next Y
+
+    End Select
+    
+    'Resize the array to fit the amount of data we have
+    If NumMiniMapTiles = 0 Then
+        Erase MiniMapTile
+    Else
+        ReDim Preserve MiniMapTile(1 To NumMiniMapTiles)
+    End If
+
+End Sub
+
 Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal PixelOffsetX As Integer, ByVal PixelOffsetY As Integer)
 
 '***********************************************
@@ -2878,6 +3076,28 @@ Dim j As Long
     'Clear the shift-related variables
     LastOffsetX = ParticleOffsetX
     LastOffsetY = ParticleOffsetY
+    
+    '************** Mini-map **************
+    Const tS As Single = 5  'Size of the mini-map dots
+    
+    If ShowMiniMap Then
+    
+        'Draw the map outline
+        For X = 1 To NumMiniMapTiles
+            Engine_Render_Rectangle MiniMapTile(X).X * tS, MiniMapTile(X).Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, MiniMapTile(X).Color, MiniMapTile(X).Color, MiniMapTile(X).Color, MiniMapTile(X).Color
+        Next X
+        
+        'Draw the characters
+        j = D3DColorARGB(200, 0, 255, 255)
+        For X = 1 To LastChar
+            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+        Next X
+        
+        'Draw the position indicator
+        j = D3DColorARGB(200, 0, 255, 0)
+        Engine_Render_Rectangle UserPos.X * tS, UserPos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+        
+    End If
 
     'End the device rendering
     D3DDevice.EndScene
@@ -3053,7 +3273,7 @@ Dim frm As Form
 
 End Sub
 
-Function Engine_Var_Get(file As String, Main As String, Var As String) As String
+Function Var_Get(file As String, Main As String, Var As String) As String
 
 '*****************************************************************
 'Gets a Var from a text file
@@ -3066,12 +3286,12 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
     sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
     getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), file
-    Engine_Var_Get = RTrim$(sSpaces)
-    Engine_Var_Get = Left$(Engine_Var_Get, Len(Engine_Var_Get) - 1)
+    Var_Get = RTrim$(sSpaces)
+    Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
 
 End Function
 
-Sub Engine_Var_Write(file As String, Main As String, Var As String, Value As String)
+Sub Var_Write(file As String, Main As String, Var As String, Value As String)
 
 '*****************************************************************
 'Writes a var to a text file

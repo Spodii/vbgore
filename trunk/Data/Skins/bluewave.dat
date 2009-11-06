@@ -15,11 +15,11 @@ ScreenX= 375
 ScreenY= 275
 
 [WRITEMESSAGE]
-ScreenX= 2
+ScreenX= 0
 ScreenY= 0
 
 [VIEWMESSAGE]
-ScreenX= 0
+ScreenX= 2
 ScreenY= 0
 
 [MAILBOX]

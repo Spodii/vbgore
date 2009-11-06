@@ -3,19 +3,42 @@ Begin VB.Form frmReport
    BackColor       =   &H00808080&
    BorderStyle     =   0  'None
    Caption         =   "Optimization Report"
-   ClientHeight    =   4035
+   ClientHeight    =   3600
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   4935
+   ClientWidth     =   5010
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   Picture         =   "frmReport.frx":0000
-   ScaleHeight     =   269
+   ScaleHeight     =   240
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   329
+   ScaleWidth      =   334
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin MapEditor.cButton FixBtn 
+      Height          =   375
+      Left            =   120
+      TabIndex        =   2
+      ToolTipText     =   "Fixes the selected entry only"
+      Top             =   3120
+      Width           =   1215
+      _ExtentX        =   2143
+      _ExtentY        =   661
+      Caption         =   "Fix Selected"
+   End
+   Begin MapEditor.cForm cForm 
+      Height          =   255
+      Left            =   0
+      TabIndex        =   1
+      Top             =   0
+      Width           =   375
+      _ExtentX        =   661
+      _ExtentY        =   450
+      MaximizeBtn     =   0   'False
+      MinimizeBtn     =   0   'False
+      CaptionTop      =   0
+      AllowResizing   =   0   'False
+   End
    Begin VB.ListBox OptList 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -30,96 +53,45 @@ Begin VB.Form frmReport
       EndProperty
       ForeColor       =   &H00FFFFFF&
       Height          =   2970
-      ItemData        =   "frmReport.frx":40E6E
+      ItemData        =   "frmReport.frx":0000
       Left            =   120
-      List            =   "frmReport.frx":40E70
+      List            =   "frmReport.frx":0002
       TabIndex        =   0
-      Top             =   720
-      Width           =   4695
+      Top             =   120
+      Width           =   4815
    End
-   Begin VB.Label SimLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Fix Similar"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   1800
-      TabIndex        =   4
-      ToolTipText     =   "Fix all problems similar to the selected effect"
-      Top             =   3720
-      Width           =   870
-   End
-   Begin VB.Label AllLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Fix All"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   3120
+   Begin MapEditor.cButton SimBtn 
+      Height          =   375
+      Left            =   1320
       TabIndex        =   3
+      ToolTipText     =   "Fixes all problems similar to the selected entry"
+      Top             =   3120
+      Width           =   1215
+      _ExtentX        =   2143
+      _ExtentY        =   661
+      Caption         =   "Fix Similar"
+   End
+   Begin MapEditor.cButton AllBtn 
+      Height          =   375
+      Left            =   2520
+      TabIndex        =   4
       ToolTipText     =   "Fix all the problems in the list"
-      Top             =   3720
-      Width           =   525
+      Top             =   3120
+      Width           =   1215
+      _ExtentX        =   2143
+      _ExtentY        =   661
+      Caption         =   "Fix All"
    End
-   Begin VB.Label DeleteLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
+   Begin MapEditor.cButton DeleteBtn 
+      Height          =   375
+      Left            =   3720
+      TabIndex        =   5
+      ToolTipText     =   "Delete the selected problem from the list - this will NOT fix or remove the problem, just hide it from the list"
+      Top             =   3120
+      Width           =   1215
+      _ExtentX        =   2143
+      _ExtentY        =   661
       Caption         =   "Delete"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   4080
-      TabIndex        =   2
-      ToolTipText     =   "Delete the problem from the list - this will NOT fix or remove the problem, just hide it from the list"
-      Top             =   3720
-      Width           =   570
-   End
-   Begin VB.Label FixLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Fix Selected"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   240
-      TabIndex        =   1
-      ToolTipText     =   "Fix only the selected problem"
-      Top             =   3720
-      Width           =   1065
    End
 End
 Attribute VB_Name = "frmReport"
@@ -152,7 +124,7 @@ Dim i As Long
     
 End Sub
 
-Private Sub AllLbl_Click()
+Private Sub AllBtn_Click()
 Dim i As Long
 
     'Click this button and all your problems shall vanish!
@@ -163,7 +135,15 @@ Dim i As Long
 
 End Sub
 
-Private Sub FixLbl_Click()
+Private Sub DeleteBtn_Click()
+    
+    MapOpt(OptList.ListIndex + 1).Type = None
+    
+    UpdateReport
+    
+End Sub
+
+Private Sub FixBtn_Click()
 
     'Fix the selected problem
     FixProblem OptList.ListIndex + 1
@@ -175,29 +155,14 @@ End Sub
 
 Private Sub Form_Load()
 
+    cForm.LoadSkin Me
+    Skin_Set Me
+    
     'Show report
     UpdateReport
-
+    
 End Sub
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
-
-End Sub
 Private Sub FixProblem(ByVal Index As Long)
 Dim RetVal As VbMsgBoxResult
 Dim i As Long
@@ -264,7 +229,7 @@ ErrOut:
     
 End Sub
 
-Private Sub SimLbl_Click()
+Private Sub SimBtn_Click()
 Dim ProblemType As MapOptType
 Dim i As Long
     
