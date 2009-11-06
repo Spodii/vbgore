@@ -10,7 +10,6 @@ Begin VB.MDIForm frmMain
    ClientWidth     =   15690
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
-   LockControls    =   -1  'True
    ScrollBars      =   0   'False
    WindowState     =   2  'Maximized
    Begin VB.Timer HotKeyTimer 
@@ -63,6 +62,14 @@ Begin VB.MDIForm frmMain
       TabIndex        =   6
       Top             =   7785
       Width           =   15690
+      Begin VB.CommandButton ShifterCmd 
+         Caption         =   "Shifter Tool"
+         Height          =   315
+         Left            =   9000
+         TabIndex        =   12
+         Top             =   30
+         Width           =   1095
+      End
       Begin VB.CommandButton ARGBLongCmd 
          Caption         =   "ARGB <-> Long Tool"
          Height          =   315
@@ -373,6 +380,7 @@ Dim F As Form
     Load frmTile
     Load frmTSOpt
     Load frmSearchList
+    Load frmShifter
     
     With Toolbar
         .Initialize 16, True, False, True
@@ -917,6 +925,12 @@ End Sub
 Private Sub SheetCmd_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "View the tile selection sheet."
+
+End Sub
+
+Private Sub ShifterCmd_Click()
+
+    ShowFrmShifter
 
 End Sub
 

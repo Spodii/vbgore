@@ -72,6 +72,12 @@ Dim Lines As Long
         If LCase$(Right$(FileList(FileNum), 4)) = ".png" Then
             TempSplit = Split(FileList(FileNum), "\")
             If IsNumeric(Left$(TempSplit(UBound(TempSplit)), Len(TempSplit(UBound(TempSplit))) - 4)) Then
+                If Val(Left$(TempSplit(UBound(TempSplit)), Len(TempSplit(UBound(TempSplit))) - 4)) > 32767 Then
+                    MsgBox "The following texture file was found with a number higher than 32767:" & vbNewLine & _
+                        FileList(FileNum) & vbNewLine & vbNewLine & "You may not use file numbers higher than 32767." & vbNewLine & _
+                        "This is for performance reasons, and highly recommended not to try and add support for!", vbOKOnly
+                        End
+                End If
                 ImageSize.ReadImageInfo FileList(FileNum)
                 If IsPowerof2(ImageSize.Width) = False Or IsPowerof2(ImageSize.Height) = False Then
                     TempLine = TempLine & TempSplit(UBound(TempSplit))
@@ -232,10 +238,14 @@ Dim Lines As Long
     
 Exit Sub
 ErrorHandler:
+Dim Loc1 As Long
+Dim Loc2 As Long
 
+    Loc1 = Loc(1)
+    Loc2 = Loc(2)
     Close #2
     Close #1
-    MsgBox "Error on Grh" & Grh & "!", vbOKOnly Or vbCritical
+    MsgBox "Error on Grh" & Grh & "!" & vbNewLine & vbNewLine & "Last GrhRaw.txt line: " & Loc2 & vbNewLine & "Last Grh.Dat line: " & Loc1, vbOKOnly Or vbCritical
 
 End Sub
 

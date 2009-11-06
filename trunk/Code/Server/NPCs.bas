@@ -1079,6 +1079,7 @@ Public Sub NPC_Close(ByVal NPCIndex As Integer, Optional ByVal CleanArray As Byt
     Log "Call NPC_Close(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Close down the NPC
+    NPCList(NPCIndex).Flags.NPCActive = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).CharType = 0
 

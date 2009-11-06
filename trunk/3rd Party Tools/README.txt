@@ -63,6 +63,16 @@ version 0.0.2 of vbGORE. It should still get the job done, though.
 The guide for Grh3RawMaker can be found on the vbGORE site at:
 http://www.vbgore.com/index.php?title=Using_GrhRawMaker
 
+=================
+== Map Capture ==
+=================
+Created by:
+Spodi
+
+Description:
+The Map Capture tool will create a bitmap copy of all of the tiles on a map, allowing you
+to make a quick and easy preview graphic of the map.
+
 =============
 == OptiPNG ==
 =============
@@ -105,3 +115,19 @@ EXE files into a smaller size without corrupting them or losing any data. The co
 but nothing you should notice or worry about. The UPX wrapper runs with the parameter --brute which forces the
 best compression ratio possible. This project is mostly just a copy-and-paste of the OptiPNG project, but with
 minor changes to support using UPX on EXE files instead of OptiPNG on PNG files.
+
+==============
+== vbGoreSP ==
+==============
+Created by:
+DarkGrave
+
+Website:
+http://www.vbgore.com/VbGore_SP
+
+Description:
+vbGoreSP is a series of PHP-powered web pages that allows for a great template of displaying your database
+information online. It includes plenty of features from who is online, user information, a list of users and
+a ton more all wrapped up in a pretty GUI. vbGoreSP connects directly to your vbGORE database, so there are
+no modifications required to use it. You can also log in to view your personal profile, or create a new account
+directly from vbGoreSP. Recommended tool for anyone using vbGORE that has a web page for their game!

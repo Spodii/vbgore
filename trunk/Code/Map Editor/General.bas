@@ -87,6 +87,17 @@ Sub HideFrmARGB()
     frmARGB.Hide
 End Sub
 
+Sub ShowFrmShifter()
+    frmShifter.Visible = True
+    frmShifter.Show
+    frmShifter.SetFocus
+End Sub
+
+Sub HideFrmShifter()
+    frmShifter.Visible = False
+    frmShifter.Hide
+End Sub
+
 Sub DrawPreview()
 Dim i As Byte
 Dim TempRect As RECT
@@ -234,7 +245,7 @@ Dim AC As Byte
                             AC = 1
                         End If
                     Else
-                        If GetAsyncKeyState(vbKeyShift) <> 0 And IsFlooding = False Then
+                        If GetAsyncKeyState(vbKeyShift) <> 0 And GetAsyncKeyState(vbKeyControl) <> 0 And IsFlooding = False Then
                             For i = 1 To 6
                                 If .Graphic(i).GrhIndex <> 0 Then
                                     .Graphic(i).GrhIndex = 0
@@ -291,7 +302,7 @@ Dim AC As Byte
     
     'Check to erase a tile
     If Not IsFlooding Then
-        If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
+        If (GetAsyncKeyState(vbKeyControl) <> 0) Then
             If frmSetTile.Visible Then
                 If Button = vbRightButton Then
                     If frmSetTile.LayerChk.Value = 1 Then
@@ -913,6 +924,11 @@ SkipCheck:
         If Engine_FileExist(MapPath & MapNum & ".map", vbNormal) Then Kill MapPath & MapNum & ".map"
         If Engine_FileExist(MapEXPath & MapNum & ".inf", vbNormal) Then Kill MapEXPath & MapNum & ".inf"
     End If
+    
+    'Raise the map version
+    If MapInfo.MapVersion > 32760 Then MapInfo.MapVersion = 0
+    MapInfo.MapVersion = MapInfo.MapVersion + 1
+    frmMapInfo.VersionTxt.Text = MapInfo.MapVersion
     
     'Make sure effects list is updated
     UpdateEffectList

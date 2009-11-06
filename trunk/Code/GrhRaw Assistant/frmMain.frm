@@ -460,7 +460,7 @@ Dim p As String
     For i = 0 To UBound(s) - 2
         p = p & s(i) & "\"
     Next i
-    TexturePathTxt.Text = GrhPath
+    TexturePathTxt.Text = GrhPath & "27.png"
     TexturePathTxt.SelStart = Len(TexturePathTxt.Text)
 
 End Sub
@@ -587,14 +587,14 @@ End Sub
 Private Sub GridHeightTxt_Change()
 
     'Update the maximum number of rows and columns
-    UpdateMaxRowsColumns
+    If Val(GridHeightTxt.Text) > 1 Then UpdateMaxRowsColumns
     
 End Sub
 
 Private Sub GridWidthTxt_Change()
 
     'Update the maximum number of rows and columns
-    UpdateMaxRowsColumns
+    If Val(GridWidthTxt.Text) > 1 Then UpdateMaxRowsColumns
 
 End Sub
 

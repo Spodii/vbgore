@@ -1,8 +1,6 @@
 Attribute VB_Name = "Declares"
 Option Explicit
 
-Public Const NumStats As Byte = 18
-
 Public Const DegreeToRadian As Single = 0.0174532925
 
 Public GrhCatFlags() As Long

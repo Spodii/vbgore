@@ -90,7 +90,7 @@ Const Add As Single = (255 - (255 * Alpha))
                         
                         'Draw the vertical lines
                         If x > 0 Then
-                            For i = 0 To Val(frmMain.GridHeightTxt.Text) - 1
+                            For i = 0 To Val(frmMain.GridWidthTxt.Text) - 1
                             
                                 'Get the image's pixel color in RGB format, modify it to get the alpha and set it
                                 l = GetPixel(frmMain.PreviewPic.hdc, x, y + i)
@@ -102,7 +102,7 @@ Const Add As Single = (255 - (255 * Alpha))
                         
                         'Draw the horizontal lines
                         If y > 0 Then
-                            For i = 0 To Val(frmMain.GridWidthTxt.Text) - 1
+                            For i = 0 To Val(frmMain.GridHeightTxt.Text) - 1
 
                                 'Get the image's pixel color in RGB format, modify it to get the alpha and set it
                                 l = GetPixel(frmMain.PreviewPic.hdc, x + i, y)
@@ -247,6 +247,10 @@ Dim GrhLine As Long
 
     'Clear the grh list
     frmMain.GrhLst.Clear
+    
+    'Hide the grh list (speeds updating up)
+    frmMain.GrhLst.Enabled = False
+    frmMain.GrhLst.Visible = False
 
     'Loop through the grid (by pixels)
     For y = Val(frmMain.StartXTxt.Text) To TexWidth Step GridWidth
@@ -280,6 +284,10 @@ Dim GrhLine As Long
         
         Next x
     Next y
+    
+    'Show the grh list
+    frmMain.GrhLst.Enabled = True
+    frmMain.GrhLst.Visible = True
     
 End Sub
 

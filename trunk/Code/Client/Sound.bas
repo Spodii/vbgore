@@ -131,16 +131,27 @@ Dim L As Long
 
 End Sub
 
-Public Sub Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
+Public Sub Sound_Play(ByVal SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
 '************************************************************
 'Used for non area-specific sound effects, such as weather
 '************************************************************
 
+    'Make sure we are using sound
     If UseSfx = 0 Then Exit Sub
 
-    'Play the sound
-    If Not SoundBuffer Is Nothing Then SoundBuffer.Play flags
+    'Confirm the buffer exists
+    If Not SoundBuffer Is Nothing Then
     
+        'Reset the sounds values (in case they were ever changed)
+        SoundBuffer.SetCurrentPosition 0
+        Sound_Pan SoundBuffer, 0
+        Sound_Volume SoundBuffer, 0
+        
+        'Play the sound
+        SoundBuffer.Play flags
+        
+    End If
+   
 End Sub
 
 Public Sub Sound_Erase(ByRef SoundBuffer As DirectSoundSecondaryBuffer8)

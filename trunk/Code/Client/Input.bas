@@ -37,6 +37,8 @@ Private Type KeyDefinitions
 End Type
 Private KeyDefinitions As KeyDefinitions
 
+Private IgnoreNextChatKey As Boolean    'Used to ignore the next keystroke going into the chat buffer (for pressing the quick-reply button)
+
 Private Function Input_Keys_IsPressed(ByVal DefinitionValue As Integer, ByVal KeyCode As Integer) As Boolean
 
 '*****************************************************************
@@ -300,28 +302,39 @@ Dim b As Boolean
     '*****************************
     Else
         If EnterText Then
-            'Backspace
-            If KeyAscii = 8 Then
-                If Len(EnterTextBuffer) > 0 Then EnterTextBuffer = Left$(EnterTextBuffer, Len(EnterTextBuffer) - 1)
-                b = True
-            End If
-            'Add to text buffer
-            If Game_ValidCharacter(KeyAscii) Then
-                If Len(EnterTextBuffer) < 85 Then
-                    If Game_ValidCharacter(KeyAscii) Then
-                        EnterTextBuffer = EnterTextBuffer & Chr$(KeyAscii)
-                        b = True
+            
+            'Check if to ignore this keystroke
+            If IgnoreNextChatKey Then
+                IgnoreNextChatKey = False
+            Else
+                
+                'Backspace
+                If KeyAscii = 8 Then
+                    If Len(EnterTextBuffer) > 0 Then EnterTextBuffer = Left$(EnterTextBuffer, Len(EnterTextBuffer) - 1)
+                    b = True
+                End If
+                
+                'Add to text buffer
+                If Game_ValidCharacter(KeyAscii) Then
+                    If Len(EnterTextBuffer) < 85 Then
+                        If Game_ValidCharacter(KeyAscii) Then
+                            EnterTextBuffer = EnterTextBuffer & Chr$(KeyAscii)
+                            b = True
+                        End If
                     End If
                 End If
+                
+                
+                'Update size
+                If b Then
+                    EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
+                    UpdateShownTextBuffer
+                    LastClickedWindow = 0
+                End If
+                
             End If
-            'Update size
-            If b Then
-                EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
-                UpdateShownTextBuffer
-                LastClickedWindow = 0
-            End If
+            
         End If
-        
     End If
 
 End Sub
@@ -686,6 +699,7 @@ Dim i As Long
             EnterText = True
             EnterTextBuffer = "/tell " & LastWhisperName & " "
             EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
+            IgnoreNextChatKey = True
             UpdateShownTextBuffer
             LastClickedWindow = 0
         End If

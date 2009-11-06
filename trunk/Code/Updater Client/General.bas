@@ -56,6 +56,24 @@ Private Type PROCESS_INFORMATION
     dwThreadID As Long
 End Type
 
+Private Type typHOSTENT
+    hName As Long
+    hAliases As Long
+    hAddrType As Integer
+    hLength As Integer
+    hAddrList As Long
+End Type
+
+Private Type WSADATA
+    wversion As Integer
+    wHighVersion As Integer
+    szDescription(0 To 255) As Byte
+    szSystemStatus(0 To 127) As Byte
+    iMaxSockets As Integer
+    iMaxUdpDg As Integer
+    lpszVendorInfo As Long
+End Type
+
 Public Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 Public Declare Sub ReleaseCapture Lib "User32" ()
 Public Declare Function SendMessage Lib "User32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
@@ -64,6 +82,92 @@ Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationname As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
 Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Sub apiCopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, ByVal hpvSource As Long, ByVal cbCopy As Long)
+Private Declare Function apiGetHostByName Lib "wsock32" Alias "gethostbyname" (ByVal HostName As String) As Long
+Private Declare Function WSACleanup Lib "wsock32" () As Long
+Private Declare Function WSAStartup Lib "wsock32" (ByVal VersionReq As Long, WSADataReturn As WSADATA) As Long
+
+Private Function IsIP(ByVal IPAddress As String) As Boolean
+Dim s() As String
+Dim i As Long
+
+    'If there are no periods, I have no idea what we have...
+    If InStr(1, IPAddress, ".") = 0 Then Exit Function
+    
+    'Split up the string by the periods
+    s = Split(IPAddress, ".")
+    
+    'Confirm we have ubound = 3, since xxx.xxx.xxx.xxx has 4 elements and we start at index 0
+    If UBound(s) <> 3 Then Exit Function
+    
+    'Check that the values are numeric and in a valid range
+    For i = 0 To 3
+        If Val(s(i)) < 0 Then Exit Function
+        If Val(s(i)) > 255 Then Exit Function
+    Next i
+    
+    'Looks like we were passed a valid IP!
+    IsIP = True
+    
+End Function
+
+Public Function GetIPFromHost(ByVal HostName As String) As String
+Dim udtWSAData As WSADATA
+Dim HostAddress As Long
+Dim HostInfo As typHOSTENT
+Dim IPLong As Long
+Dim IPBytes() As Byte
+Dim i As Integer
+
+    On Error Resume Next
+    
+    If WSAStartup(257, udtWSAData) Then
+        MsgBox "Error initializing winsock on WSAStartup!"
+        GetIPFromHost = HostName
+        Exit Function
+    End If
+
+    'Make sure a HTTP:// or FTP:// something wasn't added... some people like to do that
+    If UCase$(Left$(HostName, 7)) = "HTTP://" Then
+        HostName = Right$(HostName, Len(HostName) - 7)
+    ElseIf UCase$(Left$(HostName, 6)) = "FTP://" Then
+        HostName = Right$(HostName, Len(HostName) - 6)
+    End If
+    
+    'If we were already passed an IP, just abort since we have what we want
+    If IsIP(HostName) Then
+        GetIPFromHost = HostName
+        Exit Function
+    End If
+    
+    'Get the host address
+    HostAddress = apiGetHostByName(HostName)
+    
+    'Failure!
+    If HostAddress = 0 Then Exit Function
+    
+    'Move the memory around to get it in a format we can read
+    apiCopyMemory HostInfo, HostAddress, LenB(HostInfo)
+    apiCopyMemory IPLong, HostInfo.hAddrList, 4
+    
+    'Get the number of parts to the IP (will always be 4 as far as I know)
+    ReDim IPBytes(1 To HostInfo.hLength)
+
+    'Convert the address, stored in the format of a long, to 4 bytes (just simple long -> byte array conversion)
+    apiCopyMemory IPBytes(1), IPLong, HostInfo.hLength
+    
+    'Add in the periods
+    For i = 1 To HostInfo.hLength
+        GetIPFromHost = GetIPFromHost & IPBytes(i) & "."
+    Next
+    
+    'Remove the final period
+    GetIPFromHost = Left$(GetIPFromHost, Len(GetIPFromHost) - 1)
+    
+    'Clean up the socket
+    WSACleanup
+
+End Function
 
 Private Sub CommandLine(ByVal CommandLineString As String)
 Dim Start As STARTUPINFO

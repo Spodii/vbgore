@@ -189,8 +189,8 @@ Private Sub ConnectTimer_Timer()
         Exit Sub
     End If
 
-    'Set up the socket
-    LocalID = GOREsock_Connect("127.0.0.1", 10201)
+    'Set up the socket (always leave the GetIPFromHost() wrapper in there!)
+    LocalID = GOREsock_Connect(GetIPFromHost("127.0.0.1"), 10201)
     If LocalID = -1 Then Exit Sub
     GOREsock_SetOption LocalID, soxSO_TCP_NODELAY, False
     

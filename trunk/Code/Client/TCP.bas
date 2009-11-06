@@ -1555,6 +1555,17 @@ Sub Data_Server_PlaySound(ByRef rBuf As DataBuffer)
 Dim WaveNum As Byte
 
     WaveNum = rBuf.Get_Byte
+    
+    'Check that we are using sounds
+    If UseSfx = 0 Then Exit Sub
+    
+    'Create the buffer if needed
+    If SoundBufferTimer(WaveNum) < timeGetTime Then
+        If DSBuffer(WaveNum) Is Nothing Then Sound_Set DSBuffer(WaveNum), WaveNum
+    End If
+    
+    'Update the timer
+    SoundBufferTimer(WaveNum) = timeGetTime + SoundBufferTimerMax
 
     Sound_Play DSBuffer(WaveNum), DSBPLAY_DEFAULT
 

@@ -89,7 +89,7 @@ Dim Y As Single
 Dim R As Single
     
     Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.1
-    R = (Index / 20) * Exp(Index / Effect(EffectIndex).Progression Mod 3)
+    R = (Index / 20) * EXP(Index / Effect(EffectIndex).Progression Mod 3)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     
@@ -765,7 +765,7 @@ Dim LoopC As Long
 
 End Sub
 
-Public Sub Effect_Render(ByVal EffectIndex As Integer)
+Public Sub Effect_Render(ByVal EffectIndex As Integer, Optional ByVal SetRenderStates As Boolean = True)
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
@@ -774,7 +774,7 @@ Public Sub Effect_Render(ByVal EffectIndex As Integer)
     D3DDevice.SetRenderState D3DRS_POINTSIZE, Effect(EffectIndex).FloatSize
     
     'Set the render state to point blitting
-    D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
+    If SetRenderStates Then D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
     
     'Set the last texture to a random number to force the engine to reload the texture
     LastTexture = -65489
@@ -786,7 +786,7 @@ Public Sub Effect_Render(ByVal EffectIndex As Integer)
     D3DDevice.DrawPrimitiveUP D3DPT_POINTLIST, Effect(EffectIndex).ParticleCount, Effect(EffectIndex).PartVertex(0), Len(Effect(EffectIndex).PartVertex(0))
 
     'Reset the render state back to normal
-    D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
+    If SetRenderStates Then D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
 
 End Sub
 
@@ -1021,6 +1021,12 @@ End Sub
 Sub Effect_UpdateAll()
 Dim LoopC As Long
 
+    'Make sure we have effects
+    If NumEffects = 0 Then Exit Sub
+
+    'Set the render state for the particle effects
+    D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
+
     'Update every effect in use
     For LoopC = 1 To NumEffects
 
@@ -1046,11 +1052,14 @@ Dim LoopC As Long
             If Effect(LoopC).EffectNum = EffectNum_Summon Then Effect_Summon_Update LoopC
             
             'Render the effect
-            Effect_Render LoopC
+            Effect_Render LoopC, False
 
         End If
 
     Next
+    
+    'Set the render state back for normal rendering
+    D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
 
 End Sub
 
@@ -1333,7 +1342,7 @@ Dim R As Single
     Else
         Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.5
     End If
-    R = (Index / 30) * Exp(Index / Effect(EffectIndex).Progression)
+    R = (Index / 30) * EXP(Index / Effect(EffectIndex).Progression)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     

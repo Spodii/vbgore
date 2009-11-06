@@ -329,9 +329,13 @@ Dim l As Long
     ReDim OldMap(1 To OldWidth, 1 To OldHeight)
     ReDim OldSaveLight(1 To OldWidth, 1 To OldHeight)
     
-    CopyMemory OldMap(1, 1), MapData(1, 1), Len(MapData(1, 1)) * OldWidth * OldHeight
-    CopyMemory OldSaveLight(1, 1), SaveLightBuffer(1, 1), Len(SaveLightBuffer(1, 1)) * OldWidth * OldHeight
-    
+    For X = 1 To OldWidth
+        For Y = 1 To OldHeight
+            OldMap(X, Y) = MapData(X, Y)
+            OldSaveLight(X, Y) = SaveLightBuffer(X, Y)
+        Next Y
+    Next X
+
     ReDim MapData(1 To MapInfo.Width, 1 To MapInfo.Height)
     ReDim SaveLightBuffer(1 To MapInfo.Width, 1 To MapInfo.Height)
 
@@ -342,7 +346,7 @@ Dim l As Long
         For Y = 1 To MapInfo.Height
             If X <= hX And Y <= hY Then
                 MapData(X, Y) = OldMap(X, Y)
-                CopyMemory SaveLightBuffer(X, Y), OldSaveLight(X, Y), Len(OldSaveLight(X, Y))
+                SaveLightBuffer(X, Y) = OldSaveLight(X, Y)
             Else
             
                 'Default data (so they know the tiles are there)

@@ -679,7 +679,7 @@ Public Const EngineBaseSpeed As Single = 0.011
 Public OffsetCounterX As Single
 Public OffsetCounterY As Single
 
-Private NotFirstRender As Byte
+Private NotFirstRender As Boolean
 
 Public ShownText As String
 
@@ -5305,6 +5305,7 @@ Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal P
 '***********************************************
 'Draw current visible to scratch area based on TileX and TileY
 '***********************************************
+Dim FrameUseMotionBlur As Boolean   'Lets us know if this frame is using motion blur so we don't have to leave support for it on
 Dim ChrID() As Integer
 Dim ChrY() As Integer
 Dim Y As Long           'Keeps track of where on map we are
@@ -5399,7 +5400,7 @@ Dim Layer As Byte
     Else
     
         'We have to bypass the present the first time through here or else we get an error
-        If NotFirstRender = 1 Then
+        If NotFirstRender Then
         
             'Close off the last sprite
             If SpriteBegun Then
@@ -5420,8 +5421,8 @@ Dim Layer As Byte
                 
         Else
         
-            'Set NotFirstRender to 1 so we can start displaying
-            NotFirstRender = 1
+            'Set NotFirstRender to True so we can start displaying
+            NotFirstRender = True
             
         End If
     
@@ -5431,7 +5432,7 @@ Dim Layer As Byte
     If UseMotionBlur Then
         If UserCharIndex > 0 Then
             If CharList(UserCharIndex).Moving = 1 And CharList(UserCharIndex).Running Then
-                BlurIntensity = 65
+                BlurIntensity = 45
             Else
                 If BlurIntensity < 255 Then
                     BlurIntensity = BlurIntensity + (ElapsedTime * 0.8)
@@ -5443,7 +5444,10 @@ Dim Layer As Byte
     
     'Set the motion blur if needed
     If UseMotionBlur Then
-        D3DDevice.SetRenderTarget BlurSurf, BlurStencil, 0
+        If BlurIntensity < 255 Or ZoomLevel > 0 Then
+            FrameUseMotionBlur = True
+            D3DDevice.SetRenderTarget BlurSurf, BlurStencil, 0
+        End If
     End If
 
     'Begin the scene
@@ -5810,35 +5814,36 @@ NextChar:
 
     'Show FPS
     Engine_Render_Text "FPS: " & FPS, ScreenWidth - 80, 2, -1
-    
-    With D3DDevice
-    
-        'Check if using motion blur / zooming
-        If UseMotionBlur Then
+
+    'Check if using motion blur / zooming
+    If UseMotionBlur Then
+        If FrameUseMotionBlur Then
+            With D3DDevice
             
-            'Perform the zooming calculations
-            ' * 1.333... maintains the aspect ratio
-            ' ... / 1024 is to factor in the buffer size
-            BlurTA(0).tU = ZoomLevel * 1.333333333
-            BlurTA(0).tV = ZoomLevel
-            BlurTA(1).tU = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
-            BlurTA(1).tV = ZoomLevel
-            BlurTA(2).tU = ZoomLevel * 1.333333333
-            BlurTA(2).tV = ((ScreenHeight + 1) / 1024) - ZoomLevel
-            BlurTA(3).tU = BlurTA(1).tU
-            BlurTA(3).tV = BlurTA(2).tV
+                'Perform the zooming calculations
+                ' * 1.333... maintains the aspect ratio
+                ' ... / 1024 is to factor in the buffer size
+                BlurTA(0).tU = ZoomLevel * 1.333333333
+                BlurTA(0).tV = ZoomLevel
+                BlurTA(1).tU = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
+                BlurTA(1).tV = ZoomLevel
+                BlurTA(2).tU = ZoomLevel * 1.333333333
+                BlurTA(2).tV = ((ScreenHeight + 1) / 1024) - ZoomLevel
+                BlurTA(3).tU = BlurTA(1).tU
+                BlurTA(3).tV = BlurTA(2).tV
+                
+                'Draw what we have drawn thus far since the last .Clear
+                LastTexture = -100
+                .SetRenderTarget DeviceBuffer, DeviceStencil, 0
+                .SetTexture 0, BlurTexture
+                .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
+                .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR
+                .DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, BlurTA(0), FVF_Size
+                .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE
             
-            'Draw what we have drawn thus far since the last .Clear
-            LastTexture = -100
-            .SetRenderTarget DeviceBuffer, DeviceStencil, 0
-            .SetTexture 0, BlurTexture
-            .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
-            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR
-            .DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, BlurTA(0), FVF_Size
-            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE
+            End With
         End If
-        
-    End With
+    End If
 
 End Sub
 
@@ -6955,38 +6960,19 @@ Public Sub Engine_SortIntArray(TheArray() As Integer, TheIndex() As Integer, ByV
 '*****************************************************************
 Dim indxt As Long   'Stored index
 Dim swp As Integer  'Swap variable
-Dim F As Integer    'Subarray Minimum
-Dim G As Integer    'Subarray Maximum
 Dim i As Integer    'Subarray Low  Scan Index
 Dim j As Integer    'Subarray High Scan Index
-Dim t As Integer    'Stack pointer
-
-    'Set the array boundries to f and g
-    F = LowerBound
-    G = UpperBound
 
     'Start the loop
-    Do
-
-        For j = F + 1 To G
-            indxt = TheIndex(j)
-            swp = TheArray(indxt)
-            For i = j - 1 To F Step -1
-                If TheArray(TheIndex(i)) <= swp Then Exit For
-                TheIndex(i + 1) = TheIndex(i)
-            Next i
-            TheIndex(i + 1) = indxt
-        Next j
-
-        'Finished sorting when t = 0
-        If t = 0 Then Exit Do
-
-        'Pop stack and begin new partitioning round
-        G = 0
-        F = 0
-        t = t - 2
-
-    Loop
+    For j = LowerBound + 1 To UpperBound
+        indxt = TheIndex(j)
+        swp = TheArray(indxt)
+        For i = j - 1 To LowerBound Step -1
+            If TheArray(TheIndex(i)) <= swp Then Exit For
+            TheIndex(i + 1) = TheIndex(i)
+        Next i
+        TheIndex(i + 1) = indxt
+    Next j
 
 End Sub
 
