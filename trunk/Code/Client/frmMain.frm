@@ -54,7 +54,6 @@ Option Explicit
 
 Implements DirectXEvent8
 
-Private NC As Byte
 Private Declare Function GetCursorPos Lib "user32.dll" (ByRef lpPoint As POINTAPI) As Long
 
 Private Sub DirectXEvent8_DXCallback(ByVal EventID As Long)
@@ -176,10 +175,7 @@ NextLoopC:
 
     Next LoopC
 
-Exit Sub
-
 ErrOut:
-    NC = 1
 
 End Sub
 
@@ -209,12 +205,9 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
 
     'Regain focus to Direct Input mouse
     On Error Resume Next
-        If NC Then
-            DIDevice.Acquire
-            NC = 0
-            MousePos.X = X
-            MousePos.Y = Y
-        End If
+        DIDevice.Acquire
+        MousePos.X = X
+        MousePos.Y = Y
     On Error GoTo 0
     
 End Sub
@@ -224,12 +217,7 @@ Private Sub Form_Resize()
     'Regain focus to Direct Input mouse
     On Error Resume Next
         If Not DIDevice Is Nothing Then
-            If Windowed = False Then
-                If NC Then
-                    DIDevice.Acquire
-                    NC = 0
-                End If
-            End If
+            If Not Windowed Then DIDevice.Acquire
         End If
     On Error GoTo 0
     

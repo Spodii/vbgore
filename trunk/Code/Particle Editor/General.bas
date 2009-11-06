@@ -18,7 +18,7 @@ Public Type WorldPos
     Y As Long
 End Type
 Public Type Char
-    RealPos As WorldPos
+    Pos As WorldPos
     Active As Byte
 End Type
 Public CharList() As Char
@@ -218,7 +218,7 @@ Dim i As Byte
 
 'Set the particles texture
 
-    NumEffects = 5
+    NumEffects = 20
     ReDim Effect(1 To NumEffects)
 
     For i = 1 To UBound(ParticleTexture())
@@ -337,5 +337,24 @@ Dim frm As Form
 
 End Sub
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 18:13)  Decl: 92  Code: 273  Total: 365 Lines
-':) CommentOnly: 82 (22.5%)  Commented: 9 (2.5%)  Empty: 89 (24.4%)  Max Logic Depth: 4
+Public Function Engine_TPtoSPX(ByVal X As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+    
+    'This acts just as a dummy in this project
+
+End Function
+
+Public Function Engine_TPtoSPY(ByVal Y As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+
+    'This acts just as a dummy in this project
+    
+End Function

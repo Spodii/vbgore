@@ -188,10 +188,9 @@ End Property
 
 Public Sub UpdateParticle(sngTime As Single)
 
-'Update the particle's variables
-
-    sngX = sngX + sngXSpeed * sngTime
-    sngY = sngY + sngYSpeed * sngTime
+    'Update the particle's variables
+    sngX = sngX + (LastOffsetX - ParticleOffsetX) + sngXSpeed * sngTime
+    sngY = sngY + (LastOffsetY - ParticleOffsetY) + sngYSpeed * sngTime
     sngXSpeed = sngXSpeed + sngXAccel * sngTime
     sngYSpeed = sngYSpeed + sngYAccel * sngTime
     sngA = sngA - sngAlphaDecay * sngTime

@@ -123,6 +123,13 @@ Dim tIndex As Integer
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
+    
+    'Display the effect on the map - this must be done AFTER the NPC is made
+    ConBuf.PreAllocate 6
+    ConBuf.Put_Byte DataCode.User_CastSkill
+    ConBuf.Put_Byte SkID.SummonBandit
+    ConBuf.Put_Integer NPCList(tIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Reduce the user's mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
@@ -308,7 +315,7 @@ Public Sub Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Display the effect
-    ConBuf.PreAllocate 10
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
@@ -1257,13 +1264,7 @@ Public Sub Skill_IronSkin_PC(ByVal UserIndex As Integer)
 
     Else 'Enable the Iron Skin
         UserList(UserIndex).Skills.IronSkin = 1
-        ConBuf.PreAllocate 6
-        ConBuf.Put_Byte DataCode.User_CastSkill
-        ConBuf.Put_Byte SkID.IronSkin
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_DisplaySpell
-
+        
         ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 1
@@ -1451,10 +1452,9 @@ Dim Damage As Long
     End If
 
     'Display the user casting it on other people's screens
-    ConBuf.PreAllocate 6
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.SpikeField
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
@@ -1486,19 +1486,13 @@ Dim WarCursePower As Integer
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Warcry_Exhaust
-    ConBuf.PreAllocate 6
-    ConBuf.Put_Byte DataCode.User_CastSkill
-    ConBuf.Put_Byte SkID.Warcry
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Cast on all attackable hostile NPCs in the PC area
     Data_Send ToIndex, CasterIndex, cMessage(49).Data
 
     'Loop through all the alive and active NPCs
     WarCursePower = UserList(CasterIndex).Stats.ModStat(SID.Str)
-    For LoopC = 1 To NumNPCs
+    For LoopC = 1 To LastNPC
         If NPCList(LoopC).flags.NPCActive Then
             If NPCList(LoopC).flags.NPCAlive Then
                 If NPCList(LoopC).Pos.Map = UserList(CasterIndex).Pos.Map Then
@@ -1531,7 +1525,7 @@ Dim WarCursePower As Integer
                     End If
                 End If
             End If
-        End If
+       End If
     Next LoopC
     
 End Sub

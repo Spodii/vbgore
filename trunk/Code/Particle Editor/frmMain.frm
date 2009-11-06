@@ -27,7 +27,8 @@ Private ResetY As Single
 Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 
 Private Sub Form_Load()
-    
+Dim i As Long
+
     'Init particle engine
     Me.Show
     InitFilePaths
@@ -45,8 +46,10 @@ Private Sub Form_Load()
 
     Do While EngineRun
 
-        If Effect(DispEffect).Used = False Then ResetEffect
-
+        If DispEffect > 0 Then
+            If Not Effect(DispEffect).Used Then ResetEffect
+        End If
+        
         'Draw
         D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
         D3DDevice.BeginScene
@@ -91,17 +94,18 @@ End Sub
 
 Private Sub ResetEffect()
     
-'Resets the effect - use this sub to change the effect displayed
+    'Resets the effect - use this sub to change the effect displayed
+
+    DispEffect = Effect_Bless_Begin(ResetX, ResetY, 3, 1000, 90, 2000)
+    DispEffect = Effect_Protection_Begin(ResetX, ResetY, 11, 1000, 120, 2000)
+    DispEffect = Effect_Strengthen_Begin(ResetX, ResetY, 12, 1000, 150, 2000)
+
+    'DispEffect = Effect_Waterfall_Begin(0, 0, 2, 75)
     
-    'DispEffect = Effect_Fire_Begin(ResetX, ResetY, 1, 150)
-    'DispEffect = Effect_Heal_Begin(ResetX, ResetY, 9, 200, 1)
+    'DispEffect = Effect_Summon_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000, 1)
     
-    'DispEffect = Effect_Bless_Begin(ResetX, ResetY, 3, 100, 40, 15)
-    'DispEffect = Effect_Protection_Begin(ResetX, ResetY, 11, 100, 40, 15)
-    'DispEffect = Effect_Strengthen_Begin(ResetX, ResetY, 12, 100, 40, 15)
-    
-    'DispEffect = Effect_EquationTemplate_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000)
-    
-    DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
+    DispEffect = Effect_Fire_Begin(ResetX, ResetY, 1, 1000, 0)
+    DispEffect = Effect_Fire_Begin(ResetX, ResetY, 1, 1000, 180)
+
 
 End Sub

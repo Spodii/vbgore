@@ -711,6 +711,28 @@ Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
     
 End Sub
 
+Public Function Engine_TPtoSPX(ByVal X As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+
+    Engine_TPtoSPX = Engine_PixelPosX(X - minX) + OffsetCounterX - 288 + ((10 - TileBufferSize) * 32)
+
+End Function
+
+Public Function Engine_TPtoSPY(ByVal Y As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+
+    Engine_TPtoSPY = Engine_PixelPosY(Y - minY) + OffsetCounterY - 288 + ((10 - TileBufferSize) * 32)
+
+End Function
+
 Public Sub Engine_AddToChatTextBuffer(ByVal Text As String, ByVal Color As Long)
 
 '************************************************************
@@ -3314,6 +3336,7 @@ Sub Engine_Weather_Update()
             ElseIf Not Effect(WeatherEffectIndex).Used Then
                 WeatherEffectIndex = Effect_Rain_Begin(9, 300)
             End If
+            LightningTimer = 15000 + (Rnd * 15000)
             WeatherDoLightning = 1  'We take our rain with a bit of lightning on top >:D
             WeatherDoFog = 0
             Sound_Set WeatherSfx1, 3
@@ -3324,6 +3347,7 @@ Sub Engine_Weather_Update()
             If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
                 If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
             End If
+            LightningTimer = 15000 + (Rnd * 15000)
             WeatherDoLightning = 1
             WeatherDoFog = 0
             Sound_Set WeatherSfx1, 4
@@ -3334,6 +3358,7 @@ Sub Engine_Weather_Update()
             If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
                 If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
             End If
+            LightningTimer = 15000 + (Rnd * 15000)
             WeatherDoLightning = 1
             WeatherDoFog = 10    'This will make it nice and spooky! >:D
             Sound_Set WeatherSfx1, 4
@@ -3714,7 +3739,7 @@ Sub Engine_OBJ_Erase(ByVal ObjIndex As Integer)
         Loop
         If ObjIndex <> LastObj Then
             'We still have objects, resize the array to end at the last used slot
-            If ObjIndex <> 0 Then
+            If LastObj <> 0 Then
                 ReDim Preserve OBJList(1 To LastObj)
             Else
                 Erase OBJList
@@ -4145,37 +4170,37 @@ Dim WingsGrh As Grh
 
         If CharList(CharIndex).CharStatus.Blessed Then
             Engine_Init_Grh TempGrh, 15
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.Protected Then
             Engine_Init_Grh TempGrh, 20
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.Strengthened Then
             Engine_Init_Grh TempGrh, 17
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.Cursed Then
             Engine_Init_Grh TempGrh, 18
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.WarCursed Then
             Engine_Init_Grh TempGrh, 19
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.IronSkinned Then
             Engine_Init_Grh TempGrh, 16
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
         If CharList(CharIndex).CharStatus.Exhausted Then
             Engine_Init_Grh TempGrh, 22
-            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+            Engine_Render_Grh TempGrh, IconOffset, PixelOffsetY - 50, 0, 0, False
             IconOffset = IconOffset + 16
         End If
     End If
@@ -4947,7 +4972,7 @@ Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
 Dim ShadowAdd As Single
-Dim l As Single
+Dim L As Single
 
     'Perform in-bounds check if needed
     If InBoundsCheck Then
@@ -5021,14 +5046,14 @@ Dim l As Single
             Y = -TrimOffset
         End If
         If X + Width > ScreenWidth + TrimOffset Then
-            l = (X + Width) - (ScreenWidth + TrimOffset)
-            Width = Width - l
-            SrcWidth = SrcWidth - l
+            L = (X + Width) - (ScreenWidth + TrimOffset)
+            Width = Width - L
+            SrcWidth = SrcWidth - L
         End If
         If Y + Height > ScreenHeight + TrimOffset Then
-            l = (Y + Height) - (ScreenHeight + TrimOffset)
-            Height = Height - l
-            SrcHeight = SrcHeight - l
+            L = (Y + Height) - (ScreenHeight + TrimOffset)
+            Height = Height - L
+            SrcHeight = SrcHeight - L
         End If
         
         'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it)
@@ -5565,16 +5590,6 @@ Dim Layer As Byte
     
     'Do the general weather updating
     Engine_Weather_Update
-
-    'Update the weather's particle effect's position if one is used
-    If WeatherEffectIndex Then
-        If ParticleOffsetX <> 0 Then
-            If ParticleOffsetY <> 0 Then
-                Effect(WeatherEffectIndex).ShiftX = (LastOffsetX - ParticleOffsetX)
-                Effect(WeatherEffectIndex).ShiftY = (LastOffsetY - ParticleOffsetY)
-            End If
-        End If
-    End If
 
     '************** Chat bubbles **************
     'Loop through the chars

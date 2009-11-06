@@ -3119,16 +3119,6 @@ Dim Layer As Byte
     
         'Make sure the right weather is going on
         Engine_Weather_Update
-    
-        'Update the weather
-        If WeatherEffectIndex Then
-            If ParticleOffsetX <> 0 Then
-                If ParticleOffsetY <> 0 Then
-                    Effect(WeatherEffectIndex).ShiftX = (LastOffsetX - ParticleOffsetX)
-                    Effect(WeatherEffectIndex).ShiftY = (LastOffsetY - ParticleOffsetY)
-                End If
-            End If
-        End If
         
     Else
     
@@ -3715,3 +3705,25 @@ Sub Var_Write(File As String, Main As String, Var As String, Value As String)
     writeprivateprofilestring Main, Var, Value, File
 
 End Sub
+
+Public Function Engine_TPtoSPX(ByVal X As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+
+    Engine_TPtoSPX = Engine_PixelPosX(X - minX) + OffsetCounterX - 288 + ((10 - TileBufferSize) * 32)
+
+End Function
+
+Public Function Engine_TPtoSPY(ByVal Y As Byte) As Long
+
+'************************************************************
+'Tile Position to Screen Position
+'Takes the tile position and returns the pixel location on the screen
+'************************************************************
+
+    Engine_TPtoSPY = Engine_PixelPosY(Y - minY) + OffsetCounterY - 288 + ((10 - TileBufferSize) * 32)
+
+End Function

@@ -3,8 +3,6 @@ Option Explicit
 Private Type Effect
     X As Single                 'Location of effect
     Y As Single
-    ShiftX As Single            'How much to shift every particle (is reset after move)
-    ShiftY As Single
     Gfx As Byte                 'Particle texture used
     Used As Boolean             'If the effect is in use
     EffectNum As Byte           'What number of effect that is used
@@ -34,14 +32,13 @@ Public Const EffectNum_Strengthen As Byte = 6       ' which float up and fade ou
 Public Const EffectNum_Rain As Byte = 7             'Exact same as snow, but moves much faster and more alpha value - weather effect
 Public Const EffectNum_EquationTemplate As Byte = 8 'Template for creating particle effects through equations - a page with some equations can be found here: http://www.vbgore.com/modules.php?name=Forums&file=viewtopic&t=221
 Public Const EffectNum_Waterfall As Byte = 9        'Waterfall effect
+Public Const EffectNum_Summon As Byte = 10          'Summon effect
 
-Function Effect_EquationTemplate_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Integer
-
+Function Effect_EquationTemplate_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Single = 1) As Integer
 Dim EffectIndex As Integer
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -97,17 +94,12 @@ Dim R As Single
 End Sub
 
 Private Sub Effect_EquationTemplate_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
     'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
-
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
 
     'Go Through The Particle Loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
@@ -144,12 +136,8 @@ Dim LoopC As Long
                 End If
 
             Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -163,12 +151,10 @@ Dim LoopC As Long
 End Sub
 
 Function Effect_Bless_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
-
 Dim EffectIndex As Integer
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -209,13 +195,11 @@ Dim LoopC As Long
 End Function
 
 Private Sub Effect_Bless_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
-
 Dim a As Single
 Dim X As Single
 Dim Y As Single
 
-'Get the positions
-
+    'Get the positions
     a = Rnd * 360 * DegreeToRadian
     X = Effect(EffectIndex).X - (Sin(a) * Effect(EffectIndex).Modifier)
     Y = Effect(EffectIndex).Y + (Cos(a) * Effect(EffectIndex).Modifier)
@@ -227,44 +211,15 @@ Dim Y As Single
 End Sub
 
 Private Sub Effect_Bless_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
     'Update the life span
     If Effect(EffectIndex).Progression > 0 Then Effect(EffectIndex).Progression = Effect(EffectIndex).Progression - ElapsedTime
-
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
-
-    'Update position through character binding
-    If Effect(EffectIndex).BindToChar Then
-        TargetI = Effect(EffectIndex).BindToChar
-        TargetX = CharList(TargetI).RealPos.X
-        TargetY = CharList(TargetI).RealPos.Y
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
-        'Unbind when character is reached
-        If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-            If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                Effect(EffectIndex).BindToChar = 0
-                Effect(EffectIndex).Progression = 0
-            End If
-        End If
-
-    End If
 
     'Go Through The Particle Loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
@@ -301,12 +256,8 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
                 End If
 
             Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -319,13 +270,12 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
 End Sub
 
-Function Effect_Fire_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Direction As Byte = 180, Optional ByVal Progression As Byte = 1) As Integer
+Function Effect_Fire_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Direction As Integer = 180, Optional ByVal Progression As Single = 1) As Integer
 
 Dim EffectIndex As Integer
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -367,26 +317,19 @@ End Function
 
 Private Sub Effect_Fire_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
-'Reset the particle
-
+    'Reset the particle
     Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X - 10 + Rnd * 20, Effect(EffectIndex).Y - 10 + Rnd * 20, -Sin((Effect(EffectIndex).Direction + (Rnd * 70) - 35) * DegreeToRadian) * 8, Cos((Effect(EffectIndex).Direction + (Rnd * 70) - 35) * DegreeToRadian) * 8, 0, 0
     Effect(EffectIndex).Particles(Index).ResetColor 1, 0.2, 0.2, 0.4 + (Rnd * 0.2), 0.03 + (Rnd * 0.07)
 
 End Sub
 
 Private Sub Effect_Fire_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
-    
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
 
     'Go Through The Particle Loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
@@ -423,12 +366,8 @@ Dim LoopC As Long
                 End If
 
             Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -451,13 +390,11 @@ Dim Buf As D3DXBuffer
 
 End Function
 
-Function Effect_Heal_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Integer
-
+Function Effect_Heal_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Single = 1) As Integer
 Dim EffectIndex As Integer
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -500,57 +437,20 @@ Private Sub Effect_Heal_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
     'Reset the particle
     Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X - 10 + Rnd * 20, Effect(EffectIndex).Y - 10 + Rnd * 20, -Sin((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), Cos((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), 0, 0
-    Effect(EffectIndex).Particles(Index).ResetColor 0.8, 0.2, 0.2, 0.6 + (Rnd * 0.2), 0.05 + (Rnd * 0.05)
-
+    Effect(EffectIndex).Particles(Index).ResetColor 0.8, 0.2, 0.2, 0.6 + (Rnd * 0.2), 0.01 + (Rnd * 0.5)
+    
 End Sub
 
 Private Sub Effect_Heal_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
+Dim i As Integer
 
-    'Calculate The Time Difference
+    'Calculate the time difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
-
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
-
-    'Update position through character binding
-    If Effect(EffectIndex).BindToChar Then
-        TargetI = Effect(EffectIndex).BindToChar
-        
-        'Check if the character the effect was bound to was removed - if so, end the effect
-        If TargetI <= 0 Then Effect(EffectIndex).Progression = 0
-        If TargetI > LastChar Then Effect(EffectIndex).Progression = 0
-        If CharList(TargetI).Active = 0 Then Effect(EffectIndex).Progression = 0
-        
-        'If we still have the effect going, move it towards the bound character
-        If Effect(EffectIndex).Progression <> 0 Then
-            TargetX = CharList(TargetI).RealPos.X
-            TargetY = CharList(TargetI).RealPos.Y
-            TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-            Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-            Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
     
-            'Unbind when character is reached
-            If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-                If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                    Effect(EffectIndex).BindToChar = 0
-                    Effect(EffectIndex).Progression = 0
-                End If
-            End If
-            
-        End If
-
-    End If
-
-    'Go Through The Particle Loop
+    'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
 
         'Check If Particle Is In Use
@@ -586,11 +486,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
             Else
                 
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
-
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -607,8 +503,7 @@ Sub Effect_Kill(ByVal EffectIndex As Integer, Optional ByVal KillAll As Boolean 
 
 Dim LoopC As Long
 
-'Check If To Kill All Effects
-
+    'Check If To Kill All Effects
     If KillAll = True Then
 
         'Loop Through Every Effect
@@ -632,8 +527,7 @@ Private Function Effect_NextOpenSlot() As Integer
 
 Dim EffectIndex As Integer
 
-'Find The Next Open Effect Slot
-
+    'Find The Next Open Effect Slot
     Do
         EffectIndex = EffectIndex + 1   'Check The Next Slot
         If EffectIndex > NumEffects Then    'Dont Go Over Maximum Amount
@@ -648,12 +542,10 @@ Dim EffectIndex As Integer
 End Function
 
 Function Effect_Protection_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
-
 Dim EffectIndex As Integer
 Dim LoopC As Long
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     EffectIndex = Effect_NextOpenSlot
     If EffectIndex = -1 Then Exit Function
 
@@ -694,13 +586,11 @@ Dim LoopC As Long
 End Function
 
 Private Sub Effect_Protection_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
-
 Dim a As Single
 Dim X As Single
 Dim Y As Single
 
-'Get the positions
-
+    'Get the positions
     a = Rnd * 360 * DegreeToRadian
     X = Effect(EffectIndex).X - (Sin(a) * Effect(EffectIndex).Modifier)
     Y = Effect(EffectIndex).Y + (Cos(a) * Effect(EffectIndex).Modifier)
@@ -711,45 +601,89 @@ Dim Y As Single
 
 End Sub
 
-Private Sub Effect_Protection_Update(ByVal EffectIndex As Integer)
+Private Sub Effect_UpdateOffset(ByVal EffectIndex As Integer)
 
+'***************************************************
+'Update an effect's position if the screen has moved
+'***************************************************
+
+    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
+    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
+
+End Sub
+
+Private Sub Effect_UpdateBinding(ByVal EffectIndex As Integer)
+
+'***************************************************
+'Updates the binding of a particle effect to a target, if
+'the effect is bound to a character
+'***************************************************
+Dim TargetI As Integer
+Dim TargetX As Long
+Dim TargetY As Long
+Dim TargetA As Single
+
+    'Update position through character binding
+    If Effect(EffectIndex).BindToChar > 0 Then
+        
+        'Store the character index
+        TargetI = Effect(EffectIndex).BindToChar
+        
+        'Check for a valid binding index
+        If TargetI > LastChar Then
+            Effect(EffectIndex).BindToChar = 0
+            If Effect(EffectIndex).EffectNum = EffectNum_Heal Then Effect(EffectIndex).Progression = 0  'This will make the heal effect end
+            Exit Sub
+        End If
+        If CharList(TargetI).Active = 0 Then
+            Effect(EffectIndex).BindToChar = 0
+            If Effect(EffectIndex).EffectNum = EffectNum_Heal Then Effect(EffectIndex).Progression = 0
+            Exit Sub
+        End If
+        
+        'Calculate the X and Y positions
+        TargetX = Engine_TPtoSPX(CharList(TargetI).Pos.X) + 16  'This will center on a 32 pixel wide character
+        TargetY = Engine_TPtoSPY(CharList(TargetI).Pos.Y)
+        
+        'Check if the effect is close enough to the target to just stick it at the target
+        If Abs(Effect(EffectIndex).X - TargetX) < 6 Then Effect(EffectIndex).X = TargetX
+        If Abs(Effect(EffectIndex).Y - TargetY) < 6 Then Effect(EffectIndex).Y = TargetY
+        
+        'Check if the position of the effect is equal to that of the target
+        If Effect(EffectIndex).X = TargetX Then
+            If Effect(EffectIndex).Y = TargetY Then
+            
+                'For some effects, if the position is reached, we want to end the effect
+                If Effect(EffectIndex).EffectNum = EffectNum_Heal Then
+                    Effect(EffectIndex).BindToChar = 0
+                    Effect(EffectIndex).Progression = 0
+                End If
+                Exit Sub    'The effect is at the right position, don't update
+                
+            End If
+        End If
+        
+        'Calculate the angle
+        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
+        
+        'Update the position of the effect
+        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+
+    End If
+
+End Sub
+
+Private Sub Effect_Protection_Update(ByVal EffectIndex As Integer)
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
     'Update the life span
     If Effect(EffectIndex).Progression > 0 Then Effect(EffectIndex).Progression = Effect(EffectIndex).Progression - ElapsedTime
-
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
-
-    'Update position through character binding
-    If Effect(EffectIndex).BindToChar Then
-        TargetI = Effect(EffectIndex).BindToChar
-        TargetX = CharList(TargetI).RealPos.X
-        TargetY = CharList(TargetI).RealPos.Y
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
-        'Unbind when character is reached
-        If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-            If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                Effect(EffectIndex).BindToChar = 0
-                Effect(EffectIndex).Progression = 0
-            End If
-        End If
-
-    End If
 
     'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
@@ -786,12 +720,8 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
                 End If
 
             Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
-                'Set The Particle Information On The Particle Vertex
+                'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
                 Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
                 Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
@@ -890,7 +820,6 @@ Private Sub Effect_Snow_Reset(ByVal EffectIndex As Integer, ByVal Index As Long,
 End Sub
 
 Private Sub Effect_Snow_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
@@ -912,10 +841,6 @@ Dim LoopC As Long
             If Effect(EffectIndex).Particles(LoopC).sngX > (ScreenWidth + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
             If Effect(EffectIndex).Particles(LoopC).sngY > (ScreenHeight + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
-            'Apply shift values
-            Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
-            Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + Effect(EffectIndex).ShiftY
-
             'Time for a reset, baby!
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
 
@@ -934,10 +859,6 @@ Dim LoopC As Long
         End If
 
     Next LoopC
-
-    'Remove shift values
-    Effect(EffectIndex).ShiftX = 0
-    Effect(EffectIndex).ShiftY = 0
 
 End Sub
 
@@ -1004,13 +925,8 @@ Dim Y As Single
 End Sub
 
 Private Sub Effect_Strengthen_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
     'Calculate the time difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
@@ -1018,29 +934,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
     'Update the life span
     If Effect(EffectIndex).Progression > 0 Then Effect(EffectIndex).Progression = Effect(EffectIndex).Progression - ElapsedTime
-
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
-
-    'Update position through character binding
-    If Effect(EffectIndex).BindToChar Then
-        TargetI = Effect(EffectIndex).BindToChar
-        TargetX = CharList(TargetI).RealPos.X
-        TargetY = CharList(TargetI).RealPos.Y
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
-        'Unbind when character is reached
-        If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-            If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                Effect(EffectIndex).BindToChar = 0
-                Effect(EffectIndex).Progression = 0
-            End If
-        End If
-
-    End If
 
     'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
@@ -1077,10 +970,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
                 End If
 
             Else
-            
-                'Set the shifting values for if the screen moves
-                Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + (LastOffsetX - ParticleOffsetX)
-                Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + (LastOffsetY - ParticleOffsetY)
 
                 'Set the particle information on the particle vertex
                 Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
@@ -1103,6 +992,12 @@ Dim LoopC As Long
 
         'Make sure the effect is in use
         If Effect(LoopC).Used Then
+        
+            'Update the effect position if the screen has moved
+            Effect_UpdateOffset LoopC
+        
+            'Update the effect position if it is binded
+            Effect_UpdateBinding LoopC
 
             'Find out which effect is selected, then update it
             If Effect(LoopC).EffectNum = EffectNum_Fire Then Effect_Fire_Update LoopC
@@ -1114,6 +1009,7 @@ Dim LoopC As Long
             If Effect(LoopC).EffectNum = EffectNum_Rain Then Effect_Rain_Update LoopC
             If Effect(LoopC).EffectNum = EffectNum_EquationTemplate Then Effect_EquationTemplate_Update LoopC
             If Effect(LoopC).EffectNum = EffectNum_Waterfall Then Effect_Waterfall_Update LoopC
+            If Effect(LoopC).EffectNum = EffectNum_Summon Then Effect_Summon_Update LoopC
             
             'Render the effect
             Effect_Render LoopC
@@ -1189,7 +1085,6 @@ Private Sub Effect_Rain_Reset(ByVal EffectIndex As Integer, ByVal Index As Long,
 End Sub
 
 Private Sub Effect_Rain_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
 
@@ -1205,10 +1100,6 @@ Dim LoopC As Long
 
             'Update the particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
-            
-            'Apply shift values
-            Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
-            Effect(EffectIndex).Particles(LoopC).sngY = Effect(EffectIndex).Particles(LoopC).sngY + Effect(EffectIndex).ShiftY
 
             'Check if to reset the particle
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
@@ -1233,10 +1124,6 @@ Dim LoopC As Long
         End If
 
     Next LoopC
-
-    'Remove shift values
-    Effect(EffectIndex).ShiftX = 0
-    Effect(EffectIndex).ShiftY = 0
 
 End Sub
 
@@ -1325,10 +1212,6 @@ Dim LoopC As Long
     'Update the life span
     If Effect(EffectIndex).Progression > 0 Then Effect(EffectIndex).Progression = Effect(EffectIndex).Progression - ElapsedTime
 
-    'Set the shifting values for if the screen moves
-    Effect(EffectIndex).X = Effect(EffectIndex).X + (LastOffsetX - ParticleOffsetX)
-    Effect(EffectIndex).Y = Effect(EffectIndex).Y + (LastOffsetY - ParticleOffsetY)
-
     'Go through the particle loop
     For LoopC = 0 To Effect(EffectIndex).ParticleCount
     
@@ -1347,10 +1230,6 @@ Dim LoopC As Long
                     Effect_Waterfall_Reset EffectIndex, LoopC
     
                 Else
-                
-                    'Set the shifting values for if the screen moves
-                    .sngX = .sngX + (LastOffsetX - ParticleOffsetX)
-                    .sngY = .sngY + (LastOffsetY - ParticleOffsetY)
 
                     'Set the particle information on the particle vertex
                     Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(.sngR, .sngG, .sngB, .sngA)
@@ -1366,3 +1245,124 @@ Dim LoopC As Long
     Next LoopC
 
 End Sub
+
+Function Effect_Summon_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Single = 0) As Integer
+Dim EffectIndex As Integer
+Dim LoopC As Long
+
+    'Get the next open effect slot
+    EffectIndex = Effect_NextOpenSlot
+    If EffectIndex = -1 Then Exit Function
+
+    'Return the index of the used slot
+    Effect_Summon_Begin = EffectIndex
+
+    'Set The Effect's Variables
+    Effect(EffectIndex).EffectNum = EffectNum_Summon    'Set the effect number
+    Effect(EffectIndex).ParticleCount = Particles       'Set the number of particles
+    Effect(EffectIndex).Used = True                     'Enable the effect
+    Effect(EffectIndex).X = X                           'Set the effect's X coordinate
+    Effect(EffectIndex).Y = Y                           'Set the effect's Y coordinate
+    Effect(EffectIndex).Gfx = Gfx                       'Set the graphic
+    Effect(EffectIndex).Progression = Progression       'If we loop the effect
+
+    'Set the number of particles left to the total avaliable
+    Effect(EffectIndex).ParticlesLeft = Effect(EffectIndex).ParticleCount
+
+    'Set the float variables
+    Effect(EffectIndex).FloatSize = Effect_FToDW(8)    'Size of the particles
+
+    'Redim the number of particles
+    ReDim Effect(EffectIndex).Particles(0 To Effect(EffectIndex).ParticleCount)
+    ReDim Effect(EffectIndex).PartVertex(0 To Effect(EffectIndex).ParticleCount)
+
+    'Create the particles
+    For LoopC = 0 To Effect(EffectIndex).ParticleCount
+        Set Effect(EffectIndex).Particles(LoopC) = New Particle
+        Effect(EffectIndex).Particles(LoopC).Used = True
+        Effect(EffectIndex).PartVertex(LoopC).Rhw = 1
+        Effect_Summon_Reset EffectIndex, LoopC
+    Next LoopC
+
+    'Set The Initial Time
+    Effect(EffectIndex).PreviousFrame = timeGetTime
+
+End Function
+
+Private Sub Effect_Summon_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
+Dim X As Single
+Dim Y As Single
+Dim R As Single
+    
+    If Effect(EffectIndex).Progression > 1000 Then
+        Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 1.4
+    Else
+        Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.5
+    End If
+    R = (Index / 30) * Exp(Index / Effect(EffectIndex).Progression)
+    X = R * Cos(Index)
+    Y = R * Sin(Index)
+    
+    'Reset the particle
+    Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X + X, Effect(EffectIndex).Y + Y, 0, 0, 0, 0
+    Effect(EffectIndex).Particles(Index).ResetColor 0, Rnd, 0, 0.9, 0.2 + (Rnd * 0.2)
+ 
+End Sub
+
+Private Sub Effect_Summon_Update(ByVal EffectIndex As Integer)
+Dim ElapsedTime As Single
+Dim LoopC As Long
+
+    'Calculate The Time Difference
+    ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
+    Effect(EffectIndex).PreviousFrame = timeGetTime
+
+    'Go Through The Particle Loop
+    For LoopC = 0 To Effect(EffectIndex).ParticleCount
+
+        'Check If Particle Is In Use
+        If Effect(EffectIndex).Particles(LoopC).Used Then
+
+            'Update The Particle
+            Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
+
+            'Check if the particle is ready to die
+            If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
+
+                'Check if the effect is ending
+                If Effect(EffectIndex).Progression < 1800 Then
+
+                    'Reset the particle
+                    Effect_Summon_Reset EffectIndex, LoopC
+
+                Else
+
+                    'Disable the particle
+                    Effect(EffectIndex).Particles(LoopC).Used = False
+
+                    'Subtract from the total particle count
+                    Effect(EffectIndex).ParticlesLeft = Effect(EffectIndex).ParticlesLeft - 1
+
+                    'Check if the effect is out of particles
+                    If Effect(EffectIndex).ParticlesLeft = 0 Then Effect(EffectIndex).Used = False
+
+                    'Clear the color (dont leave behind any artifacts)
+                    Effect(EffectIndex).PartVertex(LoopC).Color = 0
+
+                End If
+
+            Else
+            
+                'Set the particle information on the particle vertex
+                Effect(EffectIndex).PartVertex(LoopC).Color = D3DColorMake(Effect(EffectIndex).Particles(LoopC).sngR, Effect(EffectIndex).Particles(LoopC).sngG, Effect(EffectIndex).Particles(LoopC).sngB, Effect(EffectIndex).Particles(LoopC).sngA)
+                Effect(EffectIndex).PartVertex(LoopC).X = Effect(EffectIndex).Particles(LoopC).sngX
+                Effect(EffectIndex).PartVertex(LoopC).Y = Effect(EffectIndex).Particles(LoopC).sngY
+
+            End If
+
+        End If
+
+    Next LoopC
+
+End Sub
+

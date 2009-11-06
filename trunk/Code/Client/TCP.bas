@@ -1716,7 +1716,7 @@ Sub Data_User_CastSkill(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'User casted a skill
-'<SkillID(B)><CasterIndex(I)><TargetIndex(I)>
+'<SkillID(B)> (Rest depends on the SkillID)
 '*********************************************
 
 Dim CasterIndex As Integer
@@ -1727,20 +1727,19 @@ Dim X As Long
 Dim Y As Long
 
     SkillID = rBuf.Get_Byte
-    CasterIndex = rBuf.Get_Integer
-    TargetIndex = rBuf.Get_Integer
-    
-    'If the char doesn't exist, request to create it
-    If Not Engine_ValidChar(CasterIndex) Then Exit Sub
-    If Not Engine_ValidChar(TargetIndex) Then Exit Sub
     
     Select Case SkillID
 
     Case SkID.Heal
+    
+        CasterIndex = rBuf.Get_Integer
+        TargetIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(CasterIndex) Then Exit Sub
+        If Not Engine_ValidChar(TargetIndex) Then Exit Sub
 
         'Set the position
-        X = CharList(CasterIndex).RealPos.X + 16
-        Y = CharList(CasterIndex).RealPos.Y
+        X = Engine_TPtoSPX(CharList(CasterIndex).Pos.X) + 16
+        Y = Engine_TPtoSPY(CharList(CasterIndex).Pos.Y)
 
         'If not casted on self, bind to character
         If TargetIndex <> CasterIndex Then
@@ -1752,27 +1751,63 @@ Dim Y As Long
         End If
 
     Case SkID.Protection
+    
+        CasterIndex = rBuf.Get_Integer
+        TargetIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(CasterIndex) Then Exit Sub
+        If Not Engine_ValidChar(TargetIndex) Then Exit Sub
 
         'Create the effect at (not bound to) the target character
-        X = CharList(TargetIndex).RealPos.X + 16
-        Y = CharList(TargetIndex).RealPos.Y
-        Effect_Protection_Begin X, Y, 11, 120, 40, 15
+        X = Engine_TPtoSPX(CharList(TargetIndex).Pos.X) + 16
+        Y = Engine_TPtoSPY(CharList(TargetIndex).Pos.Y)
+        TempIndex = Effect_Protection_Begin(X, Y, 11, 120, 40, 15)
+        Effect(TempIndex).BindToChar = TargetIndex
+        Effect(TempIndex).BindSpeed = 25
 
     Case SkID.Strengthen
+    
+        CasterIndex = rBuf.Get_Integer
+        TargetIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(CasterIndex) Then Exit Sub
+        If Not Engine_ValidChar(TargetIndex) Then Exit Sub
 
         'Create the effect at (not bound to) the target character
-        X = CharList(TargetIndex).RealPos.X + 16
-        Y = CharList(TargetIndex).RealPos.Y
-        Effect_Strengthen_Begin X, Y, 12, 120, 40, 15
+        X = Engine_TPtoSPX(CharList(TargetIndex).Pos.X) + 16
+        Y = Engine_TPtoSPY(CharList(TargetIndex).Pos.Y)
+        TempIndex = Effect_Strengthen_Begin(X, Y, 12, 120, 40, 15)
+        Effect(TempIndex).BindToChar = TargetIndex
+        Effect(TempIndex).BindSpeed = 25
 
     Case SkID.Bless
+    
+        CasterIndex = rBuf.Get_Integer
+        TargetIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(CasterIndex) Then Exit Sub
+        If Not Engine_ValidChar(TargetIndex) Then Exit Sub
 
-        'Create the effect at (not bound to) the target character
-        X = CharList(TargetIndex).RealPos.X + 16
-        Y = CharList(TargetIndex).RealPos.Y
-        Effect_Bless_Begin X, Y, 3, 120, 40, 15
+        'Create the effect
+        X = Engine_TPtoSPX(CharList(TargetIndex).Pos.X) + 16
+        Y = Engine_TPtoSPY(CharList(TargetIndex).Pos.Y)
+        TempIndex = Effect_Bless_Begin(X, Y, 3, 120, 40, 15)
+        Effect(TempIndex).BindToChar = TargetIndex
+        Effect(TempIndex).BindSpeed = 25
+        
+    Case SkID.SummonBandit
+    
+        TargetIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(TargetIndex) Then Exit Sub
+        X = Engine_TPtoSPX(CharList(TargetIndex).Pos.X) + 16
+        Y = Engine_TPtoSPY(CharList(TargetIndex).Pos.Y)
+        
+        'Create the effect
+        TempIndex = Effect_Summon_Begin(X, Y, 1, 500, 0)
+        Effect(TempIndex).BindToChar = TargetIndex
+        Effect(TempIndex).BindSpeed = 25
 
     Case SkID.SpikeField
+    
+        CasterIndex = rBuf.Get_Integer
+        If Not Engine_ValidChar(CasterIndex) Then Exit Sub
 
         'Create the spike field depending on the direction the user is facing
         X = CharList(CasterIndex).Pos.X

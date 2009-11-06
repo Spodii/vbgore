@@ -160,7 +160,7 @@ Dim X As Long
             nPos = NPCList(NPCIndex).Pos
             Server_HeadToPos HeadingLoop, nPos
 
-            'If a legal pos and a user is found attack
+            'If a legal pos and a NPC is found attack
             If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
                 X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
                 If NPCList(X).Attackable Then
@@ -178,10 +178,10 @@ Dim X As Long
                             ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
                             ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
                             If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
-                            Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                            Data_Send ToNPCArea, X, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
             
                             'Apply damage
-                            NPC_Damage NPCIndex, 0, Damage, NPCList(X).Char.CharIndex
+                            NPC_Damage X, 0, Damage, NPCList(NPCIndex).Char.CharIndex
                             NPC_AI_AttackNPC = 1
                             Exit Function
                         
@@ -217,10 +217,10 @@ Dim X As Long
                     ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
                     ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
                     If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
-                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                    Data_Send ToNPCArea, X, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
                     'Apply damage
-                    NPC_Damage NPCIndex, 0, Damage, NPCList(X).Char.CharIndex
+                    NPC_Damage X, 0, Damage, NPCList(NPCIndex).Char.CharIndex
                     NPC_AI_AttackNPC = 1
                     Exit Function
                 
@@ -1249,7 +1249,7 @@ Dim i As Integer
                 If CharList(AttackerCharIndex).CharType = CharType_NPC Then
                     If NPCList(CharList(AttackerCharIndex).Index).OwnerIndex > 0 Then
                         'The NPC is owned by a user, so give the EXP to the user (or group) like above
-                        i = CharList(NPCList(CharList(AttackerCharIndex).Index).OwnerIndex).Index
+                        i = NPCList(CharList(AttackerCharIndex).Index).OwnerIndex
                         If i > 0 Then
                             If i <= LastUser Then
                                 If UserList(i).GroupIndex > 0 Then
