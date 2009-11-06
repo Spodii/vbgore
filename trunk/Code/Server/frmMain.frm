@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCN.OCX"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
 Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
@@ -106,6 +106,14 @@ Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal l
 
 Private Sub Form_Load()
 Dim TempSplit() As String
+
+    'Make sure the server is not already running
+    If App.PrevInstance Then
+        MsgBox "You are already running an instance of the server!" & vbNewLine & _
+            "Only one instance of the server per server ID may be run at a time.", vbOKOnly
+        Unload Me
+        End
+    End If
 
     'Show the form
     Me.Caption = "Creating server..."
@@ -497,7 +505,7 @@ Private Sub GOREsock_OnClose(inSox As Long)
     If inSox < 1 Then Exit Sub
     
     'If the user is logged in still, close them down so they can be removed properly
-    If UserList(inSox).flags.UserLogged = 1 Then User_Close inSox
+    If UserList(inSox).Flags.UserLogged = 1 Then User_Close inSox
 
 End Sub
 
@@ -548,7 +556,7 @@ Dim CommandID As Byte
     If Index > LastUser Then Exit Sub
     
     'If it is a character disconnecting, do not check their packets since they're doodie heads
-    If UserList(Index).flags.Disconnecting Then Exit Sub
+    If UserList(Index).Flags.Disconnecting Then Exit Sub
     
     'Reset the user's packet counter
     UserList(Index).Counters.LastPacket = timeGetTime

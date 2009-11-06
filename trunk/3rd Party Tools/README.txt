@@ -62,18 +62,6 @@ version 0.0.2 of vbGORE. It should still get the job done, though.
 The guide for Grh3RawMaker can be found on the vbGORE site at:
 http://www.vbgore.com/index.php?title=Using_GrhRawMaker
 
-=================
-== Grh Crafter ==
-=================
-Created by:
-The Drasil team (http://www.vbgore.com/index.php?title=Drasil)
-
-Description:
-Grh Crafter is a replacement for Grh3RawMaker, created by the staff of Drasil. It is supposed
-to help you create your Grh1.raw file even easier then the Grh3RawMaker, along with is much
-newer so is more likely to work with the later versions. Use whichever you like more, though,
-as Grh Crater and Grh3RawMaker are both good tools.
-
 =============
 == OptiPNG ==
 =============

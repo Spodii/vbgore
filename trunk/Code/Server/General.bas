@@ -245,10 +245,10 @@ Dim NPCIndex As Integer
     For NPCIndex = 1 To LastNPC
 
         'Make sure NPC is active
-        If NPCList(NPCIndex).flags.NPCActive Then
+        If NPCList(NPCIndex).Flags.NPCActive Then
 
             'See if npc is alive
-            If NPCList(NPCIndex).flags.NPCAlive Then
+            If NPCList(NPCIndex).Flags.NPCAlive Then
 
                 'Only update npcs in user populated maps
                 If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
@@ -256,54 +256,69 @@ Dim NPCIndex As Integer
                     'Confirm the map is loaded in memory
                     If MapInfo(NPCList(NPCIndex).Pos.Map).DataLoaded = 1 Then
                     
-                        'Check to update mod stats
-                        If NPCList(NPCIndex).flags.UpdateStats Then
-                            NPCList(NPCIndex).flags.UpdateStats = 0
-                            NPC_UpdateModStats NPCIndex
-                        End If
-                        
-                        '*** Update counters ***
-                        If UpdateNPCCounters Then   'Update warcurse time
-                            If NPCList(NPCIndex).Skills.WarCurse > 0 Then
-                                If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
-                                    NPCList(NPCIndex).Counters.WarCurseCounter = 0
-                                    NPCList(NPCIndex).Skills.WarCurse = 0
-                                    ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
-                                    ConBuf.Put_Byte DataCode.Server_Message
-                                    ConBuf.Put_Byte 1
-                                    ConBuf.Put_String NPCList(NPCIndex).Name
-                                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-                                    ConBuf.PreAllocate 4
-                                    ConBuf.Put_Byte DataCode.Server_IconWarCursed
-                                    ConBuf.Put_Byte 0
-                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
-                                End If
-                            End If                  'Update spell exhaustion
-                            If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
-                                If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
-                                    NPCList(NPCIndex).Counters.SpellExhaustion = 0
-                                    ConBuf.PreAllocate 4
-                                    ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
-                                    ConBuf.Put_Byte 0
-                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
-                                End If
-                            End If                  'Update thralled NPC dispell (unsummon) time
-                            If NPCList(NPCIndex).flags.Thralled Then
-                                If NPCList(NPCIndex).Counters.RespawnCounter <> -1 Then
-                                    If NPCList(NPCIndex).Counters.RespawnCounter < timeGetTime Then
-                                        NPC_Kill NPCIndex
+                        'Confirm the NPC has a valid location, just in case
+                        If NPCList(NPCIndex).Pos.Map > 0 Then
+                            If NPCList(NPCIndex).Pos.Map <= NumMaps Then
+                                If NPCList(NPCIndex).Pos.X > 0 Then
+                                    If NPCList(NPCIndex).Pos.Y > 0 Then
+                                        If NPCList(NPCIndex).Pos.X <= MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
+                                            If NPCList(NPCIndex).Pos.Y <= MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
+                                                
+                                                'Check to update mod stats
+                                                If NPCList(NPCIndex).Flags.UpdateStats Then
+                                                    NPCList(NPCIndex).Flags.UpdateStats = 0
+                                                    NPC_UpdateModStats NPCIndex
+                                                End If
+                                                
+                                                '*** Update counters ***
+                                                If UpdateNPCCounters Then   'Update warcurse time
+                                                    If NPCList(NPCIndex).Skills.WarCurse > 0 Then
+                                                        If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
+                                                            NPCList(NPCIndex).Counters.WarCurseCounter = 0
+                                                            NPCList(NPCIndex).Skills.WarCurse = 0
+                                                            ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
+                                                            ConBuf.Put_Byte DataCode.Server_Message
+                                                            ConBuf.Put_Byte 1
+                                                            ConBuf.Put_String NPCList(NPCIndex).Name
+                                                            Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+                                                            ConBuf.PreAllocate 4
+                                                            ConBuf.Put_Byte DataCode.Server_IconWarCursed
+                                                            ConBuf.Put_Byte 0
+                                                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                                            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
+                                                        End If
+                                                    End If                  'Update spell exhaustion
+                                                    If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
+                                                        If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
+                                                            NPCList(NPCIndex).Counters.SpellExhaustion = 0
+                                                            ConBuf.PreAllocate 4
+                                                            ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+                                                            ConBuf.Put_Byte 0
+                                                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                                            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
+                                                        End If
+                                                    End If                  'Update thralled NPC dispell (unsummon) time
+                                                    If NPCList(NPCIndex).Flags.Thralled Then
+                                                        If NPCList(NPCIndex).Counters.RespawnCounter <> -1 Then
+                                                            If NPCList(NPCIndex).Counters.RespawnCounter < timeGetTime Then
+                                                                NPC_Kill NPCIndex
+                                                            End If
+                                                        End If
+                                                    End If
+                                                End If
+                            
+                                                '*** NPC AI ***
+                                                If UpdateNPCAI Then
+                                                    If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then NPC_AI NPCIndex
+                                                End If
+                            
+                                            End If
+                                            
+                                        End If
                                     End If
                                 End If
                             End If
                         End If
-    
-                        '*** NPC AI ***
-                        If UpdateNPCAI Then
-                            If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then NPC_AI NPCIndex
-                        End If
-    
                     End If
                     
                 End If
@@ -337,16 +352,16 @@ Dim UserIndex As Integer
     For UserIndex = 1 To LastUser
 
         'Make sure user is logged on
-        If UserList(UserIndex).flags.UserLogged Then
+        If UserList(UserIndex).Flags.UserLogged Then
         
             'Dont perform most actions if they are disconnecting
-            If UserList(UserIndex).flags.Disconnecting = 0 Then
+            If UserList(UserIndex).Flags.Disconnecting = 0 Then
 
                 '*** Disconnection timers ***
                 'Check if it has been idle for too long
                 If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
                     Data_Send ToIndex, UserIndex, cMessage(85).Data
-                    UserList(UserIndex).flags.Disconnecting = 1
+                    UserList(UserIndex).Flags.Disconnecting = 1
                     GoTo NextUser   'Skip to the next user
                 End If
                 
@@ -357,7 +372,7 @@ Dim UserIndex As Integer
                     GoTo NextUser   'Skip to the next user
                 End If
                 
-                If UserList(UserIndex).flags.CreatedStats = 1 Then
+                If UserList(UserIndex).Flags.CreatedStats = 1 Then
                     
                     '*** Recover stats ***
                     If RecoverUserStats Then    'HP
@@ -1251,7 +1266,7 @@ Dim LoopC As Long
     Log "Server_UpdateConnections: Updating " & LastUser & " users", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To LastUser
         If LenB(UserList(LoopC).Name) Then
-            If UserList(LoopC).flags.UserLogged Then
+            If UserList(LoopC).Flags.UserLogged Then
                 CurrConnections = CurrConnections + 1
             End If
         End If
@@ -1383,7 +1398,7 @@ Dim LoopC As Long
     Log "Call Server_CheckForSameName(" & UserIndex & "," & sName & ")", CodeTracker '//\\LOGLINE//\\
 
     For LoopC = 1 To LastUser
-        If UserList(LoopC).flags.UserLogged = 1 Then
+        If UserList(LoopC).Flags.UserLogged = 1 Then
             If UCase$(UserList(LoopC).Name) = UCase$(sName) Then
                 If UserIndex <> LoopC Then
                     Server_CheckForSameName = LoopC
@@ -1409,10 +1424,10 @@ Dim TargetID As Integer
     Log "Call Server_CheckTargetedDistance(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
     
     'Set the target ID
-    TargetID = UserList(UserIndex).flags.TargetIndex
+    TargetID = UserList(UserIndex).Flags.TargetIndex
     Log "Server_CheckTargetedDistance: Target ID acquired (" & TargetID & ")", CodeTracker '//\\LOGLINE//\\
 
-    Select Case UserList(UserIndex).flags.Target
+    Select Case UserList(UserIndex).Flags.Target
 
         'Self
         Case 0
@@ -1455,10 +1470,10 @@ Dim TargetID As Integer
     End Select
 
     'Not in distance or nothing targeted, so tell the user it is not targeted
-    If TargetID = 0 Or UserList(UserIndex).flags.TargetIndex = 0 Then
+    If TargetID = 0 Or UserList(UserIndex).Flags.TargetIndex = 0 Then
         Log "Server_CheckTargetedDistance: Telling user nothing is targeted", CodeTracker '//\\LOGLINE//\\
-        UserList(UserIndex).flags.Target = 0
-        UserList(UserIndex).flags.TargetIndex = 0
+        UserList(UserIndex).Flags.Target = 0
+        UserList(UserIndex).Flags.TargetIndex = 0
         ConBuf.PreAllocate 3
         ConBuf.Put_Byte DataCode.User_Target
         ConBuf.Put_Integer 0
@@ -1760,6 +1775,9 @@ Dim tmpBlocked As Byte
         Exit Function
     End If
     
+    'Make sure the map is loaded
+    If MapInfo(Map).DataLoaded = 0 Then Load_Maps_Temp Map
+    
     With MapInfo(Map).Data(X, Y)
     
         'Check if a character (User or NPC) is already at the tile
@@ -1916,29 +1934,6 @@ Dim LoopC As Long
 
 End Function
 
-Public Function Server_SkillIDtoSkillName(ByVal SkillID As Byte) As String
-
-'***************************************************
-'Takes in a SkillID and returns the name of that skill
-'***************************************************
-
-    Log "Call Server_SkillIDtoSkillName(" & SkillID & ")", CodeTracker '//\\LOGLINE//\\
-
-    Select Case SkillID
-        Case SkID.Bless: Server_SkillIDtoSkillName = "Bless"
-        Case SkID.IronSkin: Server_SkillIDtoSkillName = "Iron Skin"
-        Case SkID.Strengthen: Server_SkillIDtoSkillName = "Strengthen"
-        Case SkID.Warcry: Server_SkillIDtoSkillName = "Warcry"
-        Case SkID.Protection: Server_SkillIDtoSkillName = "Protection"
-        Case SkID.SpikeField: Server_SkillIDtoSkillName = "Spike Field"
-        Case SkID.Heal: Server_SkillIDtoSkillName = "Heal"
-        Case Else: Server_SkillIDtoSkillName = "Unknown Skill #" & SkillID
-    End Select
-    
-    Log "Rtrn Server_SkillIDtoSkillName = " & Server_SkillIDtoSkillName, CodeTracker '//\\LOGLINE//\\
-
-End Function
-
 Public Function Server_WriteMail(ByVal WriterIndex As Integer, ByVal ReceiverName As String, ByVal Subject As String, ByVal Message As String, ByRef Objs() As Obj) As Byte
 Dim MailIndex As Long
 Dim MailData As MailData
@@ -2025,7 +2020,7 @@ Dim j As Byte
 
     'Check if the reciever is on
     For LoopC = 1 To LastUser
-        If UserList(LoopC).flags.UserLogged Then
+        If UserList(LoopC).Flags.UserLogged Then
             If UCase$(UserList(LoopC).Name) = UCase$(ReceiverName) Then
 
                 'Get the user's next open MailID slot

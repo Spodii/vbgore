@@ -252,7 +252,7 @@ Begin VB.Form frmMain
       Begin VB.Label Label1 
          Alignment       =   1  'Right Justify
          BackStyle       =   0  'Transparent
-         Caption         =   "Data Out (Mb) :"
+         Caption         =   "Data Out (MB) :"
          ForeColor       =   &H80000008&
          Height          =   195
          Index           =   2

@@ -57,6 +57,38 @@ Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Lo
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 
+Private Function GetRandomFileName() As String
+Dim i As Long
+
+    'Returns a random file name
+    For i = 1 To (3 + Int(Rnd * 10))
+        GetRandomFileName = GetRandomFileName & GetRandomChar
+    Next i
+    
+End Function
+
+Private Function GetRandomChar() As String
+Dim i As Long
+
+    i = Int(Rnd * 3)
+    Select Case i
+    
+        '0 to 9
+        Case 0
+            GetRandomChar = Str$(Int(Rnd * 9))
+            
+        'A to Z
+        Case 1
+            GetRandomChar = Chr$(65 + Int(Rnd * 26))
+            
+        'a to z
+        Case 2
+            GetRandomChar = Chr$(97 + Int(Rnd * 26))
+            
+    End Select
+
+End Function
+
 Private Sub CommandLine(ByVal CommandLineString As String)
 Dim Start As STARTUPINFO
 Dim Proc As PROCESS_INFORMATION
@@ -96,26 +128,30 @@ Dim FileNum As Byte
 End Sub
 
 Public Sub Compression_Compress_PAQ8l(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin"
-    CommandLine DataPath & "paq8l.exe -" & PAQ8l_Level & " " & QUOTE & App.Path & "\contemp.bin" & QUOTE
-    If Dir$(App.Path & "\contemp.bin.paq8l") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin.paq8l"
-        Kill App.Path & "\contemp.bin.paq8l"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+    CommandLine DataPath & "paq8l.exe -" & PAQ8l_Level & " " & QUOTE & App.Path & "\" & FileName & ".bin" & QUOTE
+    If Dir$(App.Path & "\" & FileName & ".bin.paq8l") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin.paq8l"
+        Kill App.Path & "\" & FileName & ".bin.paq8l"
     End If
-    Kill App.Path & "\contemp.bin"
+    Kill App.Path & "\" & FileName & ".bin"
 
 End Sub
 
 Public Sub Compression_DeCompress_PAQ8l(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin.paq8l"
-    CommandLine DataPath & "paq8l.exe -d " & QUOTE & App.Path & "\contemp.bin.paq8l" & QUOTE
-    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin"
-        Kill App.Path & "\contemp.bin"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin.paq8l"
+    CommandLine DataPath & "paq8l.exe -d " & QUOTE & App.Path & "\" & FileName & ".bin.paq8l" & QUOTE
+    If Dir$(App.Path & "\" & FileName & ".bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+        Kill App.Path & "\" & FileName & ".bin"
     End If
-    Kill App.Path & "\contemp.bin.paq8l"
+    Kill App.Path & "\" & FileName & ".bin.paq8l"
 
 End Sub
 
@@ -151,64 +187,74 @@ Dim Dummy As Boolean
 End Sub
 
 Public Sub Compression_Compress_LZMA(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin"
-    CommandLine DataPath & "7za.exe a -t7z " & QUOTE & App.Path & "\contemp.bin.7z" & QUOTE & " -aoa " & QUOTE & App.Path & "\contemp.bin" & QUOTE & " -mx9 -m0=LZMA:d80m:fb273:lc5:pb1:mc10000"
-    If Dir$(App.Path & "\contemp.bin.7z") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin.7z"
-        Kill App.Path & "\contemp.bin.7z"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+    CommandLine DataPath & "7za.exe a -t7z " & QUOTE & App.Path & "\" & FileName & ".bin.7z" & QUOTE & " -aoa " & QUOTE & App.Path & "\" & FileName & ".bin" & QUOTE & " -mx9 -m0=LZMA:d80m:fb273:lc5:pb1:mc10000"
+    If Dir$(App.Path & "\" & FileName & ".bin.7z") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin.7z"
+        Kill App.Path & "\" & FileName & ".bin.7z"
     End If
-    Kill App.Path & "\contemp.bin"
+    Kill App.Path & "\" & FileName & ".bin"
 
 End Sub
 
 Public Sub Compression_Compress_MonkeyAudio(ByteArray() As Byte)
+Dim FileName As String
 
     '*.wav only
-    SaveBytes ByteArray(), App.Path & "\contemp.wav"
-    CommandLine DataPath & "mac.exe " & QUOTE & App.Path & "\contemp.wav" & QUOTE & " " & QUOTE & App.Path & "\contemp.wav.ape" & QUOTE & " -c5000"
-    If Dir$(App.Path & "\contemp.wav.ape") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.wav.ape"
-        Kill App.Path & "\contemp.wav.ape"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".wav"
+    CommandLine DataPath & "mac.exe " & QUOTE & App.Path & "\" & FileName & ".wav" & QUOTE & " " & QUOTE & App.Path & "\" & FileName & ".wav.ape" & QUOTE & " -c5000"
+    If Dir$(App.Path & "\" & FileName & ".wav.ape") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".wav.ape"
+        Kill App.Path & "\" & FileName & ".wav.ape"
     End If
-    Kill App.Path & "\contemp.wav"
+    Kill App.Path & "\" & FileName & ".wav"
 
 End Sub
 
 Public Sub Compression_DeCompress_MonkeyAudio(ByteArray() As Byte)
+Dim FileName As String
 
     '*.wav only
-    SaveBytes ByteArray(), App.Path & "\contemp.wav.ape"
-    CommandLine DataPath & "mac.exe " & QUOTE & App.Path & "\contemp.wav.ape" & QUOTE & " " & QUOTE & App.Path & "\contemp.wav" & QUOTE & " -d"
-    If Dir$(App.Path & "\contemp.wav") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.wav"
-        Kill App.Path & "\contemp.wav"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".wav.ape"
+    CommandLine DataPath & "mac.exe " & QUOTE & App.Path & "\" & FileName & ".wav.ape" & QUOTE & " " & QUOTE & App.Path & "\" & FileName & ".wav" & QUOTE & " -d"
+    If Dir$(App.Path & "\" & FileName & ".wav") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".wav"
+        Kill App.Path & "\" & FileName & ".wav"
     End If
-    Kill App.Path & "\contemp.wav.ape"
+    Kill App.Path & "\" & FileName & ".wav.ape"
 
 End Sub
 
 Public Sub Compression_Compress_Deflate64(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin"
-    CommandLine DataPath & "7za.exe a -tzip " & QUOTE & App.Path & "\contemp.bin.7z" & QUOTE & " -aoa " & QUOTE & App.Path & "\contemp.bin" & QUOTE & " -mx9 -mm=Deflate64 -mfb=257 -mpass=15 -mmc=1000"
-    If Dir$(App.Path & "\contemp.bin.7z") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin.7z"
-        Kill App.Path & "\contemp.bin.7z"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+    CommandLine DataPath & "7za.exe a -tzip " & QUOTE & App.Path & "\" & FileName & ".bin.7z" & QUOTE & " -aoa " & QUOTE & App.Path & "\" & FileName & ".bin" & QUOTE & " -mx9 -mm=Deflate64 -mfb=257 -mpass=15 -mmc=1000"
+    If Dir$(App.Path & "\" & FileName & ".bin.7z") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin.7z"
+        Kill App.Path & "\" & FileName & ".bin.7z"
     End If
-    Kill App.Path & "\contemp.bin"
+    Kill App.Path & "\" & FileName & ".bin"
 
 End Sub
 
 Public Sub Compression_DeCompress_Deflate64(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin.7z"
-    CommandLine DataPath & "7za.exe e " & QUOTE & App.Path & "\contemp.bin.7z" & QUOTE
-    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin"
-        Kill App.Path & "\contemp.bin"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin.7z"
+    CommandLine DataPath & "7za.exe e " & QUOTE & App.Path & "\" & FileName & ".bin.7z" & QUOTE
+    If Dir$(App.Path & "\" & FileName & ".bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+        Kill App.Path & "\" & FileName & ".bin"
     End If
-    Kill App.Path & "\contemp.bin.7z"
+    Kill App.Path & "\" & FileName & ".bin.7z"
 
 End Sub
 
@@ -341,14 +387,16 @@ Public Sub Compression_DeCompress(SrcFile As String, DestFile As String, Compres
 End Sub
 
 Public Sub Compression_DeCompress_LZMA(ByteArray() As Byte)
+Dim FileName As String
 
-    SaveBytes ByteArray(), App.Path & "\contemp.bin.7z"
-    CommandLine DataPath & "7za.exe e " & QUOTE & App.Path & "\contemp.bin.7z" & QUOTE
-    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
-        LoadBytes ByteArray(), App.Path & "\contemp.bin"
-        Kill App.Path & "\contemp.bin"
+    FileName = GetRandomFileName
+    SaveBytes ByteArray(), App.Path & "\" & FileName & ".bin.7z"
+    CommandLine DataPath & "7za.exe e " & QUOTE & App.Path & "\" & FileName & ".bin.7z" & QUOTE
+    If Dir$(App.Path & "\" & FileName & ".bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\" & FileName & ".bin"
+        Kill App.Path & "\" & FileName & ".bin"
     End If
-    Kill App.Path & "\contemp.bin.7z"
+    Kill App.Path & "\" & FileName & ".bin.7z"
 
 End Sub
 

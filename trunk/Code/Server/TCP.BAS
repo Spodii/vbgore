@@ -1898,10 +1898,9 @@ Dim i As Long
 
     Log "Call Data_Server_Who(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-'Get the list of users
-
+    'Get the list of users
     For LoopC = 1 To LastUser
-        If LenB(UserList(LoopC).Name) Then
+        If LenB(UserList(LoopC).Name) <> 0 Then
             If UserList(LoopC).Flags.UserLogged Then
                 intNumUsers = intNumUsers + 1
                 ReDim Preserve UserNames(1 To intNumUsers)
@@ -1921,8 +1920,7 @@ Dim i As Long
         tStr = vbNullString             'Clear the string buffer
         For LoopC = 1 To 10
             If LoopC + ((i - 1) * 10) > intNumUsers Then Exit For
-            tStr = UserNames(LoopC + ((i - 1) * 10))
-            tStr = tStr & ", "
+            tStr = tStr & UserNames(LoopC + ((i - 1) * 10)) & ", "
         Next LoopC
         tStr = Left$(tStr, Len(tStr) - 2)   'Crop off the last comma
         ConBuf.Allocate 3 + Len(tStr)
@@ -2789,32 +2787,7 @@ Dim s As String
 
             'Starting reward skills
             If QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill > 0 Then
-            
-                'Check for skill requirements
-                If Skill_ValidSkillForClass(UserList(UserIndex).Class, QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) Then
-            
-                    If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1 Then
-                        s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
-                        'User already knew the skill
-                        ConBuf.PreAllocate 3 + Len(s)
-                        ConBuf.Put_Byte DataCode.Server_Message
-                        ConBuf.Put_Byte 5
-                        ConBuf.Put_String s
-                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                    Else
-                        s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
-                        'User learns the new skill
-                        ConBuf.PreAllocate 3 + Len(s)
-                        ConBuf.Put_Byte DataCode.Server_Message
-                        ConBuf.Put_Byte 6
-                        ConBuf.Put_String s
-                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                        'Give the user the skill
-                        UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1
-                        User_SendKnownSkills UserIndex
-                    End If
-                    
-                End If
+                User_GiveSkill UserIndex, QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill
             End If
 
             'Check for an object reward

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
+Object = "{4F622962-B733-4D8E-821E-95196CB8025E}#1.0#0"; "GOREsockClient.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,7 +31,7 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin GOREsock.GOREsockServer GOREsock 
+   Begin GOREsock.GOREsockClient GOREsock 
       Left            =   600
       Top             =   120
       _ExtentX        =   847
@@ -249,7 +249,6 @@ Static FailedUnloads As Long
         FailedUnloads = FailedUnloads + 1
         
     End If
-            
 
 End Sub
 
@@ -309,7 +308,7 @@ Dim BufUBound As Long
             Case .Server_IconIronSkin: Data_Server_IconIronSkin rBuf
             Case .Server_IconProtected: Data_Server_IconProtected rBuf
             Case .Server_IconStrengthened: Data_Server_IconStrengthened rBuf
-            Case .Server_IconWarCursed:  Data_Server_IconWarCursed rBuf
+            Case .Server_IconWarCursed: Data_Server_IconWarCursed rBuf
             Case .Server_IconSpellExhaustion: Data_Server_IconSpellExhaustion rBuf
             Case .Server_MailBox: Data_Server_Mailbox rBuf
             Case .Server_MailItemRemove: Data_Server_MailItemRemove rBuf

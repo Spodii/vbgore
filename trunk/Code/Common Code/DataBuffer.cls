@@ -69,9 +69,8 @@ Public Function HasBuffer() As Byte
 End Function
 
 Public Sub Clear()
-
-'Clear all the values so we can use the buffer from the start again
-
+ 
+    'Clear all the values so we can use the buffer from the start again
     PutBytePos = 0
     GetBytePos = 0
     ByteBufferUbound = -1
@@ -82,7 +81,7 @@ End Sub
 Public Function Get_Buffer_Remainder() As Byte()
 Dim b() As Byte
 
-'Return the remainder of the byte array buffer
+    'Return the remainder of the byte array buffer
 
     'Check if we already hit the end of the buffer
     If UBound(ByteBuffer) - GetBytePos + 1 = 0 Then

@@ -1,6 +1,111 @@
 Attribute VB_Name = "TCP"
 Option Explicit
 
+Private Type typHOSTENT
+    hName As Long
+    hAliases As Long
+    hAddrType As Integer
+    hLength As Integer
+    hAddrList As Long
+End Type
+
+Private Type WSADATA
+    wversion As Integer
+    wHighVersion As Integer
+    szDescription(0 To 255) As Byte
+    szSystemStatus(0 To 127) As Byte
+    iMaxSockets As Integer
+    iMaxUdpDg As Integer
+    lpszVendorInfo As Long
+End Type
+
+Private Declare Sub apiCopyMemory Lib "kernel32" Alias "RtlMoveMemory" (hpvDest As Any, ByVal hpvSource As Long, ByVal cbCopy As Long)
+Private Declare Function apiGetHostByName Lib "wsock32" Alias "gethostbyname" (ByVal HostName As String) As Long
+Private Declare Function WSACleanup Lib "wsock32" () As Long
+Private Declare Function WSAStartup Lib "wsock32" (ByVal VersionReq As Long, WSADataReturn As WSADATA) As Long
+
+Private Function IsIP(ByVal IPAddress As String) As Boolean
+Dim s() As String
+Dim i As Long
+
+    'If there are no periods, I have no idea what we have...
+    If InStr(1, IPAddress, ".") = 0 Then Exit Function
+    
+    'Split up the string by the periods
+    s = Split(IPAddress, ".")
+    
+    'Confirm we have ubound = 3, since xxx.xxx.xxx.xxx has 4 elements and we start at index 0
+    If UBound(s) <> 3 Then Exit Function
+    
+    'Check that the values are numeric and in a valid range
+    For i = 0 To 3
+        If Val(s(i)) < 0 Then Exit Function
+        If Val(s(i)) > 255 Then Exit Function
+    Next i
+    
+    'Looks like we were passed a valid IP!
+    IsIP = True
+    
+End Function
+
+Public Function GetIPFromHost(ByVal HostName As String) As String
+Dim udtWSAData As WSADATA
+Dim HostAddress As Long
+Dim HostInfo As typHOSTENT
+Dim IPLong As Long
+Dim IPBytes() As Byte
+Dim i As Integer
+
+    On Error Resume Next
+    
+    If WSAStartup(257, udtWSAData) Then
+        MsgBox "Error initializing winsock on WSAStartup!"
+        GetIPFromHost = HostName
+        Exit Function
+    End If
+
+    'Make sure a HTTP:// or FTP:// something wasn't added... some people like to do that
+    If UCase$(Left$(HostName, 7)) = "HTTP://" Then
+        HostName = Right$(HostName, Len(HostName) - 7)
+    ElseIf UCase$(Left$(HostName, 6)) = "FTP://" Then
+        HostName = Right$(HostName, Len(HostName) - 6)
+    End If
+    
+    'If we were already passed an IP, just abort since we have what we want
+    If IsIP(HostName) Then
+        GetIPFromHost = HostName
+        Exit Function
+    End If
+    
+    'Get the host address
+    HostAddress = apiGetHostByName(HostName)
+    
+    'Failure!
+    If HostAddress = 0 Then Exit Function
+    
+    'Move the memory around to get it in a format we can read
+    apiCopyMemory HostInfo, HostAddress, LenB(HostInfo)
+    apiCopyMemory IPLong, HostInfo.hAddrList, 4
+    
+    'Get the number of parts to the IP (will always be 4 as far as I know)
+    ReDim IPBytes(1 To HostInfo.hLength)
+
+    'Convert the address, stored in the format of a long, to 4 bytes (just simple long -> byte array conversion)
+    apiCopyMemory IPBytes(1), IPLong, HostInfo.hLength
+    
+    'Add in the periods
+    For i = 1 To HostInfo.hLength
+        GetIPFromHost = GetIPFromHost & IPBytes(i) & "."
+    Next
+    
+    'Remove the final period
+    GetIPFromHost = Left$(GetIPFromHost, Len(GetIPFromHost) - 1)
+    
+    'Clean up the socket
+    WSACleanup
+
+End Function
+
 Sub InitSocket()
 
 '*****************************************************************
@@ -19,7 +124,8 @@ Sub InitSocket()
     If frmMain.GOREsock.ShutDown <> soxERROR Then
     
         'Set up the socket
-        SoxID = frmMain.GOREsock.Connect("127.0.0.1", 10200)
+        'Leave the GetIPFromHost() wrapper there, this will convert a host name to IP if needed, or leave it as an IP if you pass an IP
+        SoxID = frmMain.GOREsock.Connect(GetIPFromHost("127.0.0.1"), 10200)
         
         'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
         If SoxID = -1 Then
@@ -37,8 +143,26 @@ Sub Data_User_Trade_Trade(ByRef rBuf As DataBuffer)
 'Begins the trading sequence
 '<Name(S)><MyIndex(B)>
 '*********************************************
+Dim i As Long
 
-    ZeroMemory TradeTable, Len(TradeTable)
+    For i = 1 To 9
+        TradeTable.Trade1(i).Amount = 0
+        TradeTable.Trade1(i).Grh = 0
+        TradeTable.Trade1(i).Name = vbNullString
+        TradeTable.Trade1(i).Value = 0
+        TradeTable.Trade2(i).Amount = 0
+        TradeTable.Trade2(i).Grh = 0
+        TradeTable.Trade2(i).Name = vbNullString
+        TradeTable.Trade2(i).Value = 0
+    Next i
+    TradeTable.Gold1 = 0
+    TradeTable.Gold2 = 0
+    TradeTable.User1Accepted = 0
+    TradeTable.User2Accepted = 0
+    TradeTable.User1Name = vbNullString
+    TradeTable.User2Name = vbNullString
+    TradeTable.MyIndex = 0
+    
     TradeTable.User1Name = rBuf.Get_String
     TradeTable.User2Name = rBuf.Get_String
     TradeTable.MyIndex = rBuf.Get_Byte
@@ -236,11 +360,11 @@ Dim Byt1 As Byte
             Lng1 = rBuf.Get_Long
             Engine_AddToChatTextBuffer Replace$(Message(4), "<gold>", Lng1), FontColor_Info
         Case 5
-            Str1 = rBuf.Get_String
-            Engine_AddToChatTextBuffer Replace$(Message(5), "<skill>", Str1), FontColor_Info
+            Byt1 = rBuf.Get_Byte
+            Engine_AddToChatTextBuffer Replace$(Message(5), "<skill>", Engine_SkillIDtoSkillName(Byt1)), FontColor_Info
         Case 6
-            Str1 = rBuf.Get_String
-            Engine_AddToChatTextBuffer Replace$(Message(6), "<skill>", Str1), FontColor_Info
+            Byt1 = rBuf.Get_Byte
+            Engine_AddToChatTextBuffer Replace$(Message(6), "<skill>", Engine_SkillIDtoSkillName(Byt1)), FontColor_Info
         Case 7
             Engine_AddToChatTextBuffer Message(7), FontColor_Quest
         Case 8
@@ -495,7 +619,7 @@ Dim Byt1 As Byte
             TempInt = rBuf.Get_Integer
             TempStr = Replace$(Message(76), "<name>", Str1)
             TempStr = Replace$(TempStr, "<message>", Str2)
-            Engine_AddToChatTextBuffer TempStr, FontColor_Info
+            Engine_AddToChatTextBuffer TempStr, FontColor_Talk
             If TempInt > 0 Then Engine_MakeChatBubble TempInt, Engine_WordWrap(TempStr, BubbleMaxWidth)
         Case 77
             Str1 = rBuf.Get_String
@@ -2194,12 +2318,6 @@ Dim StatID As Byte
 
     StatID = rBuf.Get_Byte
     ModStats(StatID) = rBuf.Get_Long
-    
-    'If we get a new speed value, adjust the scroll speed accordingly
-    If StatID = SID.Speed Then
-        ScrollPixelsPerFrameX = 4
-        ScrollPixelsPerFrameY = 4
-    End If
 
 End Sub
 
@@ -2360,10 +2478,28 @@ Sub Data_User_Trade_Cancel()
 'Trade table was closed or canceled
 '<>
 '*********************************************
+Dim i As Long
 
     ShowGameWindow(TradeWindow) = 0
     If LastClickedWindow = TradeWindow Then LastClickedWindow = 0
-    ZeroMemory TradeTable, Len(TradeTable)
+
+    For i = 1 To 9
+        TradeTable.Trade1(i).Amount = 0
+        TradeTable.Trade1(i).Grh = 0
+        TradeTable.Trade1(i).Name = vbNullString
+        TradeTable.Trade1(i).Value = 0
+        TradeTable.Trade2(i).Amount = 0
+        TradeTable.Trade2(i).Grh = 0
+        TradeTable.Trade2(i).Name = vbNullString
+        TradeTable.Trade2(i).Value = 0
+    Next i
+    TradeTable.Gold1 = 0
+    TradeTable.Gold2 = 0
+    TradeTable.User1Accepted = 0
+    TradeTable.User2Accepted = 0
+    TradeTable.User1Name = vbNullString
+    TradeTable.User2Name = vbNullString
+    TradeTable.MyIndex = 0
 
 End Sub
 

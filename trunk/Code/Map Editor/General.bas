@@ -194,7 +194,7 @@ Sub HideFrmTSOpt()
     frmTileSelect.Enabled = True
 End Sub
 
-Sub SetTile(ByVal tX As Byte, ByVal tY As Byte, ByVal Button As Integer, ByVal Shift As Integer)
+Sub SetTile(ByVal tX As Byte, ByVal tY As Byte, ByVal Button As Integer, ByVal Shift As Integer, Optional ByVal IsFlooding As Boolean = False)
 
 '*****************************************************************
 'Updates the marked tile with the new graphics/lights/etc
@@ -217,12 +217,12 @@ Dim AC As Byte
     If tY > MapInfo.Height Then Exit Sub
 
     'Check to get tile information
-    If frmTile.Visible = True Then
+    If frmTile.Visible Then
         If Button = vbRightButton Then frmTile.SetTileInfo tX, tY
     End If
     
     'Check to place/erase a tile
-    If frmSetTile.Visible = True Then
+    If frmSetTile.Visible Then
         If Button = vbLeftButton Then
             With MapData(tX, tY)
             
@@ -234,7 +234,7 @@ Dim AC As Byte
                             AC = 1
                         End If
                     Else
-                        If GetAsyncKeyState(vbKeyShift) Then
+                        If GetAsyncKeyState(vbKeyShift) <> 0 And IsFlooding = False Then
                             For i = 1 To 6
                                 If .Graphic(i).GrhIndex <> 0 Then
                                     .Graphic(i).GrhIndex = 0
@@ -288,13 +288,15 @@ Dim AC As Byte
     End If
     
     'Check to erase a tile
-    If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
-        If frmSetTile.Visible = True Then
-            If Button = vbRightButton Then
-                If frmSetTile.LayerChk.Value = 1 Then
-                    If MapData(tX, tY).Graphic(DrawLayer).GrhIndex <> 0 Then
-                        MapData(tX, tY).Graphic(DrawLayer).GrhIndex = 0
-                        AB = 1
+    If Not IsFlooding Then
+        If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
+            If frmSetTile.Visible Then
+                If Button = vbRightButton Then
+                    If frmSetTile.LayerChk.Value = 1 Then
+                        If MapData(tX, tY).Graphic(DrawLayer).GrhIndex <> 0 Then
+                            MapData(tX, tY).Graphic(DrawLayer).GrhIndex = 0
+                            AB = 1
+                        End If
                     End If
                 End If
             End If
@@ -302,7 +304,7 @@ Dim AC As Byte
     End If
                         
     'Check to place/erase a sound effect
-    If frmSfx.Visible = True Then
+    If frmSfx.Visible Then
         If Button = vbLeftButton Then
             MapData(tX, tY).Sfx = Val(frmSfx.SfxTxt.Text)
             AB = 1
@@ -310,11 +312,11 @@ Dim AC As Byte
     End If
     
     'Check to place/erase a NPC
-    If frmNPCs.Visible = True Then
+    If frmNPCs.Visible Then
         If Button = vbLeftButton Then
             If tY > 1 Then  'Dont place NPCs on tiles y = 1, since their head goes onto tile 0, then uhoh! :o
                 If Not Shift Then
-                    If frmNPCs.SetOpt.Value = True Then
+                    If frmNPCs.SetOpt.Value Then
                         If MapData(tX, tY).NPCIndex = 0 Then
                             DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
                             Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
@@ -322,7 +324,7 @@ Dim AC As Byte
                             AB = 1
                         End If
                     End If
-                    If frmNPCs.EraseOpt.Value = True Then
+                    If frmNPCs.EraseOpt.Value Then
                         If MapData(tX, tY).NPCIndex <> 0 Then
                             Engine_Char_Erase MapData(tX, tY).NPCIndex
                             AB = 1
@@ -334,16 +336,16 @@ Dim AC As Byte
     End If
     
     'Check to place/erase an exit
-    If frmExit.Visible = True Then
+    If frmExit.Visible Then
         If Button = vbLeftButton Then
             If Not Shift Then
-                If frmExit.SetOpt.Value = True Then
+                If frmExit.SetOpt.Value Then
                     MapData(tX, tY).TileExit.Map = Val(frmExit.MapTxt.Text)
                     MapData(tX, tY).TileExit.X = Val(frmExit.XTxt.Text)
                     MapData(tX, tY).TileExit.Y = Val(frmExit.YTxt.Text)
                     AB = 1
                 End If
-                If frmExit.EraseOpt.Value = True Then
+                If frmExit.EraseOpt.Value Then
                     MapData(tX, tY).TileExit.Map = 0
                     MapData(tX, tY).TileExit.X = 0
                     MapData(tX, tY).TileExit.Y = 0
@@ -354,7 +356,7 @@ Dim AC As Byte
     End If
     
     'Check to place a block
-    If frmBlock.Visible = True Then
+    If frmBlock.Visible Then
         If Button = vbLeftButton Then
             If Not Shift Then
                 If frmBlock.SetWalkChk.Value = 1 Then
@@ -378,32 +380,36 @@ Dim AC As Byte
         End If
     End If
     
-    If Button = vbLeftButton Then
-        If AB = 1 Then
-            If ShowMiniMap Then Engine_BuildMiniMap
+    If Not IsFlooding Then
+        If Button = vbLeftButton Then
+            If AB = 1 Then
+                If ShowMiniMap Then Engine_BuildMiniMap
+            End If
+            If AC = 1 Or AB = 1 Then Engine_CreateTileLayers
         End If
-        If AC = 1 Or AB = 1 Then Engine_CreateTileLayers
     End If
 
     'Move a particle effect
-    If frmParticles.Visible = True Then
-        If Button = vbRightButton Then
-            If Shift Then
-                If frmParticles.ParticlesList.ListIndex + 1 >= LBound(Effect) Then
-                    If frmParticles.ParticlesList.ListIndex + 1 <= UBound(Effect) Then
-                        If Effect(frmParticles.ParticlesList.ListIndex + 1).Used = True Then
-                            For i = 0 To Effect(frmParticles.ParticlesList.ListIndex + 1).ParticleCount
-                                Effect(frmParticles.ParticlesList.ListIndex + 1).Particles(i).sngA = 0
-                            Next i
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).X = HoverX - (ParticleOffsetX - 288)
-                            Effect(frmParticles.ParticlesList.ListIndex + 1).Y = HoverY - (ParticleOffsetY - 288)
+    If Not IsFlooding Then
+        If frmParticles.Visible Then
+            If Button = vbRightButton Then
+                If Shift Then
+                    If frmParticles.ParticlesList.ListIndex + 1 >= LBound(Effect) Then
+                        If frmParticles.ParticlesList.ListIndex + 1 <= UBound(Effect) Then
+                            If Effect(frmParticles.ParticlesList.ListIndex + 1).Used = True Then
+                                For i = 0 To Effect(frmParticles.ParticlesList.ListIndex + 1).ParticleCount
+                                    Effect(frmParticles.ParticlesList.ListIndex + 1).Particles(i).sngA = 0
+                                Next i
+                                Effect(frmParticles.ParticlesList.ListIndex + 1).X = HoverX - (ParticleOffsetX - 288)
+                                Effect(frmParticles.ParticlesList.ListIndex + 1).Y = HoverY - (ParticleOffsetY - 288)
+                            End If
                         End If
                     End If
                 End If
             End If
         End If
     End If
-            
+                
 End Sub
 
 Public Function LoadTextureToForm(ByVal frm As Form, ByVal TextureNum As Long, Optional ByVal Resize As Byte = 1)

@@ -71,6 +71,7 @@ Dim b() As Byte
     On Error GoTo ErrOut
     NumFiles = UBound(FileList())
     On Error GoTo 0
+    If FileList(0) = vbNullString Then GoTo ErrOut
 
     'Create the short file list
     ReDim FileListShortName(0 To NumFiles)
@@ -83,7 +84,7 @@ Dim b() As Byte
     ReDim FileSize(0 To NumFiles)
     FileNum = FreeFile
     For i = 0 To NumFiles
-        frmMain.StatusLbl.Caption = "Loading file sizes (" & Int((i / NumFiles) * 100) & "%)"
+        If NumFiles > 0 Then frmMain.StatusLbl.Caption = "Loading file sizes (" & Int((i / NumFiles) * 100) & "%)"
         DoEvents
         Open FileList(i) For Append As #FileNum
             FileSize(i) = LOF(FileNum)
@@ -93,7 +94,7 @@ Dim b() As Byte
     'Create MD5 hashes
     ReDim FileHash(0 To NumFiles)
     For i = 0 To NumFiles
-        frmMain.StatusLbl.Caption = "Creating MD5 hashes (" & Int((i / NumFiles) * 100) & "%)"
+        If NumFiles > 0 Then frmMain.StatusLbl.Caption = "Creating MD5 hashes (" & Int((i / NumFiles) * 100) & "%)"
         DoEvents
         FileHash(i) = MD5_File(FileList(i))
     Next i
@@ -132,7 +133,7 @@ Dim b() As Byte
         
         'If j = 0, the hash we found was invalid or didn't exist
         If j = 0 Then
-            frmMain.StatusLbl.Caption = "Compressing files (" & Int((i / NumFiles) * 100) & "%)"
+            If NumFiles > 0 Then frmMain.StatusLbl.Caption = "Compressing files (" & Int((i / NumFiles) * 100) & "%)"
             DoEvents
             If Engine_FileExist(App.Path & "\_Compressed" & FileListShortName(i), vbNormal) Then Kill App.Path & "\_Compressed" & FileListShortName(i)
             MakeSureDirectoryPathExists App.Path & "\_Compressed" & FileListShortName(i)
@@ -157,7 +158,7 @@ Dim b() As Byte
     DoEvents
 
     'Start up the socket (change the ip to 0.0.0.0 or your internal IP)
-    LocalID = GOREsock_Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
+    LocalID = GOREsock_Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
     GOREsock_SetOption LocalID, soxSO_TCP_NODELAY, False
     
     If GOREsock_Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly

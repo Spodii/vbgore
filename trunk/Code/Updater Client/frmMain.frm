@@ -15,6 +15,12 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   203
    StartUpPosition =   2  'CenterScreen
+   Begin VB.Timer ConnectTimer 
+      Enabled         =   0   'False
+      Interval        =   100
+      Left            =   2520
+      Top             =   1080
+   End
    Begin VB.Timer CloseTimer 
       Enabled         =   0   'False
       Interval        =   200
@@ -153,25 +159,7 @@ Option Explicit
 ' - Client decompresses the list, checks which files it needs to update
 ' - For every file the client needs to update, it sends a request to the server
 ' - After each download, the MD5 hash is compared with the one from the server to varify file contents
-
-Private Sub Connect()
-
-    'Set the status
-    ConnectCmd.Enabled = False
-    StatusLbl.Caption = "Connecting..."
-
-    'Set up the socket
-    LocalID = GOREsock_Connect("127.0.0.1", 10201)
-    
-     'Check for invalid LocalID (did not connect)
-    If LocalID = -1 Then
-        StatusLbl.Caption = "Unable to connect!"
-        ConnectCmd.Enabled = True
-    Else
-        GOREsock_SetOption LocalID, soxSO_TCP_NODELAY, False
-    End If
-    
-End Sub
+Private Attempts As Long
 
 Private Sub CloseTimer_Timer()
 
@@ -183,17 +171,49 @@ End Sub
 
 Private Sub ConnectCmd_Click()
 
-    Connect
+    ConnectCmd.Enabled = False
+    StatusLbl.Caption = "Connecting..."
+    ConnectTimer.Enabled = True
+
+End Sub
+
+Private Sub ConnectTimer_Timer()
+
+    'Only try 5 times
+    Attempts = Attempts + 1
+    Debug.Print Attempts
+    If Attempts >= 6 Then
+        ConnectTimer.Enabled = False
+        StatusLbl.Caption = "Unable to connect!"
+        ConnectCmd.Enabled = True
+        Exit Sub
+    End If
+
+    'Set up the socket
+    LocalID = GOREsock_Connect("127.0.0.1", 10201)
+    If LocalID = -1 Then Exit Sub
+    GOREsock_SetOption LocalID, soxSO_TCP_NODELAY, False
+    
+    'Turn the timer off since we have made a connection
+    ConnectTimer.Enabled = False
 
 End Sub
 
 Private Sub Form_Load()
     
+    'Check for 7za.exe, because without it we can't decrypt the server files!
+    If Not Engine_FileExist(App.Path & "\Data\7za.exe", vbNormal) Then
+        MsgBox "The decompression file 7za.exe could not be found! This file should be located at:" & vbNewLine & _
+            App.Path & "\Data\7za.exe" & vbNewLine & vbNewLine & "If needed, this file can be found at:" & vbNewLine & _
+            "http://www.vbgore.com/downloads/7za.exe", vbOKOnly Or vbCritical
+        Exit Sub
+    End If
+        
     GOREsock_Initialize Me.hWnd
     InitFilePaths
     Me.Show
     DoEvents
-    Connect
+    ConnectCmd_Click
 
 End Sub
 

@@ -1,7 +1,7 @@
 VERSION 5.00
 Begin VB.Form frmNew 
    AutoRedraw      =   -1  'True
-   BackColor       =   &H00000000&
+   BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "vbGORE Login"
    ClientHeight    =   3360
@@ -9,7 +9,6 @@ Begin VB.Form frmNew
    ClientTop       =   0
    ClientWidth     =   5280
    LinkTopic       =   "Form1"
-   Picture         =   "frmNew.frx":0000
    ScaleHeight     =   224
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   352
@@ -92,7 +91,7 @@ Begin VB.Form frmNew
       Left            =   840
       MultiLine       =   -1  'True
       TabIndex        =   1
-      Text            =   "frmNew.frx":39C42
+      Text            =   "frmNew.frx":0000
       Top             =   1125
       Width           =   1875
    End
@@ -114,7 +113,7 @@ Begin VB.Form frmNew
       Left            =   840
       MultiLine       =   -1  'True
       TabIndex        =   0
-      Text            =   "frmNew.frx":39C46
+      Text            =   "frmNew.frx":0004
       Top             =   780
       Width           =   1875
    End
@@ -206,6 +205,9 @@ Private Sub Form_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Form_Load()
+
+    'Set the background picture
+    Me.Picture = LoadPicture(GrhPath & "New.bmp")
 
     'Set the text boxes to transparent
     SetPictureTextboxes Me.hwnd

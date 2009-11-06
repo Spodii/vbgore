@@ -270,6 +270,16 @@ Dim tPos As WorldPos
 
     Log "Call NPC_AI(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Confirm the NPC is still in a valid condition to perform the AI
+    If NPCList(NPCIndex).Flags.NPCActive = 0 Then Exit Sub
+    If NPCList(NPCIndex).Flags.NPCAlive = 0 Then Exit Sub
+    If NPCList(NPCIndex).Pos.Map <= 0 Then Exit Sub
+    If NPCList(NPCIndex).Pos.Map > NumMaps Then Exit Sub
+    If NPCList(NPCIndex).Pos.X <= 0 Then Exit Sub
+    If NPCList(NPCIndex).Pos.Y <= 0 Then Exit Sub
+    If NPCList(NPCIndex).Pos.X > MapInfo(NPCList(NPCIndex).Pos.Map).Width Then Exit Sub
+    If NPCList(NPCIndex).Pos.Y > MapInfo(NPCList(NPCIndex).Pos.Map).Height Then Exit Sub
+
     'Movement
     Select Case NPCList(NPCIndex).AI
     
@@ -615,7 +625,7 @@ Dim tPos As WorldPos
             End If
         
             'Check for a near-by NPC to attack
-            i = NPC_AI_ClosestNPC(NPCIndex, 5, 5, NPCList(NPCIndex).OwnerIndex)
+            i = NPC_AI_ClosestNPC(NPCIndex, 5, 5, NPCList(NPCIndex).OwnerIndex, , , 0)
             If i > 0 Then tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, NPCList(i).Pos) Else tHeading = 0
 
             'Move towards the owner if no nearby NPCs to move to to attack were found
@@ -793,7 +803,7 @@ Dim Y As Integer
 
 End Function
 
-Public Function NPC_AI_ClosestNPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte, Optional ByVal NotSlaveOfUserIndex As Integer = 0, Optional ByVal IsAttackable As Byte = 1, Optional ByVal IsHostile As Byte = 1) As Integer
+Public Function NPC_AI_ClosestNPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte, Optional ByVal NotSlaveOfUserIndex As Integer = -1, Optional ByVal IsAttackable As Byte = 1, Optional ByVal IsHostile As Byte = 1, Optional ByVal IsSlaveOfUserIndex As Integer = -1) As Integer
 
 '*****************************************************************
 'Return the index of the closest player character (PC)
@@ -832,6 +842,9 @@ Dim Y As Integer
                                             End If
                                             If NotSlaveOfUserIndex > -1 Then
                                                 If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).OwnerIndex = NotSlaveOfUserIndex Then GoTo NextNPC
+                                            End If
+                                            If IsSlaveOfUserIndex > -1 Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).OwnerIndex <> IsSlaveOfUserIndex Then GoTo NextNPC
                                             End If
                                             
                                             'We found our match!
@@ -1339,6 +1352,7 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
     NPCList(NPCIndex).Flags.NPCAlive = 0
+    NPCList(NPCIndex).Flags.NPCActive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map

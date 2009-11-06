@@ -142,8 +142,8 @@ End Type
 'Holds data about where a png can be found,
 'How big it is and animation info
 Public Type GrhData
-    SX As Integer
-    SY As Integer
+    sX As Integer
+    sY As Integer
     FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
@@ -315,20 +315,20 @@ Private FramesPerSecCounter As Long
 Private FPSLastCheck As Long
 Private SaveLastCheck As Long
 
-'Main view size size in tiles
-Public WindowTileWidth As Integer
-Public WindowTileHeight As Integer
-
 'How many tiles the engine "looks ahead" when drawing the screen
 Public TileBufferSize As Integer
 
+'Main view size size in tiles
+Public Const WindowTileWidth As Integer = ScreenWidth \ 32
+Public Const WindowTileHeight As Integer = ScreenHeight \ 32
+
 'Tile size in pixels
-Public TilePixelHeight As Integer
-Public TilePixelWidth As Integer
+Public Const TilePixelHeight As Integer = 32
+Public Const TilePixelWidth As Integer = 32
 
 'Number of pixels the engine scrolls per frame. MUST divide evenly into pixels per tile
-Public ScrollPixelsPerFrameX As Integer
-Public ScrollPixelsPerFrameY As Integer
+Public Const ScrollPixelsPerFrameX As Integer = 4
+Public Const ScrollPixelsPerFrameY As Integer = 4
 
 'Totals
 Private NumBodies As Integer    'Number of bodies
@@ -671,7 +671,7 @@ Public DamageList() As DamageTxt        'Holds info on the damage displays
 Public EndTime As Long
 Public ElapsedTime As Single
 Public TickPerFrame As Single
-Public EngineBaseSpeed As Single
+Public Const EngineBaseSpeed As Single = 0.011
 Public OffsetCounterX As Single
 Public OffsetCounterY As Single
 
@@ -1902,10 +1902,10 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To 1)
             Get #FileNum, , GrhData(Grh).FileNum
             If GrhData(Grh).FileNum <= 0 Then GoTo ErrorHandler
-            Get #FileNum, , GrhData(Grh).SX
-            If GrhData(Grh).SX < 0 Then GoTo ErrorHandler
-            Get #FileNum, , GrhData(Grh).SY
-            If GrhData(Grh).SY < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).sX
+            If GrhData(Grh).sX < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).sY
+            If GrhData(Grh).sY < 0 Then GoTo ErrorHandler
             Get #FileNum, , GrhData(Grh).pixelWidth
             If GrhData(Grh).pixelWidth <= 0 Then GoTo ErrorHandler
             Get #FileNum, , GrhData(Grh).pixelHeight
@@ -3830,32 +3830,32 @@ Dim IX As Single
     
 End Function
 
-Public Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+Public Function Engine_Collision_LineRect(ByVal sX As Long, ByVal sY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
 
 '*****************************************************************
 'Check if a line intersects with a rectangle (returns 1 if true)
 '*****************************************************************
 
     'Top line
-    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY, sX + SW, sY, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
     
     'Right line
-    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX + SW, sY, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Bottom line
-    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY + SH, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Left line
-    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY, sX, sY + SW, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
@@ -4384,13 +4384,13 @@ Dim FileNum As Integer
                     If AlternateRender = 0 Then
                     
                         'Render the texture with 2 triangles on a triangle strip
-                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, _
-                            GrhData(CurrGrhIndex).SY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, False
+                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
+                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, False
                         
                     Else
                         
                         'Render the texture as a D3DXSprite
-                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, GrhData(CurrGrhIndex).SY, Light1, FileNum, Angle
+                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, GrhData(CurrGrhIndex).sY, Light1, FileNum, Angle
                         
                     End If
                     
@@ -5025,25 +5025,25 @@ Dim L As Single
         'bottom of the screen, in the water.
         '------------------------------------------------------------------------------------------------------
         Const TrimOffset As Single = 32
-        If X < -TrimOffset Then
-            SrcX = SrcX - X - TrimOffset
-            SrcWidth = SrcWidth + X + TrimOffset
-            Width = Width + X + TrimOffset
-            X = -TrimOffset
+        If X < 0 Then
+            SrcX = SrcX - X
+            SrcWidth = SrcWidth + X
+            Width = Width + X
+            X = 0
         End If
-        If Y < -TrimOffset Then
-            SrcY = SrcY - Y - TrimOffset
-            SrcHeight = SrcHeight + Y + TrimOffset
-            Height = Height + Y + TrimOffset
-            Y = -TrimOffset
+        If Y < 0 Then
+            SrcY = SrcY - Y
+            SrcHeight = SrcHeight + Y
+            Height = Height + Y
+            Y = 0
         End If
-        If X + Width > ScreenWidth + TrimOffset Then
-            L = (X + Width) - (ScreenWidth + TrimOffset)
+        If X + Width > ScreenWidth Then
+            L = X + Width - ScreenWidth
             Width = Width - L
             SrcWidth = SrcWidth - L
         End If
-        If Y + Height > ScreenHeight + TrimOffset Then
-            L = (Y + Height) - (ScreenHeight + TrimOffset)
+        If Y + Height > ScreenHeight Then
+            L = Y + Height - ScreenHeight
             Height = Height - L
             SrcHeight = SrcHeight - L
         End If
@@ -6843,6 +6843,7 @@ Public Function Engine_SkillIDtoSkillName(ByVal SkillID As Byte) As String
         Case SkID.Protection: Engine_SkillIDtoSkillName = "Protection"
         Case SkID.SpikeField: Engine_SkillIDtoSkillName = "Spike Field"
         Case SkID.Heal: Engine_SkillIDtoSkillName = "Heal"
+        Case SkID.SummonBandit: Engine_SkillIDtoSkillName = "Summon Bandit"
         Case Else: Engine_SkillIDtoSkillName = "Unknown Skill"
     End Select
 

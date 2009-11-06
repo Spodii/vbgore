@@ -16,7 +16,6 @@ Begin VB.Form frmMain
    ScaleHeight     =   174
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   297
-   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cButton 
       Caption         =   "Recalculate"

@@ -28,14 +28,14 @@ Public Sub User_GiveSkill(ByVal UserIndex As Integer, ByVal SkillID As Byte)
 '*****************************************************************
 'Gives a user a skill they don't know, or tells them they already know it
 '*****************************************************************
-Dim s As String
 
     'Check for a valid skill ID
     If SkillID <= 0 Then Exit Sub
     If SkillID > NumSkills Then Exit Sub
-
-    'Store the skill name
-    s = Server_SkillIDtoSkillName(SkillID)
+    
+    'Ready the buffer
+    ConBuf.PreAllocate 3
+    ConBuf.Put_Byte DataCode.Server_Message
 
     'Make sure the user can learn the skill
     If Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) Then
@@ -44,19 +44,15 @@ Dim s As String
         If UserList(UserIndex).KnownSkills(SkillID) = 1 Then
         
             'User already knew the skill
-            ConBuf.PreAllocate 3 + Len(s)
-            ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 5
-            ConBuf.Put_String s
+            ConBuf.Put_Byte SkillID
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
         Else
         
             'User learns the new skill
-            ConBuf.PreAllocate 3 + Len(s)
-            ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 6
-            ConBuf.Put_String s
+            ConBuf.Put_Byte SkillID
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
             'Give the user the skill
@@ -68,10 +64,8 @@ Dim s As String
     Else
     
         'User can't learn the skill
-        ConBuf.PreAllocate 3 + Len(s)
-        ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 137
-        ConBuf.Put_String s
+        ConBuf.Put_Byte SkillID
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         
     End If
@@ -2023,7 +2017,6 @@ Dim i As Long
                         ConBuf.Put_Long ObjData.GrhIndex(MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex)
                         ConBuf.Put_Byte X
                         ConBuf.Put_Byte Y
-                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map, PP_GroundObjects
                     End If
                 Next i
             End If

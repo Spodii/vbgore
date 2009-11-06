@@ -359,7 +359,7 @@ Function Game_LegalCharacter(ByVal KeyAscii As Byte) As Boolean
 
 '*****************************************************************
 'Only allow certain specified characters (this is for username/pass)
-'Make sure you update the server's Server_ValidCharacter, too!
+'Make sure you update the server's Server_LegalCharacter, too!
 '*****************************************************************
 
     On Error GoTo ErrOut
@@ -564,10 +564,7 @@ Dim TempInt As Integer
     
     'Resize mapdata array
     ReDim MapData(1 To MapInfo.Width, 1 To MapInfo.Height) As MapBlock
-    
-    'Clear the map
-    ZeroMemory MapData(1, 1), CLng(Len(MapData(1, 1))) * CLng(MapInfo.Width) * CLng(MapInfo.Height)  'Width * Height * Size
-    
+
     'Resize the save light buffer
     ReDim SaveLightBuffer(1 To MapInfo.Width, 1 To MapInfo.Height)
     
@@ -860,7 +857,7 @@ Dim i As Integer
 
     'Set the high-resolution timer
     timeBeginPeriod 1
-    
+
     'Init file paths
     InitFilePaths
     
@@ -870,7 +867,7 @@ Dim i As Integer
     DoEvents
 
     'Check if we need to run the updater
-    If ForceUpdateCheck = True Then
+    If ForceUpdateCheck Then
     
         'Check for the right parameter
         If Command$ <> "-sdf@041jkdf0)21`~" Then
@@ -907,12 +904,7 @@ Dim i As Integer
     Engine_Init_Signs LCase$(Var_Get(DataPath & "Game.ini", "INIT", "Language"))
     
     'Fill startup variables for the tile engine
-    TilePixelWidth = 32
-    TilePixelHeight = 32
-    WindowTileHeight = ScreenHeight \ 32
-    WindowTileWidth = ScreenWidth \ 32
     EnterTextBufferWidth = 1
-    EngineBaseSpeed = 0.011
     ReDim SkillListIDs(1 To NumSkills)
 
     'Set intial user position
@@ -920,8 +912,6 @@ Dim i As Integer
     UserPos.Y = 1
 
     'Set scroll pixels per frame
-    ScrollPixelsPerFrameX = 4
-    ScrollPixelsPerFrameY = 4
     ShowGameWindow(QuickBarWindow) = 1
     ShowGameWindow(ChatWindow) = 1
 
@@ -1020,7 +1010,8 @@ Dim i As Integer
             If frmMain.GOREsock.ShutDown <> soxERROR Then
                 
                 'Set up the socket
-                SoxID = frmMain.GOREsock.Connect(SocketMoveToIP, SocketMoveToPort)
+                'Leave the GetIPFromHost() wrapper there, this will convert a host name to IP if needed, or leave it as an IP if you pass an IP
+                SoxID = frmMain.GOREsock.Connect(GetIPFromHost(SocketMoveToIP), SocketMoveToPort)
                 SocketOpen = 1
                 
                 'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
@@ -1112,53 +1103,62 @@ Dim b As Long
         'Add back in the vbNewLines
         If TSLoop < UBound(TempSplit()) Then TempSplit(TSLoop) = TempSplit(TSLoop) & vbNewLine
         
-        'Loop through all the characters
-        For i = 1 To Len(TempSplit(TSLoop))
+        'Only check lines with a space
+        If InStr(1, TempSplit(TSLoop), " ") Or InStr(1, TempSplit(TSLoop), "-") Or InStr(1, TempSplit(TSLoop), "_") Then
+            
+            'Loop through all the characters
+            For i = 1 To Len(TempSplit(TSLoop))
+            
+                'If it is a space, store it so we can easily break at it
+                Select Case Mid$(TempSplit(TSLoop), i, 1)
+                    Case " ": LastSpace = i
+                    Case "_": LastSpace = i
+                    Case "-": LastSpace = i
+                End Select
+    
+                'Add up the size - Do not count the "|" character (high-lighter)!
+                If Not Mid$(TempSplit(TSLoop), i, 1) = "|" Then
+                    Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+                End If
+                
+                'Check for too large of a size
+                If Size > MaxLineLen Then
+                    
+                    'Check if the last space was too far back
+                    If i - LastSpace > 4 Then
+                        
+                        'Too far away to the last space, so break at the last character
+                        Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
+                        b = i - 1
+                        Size = 0
+                        
+                    Else
+                    
+                        'Break at the last space to preserve the word
+                        Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)) & vbNewLine
+                        b = LastSpace + 1
+                        
+                        'Count all the words we ignored (the ones that weren't printed, but are before "i")
+                        Size = Engine_GetTextWidth(Mid$(TempSplit(TSLoop), LastSpace, i - LastSpace))
+                        
+                    End If
+                    
+                End If
+                
+                'This handles the remainder
+                If i = Len(TempSplit(TSLoop)) Then
+                    If b <> i Then
+                        Engine_WordWrap = Engine_WordWrap & Mid$(TempSplit(TSLoop), b, i)
+                    End If
+                End If
+                
+            Next i
+            
+        Else
         
-            'If it is a space, store it so we can easily break at it
-            Select Case Mid$(TempSplit(TSLoop), i, 1)
-                Case " ": LastSpace = i
-                Case "_": LastSpace = i
-                Case "-": LastSpace = i
-            End Select
-
-            'Add up the size - Do not count the "|" character (high-lighter)!
-            If Not Mid$(TempSplit(TSLoop), i, 1) = "|" Then
-                Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
-            End If
-            
-            'Check for too large of a size
-            If Size > MaxLineLen Then
-                
-                'Check if the last space was too far back
-                If i - LastSpace > 4 Then
-                    
-                    'Too far away to the last space, so break at the last character
-                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
-                    b = i - 1
-                    Size = 0
-                    
-                Else
-                
-                    'Break at the last space to preserve the word
-                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)) & vbNewLine
-                    b = LastSpace + 1
-                    
-                    'Count all the words we ignored (the ones that weren't printed, but are before "i")
-                    Size = Engine_GetTextWidth(Mid$(TempSplit(TSLoop), LastSpace, i - LastSpace))
-                    
-                End If
-                
-            End If
-            
-            'This handles the remainder
-            If i = Len(TempSplit(TSLoop)) Then
-                If b <> i Then
-                    Engine_WordWrap = Engine_WordWrap & Mid$(TempSplit(TSLoop), b, i)
-                End If
-            End If
-            
-        Next i
+            Engine_WordWrap = Engine_WordWrap & TempSplit(TSLoop)
+        
+        End If
         
     Next TSLoop
 

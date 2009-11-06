@@ -79,9 +79,11 @@ Dim Y As Byte
         vbCrLf & "Set Tiles: " & CBool(frmSetTile.Visible), vbYesNo) = vbYes Then
         For X = 1 To MapInfo.Width
             For Y = 1 To MapInfo.Height
-                SetTile X, Y, vbLeftButton, 0
+                SetTile X, Y, vbLeftButton, 0, True
             Next Y
         Next X
+        Engine_BuildMiniMap
+        Engine_CreateTileLayers
     End If
 
 End Sub
@@ -120,13 +122,15 @@ Dim Y As Integer
                     If Y > 0 Then
                         If X <= MapInfo.Width Then
                             If Y <= MapInfo.Height Then
-                                SetTile X, Y, vbLeftButton, 0
+                                SetTile X, Y, vbLeftButton, 0, True
                             End If
                         End If
                     End If
                 End If
             Next Y
         Next X
+        Engine_BuildMiniMap
+        Engine_CreateTileLayers
     End If
     
 End Sub

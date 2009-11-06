@@ -6,7 +6,7 @@ Private Const MaxSummons As Byte = 3        'Maximum number of characters on pla
 
 'Bless
 Private Const Bless_Cost As Single = 0.5    'Magic * Bless_Cost
-Private Const Bless_Length As Long = 300 'How long the skill lasts
+Private Const Bless_Length As Long = 300000 'How long the skill lasts
 Private Const Bless_Exhaust As Long = 3500  'Exhaustion time
 Private Const Bless_Sfx As Byte = 8
 
@@ -98,6 +98,13 @@ Dim tIndex As Integer
     NPCList(tIndex).BaseStat(SID.MinHP) = NPCList(tIndex).BaseStat(SID.MaxHP)
     NPCList(tIndex).ModStat(SID.MaxHP) = NPCList(tIndex).BaseStat(SID.MaxHP)
     NPC_UpdateModStats tIndex
+    
+    'Remove the summon's drop and shop items
+    Erase NPCList(tIndex).DropItems
+    Erase NPCList(tIndex).DropRate
+    Erase NPCList(tIndex).VendItems
+    NPCList(tIndex).NumDropItems = 0
+    NPCList(tIndex).NumVendItems = 0
     
     'Set up the NPC on the map / char array
     MapInfo(NPCList(tIndex).Pos.Map).Data(NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y).NPCIndex = tIndex
@@ -1256,6 +1263,8 @@ Public Sub Skill_IronSkin_PC(ByVal UserIndex As Integer)
 
     'Remove the Iron Skin
     If UserList(UserIndex).Skills.IronSkin = 1 Then
+        UserList(UserIndex).Skills.IronSkin = 0
+        
         ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 0

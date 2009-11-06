@@ -3,6 +3,10 @@ Option Explicit
 Private Type Effect
     X As Single                 'Location of effect
     Y As Single
+    GoToX As Single             'Location to move to
+    GoToY As Single
+    KillWhenAtTarget As Boolean     'If the effect is at its target (GoToX/Y), then Progression is set to 0
+    KillWhenTargetLost As Boolean   'Kill the effect if the target is lost (sets progression = 0)
     Gfx As Byte                 'Particle texture used
     Used As Boolean             'If the effect is in use
     EffectNum As Byte           'What number of effect that is used
@@ -10,7 +14,7 @@ Private Type Effect
     FloatSize As Long           'The size of the particles
     Direction As Integer        'Misc variable (depends on the effect)
     Particles() As Particle     'Information on each particle
-    Progression As Single       'Misc variable (depends on the effect)
+    Progression As Single       'Progression state, best to design where 0 = effect ends
     PartVertex() As TLVERTEX    'Used to point render particles
     PreviousFrame As Long       'Tick time of the last frame
     ParticleCount As Integer    'Number of particles total
@@ -33,6 +37,8 @@ Public Const EffectNum_Rain As Byte = 7             'Exact same as snow, but mov
 Public Const EffectNum_EquationTemplate As Byte = 8 'Template for creating particle effects through equations - a page with some equations can be found here: http://www.vbgore.com/modules.php?name=Forums&file=viewtopic&t=221
 Public Const EffectNum_Waterfall As Byte = 9        'Waterfall effect
 Public Const EffectNum_Summon As Byte = 10          'Summon effect
+
+Private Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
 
 Function Effect_EquationTemplate_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Single = 1) As Integer
 Dim EffectIndex As Integer
@@ -409,7 +415,9 @@ Dim LoopC As Long
     Effect(EffectIndex).Y = Y           'Set the effect's Y coordinate
     Effect(EffectIndex).Gfx = Gfx       'Set the graphic
     Effect(EffectIndex).Progression = Progression   'Loop the effect
-
+    Effect(EffectIndex).KillWhenAtTarget = True     'End the effect when it reaches the target (progression = 0)
+    Effect(EffectIndex).KillWhenTargetLost = True   'End the effect if the target is lost (progression = 0)
+    
     'Set the number of particles left to the total avaliable
     Effect(EffectIndex).ParticlesLeft = Effect(EffectIndex).ParticleCount
 
@@ -539,6 +547,13 @@ Dim EffectIndex As Integer
     'Return the next open slot
     Effect_NextOpenSlot = EffectIndex
 
+    'Clear the old information from the effect
+    Erase Effect(EffectIndex).Particles()
+    Erase Effect(EffectIndex).PartVertex()
+    ZeroMemory Effect(EffectIndex), Len(Effect(EffectIndex))
+    Effect(EffectIndex).GoToX = -30000
+    Effect(EffectIndex).GoToY = -30000
+
 End Function
 
 Function Effect_Protection_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
@@ -613,65 +628,81 @@ Private Sub Effect_UpdateOffset(ByVal EffectIndex As Integer)
 End Sub
 
 Private Sub Effect_UpdateBinding(ByVal EffectIndex As Integer)
-
+ 
 '***************************************************
 'Updates the binding of a particle effect to a target, if
 'the effect is bound to a character
 '***************************************************
 Dim TargetI As Integer
-Dim TargetX As Long
-Dim TargetY As Long
 Dim TargetA As Single
-
+ 
     'Update position through character binding
     If Effect(EffectIndex).BindToChar > 0 Then
-        
+ 
         'Store the character index
         TargetI = Effect(EffectIndex).BindToChar
-        
+ 
         'Check for a valid binding index
         If TargetI > LastChar Then
             Effect(EffectIndex).BindToChar = 0
-            If Effect(EffectIndex).EffectNum = EffectNum_Heal Then Effect(EffectIndex).Progression = 0  'This will make the heal effect end
-            Exit Sub
-        End If
-        If CharList(TargetI).Active = 0 Then
-            Effect(EffectIndex).BindToChar = 0
-            If Effect(EffectIndex).EffectNum = EffectNum_Heal Then Effect(EffectIndex).Progression = 0
-            Exit Sub
-        End If
-        
-        'Calculate the X and Y positions
-        TargetX = Engine_TPtoSPX(CharList(TargetI).Pos.X) + 16  'This will center on a 32 pixel wide character
-        TargetY = Engine_TPtoSPY(CharList(TargetI).Pos.Y)
-        
-        'Check if the effect is close enough to the target to just stick it at the target
-        If Abs(Effect(EffectIndex).X - TargetX) < 6 Then Effect(EffectIndex).X = TargetX
-        If Abs(Effect(EffectIndex).Y - TargetY) < 6 Then Effect(EffectIndex).Y = TargetY
-        
-        'Check if the position of the effect is equal to that of the target
-        If Effect(EffectIndex).X = TargetX Then
-            If Effect(EffectIndex).Y = TargetY Then
-            
-                'For some effects, if the position is reached, we want to end the effect
-                If Effect(EffectIndex).EffectNum = EffectNum_Heal Then
-                    Effect(EffectIndex).BindToChar = 0
-                    Effect(EffectIndex).Progression = 0
-                End If
-                Exit Sub    'The effect is at the right position, don't update
-                
+            If Effect(EffectIndex).KillWhenTargetLost Then
+                Effect(EffectIndex).Progression = 0
+                Exit Sub
             End If
+        ElseIf CharList(TargetI).Active = 0 Then
+            Effect(EffectIndex).BindToChar = 0
+            If Effect(EffectIndex).KillWhenTargetLost Then
+                Effect(EffectIndex).Progression = 0
+                Exit Sub
+            End If
+        Else
+ 
+            'Calculate the X and Y positions
+            Effect(EffectIndex).GoToX = Engine_TPtoSPX(CharList(Effect(EffectIndex).BindToChar).Pos.X) + 16
+            Effect(EffectIndex).GoToY = Engine_TPtoSPY(CharList(Effect(EffectIndex).BindToChar).Pos.Y)
+ 
         End If
-        
-        'Calculate the angle
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        
-        'Update the position of the effect
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
+ 
     End If
-
+ 
+    'Move to the new position if needed
+    If Effect(EffectIndex).GoToX > -30000 Or Effect(EffectIndex).GoToY > -30000 Then
+        If Effect(EffectIndex).GoToX <> Effect(EffectIndex).X Or Effect(EffectIndex).GoToY <> Effect(EffectIndex).Y Then
+ 
+            'Calculate the angle
+            TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, Effect(EffectIndex).GoToX, Effect(EffectIndex).GoToY) + 180
+ 
+            'Update the position of the effect
+            Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+            Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+ 
+            'Check if the effect is close enough to the target to just stick it at the target
+            If Effect(EffectIndex).GoToX > -30000 Then
+                If Abs(Effect(EffectIndex).X - Effect(EffectIndex).GoToX) < 6 Then Effect(EffectIndex).X = Effect(EffectIndex).GoToX
+            End If
+            If Effect(EffectIndex).GoToY > -30000 Then
+                If Abs(Effect(EffectIndex).Y - Effect(EffectIndex).GoToY) < 6 Then Effect(EffectIndex).Y = Effect(EffectIndex).GoToY
+            End If
+ 
+            'Check if the position of the effect is equal to that of the target
+            If Effect(EffectIndex).X = Effect(EffectIndex).GoToX Then
+                If Effect(EffectIndex).Y = Effect(EffectIndex).GoToY Then
+ 
+                    'For some effects, if the position is reached, we want to end the effect
+                    If Effect(EffectIndex).KillWhenAtTarget Then
+                        Effect(EffectIndex).BindToChar = 0
+                        Effect(EffectIndex).Progression = 0
+                        Effect(EffectIndex).GoToX = Effect(EffectIndex).X
+                        Effect(EffectIndex).GoToY = Effect(EffectIndex).Y
+                    End If
+                    Exit Sub    'The effect is at the right position, don't update
+ 
+                End If
+            End If
+ 
+        End If
+    End If
+ 
 End Sub
 
 Private Sub Effect_Protection_Update(ByVal EffectIndex As Integer)

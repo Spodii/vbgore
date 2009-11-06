@@ -28,11 +28,56 @@ Public StartTime As Long
 'Last time we updated the KBps
 Public UpdateTime As Long
 
+Private Type STARTUPINFO
+    cb As Long
+    lpReserved As String
+    lpDesktop As String
+    lpTitle As String
+    dwX As Long
+    dwY As Long
+    dwXSize As Long
+    dwYSize As Long
+    dwXCountChars As Long
+    dwYCountChars As Long
+    dwFillAttribute As Long
+    dwFlags As Long
+    wShowWindow As Integer
+    cbReserved2 As Integer
+    lpReserved2 As Long
+    hStdInput As Long
+    hStdOutput As Long
+    hStdError As Long
+End Type
+
+Private Type PROCESS_INFORMATION
+    hProcess As Long
+    hThread As Long
+    dwProcessID As Long
+    dwThreadID As Long
+End Type
+
 Public Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 Public Declare Sub ReleaseCapture Lib "User32" ()
 Public Declare Function SendMessage Lib "User32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+Private Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationname As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+
+Private Sub CommandLine(ByVal CommandLineString As String)
+Dim Start As STARTUPINFO
+Dim Proc As PROCESS_INFORMATION
+
+    Start.dwFlags = &H1
+    Start.wShowWindow = 1
+    CreateProcessA 0&, CommandLineString, 0&, 0&, 1&, &H20&, 0&, 0&, Start, Proc
+    Do While WaitForSingleObject(Proc.hProcess, 0) = 258
+        DoEvents
+        Sleep 1
+    Loop
+
+End Sub
 
 Public Sub GOREsock_Connection(inSox As Long)
 
@@ -105,7 +150,9 @@ Dim FileNum As Byte
         'Get our data, decompress it and save it to the file
         Data = Left$(Data, Len(Data) - 9)
         b() = StrConv(Data, vbFromUnicode)
+        DoEvents
         
+        'Find which decompression to use (MonkeyAudio for *.wav, LZMA for the rest)
         If Len(Data) > 0 Then
             If LCase$(Right$(ServerFile(FileIndex).Path, 4)) = ".wav" Then
                 Compression_DeCompress_MonkeyAudio b()
@@ -114,18 +161,28 @@ Dim FileNum As Byte
             End If
         End If
         
-        FileNum = FreeFile
+        'Make the directory path if needed
+        DoEvents
         MakeSureDirectoryPathExists ServerFile(FileIndex).Path
+        
+        'Save the file
         If Engine_FileExist(ServerFile(FileIndex).Path, vbNormal) Then Kill ServerFile(FileIndex).Path
+        FileNum = FreeFile
         Open ServerFile(FileIndex).Path For Binary Access Write As #FileNum
             Put #FileNum, , b()
         Close #FileNum
-        TotalGot = TotalGot + ServerFile(FileIndex).Size
         
-        DoEvents
+        'Register the file if it is an OCX or DLL
+        If LCase$(Right$(ServerFile(FileIndex).Path, 4)) = ".ocx" Or LCase$(Right$(ServerFile(FileIndex).Path, 4)) = ".dll" Then
+            CommandLine "regsvr32 " & Chr$(34) & ServerFile(FileIndex).Path & Chr$(34) & " /s"
+        End If
         
         'Confirm the file data
         ServerFile(FileIndex).NeedFile = NeedFile(FileIndex)
+
+        TotalGot = TotalGot + ServerFile(FileIndex).Size
+        
+        DoEvents
         
         'Request the next file
         RequestNextFile
@@ -189,6 +246,12 @@ Dim fHash As String * 32
 
     'Check if we already have the file
     If LenB(Dir$(ServerFile(i).Path)) <> 0 Then
+        
+        'Check for Game.ini
+        If UCase$(Right$(ServerFile(i).Path, 9)) = "\GAME.INI" Then
+            NeedFile = False
+            Exit Function
+        End If
         
         'We have the file, compare the size
         FileNum = FreeFile
