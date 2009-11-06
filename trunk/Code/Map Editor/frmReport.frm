@@ -200,6 +200,12 @@ Private Sub Form_Load()
     
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
 Private Sub FixProblem(ByVal Index As Long)
 Dim RetVal As VbMsgBoxResult
 Dim i As Long
@@ -264,6 +270,13 @@ ErrOut:
     'Problem :(
     MsgBox "Error auto-fixing index " & Index, vbOKOnly
     
+End Sub
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
+
 End Sub
 
 Private Sub OptList_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)

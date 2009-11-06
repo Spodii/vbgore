@@ -29,19 +29,19 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    Form_MouseMove Button, Shift, x, y
+    Form_MouseMove Button, Shift, X, Y
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Dim i As Long
 
     SetInfo vbNullString
     For i = 1 To ShownTextureAnims.NumGrhs
         With ShownTextureAnims.Grh(i)
-            If Engine_RectCollision(x, y, 1, 1, .x, .y, .Width, .Height) Then
+            If Engine_RectCollision(X, Y, 1, 1, .X, .Y, .Width, .Height) Then
                 If Button = vbLeftButton Then
                     frmSetTile.GrhTxt.Text = .GrhIndex
                 Else
@@ -54,9 +54,9 @@ Dim i As Long
 
 End Sub
 
-Private Sub Form_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    Form_MouseMove Button, Shift, x, y
+    Form_MouseMove Button, Shift, X, Y
 
 End Sub
 

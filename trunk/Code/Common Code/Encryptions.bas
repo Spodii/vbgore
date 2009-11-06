@@ -7,15 +7,14 @@ Option Explicit
 Public Const PacketEncTypeNone As Byte = 0  'Use no encryption
 Public Const PacketEncTypeRC4 As Byte = 1   'Use RC4 encryption
 Public Const PacketEncTypeXOR As Byte = 2   'Use XOR encryption
-Public Const PacketEncTypeServerIn As Byte = PacketEncTypeXOR   'Encryption for server in (or client out) packets
+Public Const PacketEncTypeServerIn As Byte = PacketEncTypeNone  'Encryption for server in (or client out) packets
 Public Const PacketEncTypeServerOut As Byte = PacketEncTypeNone 'Encryption for server out (or client in) packets
 
 'These are only used if the PacketEncType is not PacketEncTypeNone
-Public Const PacketEncKey1 As String = "al123vcAM !$@(2!@_#;241234vzxv!@$(*_DSZVc2123"  'First encryption key (any string works)
-Public Const PacketEncKey2 As String = "t123409-nsad DS:!$N$MN!U_AKLJ!1240naga!@$)ZZV"  'Second encryption key (any string works)
+Private Const PacketEncKey1 As String = "al123vcAM !$@(2!@_#;241234vzxv!@$(*_DSZVc2123" 'First encryption key (any string works)
+Private Const PacketEncKey2 As String = "t123409-nsad DS:!$N$MN!U_AKLJ!1240naga!@$)ZZV" 'Second encryption key (any string works)
 Public Const PacketEncSeed As Long = 214    'The number to start from (any random value works)
 Public Const PacketEncKeys As Byte = 40     'Number of packet encryption keys
-Public PacketKeys() As String   'The array of keys generated to encrypt packets
 
 '***** RC4 *****
 Private m_sBoxRC4(0 To 255) As Integer
@@ -33,7 +32,7 @@ Private m_KeyS As String
 Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Private Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
 
-Sub GenerateEncryptionKeys()
+Sub GenerateEncryptionKeys(ByRef PacketKeys() As String)
 
 '*****************************************************************
 'Generates a series of unique keys based off the parameters

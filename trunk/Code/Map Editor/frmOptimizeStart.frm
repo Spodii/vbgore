@@ -140,16 +140,16 @@ Private Sub EmptyLightsChk_MouseMove(Button As Integer, Shift As Integer, X As S
 End Sub
 
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-Dim c As Control
-    
-    For Each c In Me
-        If TypeName(c) = "cButton" Then
-            c.Refresh
-            c.DrawState = 0
-        End If
-    Next c
-    Set c = Nothing
-    
+
+    SetInfo vbNullString
+
+End Sub
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
+
 End Sub
 
 Private Sub OptBtn_Click()
@@ -250,6 +250,7 @@ Dim j As Long
     Me.Visible = False
     frmReport.Visible = True
     frmReport.Show
+    frmReport.SetFocus
 
 End Sub
 

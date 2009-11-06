@@ -161,7 +161,7 @@ Private Sub Connect()
     StatusLbl.Caption = "Connecting..."
 
     'Set up the socket
-    LocalID = GOREsock_Connect("24.16.43.254", 10201)
+    LocalID = GOREsock_Connect("127.0.0.1", 10201)
     
      'Check for invalid LocalID (did not connect)
     If LocalID = -1 Then

@@ -100,7 +100,7 @@ Public Type DataCode
     User_Attack As Byte
     User_SetInventorySlot As Byte
     User_Desc As Byte
-    User_Login  As Byte
+    User_Login As Byte
     User_NewLogin As Byte
     User_Get As Byte
     User_Drop As Byte
@@ -111,11 +111,21 @@ Public Type DataCode
     User_RightClick As Byte
     User_LookLeft As Byte
     User_LookRight As Byte
-    User_AggressiveFace As Byte
     User_Blink As Byte
     User_Trade_StartNPCTrade As Byte
     User_Trade_BuyFromNPC As Byte
     User_Trade_SellToNPC As Byte
+    '-----------------------------------------------------------
+    'data codes
+    'start the trade
+    User_Trade_Trade As Byte
+    User_Trade_UpdateTrade As Byte
+    'for when they have finished adding stuff
+    User_Trade_Accept As Byte
+    'for when the user conforms
+    User_Trade_Confirm As Byte
+
+    '-----------------------------------------------------------
     User_Bank_Open As Byte
     User_Bank_PutItem As Byte
     User_Bank_TakeItem As Byte
@@ -129,6 +139,7 @@ Public Type DataCode
     User_ChangeInvSlot As Byte
     User_Emote As Byte
     User_StartQuest As Byte
+    User_CancelQuest As Byte
     User_SetWeaponRange As Byte
     User_RequestMakeChar As Byte
     User_RequestUserCharIndex As Byte
@@ -149,6 +160,9 @@ Public Type DataCode
     GM_BanIP As Byte
     GM_UnBanIP As Byte
     GM_Warp As Byte
+    Combo_ProjectileSoundRotateDamage As Byte
+    Combo_SoundRotateDamage As Byte
+    Combo_SlashSoundRotateDamage As Byte
 End Type
 Public DataCode As DataCode
 
@@ -304,7 +318,6 @@ Public Sub InitDataCommands()
         .User_LookLeft = 47
         .User_LookRight = 48
         .User_Blink = 49
-        .User_AggressiveFace = 50
         .User_Trade_BuyFromNPC = 51
         .User_BaseStat = 52
         .User_ModStat = 53
@@ -355,7 +368,20 @@ Public Sub InitDataCommands()
         .User_Bank_Balance = 98
         .GM_Warp = 99
         .Server_ChangeCharType = 100
-        
+        '-------------------------------
+        'start trade packet
+        .User_Trade_Trade = 101
+        .User_Trade_UpdateTrade = 102
+        'accept the trade packet
+        .User_Trade_Accept = 104
+        'conform trade packet
+        .User_Trade_Confirm = 105
+        '-----------------------------------------------------------
+        .User_CancelQuest = 106
+        .Combo_ProjectileSoundRotateDamage = 107
+        .Combo_SoundRotateDamage = 108
+        .Combo_SlashSoundRotateDamage = 109
+ 
         'This values can be used over again since they aren't used in their own packet header
         .Comm_FontType_Fight = 1
         .Comm_FontType_Info = 2

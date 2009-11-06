@@ -147,6 +147,12 @@ Private Sub EraseOpt_MouseMove(Button As Integer, Shift As Integer, X As Single,
 
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
 Private Sub MapTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then

@@ -4,7 +4,7 @@ Source Host: localhost
 Source Database: vbgore
 Target Host: localhost
 Target Database: vbgore
-Date: 4/3/2007 9:46:56 PM
+Date: 4/22/2007 10:36:30 PM
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -85,16 +85,16 @@ CREATE TABLE `npcs` (
 CREATE TABLE `objects` (
   `id` smallint(6) NOT NULL COMMENT 'Identifier of the object',
   `name` varchar(255) NOT NULL COMMENT 'Name',
-  `price` int(11) NOT NULL default '0' COMMENT 'Price object is bought for',
+  `price` int(10) unsigned NOT NULL default '0' COMMENT 'Price object is bought for',
   `objtype` tinyint(3) unsigned NOT NULL COMMENT 'Object type (see Server.Declares for OBJTYPE_ consts)',
   `weapontype` tinyint(3) unsigned NOT NULL COMMENT 'Weapon type (Only valid if obj=weapon - see Server.Declares)',
   `weaponrange` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Range of the weapon''s attack (if ranged)',
   `classreq` smallint(5) unsigned NOT NULL default '0' COMMENT 'Only allow certain classes to use this item (0 for no req)',
-  `grhindex` int(11) NOT NULL COMMENT 'Index of the object graphic (by Grh value)',
-  `usegrh` int(11) NOT NULL default '0' COMMENT 'Grh for the weapon''s attack',
+  `grhindex` int(10) unsigned NOT NULL COMMENT 'Index of the object graphic (by Grh value)',
+  `usegrh` int(10) unsigned NOT NULL default '0' COMMENT 'Grh for the weapon''s attack',
   `usesfx` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Sound played when the object is used (0 for none)',
   `projectilerotatespeed` tinyint(3) unsigned NOT NULL COMMENT 'If a projectile, how fast it rotates (0 for no rotate)',
-  `stacking` smallint(6) NOT NULL default '-1' COMMENT 'Amount the item can be stacked ( < 1 for server limit)',
+  `stacking` smallint(6) NOT NULL default '-1' COMMENT 'Amount the item can be stacked ( < 1 for server default)',
   `sprite_body` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling body changed to upon usage (-1 for no change)',
   `sprite_weapon` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling weapon changed to upon usage (-1 for no change)',
   `sprite_hair` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling hair changed to upon usage (-1 for no change)',
@@ -106,16 +106,16 @@ CREATE TABLE `objects` (
   `replenish_hp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of HP replenished upon usage',
   `replenish_mp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of MP replenished upon usage',
   `replenish_sp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of SP replenished upon usage',
-  `stat_str` int(11) NOT NULL default '0' COMMENT 'Strength raised upon usage',
-  `stat_agi` int(11) NOT NULL default '0' COMMENT 'Agility raised upon usage',
-  `stat_mag` int(11) NOT NULL default '0' COMMENT 'Magic raised upon usage',
-  `stat_def` int(11) NOT NULL default '0' COMMENT 'Defence raised upon usage',
-  `stat_speed` int(11) NOT NULL default '0' COMMENT 'Walk speed raised upon usage',
-  `stat_hit_min` int(11) NOT NULL default '0' COMMENT 'Minimum hit raised upon usage',
-  `stat_hit_max` int(11) NOT NULL default '0' COMMENT 'Maximum hit raised upon usage',
-  `stat_hp` int(11) NOT NULL default '0' COMMENT 'Health raised upon usage',
-  `stat_mp` int(11) NOT NULL default '0' COMMENT 'Magic raised upon usage',
-  `stat_sp` int(11) NOT NULL default '0' COMMENT 'Stamina raised upon usage',
+  `stat_str` int(10) unsigned NOT NULL default '0' COMMENT 'Strength raised upon usage',
+  `stat_agi` int(10) unsigned NOT NULL default '0' COMMENT 'Agility raised upon usage',
+  `stat_mag` int(10) unsigned NOT NULL default '0' COMMENT 'Magic raised upon usage',
+  `stat_def` int(10) unsigned NOT NULL default '0' COMMENT 'Defence raised upon usage',
+  `stat_speed` int(10) unsigned NOT NULL default '0' COMMENT 'Walk speed raised upon usage',
+  `stat_hit_min` int(10) unsigned NOT NULL default '0' COMMENT 'Minimum hit raised upon usage',
+  `stat_hit_max` int(10) unsigned NOT NULL default '0' COMMENT 'Maximum hit raised upon usage',
+  `stat_hp` int(10) unsigned NOT NULL default '0' COMMENT 'Health raised upon usage',
+  `stat_mp` int(10) unsigned NOT NULL default '0' COMMENT 'Magic raised upon usage',
+  `stat_sp` int(10) unsigned NOT NULL default '0' COMMENT 'Stamina raised upon usage',
   `req_str` int(10) unsigned NOT NULL default '0' COMMENT 'Required strength to use the item',
   `req_agi` int(10) unsigned NOT NULL default '0' COMMENT 'Required agility to use the item',
   `req_mag` int(10) unsigned NOT NULL default '0' COMMENT 'Required magic to use the item',
@@ -135,22 +135,22 @@ CREATE TABLE `quests` (
   `text_incomplete` varchar(255) NOT NULL COMMENT 'Text said when trying to finish a quest (reqs. not met)',
   `text_finish` varchar(255) NOT NULL COMMENT 'Text said when finishing a quest (requirements met)',
   `text_info` text NOT NULL COMMENT 'All the quest info that appears on the client quest screen',
-  `accept_req_level` int(11) NOT NULL default '0' COMMENT 'Required level to accept',
-  `accept_req_obj` smallint(6) NOT NULL default '0' COMMENT 'Required object to accept (object ID)',
-  `accept_req_objamount` smallint(6) NOT NULL default '0' COMMENT 'Required object amount to accept (if accept_req_obj > 0)',
-  `accept_reward_exp` int(11) NOT NULL default '0' COMMENT 'Experience reward upon accepting',
-  `accept_reward_gold` int(11) NOT NULL default '0' COMMENT 'Gold reward upon accepting',
-  `accept_reward_obj` smallint(6) NOT NULL default '0' COMMENT 'Object reward upon accepting',
-  `accept_reward_objamount` smallint(6) NOT NULL default '0' COMMENT 'Object amount reward upon accepting (accept_reward_obj > 0)',
-  `accept_reward_learnskill` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Skill learned upon accepting',
-  `finish_req_obj` smallint(6) NOT NULL default '0' COMMENT 'Required object to finish (object ID)',
-  `finish_req_objamount` smallint(6) NOT NULL default '0' COMMENT 'Required object amount to finish (if finish_req_obj > 0)',
-  `finish_req_killnpc` smallint(6) NOT NULL default '0' COMMENT 'Index of the NPC to kill to complete quest',
-  `finish_req_killnpcamount` smallint(6) NOT NULL default '0' COMMENT 'Number of the NPCs to kill (if killnpc > 0) to finish quest',
-  `finish_reward_exp` int(11) NOT NULL default '0' COMMENT 'Experience reward upon finishing',
-  `finish_reward_gold` int(11) NOT NULL default '0' COMMENT 'Gold reward upon finishing',
-  `finish_reward_obj` smallint(6) NOT NULL default '0' COMMENT 'Object reward upon finishing',
-  `finish_reward_objamount` smallint(6) NOT NULL default '0' COMMENT 'Object amount reward upon finishing (finish_reward_obj > 0)',
+  `accept_req_level` int(10) unsigned NOT NULL default '0' COMMENT 'Required level to accept',
+  `accept_req_obj` smallint(5) unsigned NOT NULL default '0' COMMENT 'Required object to accept (object ID)',
+  `accept_req_objamount` smallint(5) unsigned NOT NULL default '0' COMMENT 'Required object amount to accept (if accept_req_obj > 0)',
+  `accept_reward_exp` int(10) unsigned NOT NULL default '0' COMMENT 'Experience reward upon accepting',
+  `accept_reward_gold` int(10) unsigned NOT NULL default '0' COMMENT 'Gold reward upon accepting',
+  `accept_reward_obj` smallint(5) unsigned NOT NULL default '0' COMMENT 'Object reward upon accepting',
+  `accept_reward_objamount` smallint(5) unsigned NOT NULL default '0' COMMENT 'Object amount reward upon accepting (accept_reward_obj > 0)',
+  `accept_reward_learnskill` tinyint(4) NOT NULL default '0' COMMENT 'Skill learned upon accepting',
+  `finish_req_obj` smallint(5) unsigned NOT NULL default '0' COMMENT 'Required object to finish (object ID)',
+  `finish_req_objamount` smallint(5) unsigned NOT NULL default '0' COMMENT 'Required object amount to finish (if finish_req_obj > 0)',
+  `finish_req_killnpc` smallint(5) unsigned NOT NULL default '0' COMMENT 'Index of the NPC to kill to complete quest',
+  `finish_req_killnpcamount` smallint(5) unsigned NOT NULL default '0' COMMENT 'Number of the NPCs to kill (if killnpc > 0) to finish quest',
+  `finish_reward_exp` int(10) unsigned NOT NULL default '0' COMMENT 'Experience reward upon finishing',
+  `finish_reward_gold` int(10) unsigned NOT NULL default '0' COMMENT 'Gold reward upon finishing',
+  `finish_reward_obj` smallint(5) unsigned NOT NULL default '0' COMMENT 'Object reward upon finishing',
+  `finish_reward_objamount` smallint(5) unsigned NOT NULL default '0' COMMENT 'Object amount reward upon finishing (finish_reward_obj > 0)',
   `finish_reward_learnskill` tinyint(3) unsigned NOT NULL default '0' COMMENT 'Skill learned upon finishing',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -212,11 +212,11 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records 
 -- ----------------------------
-INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-04-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 4.535275', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-04-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 41.40327', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-04-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 86.26193', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-04-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 79.048', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-04-03', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 37.35362', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-04-22', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 4.535275', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-04-22', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 41.40327', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-04-22', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 86.26193', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-04-22', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 79.048', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-04-22', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 37.35362', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
 INSERT INTO `mail_lastid` VALUES ('5');
 INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '3', '0', '0', '0', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '0', '3', '1', '1', '10', '10', '10');
 INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '2', '15000', '1', '26', '0', '1', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '0', '3', '1', '2', '15', '2', '2');
@@ -235,4 +235,4 @@ INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '0', '0', '12
 INSERT INTO `objects` VALUES ('8', 'Ninja Stars', '100', '2', '4', '10', '0', '11', '11', '7', '100', '1', '-1', '0', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '6', '0', '0', '0', '0', '0', '0', '0');
 INSERT INTO `objects` VALUES ('9', 'Big Star', '15', '1', '0', '0', '0', '27', '14', '0', '0', '-1', '-1', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
 INSERT INTO `quests` VALUES ('1', 'Kill Bandits', '1', 'Help me get revenge!', 'Thanks for the help! Kill 3 bandits that hide in the waterfall!', 'Just because I have no head doesn\'t mean I have no brain...', 'Sweet d00d, that\'ll show them whos boss! ^_^', 'The Headless Man has told you about some dangerous bandits that have nested in the cave under the |waterfall| in the west side of the island, outside of town. They have been stealing junk from the only two houses on this pathetic island, and it is important that we get it back, since without our junk, we are useless.\r\n\r\nTalk to the Headless Man after you kill the 3 bandits for your reward.', '1', '0', '0', '50', '45', '0', '0', '1', '0', '0', '2', '3', '200', '400', '2', '60', '2');
-INSERT INTO `users` VALUES ('Spodi', '127.0.0.1', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8', '', '', '2007-04-03', '2007-04-03', '34', '35', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '66', '50', '60', '50', '16', '50', '0');
+INSERT INTO `users` VALUES ('Spodi', '127.0.0.1', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8', '', '', '2007-04-22', '2007-04-22', '29', '36', '1', '1', '1', '2', '1', '1', '1', '1', '5', '4', '6', '1', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '58', '50', '58', '50', '45', '50', '0');

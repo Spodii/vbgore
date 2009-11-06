@@ -265,8 +265,8 @@ Dim i As Long
     MapInfo(MapNum).DataLoaded = 1
 
     'Create the data arrays
-    ReDim MapInfo(MapNum).Data(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
-    ReDim MapInfo(MapNum).ObjTile(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
+    ReDim MapInfo(MapNum).Data(1 To CLng(MapInfo(MapNum).Width), 1 To CLng(MapInfo(MapNum).Height))
+    ReDim MapInfo(MapNum).ObjTile(1 To CLng(MapInfo(MapNum).Width), 1 To CLng(MapInfo(MapNum).Height))
 
     'Open the file
     FileNum = FreeFile
@@ -402,7 +402,7 @@ Dim i As Long
     Get #FileNumMap, , MapInfo(MapNum).Height
     
     'Create the array
-    ReDim MapInfo(MapNum).Data(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
+    ReDim MapInfo(MapNum).Data(1 To CLng(MapInfo(MapNum).Width), 1 To CLng(MapInfo(MapNum).Height))
 
     'Load arrays
     For Y = 1 To MapInfo(MapNum).Height
@@ -569,16 +569,24 @@ Dim Map As Long
     
         Log "Load_Maps: Loading map (" & Map & ")", CodeTracker '//\\LOGLINE//\\
 
-        'Other Room Data
-        With MapInfo(Map)
-            .Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
-            .Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
-            .Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
-        End With
-        
-        'Create the temp maps
-        Load_Maps_Data Map
-        Save_Maps_Temp Map
+        If Server_FileExist(MapPath & Map & ".map", vbNormal) Then
+            If Server_FileExist(MapEXPath & Map & ".dat", vbNormal) Then
+                If Server_FileExist(MapEXPath & Map & ".inf", vbNormal) Then
+                
+                    'Other Room Data
+                    With MapInfo(Map)
+                        .Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+                        .Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
+                        .Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
+                    End With
+                    
+                    'Create the temp maps
+                    Load_Maps_Data Map
+                    Save_Maps_Temp Map
+                    
+                End If
+            End If
+        End If
         
     Next Map
     
@@ -759,7 +767,7 @@ Dim i As Long
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         
         'If the ID is used, mark it with ".", so we can get the real name later
-        If DB_RS(0) > 0 Then NPCName(DB_RS(0)) = "."
+        If Val(DB_RS(0)) > 0 Then NPCName(Val(DB_RS(0))) = "."
         
         'Move to the next record
         DB_RS.MoveNext
@@ -776,7 +784,7 @@ Dim i As Long
             
             'Get the name
             DB_RS.Open "SELECT name FROM npcs WHERE id=" & i, DB_Conn, adOpenStatic, adLockOptimistic
-            NPCName(i) = DB_RS(0)
+            NPCName(i) = Trim$(DB_RS(0))
             DB_RS.Close
         
         End If
@@ -1428,7 +1436,7 @@ Dim i As Long
         If NewUser Then
             DB_RS!date_create = Date$
             DB_RS!Name = .Name
-            DB_RS!IP = GOREsock_Address(UserIndex)
+            DB_RS!IP = frmMain.GOREsock.Address(UserIndex)
         End If
         DB_RS!date_lastlogin = Date$
         DB_RS!gm = .flags.GMLevel

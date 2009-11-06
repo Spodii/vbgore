@@ -262,17 +262,7 @@ Dim NPCIndex As Integer
                         End If
                         
                         '*** Update counters ***
-                        If UpdateNPCCounters Then   'Update aggressive-face timer
-                            If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
-                                If NPCList(NPCIndex).Counters.AggressiveCounter < timeGetTime Then
-                                    NPCList(NPCIndex).Counters.AggressiveCounter = 0
-                                    ConBuf.PreAllocate 4
-                                    ConBuf.Put_Byte DataCode.User_AggressiveFace
-                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                    ConBuf.Put_Byte 0
-                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                                End If
-                            End If                  'Update warcurse time
+                        If UpdateNPCCounters Then   'Update warcurse time
                             If NPCList(NPCIndex).Skills.WarCurse > 0 Then
                                 If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
                                     NPCList(NPCIndex).Counters.WarCurseCounter = 0
@@ -347,91 +337,93 @@ Dim UserIndex As Integer
 
         'Make sure user is logged on
         If UserList(UserIndex).flags.UserLogged Then
+        
+            'Dont perform most actions if they are disconnecting
+            If UserList(UserIndex).flags.Disconnecting = 0 Then
 
-            '*** Disconnection timers ***
-            'Check if it has been idle for too long
-            If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
-                Data_Send ToIndex, UserIndex, cMessage(85).Data
-                Server_CloseSocket UserIndex
-                GoTo NextUser   'Skip to the next user
-            End If
-            
-            'Check if the user was possible disconnected (or extremely laggy)
-            If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
-                Data_Send ToIndex, UserIndex, cMessage(85).Data
-                Server_CloseSocket UserIndex
-                GoTo NextUser   'Skip to the next user
-            End If
-            
-            '*** Recover stats ***
-            If RecoverUserStats Then    'HP
-                With UserList(UserIndex).Stats
-                    If .BaseStat(SID.MinHP) < .ModStat(SID.MaxHP) Then
-                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.Str) \ 2)
-                    End If                  'SP
-                    If .BaseStat(SID.MinSTA) < .ModStat(SID.MaxSTA) Then
-                        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) \ 2)
-                    End If                  'MP
-                    If .BaseStat(SID.MinMAN) < .ModStat(SID.MaxMAN) Then
-                        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + 1 + (.ModStat(SID.Mag) \ 2)
-                    End If
-                End With
-            End If
-
-            '*** Update the counters ***
-            If UpdateUserCounters Then  'Bless
-                If UserList(UserIndex).Counters.BlessCounter > 0 Then
-                    If UserList(UserIndex).Counters.BlessCounter < timeGetTime Then
-                        UserList(UserIndex).Skills.Bless = 0
-                        ConBuf.PreAllocate 4
-                        ConBuf.Put_Byte DataCode.Server_IconBlessed
-                        ConBuf.Put_Byte 0
-                        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    End If
-                End If                  'Protection
-                If UserList(UserIndex).Counters.ProtectCounter > 0 Then
-                    If UserList(UserIndex).Counters.ProtectCounter < timeGetTime Then
-                        UserList(UserIndex).Skills.Protect = 0
-                        ConBuf.PreAllocate 4
-                        ConBuf.Put_Byte DataCode.Server_IconProtected
-                        ConBuf.Put_Byte 0
-                        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    End If
-                End If                  'Strengthen
-                If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
-                    If UserList(UserIndex).Counters.StrengthenCounter < timeGetTime Then
-                        UserList(UserIndex).Skills.Strengthen = 0
-                        ConBuf.PreAllocate 4
-                        ConBuf.Put_Byte DataCode.Server_IconStrengthened
-                        ConBuf.Put_Byte 0
-                        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    End If
-                End If                  'Spell exhaustion
-                If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
-                    If UserList(UserIndex).Counters.SpellExhaustion < timeGetTime Then
-                        UserList(UserIndex).Counters.SpellExhaustion = 0
-                        ConBuf.PreAllocate 4
-                        ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
-                        ConBuf.Put_Byte 0
-                        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    End If
-                End If                  'Aggressive face
-                If UserList(UserIndex).Counters.AggressiveCounter > 0 Then
-                    If UserList(UserIndex).Counters.AggressiveCounter < timeGetTime Then
-                        UserList(UserIndex).Counters.AggressiveCounter = 0
-                        ConBuf.PreAllocate 4
-                        ConBuf.Put_Byte DataCode.User_AggressiveFace
-                        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                        ConBuf.Put_Byte 0
-                        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    End If
+                '*** Disconnection timers ***
+                'Check if it has been idle for too long
+                If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
+                    Data_Send ToIndex, UserIndex, cMessage(85).Data
+                    Server_CloseSocket UserIndex
+                    GoTo NextUser   'Skip to the next user
                 End If
+                
+                'Check if the user was possible disconnected (or extremely laggy)
+                If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
+                    Data_Send ToIndex, UserIndex, cMessage(85).Data
+                    Server_CloseSocket UserIndex
+                    GoTo NextUser   'Skip to the next user
+                End If
+                
+                If UserList(UserIndex).flags.CreatedStats = 1 Then
+                    
+                    '*** Recover stats ***
+                    If RecoverUserStats Then    'HP
+                        With UserList(UserIndex).Stats
+                            If .BaseStat(SID.MinHP) < .ModStat(SID.MaxHP) Then
+                                .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.Str) \ 2)
+                            End If                  'SP
+                            If .BaseStat(SID.MinSTA) < .ModStat(SID.MaxSTA) Then
+                                .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) \ 2)
+                            End If                  'MP
+                            If .BaseStat(SID.MinMAN) < .ModStat(SID.MaxMAN) Then
+                                .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + 1 + (.ModStat(SID.Mag) \ 2)
+                            End If
+                        End With
+                    End If
+        
+                    '*** Update the counters ***
+                    If UpdateUserCounters Then  'Bless
+                        If UserList(UserIndex).Counters.BlessCounter > 0 Then
+                            If UserList(UserIndex).Counters.BlessCounter < timeGetTime Then
+                                UserList(UserIndex).Skills.Bless = 0
+                                ConBuf.PreAllocate 4
+                                ConBuf.Put_Byte DataCode.Server_IconBlessed
+                                ConBuf.Put_Byte 0
+                                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                            End If
+                        End If                  'Protection
+                        If UserList(UserIndex).Counters.ProtectCounter > 0 Then
+                            If UserList(UserIndex).Counters.ProtectCounter < timeGetTime Then
+                                UserList(UserIndex).Skills.Protect = 0
+                                ConBuf.PreAllocate 4
+                                ConBuf.Put_Byte DataCode.Server_IconProtected
+                                ConBuf.Put_Byte 0
+                                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                            End If
+                        End If                  'Strengthen
+                        If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
+                            If UserList(UserIndex).Counters.StrengthenCounter < timeGetTime Then
+                                UserList(UserIndex).Skills.Strengthen = 0
+                                ConBuf.PreAllocate 4
+                                ConBuf.Put_Byte DataCode.Server_IconStrengthened
+                                ConBuf.Put_Byte 0
+                                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                            End If
+                        End If                  'Spell exhaustion
+                        If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
+                            If UserList(UserIndex).Counters.SpellExhaustion < timeGetTime Then
+                                UserList(UserIndex).Counters.SpellExhaustion = 0
+                                ConBuf.PreAllocate 4
+                                ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+                                ConBuf.Put_Byte 0
+                                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                            End If
+                        End If
+                    End If
+                    
+                    '*** Update user stats (on client-side) ***
+                    If UpdateUserStats Then UserList(UserIndex).Stats.SendUpdatedStats
+                    
+                End If
+                
             End If
-            
+                
             '*** Send queued packet buffer ***
             If SendUserBuffer Then
 
@@ -450,10 +442,7 @@ Dim UserIndex As Integer
                 End If
                 
             End If
-            
-            '*** Update user stats (on client-side) ***
-            If UpdateUserStats Then UserList(UserIndex).Stats.SendUpdatedStats
-            
+
         End If
 
 NextUser:
@@ -465,6 +454,12 @@ NextUser:
     RecoverUserStats = 0
     UpdateUserCounters = 0
     SendUserBuffer = 0
+    
+    'Check if User_CleanArray needs to be called
+    If CallUserCleanArray = 1 Then
+        User_CleanArray
+        CallUserCleanArray = 0
+    End If
 
 End Sub
 
@@ -898,6 +893,8 @@ Dim u As Integer
     Next i
     ByteArrayToStr = Left$(ByteArrayToStr, Len(ByteArrayToStr) - 1)
     
+    Exit Function
+    
 'If there was an error, we were probably passed an erased ByteArray
 ErrOut:
 
@@ -910,7 +907,7 @@ Out:
     
 End Function
 
-Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBuffer As Integer = 250) As Long
+Public Function Server_WalkTimePerTile(ByVal Speed As Long) As Long
 '*****************************************************************
 'Takes a speed value and returns the time it takes to walk a tile
 'To fine the value:
@@ -925,10 +922,8 @@ Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBu
     '11 = BaseWalkSpeed - how fast we move in pixels/sec
     '1/32 = The size of a tile
     '1000 = Miliseconds in a second
-    'LagBuffer = We have to give some slack for network lag and client lag - raise this value if people skip too much
-    '     and lower it if people are speedhacking and getting too much extra speed
-    'Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - LagBuffer
-    Server_WalkTimePerTile = (1000 / ((Speed + 4) * 0.34375)) - LagBuffer
+    'Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32)
+    Server_WalkTimePerTile = (1000 / ((Speed + 4) * 0.34375))
     
     'Make sure the lag buffer doesn't overshoot the value into the negatives
     If Server_WalkTimePerTile < 0 Then Server_WalkTimePerTile = 0
@@ -938,6 +933,7 @@ Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBu
 End Function
 
 Public Function Server_UserExist(ByVal UserName As String) As Boolean
+
 '*****************************************************************
 'Checks the database for if a user exists by the specified name
 '*****************************************************************
@@ -949,7 +945,7 @@ Public Function Server_UserExist(ByVal UserName As String) As Boolean
 
     'If End Of File = true, then the user doesn't exist
     Server_UserExist = Not DB_RS.EOF
-    
+
     'Close the recordset
     DB_RS.Close
     
@@ -1168,21 +1164,14 @@ Public Function Server_RectDistance(ByVal x1 As Long, ByVal Y1 As Long, ByVal x2
 
 End Function
 
-Public Function Server_FileExist(File As String, FileType As VbFileAttribute) As Boolean
+Function Server_FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
 '*****************************************************************
 'Checks to see if a file exists
 '*****************************************************************
+On Error GoTo ErrOut
 
-    On Error GoTo ErrOut
-    
-    Log "Call Server_FileExist(" & File & "," & FileType & ")", CodeTracker '//\\LOGLINE//\\
-
-    If Dir$(File, FileType) <> "" Then Server_FileExist = True
-    
-    Log "Rtrn Server_FileExist = " & Server_FileExist, CodeTracker '//\\LOGLINE//\\
-    
-    On Error GoTo 0
+    If LenB(Dir$(File, FileType)) Then Server_FileExist = True
 
 Exit Function
 
@@ -1190,8 +1179,7 @@ Exit Function
 ErrOut:
 
     Server_FileExist = False
-    Log "Rtrn Server_FileExist = " & Server_FileExist, CodeTracker '//\\LOGLINE//\\
-
+    
 End Function
 
 Public Function Server_RandomNumber(ByVal LowerBound As Long, ByVal UpperBound As Long) As Long
@@ -1336,7 +1324,6 @@ Public Sub Server_Unload()
 '*****************************************************************
 'Unload the server and all the variables
 '*****************************************************************
-Dim Cancel As Byte
 Dim FileNum As Byte
 Dim LoopC As Long
 Dim s As String
@@ -1346,14 +1333,8 @@ Dim s As String
     Log "Call Server_Unload()", CodeTracker '//\\LOGLINE//\\
     
     'Close down the socket
-    GOREsock_ShutDown
-    GOREsock_UnHook
-    If GOREsock_Loaded Then
-        GOREsock_Terminate
-        Cancel = 1
-    End If
-    
-    If Cancel <> 1 Then
+    If frmMain.GOREsock.ShutDown <> soxERROR Then
+        frmMain.GOREsock.UnHook
         
         'Stop the server loop
         ServerRunning = 0
@@ -1406,3 +1387,838 @@ Dim s As String
     End If
 
 End Sub
+
+
+Function Server_CheckForSameName(ByVal UserIndex As Integer, ByVal sName As String) As Boolean
+
+'*****************************************************************
+'Checks for a user with the same Name
+'*****************************************************************
+
+Dim LoopC As Long
+
+    Log "Call Server_CheckForSameName(" & UserIndex & "," & sName & ")", CodeTracker '//\\LOGLINE//\\
+
+    For LoopC = 1 To LastUser
+        If UserList(LoopC).flags.UserLogged = 1 Then
+            If UCase$(UserList(LoopC).Name) = UCase$(sName) Then
+                If UserIndex <> LoopC Then
+                    Server_CheckForSameName = True
+                    Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
+                    Exit Function
+                End If
+            End If
+        End If
+    Next LoopC
+
+    Server_CheckForSameName = False
+    
+    Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Function Server_CheckTargetedDistance(ByVal UserIndex As Integer) As Byte
+
+'*****************************************************************
+'Checks if a user is targeting a character in range
+'*****************************************************************
+
+Dim TargetID As Integer
+
+    Log "Call Server_CheckTargetedDistance(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Set the target ID
+    TargetID = UserList(UserIndex).flags.TargetIndex
+    Log "Server_CheckTargetedDistance: Target ID acquired (" & TargetID & ")", CodeTracker '//\\LOGLINE//\\
+
+    Select Case UserList(UserIndex).flags.Target
+
+        'Self
+        Case 0
+            Server_CheckTargetedDistance = 1
+            Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+
+        'User
+        Case 1
+        
+            'Check the map
+            If UserList(UserIndex).Pos.Map <> UserList(CharList(TargetID).Index).Pos.Map Then
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            
+            'Check the X/Y position
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(CharList(TargetID).Index).Pos.X, UserList(CharList(TargetID).Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
+                Server_CheckTargetedDistance = 1
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+    
+            'NPC
+        Case 2
+        
+            'Check the map
+            If UserList(UserIndex).Pos.Map <> NPCList(CharList(TargetID).Index).Pos.Map Then
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            
+            'Check the X/Y position
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(CharList(TargetID).Index).Pos.X, NPCList(CharList(TargetID).Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
+                Server_CheckTargetedDistance = 1
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+
+    End Select
+
+    'Not in distance or nothing targeted, so tell the user it is not targeted
+    If TargetID = 0 Or UserList(UserIndex).flags.TargetIndex = 0 Then
+        Log "Server_CheckTargetedDistance: Telling user nothing is targeted", CodeTracker '//\\LOGLINE//\\
+        UserList(UserIndex).flags.Target = 0
+        UserList(UserIndex).flags.TargetIndex = 0
+        ConBuf.PreAllocate 3
+        ConBuf.Put_Byte DataCode.User_Target
+        ConBuf.Put_Integer 0
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    End If
+    
+    Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Sub Server_ClosestLegalPos(Pos As WorldPos, nPos As WorldPos)
+
+'*****************************************************************
+'Finds the closest legal tile to Pos and stores it in nPos
+'*****************************************************************
+
+Dim Notfound As Boolean
+Dim LoopC As Integer
+Dim tX As Long
+Dim tY As Long
+
+    Log "Call Server_ClosestLegalPos([M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "],N/A)", CodeTracker '//\\LOGLINE//\\
+
+    'Check for a starting legal position
+    If Server_LegalPos(Pos.Map, Pos.X, Pos.Y, 0) Then
+        nPos = Pos
+        Exit Sub
+    End If
+
+    'Set the new map
+    nPos.Map = Pos.Map
+
+    'Keep looping while the position is not legal
+    Do
+
+        'Loop through the tiles
+        For tY = Pos.Y - LoopC To Pos.Y + LoopC
+            For tX = Pos.X - LoopC To Pos.X + LoopC
+            
+                Log "Server_ClosestLegalPos: Checking map tile (" & nPos.Map & "," & tX & "," & tY & ")", CodeTracker '//\\LOGLINE//\\
+
+                'Check if the position is legal
+                If Server_LegalPos(nPos.Map, tX, tY, 0) Then
+                    nPos.X = tX
+                    nPos.Y = tY
+                    tX = Pos.X + LoopC
+                    tY = Pos.Y + LoopC
+                    Exit Sub
+                End If
+
+            Next tX
+        Next tY
+
+        'Check the next set of tiles
+        LoopC = LoopC + 1
+        
+        'If we have checked too much, then just leave
+        If LoopC > 5 Then   'How many tiles in all directions to search
+            Notfound = True
+            Exit Do
+        End If
+
+    Loop
+
+    'If no position was found, return empty positions
+    If Notfound Then
+        nPos.X = 0
+        nPos.Y = 0
+    End If
+    
+    Log "Server_ClosestLegalPos: Returning position (" & nPos.Map & "," & nPos.X & "," & nPos.Y & ")", CodeTracker '//\\LOGLINE//\\
+
+End Sub
+
+Public Sub Server_DoTileEvents(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer)
+
+'*****************************************************************
+'Do any events on a tile
+'*****************************************************************
+
+Dim TempPos As WorldPos
+Dim NewPos As WorldPos
+
+    Log "Call Server_DoTileEvents(" & UserIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for tile exit
+    If MapInfo(Map).Data(X, Y).TileExitMap Then
+
+        'Set the position values
+        TempPos.X = MapInfo(Map).Data(X, Y).TileExitX
+        TempPos.Y = MapInfo(Map).Data(X, Y).TileExitY
+        TempPos.Map = MapInfo(Map).Data(X, Y).TileExitMap
+        Log "Server_DoTileEvents: Tile exist exists, warps to (" & TempPos.Map & "," & TempPos.X & "," & TempPos.Y & ")", CodeTracker '//\\LOGLINE//\\
+
+        'Check if it is a new map - if so, load the new map if needed
+        If TempPos.Map <> Map Then Load_Maps_Temp TempPos.Map
+
+        'Get the closest legal position
+        If ServerMap(TempPos.Map) = ServerID Then
+            Server_ClosestLegalPos TempPos, NewPos
+            If Server_LegalPos(NewPos.Map, NewPos.X, NewPos.Y, 0) Then User_WarpChar UserIndex, NewPos.Map, NewPos.X, NewPos.Y
+        Else
+            NewPos = TempPos
+            User_WarpChar UserIndex, NewPos.Map, NewPos.X, NewPos.Y
+        End If
+        
+    End If
+
+End Sub
+
+Public Function Server_FindDirection(Pos As WorldPos, Target As WorldPos) As Byte
+
+'*****************************************************************
+'Returns the direction in which the Target is from the Pos, 0 if equal
+'*****************************************************************
+Dim pX As Integer
+Dim pY As Integer
+Dim tX As Integer
+Dim tY As Integer
+Dim X As Integer
+Dim Y As Integer
+
+    Log "Call Server_FindDirection([M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "],[M:" & Target.Map & " X:" & Target.X & " Y:" & Target.Y & "])", CodeTracker '//\\LOGLINE//\\
+
+    'Put the bytes into integer variables (causes overflows for negatives, even if the return is an integer)
+    pX = Pos.X
+    pY = Pos.Y
+    tX = Target.X
+    tY = Target.Y
+    
+    'Find the difference
+    X = pX - tX
+    Y = pY - tY
+    Log "Server_FindDirection: Position difference (X:" & X & " Y:" & Y & ") found", CodeTracker '//\\LOGLINE//\\
+
+    'Same position
+    If X = 0 Then
+        If Y = 0 Then
+            Server_FindDirection = NORTH
+            Exit Function
+        End If
+    End If
+
+    'NE
+    If X <= -1 Then
+        If Y >= 1 Then
+            Server_FindDirection = NORTHEAST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+    End If
+
+    'NW
+    If X >= 1 Then
+        If Y >= 1 Then
+            Server_FindDirection = NORTHWEST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+    End If
+
+    'SW
+    If X >= 1 Then
+        If Y <= -1 Then
+            Server_FindDirection = SOUTHWEST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+    End If
+
+    'SE
+    If X <= -1 Then
+        If Y <= -1 Then
+            Server_FindDirection = SOUTHEAST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+    End If
+
+    'South
+    If Y <= -1 Then
+        Server_FindDirection = SOUTH
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+
+    'North
+    If Y >= 1 Then
+        Server_FindDirection = NORTH
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+
+    'West
+    If X >= 1 Then
+        Server_FindDirection = WEST
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+
+    'East
+    If X <= -1 Then
+        Server_FindDirection = EAST
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Sub Server_HeadToPos(ByVal Head As Byte, ByRef Pos As WorldPos)
+
+'*****************************************************************
+'Takes Pos and moves it in heading direction
+'*****************************************************************
+
+    Log "Call Server_HeadToPos(" & Head & ",[M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "])", CodeTracker '//\\LOGLINE//\\
+
+    Select Case Head
+        Case NORTH
+            If Pos.Y > 0 Then Pos.Y = Pos.Y - 1
+        Case SOUTH
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
+        Case EAST
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
+        Case WEST
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
+        Case NORTHEAST
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
+            If Pos.Y > 0 Then Pos.Y = Pos.Y - 1
+        Case SOUTHEAST
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
+        Case SOUTHWEST
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
+        Case NORTHWEST
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y - 1
+    End Select
+
+End Sub
+
+Public Function Server_InMapBounds(ByVal Map As Long, ByVal X As Integer, ByVal Y As Integer) As Boolean
+
+'*****************************************************************
+'Checks to see if a tile position is in the maps bounds
+'*****************************************************************
+
+    Log "Call Server_InMapBounds(" & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    If X >= 1 Then
+        If X <= MapInfo(Map).Width Then
+            If Y >= 1 Then
+                If Y <= MapInfo(Map).Height Then Server_InMapBounds = True
+            End If
+        End If
+    End If
+    
+    Log "Rtrn Server_InMapBounds = " & Server_InMapBounds, CodeTracker '//\\LOGLINE//\\
+    
+End Function
+
+Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, ByVal Heading As Byte) As Boolean
+
+'*****************************************************************
+'Checks to see if a tile position is legal
+'*****************************************************************
+Dim tmpBlocked As Byte
+
+    Log "Call Server_LegalPos(" & Map & "," & X & "," & Y & "," & Heading & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Make sure it's a legal map
+    If Map <= 0 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Map > NumMaps Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+
+    'Check to see if its out of bounds
+    If X < 1 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If X > MapInfo(Map).Width Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Y < 1 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Y > MapInfo(Map).Height Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    With MapInfo(Map).Data(X, Y)
+    
+        'Check if a character (User or NPC) is already at the tile
+        If .UserIndex > 0 Then
+            Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+        If .NPCIndex > 0 Then
+            Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+        
+        'Set the temp blocked variable
+        tmpBlocked = .Blocked
+        If tmpBlocked > 128 Then tmpBlocked = tmpBlocked - 128 'Remove the Blocked Attack flag
+    
+        'Check to see if its blocked
+        If tmpBlocked = BlockedAll Then
+            Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+    
+    End With
+
+    'Check the heading for directional blocking
+    If Heading > 0 Then
+        If tmpBlocked And BlockedNorth Then
+            If Heading = NORTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+        If tmpBlocked And BlockedEast Then
+            If Heading = EAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+        If tmpBlocked And BlockedSouth Then
+            If Heading = SOUTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+        If tmpBlocked And BlockedWest Then
+            If Heading = WEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+    End If
+
+    'If we are still in this routine, then it must be a legal position
+    Server_LegalPos = True
+    
+    Exit Function
+    
+ErrOut:
+
+    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Function Server_NextOpenCharIndex() As Integer
+
+'*****************************************************************
+'Finds the next open CharIndex in Charlist
+'*****************************************************************
+
+Dim LoopC As Long
+    
+    Log "Call Server_NextOpenCharIndex", CodeTracker '//\\LOGLINE//\\
+    
+    'Check for the first char creation
+    If LastChar = 0 Then
+        ReDim CharList(0 To 1)
+        LastChar = 1
+        Server_NextOpenCharIndex = 1
+        Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    'Loop through the character slots
+    Log "Server_NextOpenCharIndex: Starting loop (1 to " & LastChar & ")", CodeTracker '//\\LOGLINE//\\
+    For LoopC = 1 To LastChar + 1
+
+        'We need to create a new slot
+        If LoopC > LastChar Then
+            LastChar = LoopC
+            Server_NextOpenCharIndex = LoopC
+            ReDim Preserve CharList(0 To LastChar)
+            Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+
+        'Re-use an old slot that is not being used
+        If CharList(LoopC).Index = 0 Then
+            Server_NextOpenCharIndex = LoopC
+            Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+
+    Next LoopC
+    
+    Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Function Server_SkillIDtoSkillName(ByVal SkillID As Byte) As String
+
+'***************************************************
+'Takes in a SkillID and returns the name of that skill
+'***************************************************
+
+    Log "Call Server_SkillIDtoSkillName(" & SkillID & ")", CodeTracker '//\\LOGLINE//\\
+
+    Select Case SkillID
+        Case SkID.Bless: Server_SkillIDtoSkillName = "Bless"
+        Case SkID.IronSkin: Server_SkillIDtoSkillName = "Iron Skin"
+        Case SkID.Strengthen: Server_SkillIDtoSkillName = "Strengthen"
+        Case SkID.Warcry: Server_SkillIDtoSkillName = "Warcry"
+        Case SkID.Protection: Server_SkillIDtoSkillName = "Protection"
+        Case SkID.SpikeField: Server_SkillIDtoSkillName = "Spike Field"
+        Case SkID.Heal: Server_SkillIDtoSkillName = "Heal"
+        Case Else: Server_SkillIDtoSkillName = "Unknown Skill #" & SkillID
+    End Select
+    
+    Log "Rtrn Server_SkillIDtoSkillName = " & Server_SkillIDtoSkillName, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Function Server_WriteMail(ByVal WriterIndex As Integer, ByVal ReceiverName As String, ByVal Subject As String, ByVal Message As String, ByRef Objs() As Obj) As Byte
+Dim MailIndex As Long
+Dim MailData As MailData
+Dim NumObjs As Byte
+Dim TempSplit() As String
+Dim TempStr As String
+Dim ServerIndex As Byte
+Dim LoopC As Byte
+Dim LoopX As Byte
+Dim i As Long
+Dim j As Byte
+
+    Log "Call Server_WriteMail(" & WriterIndex & "," & ReceiverName & "," & Subject & ",[" & Message & "],[Objs() = N/A])", CodeTracker '//\\LOGLINE//\\
+
+    'Check for a writing delay
+    If WriterIndex > 0 Then
+        If UserList(WriterIndex).Counters.DelayTimeMail > timeGetTime Then
+            'Not enough time has passed by - goodbye! :)
+            Log "Server_WriteMail: Not enough time elapsed since last mail write for user " & WriterIndex & " (" & UserList(WriterIndex).Name & ")", CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        Else
+            'Set the delay
+            UserList(WriterIndex).Counters.DelayTimeMail = timeGetTime + DelayTimeMail
+        End If
+    End If
+    
+    'Check for a valid reciever
+    If Not Server_UserExist(ReceiverName) Then
+        If WriterIndex > 0 Then
+            ConBuf.PreAllocate 3 + Len(ReceiverName)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 13
+            ConBuf.Put_String ReceiverName
+            Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+        End If
+        Exit Function
+    End If
+    
+    'Check for sending cost
+    If MailCost > 0 Then
+        If WriterIndex > 0 Then 'Prevent charging the server from sending mail (ID = -1 for server) ;)
+            If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
+            
+                'Not enough money
+                Log "Server_WriteMail: User " & WriterIndex & " (" & UserList(WriterIndex).Name & ") has not enough money to write mail (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
+                ConBuf.PreAllocate 6
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 14
+                ConBuf.Put_Long MailCost
+                Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                Exit Function
+            
+            End If
+        End If
+    End If
+
+    'Get the next open mail ID
+    DB_RS.Open "SELECT lastid FROM mail_lastid", DB_Conn, adOpenStatic, adLockOptimistic
+    MailIndex = Val(DB_RS(0)) + 1
+    DB_RS(0) = MailIndex    'Update the value in the database
+    DB_RS.Update
+    DB_RS.Close
+    Log "Server_WriteMail: MailIndex acquired from `mail_lastid` table (" & MailIndex & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Set up the mail type
+    MailData.New = 1
+    MailData.Message = Message
+    MailData.RecieveDate = Date
+    MailData.Subject = Subject
+    If WriterIndex <> -1 Then MailData.WriterName = UserList(WriterIndex).Name Else MailData.WriterName = "Game Admin"
+
+    'Get the number of objects
+    On Error Resume Next
+    NumObjs = UBound(Objs)
+    If Err Then NumObjs = 0
+    On Error GoTo 0
+
+    'Put the objects into the MailData
+    If NumObjs > 0 Then
+        For i = 1 To NumObjs
+            MailData.Obj(i) = Objs(i)
+        Next i
+    End If
+
+    'Check if the reciever is on
+    For LoopC = 1 To LastUser
+        If UserList(LoopC).flags.UserLogged Then
+            If UCase$(UserList(LoopC).Name) = UCase$(ReceiverName) Then
+
+                'Get the user's next open MailID slot
+                LoopX = 0
+                Do
+                    LoopX = LoopX + 1
+                    If LoopX > MaxMailPerUser Then
+                        If WriterIndex <> -1 Then
+                            'Message to the receiver
+                            ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).Name)
+                            ConBuf.Put_Byte DataCode.Server_Message
+                            ConBuf.Put_Byte 15
+                            ConBuf.Put_String UserList(WriterIndex).Name
+                            Data_Send ToIndex, LoopC, ConBuf.Get_Buffer
+                            'Message to the sender
+                            ConBuf.PreAllocate 3 + Len(ReceiverName)
+                            ConBuf.Put_Byte DataCode.Server_Message
+                            ConBuf.Put_Byte 15
+                            ConBuf.Put_String ReceiverName
+                            Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                            Server_WriteMail = 1
+                            Exit Function
+                        Else
+                            Data_Send ToIndex, LoopC, cMessage(17).Data
+                            Exit Function
+                        End If
+                    End If
+                Loop While UserList(LoopC).MailID(LoopX) > 0
+
+                'Add the mail directly to the user's MailID
+                UserList(LoopC).MailID(LoopX) = MailIndex
+
+                'Save the mail
+                Save_Mail MailIndex, MailData
+
+                'Display the recieve/sent messages
+                If WriterIndex <> -1 Then
+                    'Send message to sender
+                    ConBuf.PreAllocate 3 + Len(ReceiverName)
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 19
+                    ConBuf.Put_String ReceiverName
+                    Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                    'Send message to receiver
+                    ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).Name)
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 18
+                    ConBuf.Put_String UserList(WriterIndex).Name
+                    Data_Send ToIndex, LoopC, ConBuf.Get_Buffer, , PP_NewMail
+                Else
+                    'Send message to receiver that it was from the game admin
+                    Data_Send ToIndex, LoopC, cMessage(20).Data, , PP_NewMail
+                End If
+                
+                'Check for sending cost
+                If MailCost > 0 Then
+                    If WriterIndex > 0 Then
+                        If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
+                            Log "Server_WriteMail: Not enough gold to write message (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
+                            Exit Function 'This should never be reached, but just in case it does, leave this here
+                        Else
+                            UserList(WriterIndex).Stats.BaseStat(SID.Gold) = UserList(WriterIndex).Stats.BaseStat(SID.Gold) - MailCost
+                            ConBuf.PreAllocate 6
+                            ConBuf.Put_Byte DataCode.Server_Message
+                            ConBuf.Put_Byte 21
+                            ConBuf.Put_Long MailCost
+                            Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                        End If
+                    End If
+                End If
+                
+                Exit Function
+
+            End If
+        End If
+    Next LoopC
+        
+    'Get the user's mail list and server from the database and store them
+    DB_RS.Open "SELECT mail,server FROM users WHERE `name`='" & ReceiverName & "'", DB_Conn, adOpenStatic, adLockOptimistic
+    ServerIndex = Val(DB_RS!server) 'Hold the server index
+    TempStr = DB_RS!mail        'Hold the mail string
+    TempSplit = Split(TempStr, vbNewLine)   'Hold the split up mail
+    
+    'Check if the user is on another server
+    If NumServers > 1 Then
+
+        'User is on another server, so send the message there
+        If ServerIndex > 0 Then
+        
+            'Check if the user has too much mail already
+            If UBound(TempSplit) >= MaxMailPerUser Then
+                Log "Server_WriteMail: User has too much mail alread - aborting", CodeTracker '//\\LOGLINE//\\
+                If WriterIndex <> -1 Then
+                    ConBuf.PreAllocate 3 + Len(ReceiverName)
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 16
+                    ConBuf.Put_String ReceiverName
+                    Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                End If
+                DB_RS.Close
+                Exit Function
+                
+            'Send the message to the other server
+            Else
+                DB_RS.Close
+                Server_ConnectToServer ServerIndex 'Confirm the connection
+                If frmMain.ServerSocket(ServerIndex).State = sckConnected Then
+                    ConBuf.PreAllocate 6 + Len(ReceiverName) + Len(MailData.Subject) + Len(MailData.Message) + (NumObjs * 4)
+                    ConBuf.Put_Byte DataCode.Server_MailCompose
+                    ConBuf.Put_String ReceiverName
+                    ConBuf.Put_String MailData.WriterName
+                    ConBuf.Put_String MailData.Subject
+                    ConBuf.Put_StringEX MailData.Message
+                    ConBuf.Put_Byte NumObjs
+                    For j = 1 To NumObjs
+                        ConBuf.Put_Integer MailData.Obj(j).ObjIndex
+                        ConBuf.Put_Integer MailData.Obj(j).Amount
+                    Next j
+                    frmMain.ServerSocket(ServerIndex).SendData ConBuf.Get_Buffer
+                    Save_Mail MailIndex, MailData
+                    Server_WriteMail = 1
+                    Exit Function
+                Else
+                    If WriterIndex <> -1 Then
+                        ConBuf.PreAllocate 3 + Len(ReceiverName)
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 16
+                        ConBuf.Put_String ReceiverName
+                        Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                    End If
+                    Exit Function
+                End If
+            End If
+        End If
+    End If
+
+    'The user is not on, so load up his character data and impliment it into the character
+    TempSplit = Split(TempStr, vbNewLine)
+    If UBound(TempSplit) >= MaxMailPerUser Then 'No room for the mail
+        Log "Server_WriteMail: User has too much mail alread - aborting", CodeTracker '//\\LOGLINE//\\
+        DB_RS.Close
+        If WriterIndex <> -1 Then
+            ConBuf.PreAllocate 3 + Len(ReceiverName)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 16
+            ConBuf.Put_String ReceiverName
+            Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+        End If
+        Exit Function
+    Else    'Save the mail ID in the user
+        If LenB(TempStr) Then
+            TempStr = TempStr & vbNewLine & MailIndex
+        Else
+            TempStr = TempStr & MailIndex
+        End If
+        DB_RS!mail = TempStr
+        DB_RS.Update
+        DB_RS.Close
+    End If
+    
+    'Check for sending cost
+    If MailCost > 0 Then
+        If WriterIndex > 0 Then
+            If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
+                Log "Server_WriteMail: Not enough gold to write message (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
+                Exit Function 'This should never be reached, but just in case it does, leave this here
+            Else
+                UserList(WriterIndex).Stats.BaseStat(SID.Gold) = UserList(WriterIndex).Stats.BaseStat(SID.Gold) - MailCost
+                ConBuf.PreAllocate 6
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 21
+                ConBuf.Put_Long MailCost
+                Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+            End If
+        End If
+    End If
+
+    'Send the message of success
+    If WriterIndex <> -1 Then
+        ConBuf.PreAllocate 3 + Len(ReceiverName)
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 19
+        ConBuf.Put_String ReceiverName
+        Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+    End If
+
+    'Save the mail
+    Save_Mail MailIndex, MailData
+    
+    Server_WriteMail = 1
+
+End Function
+

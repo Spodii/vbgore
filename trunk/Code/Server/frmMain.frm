@@ -1,5 +1,6 @@
 VERSION 5.00
 Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{FFB2E677-6800-4C2B-BB59-BA978B9A39D5}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -27,6 +28,12 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   251
    StartUpPosition =   2  'CenterScreen
+   Begin GOREsock.GOREsockServer GOREsock 
+      Left            =   600
+      Top             =   120
+      _ExtentX        =   847
+      _ExtentY        =   847
+   End
    Begin MSWinsockLib.Winsock ServerSocket 
       Index           =   0
       Left            =   120
@@ -102,7 +109,7 @@ Dim TempSplit() As String
 
     'Show the form
     Me.Caption = "Creating server..."
-    Me.Height = 460
+    Me.Height = 0
     Me.Width = 5000
     Me.Show
     DoEvents
@@ -161,8 +168,10 @@ Dim TempSplit() As String
     MySQL_Init
     
     'Generate the packet keys
-    GenerateEncryptionKeys
-
+    GenerateEncryptionKeys TempSplit
+    frmMain.GOREsock.ClearPicture
+    frmMain.GOREsock.SetEncryption PacketEncTypeServerIn, PacketEncTypeServerOut, TempSplit
+    
     'Start the server
     StartServer
 
@@ -357,11 +366,9 @@ Dim i As Long
     frmMain.Caption = "Loading sockets..."
     frmMain.Refresh
     
-    GOREsock_Initialize Me.hwnd
-    
     'Change the listen settings in the Server.ini file
-    LocalSocketID = GOREsock_Listen(ServerInfo(ServerID).IIP, ServerInfo(ServerID).Port)
-    GOREsock_SetOption LocalSocketID, soxSO_TCP_NODELAY, True
+    LocalSocketID = frmMain.GOREsock.Listen(ServerInfo(ServerID).IIP, ServerInfo(ServerID).Port)
+    frmMain.GOREsock.SetOption LocalSocketID, soxSO_TCP_NODELAY, True
 
     '*** Listen (Server-To-Server) ***
     If NumServers > 1 Then
@@ -391,7 +398,7 @@ Dim i As Long
     '*** Misc ***
 
     'Check for a valid connection
-    If GOREsock_Address(LocalSocketID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbNewLine & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbNewLine & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
+    If frmMain.GOREsock.Address(LocalSocketID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbNewLine & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbNewLine & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     'Set the starting time
     ServerStartTime = timeGetTime
@@ -466,6 +473,224 @@ Dim BufUBound As Long
         'Check if the buffer ran out
         If rBuf.Get_ReadPos > BufUBound Then Exit Sub
         
+    Loop
+
+End Sub
+
+Private Sub GOREsock_OnClose(inSox As Long)
+
+'*********************************************
+'Socket was closed - make sure the user is logged off and reset the ConnID
+'*********************************************
+
+    Log "Call frmMain.GOREsock.Close(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Make sure the user is in a valid range
+    If inSox > LastUser Then Exit Sub
+    If inSox < 1 Then Exit Sub
+    
+    'If the user is logged in still, close them down so they can be removed properly
+    If UserList(inSox).flags.UserLogged = 1 Then User_Close inSox
+
+End Sub
+
+Private Sub GOREsock_OnConnecting(inSox As Long)
+
+'*********************************************
+'Empty procedure
+'*********************************************
+
+End Sub
+
+Private Sub GOREsock_OnConnection(inSox As Long)
+
+'*********************************************
+'Accepts new user and assigns an open Index
+'*********************************************
+
+    Log "Call frmMain.GOREsock.Connection(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for max users
+    If inSox > MaxUsers Then Exit Sub
+    
+    'Make sure Nagling is off
+    frmMain.GOREsock.SetOption inSox, soxSO_TCP_NODELAY, True
+
+    'Check that the userlist is high enough
+    If inSox > LastUser Then
+        LastUser = inSox
+        ReDim Preserve UserList(1 To inSox)
+    End If
+
+End Sub
+
+Private Sub GOREsock_OnDataArrival(inSox As Long, inData() As Byte)
+
+'*********************************************
+'Retrieve the CommandIDs and send to corresponding data handler
+'*********************************************
+Dim Index As Integer
+Dim rBuf As DataBuffer
+Dim BufUBound As Long
+Dim CommandID As Byte
+Dim CommandID2 As Byte
+Dim i As Byte
+
+    Log "Call frmMain.GOREsock.DataArrival(" & inSox & "," & ByteArrayToStr(inData) & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Get the UserIndex
+    Index = inSox
+    If Index > LastUser Then Exit Sub
+    
+    'If it is a character disconnecting, do not check their packets since they're doodie heads
+    If UserList(Index).flags.Disconnecting Then Exit Sub
+    
+    'Reset the user's packet counter
+    UserList(Index).Counters.LastPacket = timeGetTime
+    
+    'Calculate data transfer rate
+    'TCP header = 20 bytes, IPv4 header = 20 bytes
+    BufUBound = UBound(inData)
+    If CalcTraffic Then DataIn = DataIn + BufUBound + 41  '+ 1 because we have to count inData(0)
+    
+    'Check if to reset the packet flood timer
+    If UserList(Index).Counters.PacketsInTime + 1000 < timeGetTime Then
+        UserList(Index).Counters.PacketsInTime = timeGetTime
+        UserList(Index).Counters.PacketsInCount = 0
+    End If
+
+    'Create the data buffer
+    Set rBuf = New DataBuffer
+    rBuf.Set_Buffer inData
+    
+    'Uncomment this to see packets going into the client
+    'Dim i As Long
+    'Dim s As String
+    'For i = LBound(inData) To UBound(inData)
+    '    If inData(i) >= 100 Then
+    '        s = s & inData(i) & " "
+    '    ElseIf inData(i) >= 10 Then
+    '        s = s & "0" & inData(i) & " "
+    '    Else
+    '        s = s & "00" & inData(i) & " "
+    '    End If
+    'Next i
+    'Debug.Print StrConv(inData, vbUnicode)
+    'Debug.Print s
+    
+    Log "Receive: " & ByteArrayToStr(rBuf.Get_Buffer), PacketIn '//\\LOGLINE//\\
+
+    'Loop through the data buffer until it's empty
+    'If done right, we should use up exactly every byte in the buffer
+    Do
+
+        'Raise the packets in count and check if the user has been flooding packets
+        UserList(Index).Counters.PacketsInCount = UserList(Index).Counters.PacketsInCount + 1
+        If UserList(Index).Counters.PacketsInCount > MaxPacketsInPerSec Then Exit Do
+
+        'Get the CommandID
+        CommandID = rBuf.Get_Byte
+        If DEBUG_RecordPacketsIn Then DebugPacketsIn(CommandID) = DebugPacketsIn(CommandID) + 1
+    
+        If CommandID >= 100 Then                                                                                '//\\LOGLINE//\\
+            Log " * ID: " & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn   '//\\LOGLINE//\\
+        ElseIf CommandID >= 10 Then                                                                             '//\\LOGLINE//\\
+            Log " * ID: 0" & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn  '//\\LOGLINE//\\
+        Else                                                                                                    '//\\LOGLINE//\\
+            Log " * ID: 00" & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn '//\\LOGLINE//\\
+        End If                                                                                                  '//\\LOGLINE//\\
+        
+        'Make the appropriate call based on the CommandID
+        With DataCode
+        
+            'Reset idle counter
+            If CommandID <> .Server_PTD Then UserList(Index).Counters.IdleCount = timeGetTime
+
+            Select Case CommandID
+            
+            Case 0
+                Exit Do
+       
+            Case .Comm_Emote: Data_Comm_Emote rBuf, Index
+            Case .Comm_GroupTalk: Data_Comm_GroupTalk rBuf, Index
+            Case .Comm_Shout: Data_Comm_Shout rBuf, Index
+            Case .Comm_Talk: Data_Comm_Talk rBuf, Index
+            Case .Comm_Whisper: Data_Comm_Whisper rBuf, Index
+
+            Case .GM_Approach: Data_GM_Approach rBuf, Index
+            Case .GM_BanIP: Data_GM_BanIP rBuf, Index
+            Case .GM_DeThrall: Data_GM_DeThrall rBuf, Index
+            Case .GM_Kick: Data_GM_Kick rBuf, Index
+            Case .GM_Raise: Data_GM_Raise rBuf, Index
+            Case .GM_SetGMLevel: Data_GM_SetGMLevel rBuf, Index
+            Case .GM_Summon: Data_GM_Summon rBuf, Index
+            Case .GM_Thrall: Data_GM_Thrall rBuf, Index
+            Case .GM_UnBanIP: Data_GM_UnBanIP rBuf, Index
+            Case .GM_Warp: Data_GM_Warp rBuf, Index
+            
+            Case .Map_DoneLoadingMap: Data_Map_DoneLoadingMap Index
+
+            Case .Server_Help: Data_Server_Help Index
+            Case .Server_MailCompose: Data_Server_MailCompose rBuf, Index
+            Case .Server_MailDelete: Data_Server_MailDelete rBuf, Index
+            Case .Server_MailItemTake: Data_Server_MailItemTake rBuf, Index
+            Case .Server_MailMessage: Data_Server_MailMessage rBuf, Index
+            Case .Server_PTD: Data_Server_PTD Index
+            Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf, Index
+            Case .Server_Who: Data_Server_Who Index
+
+            Case .User_Attack: Data_User_Attack rBuf, Index
+            Case .User_Bank_Balance: Data_User_Bank_Balance Index
+            Case .User_Bank_Deposit: Data_User_Bank_Deposit rBuf, Index
+            Case .User_Bank_PutItem: Data_User_Bank_PutItem rBuf, Index
+            Case .User_Bank_TakeItem: Data_User_Bank_TakeItem rBuf, Index
+            Case .User_Bank_Withdraw: Data_User_Bank_Withdraw rBuf, Index
+            Case .User_BaseStat: Data_User_BaseStat rBuf, Index
+            Case .User_Blink: Data_User_Blink Index
+            Case .User_CancelQuest: Data_User_CancelQuest rBuf, Index
+            Case .User_CastSkill: Data_User_CastSkill rBuf, Index
+            Case .User_ChangeInvSlot: Data_User_ChangeInvSlot rBuf, Index
+            Case .User_Desc: Data_User_Desc rBuf, Index
+            Case .User_Drop: Data_User_Drop rBuf, Index
+            Case .User_Emote: Data_User_Emote rBuf, Index
+            Case .User_Get: Data_User_Get Index
+            Case .User_Group_Info: Data_User_Group_Info Index
+            Case .User_Group_Invite: Data_User_Group_Invite rBuf, Index
+            Case .User_Group_Join: Data_User_Group_Join Index
+            Case .User_Group_Leave: Data_User_Group_Leave Index
+            Case .User_Group_Make: Data_User_Group_Make Index
+            Case .User_KnownSkills: Data_User_KnownSkills Index
+            Case .User_LeftClick: Data_User_LeftClick rBuf, Index
+            Case .User_Login: Data_User_Login rBuf, Index
+            Case .User_LookLeft: Data_User_LookLeft Index
+            Case .User_LookRight: Data_User_LookRight Index
+            Case .User_Move: Data_User_Move rBuf, Index
+            Case .User_NewLogin: Data_User_NewLogin rBuf, Index
+            Case .User_RequestMakeChar: Data_User_RequestMakeChar rBuf, Index
+            Case .User_RequestUserCharIndex: Data_User_RequestUserCharIndex Index
+            Case .User_RightClick: Data_User_RightClick rBuf, Index
+            Case .User_Rotate: Data_User_Rotate rBuf, Index
+            Case .User_StartQuest: Data_User_StartQuest Index
+            Case .User_Target: Data_User_Target rBuf, Index
+            '--------------------------------------------
+            Case .User_Trade_Trade: Data_User_Trade_Trade rBuf, Index
+            Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf
+            '--------------------------------------------
+            Case .User_Trade_BuyFromNPC: Data_User_Trade_BuyFromNPC rBuf, Index
+            Case .User_Trade_SellToNPC: Data_User_Trade_SellToNPC rBuf, Index
+            Case .User_Use: Data_User_Use rBuf, Index
+            
+            Case Else
+                Log "OnDataArrival: Command ID " & CommandID & " caused a premature packet handling abortion!", CriticalError '//\\LOGLINE//\\
+                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
+                
+            End Select
+
+        End With
+
+        'Exit when the buffer runs out
+        If rBuf.Get_ReadPos > BufUBound Then Exit Do
+
     Loop
 
 End Sub

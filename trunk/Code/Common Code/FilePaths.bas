@@ -13,6 +13,7 @@ Public SfxPath As String
 Public MessagePath As String
 Public LogPath As String
 Public ServerTempPath As String
+Public SignsPath As String
 
 Public Sub InitFilePaths()
 '***************************************
@@ -29,6 +30,7 @@ Public Sub InitFilePaths()
     ServerDataPath = App.Path & "\ServerData\"
     SfxPath = App.Path & "\Sfx\"
     MessagePath = DataPath & "Messages\"
+    SignsPath = DataPath & "Signs\"
     LogPath = App.Path & "\Logs\"
     ServerTempPath = ServerDataPath & "_temp\"
 

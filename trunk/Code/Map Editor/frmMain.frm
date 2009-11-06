@@ -4,12 +4,13 @@ Begin VB.MDIForm frmMain
    Appearance      =   0  'Flat
    BackColor       =   &H8000000C&
    Caption         =   "vbGORE Map Editor"
-   ClientHeight    =   11040
+   ClientHeight    =   8445
    ClientLeft      =   60
    ClientTop       =   450
-   ClientWidth     =   15240
+   ClientWidth     =   15690
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
+   LockControls    =   -1  'True
    ScrollBars      =   0   'False
    WindowState     =   2  'Maximized
    Begin MSComDlg.CommonDialog CD 
@@ -40,8 +41,8 @@ Begin VB.MDIForm frmMain
       Height          =   375
       Left            =   0
       Top             =   0
-      Width           =   15240
-      _ExtentX        =   26882
+      Width           =   15690
+      _ExtentX        =   27675
       _ExtentY        =   661
    End
    Begin VB.PictureBox Picture1 
@@ -53,10 +54,10 @@ Begin VB.MDIForm frmMain
       Left            =   0
       ScaleHeight     =   27
       ScaleMode       =   3  'Pixel
-      ScaleWidth      =   1014
+      ScaleWidth      =   1044
       TabIndex        =   6
-      Top             =   10380
-      Width           =   15240
+      Top             =   7785
+      Width           =   15690
       Begin VB.CommandButton ARGBLongCmd 
          Caption         =   "ARGB <-> Long Tool"
          Height          =   315
@@ -110,14 +111,14 @@ Begin VB.MDIForm frmMain
       Left            =   0
       ScaleHeight     =   13
       ScaleMode       =   3  'Pixel
-      ScaleWidth      =   1014
+      ScaleWidth      =   1044
       TabIndex        =   0
-      Top             =   10815
-      Width           =   15240
+      Top             =   8220
+      Width           =   15690
       Begin VB.Label InfoLbl 
          BackStyle       =   0  'Transparent
          Caption         =   "Information"
-         ForeColor       =   &H80000009&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   120
          TabIndex        =   5
@@ -126,7 +127,6 @@ Begin VB.MDIForm frmMain
          Width           =   930
       End
       Begin VB.Line LineName 
-         BorderColor     =   &H80000009&
          X1              =   560
          X2              =   560
          Y1              =   0
@@ -136,7 +136,7 @@ Begin VB.MDIForm frmMain
          Alignment       =   2  'Center
          BackStyle       =   0  'Transparent
          Caption         =   "Map Name"
-         ForeColor       =   &H80000009&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   8520
          TabIndex        =   4
@@ -145,21 +145,18 @@ Begin VB.MDIForm frmMain
          Width           =   2010
       End
       Begin VB.Line LineTile 
-         BorderColor     =   &H80000009&
          X1              =   704
          X2              =   704
          Y1              =   0
          Y2              =   16
       End
       Begin VB.Line LineMouse 
-         BorderColor     =   &H80000009&
          X1              =   768
          X2              =   768
          Y1              =   0
          Y2              =   16
       End
       Begin VB.Line LineFPS 
-         BorderColor     =   &H80000009&
          X1              =   856
          X2              =   856
          Y1              =   0
@@ -169,7 +166,7 @@ Begin VB.MDIForm frmMain
          Alignment       =   2  'Center
          BackStyle       =   0  'Transparent
          Caption         =   "(0,0)"
-         ForeColor       =   &H80000009&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   10680
          TabIndex        =   3
@@ -181,7 +178,7 @@ Begin VB.MDIForm frmMain
          Alignment       =   2  'Center
          BackStyle       =   0  'Transparent
          Caption         =   "(0,0)"
-         ForeColor       =   &H80000009&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   11640
          TabIndex        =   2
@@ -192,7 +189,7 @@ Begin VB.MDIForm frmMain
       Begin VB.Label FPSLbl 
          BackStyle       =   0  'Transparent
          Caption         =   "FPS: 0"
-         ForeColor       =   &H80000009&
+         ForeColor       =   &H80000008&
          Height          =   195
          Left            =   12960
          TabIndex        =   1
@@ -252,7 +249,7 @@ End Sub
 Private Sub CritTimer_Timer()
 Static i As Long
     
-    If InfoLbl.ForeColor = vbRed Then InfoLbl.ForeColor = &H80000009 Else InfoLbl.ForeColor = vbRed
+    If InfoLbl.ForeColor = vbRed Then InfoLbl.ForeColor = &H80000008 Else InfoLbl.ForeColor = vbRed
     i = i + 1
     If i > 7 Then
         i = 0
@@ -309,6 +306,8 @@ End Sub
 
 Private Sub MDIForm_Load()
 Dim F As Form
+
+    SetInfo vbNullString
 
     'Load the forms
     Load frmARGB
@@ -754,6 +753,7 @@ Private Sub SavePic_MouseMove(Button As Integer, Shift As Integer, X As Single, 
 End Sub
 
 Private Sub SearchBtn_Click()
+Dim WordList() As String
 Dim s As String
 Dim i As Long
 Dim j As Long
@@ -790,16 +790,29 @@ Dim j As Long
             Erase DescResults
             frmSearchList.Caption = "Search: """ & SearchTxt.Text & """"
             s = UCase$(SearchTxt.Text)
+            
+            'Get the words, trim off empty spaces
+            WordList = Split(s, ",")
+            For i = 0 To UBound(WordList)
+                WordList(i) = Trim$(WordList(i))
+            Next i
+            
+            'Search
             For i = 1 To NumTextureDesc
-                If InStr(1, UCase$(TextureDesc(i)), s) Then
-                    NumDescResults = NumDescResults + 1
-                    ReDim Preserve DescResults(1 To NumDescResults)
-                    DescResults(NumDescResults) = i
-                    frmSearchList.SearchLst.AddItem i & " - " & TextureDesc(i)
-                End If
+                For j = 0 To UBound(WordList())
+                    If InStr(1, UCase$(TextureDesc(i)), s) = 0 Then GoTo NextI
+                Next j
+                NumDescResults = NumDescResults + 1
+                ReDim Preserve DescResults(1 To NumDescResults)
+                DescResults(NumDescResults) = i
+                frmSearchList.SearchLst.AddItem i & " - " & TextureDesc(i)
+                
+NextI:
+                
             Next i
             frmSearchList.Visible = True
             frmSearchList.Show
+            frmSearchList.SetFocus
             
     End Select
     
@@ -947,13 +960,14 @@ Dim R As RECT
 Dim j As Long
 
     'This timer brought to you by a lazy ass programmer :)
-    'Fuck speed, this is a tool!
+    'Screw speed, this is a tool!
 
     If D3DDevice Is Nothing Then Exit Sub
+    If Not Engine_ValidateDevice Then Exit Sub
     If SearchTextureFileNum > 0 Then
     
         If ShownTextureGrhs.NumGrhs > 0 Then
-
+            
             D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
             D3DDevice.BeginScene
             
@@ -1035,7 +1049,7 @@ Private Sub Toolbar_ButtonClick(ByVal Button As Long)
         Case 2: LoadPic_Click
         Case 3: SavePic_Click
         Case 4: SaveAsPic_Click
-        Case 5: frmOptimizeStart.Visible = True: frmOptimizeStart.Show
+        Case 5: frmOptimizeStart.Visible = True: frmOptimizeStart.Show: frmOptimizeStart.SetFocus
         
         Case 7: SetTilesPic_Click
         Case 8: BlocksPic_Click

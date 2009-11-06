@@ -63,6 +63,7 @@ Private Function NPC_AI_Attack(ByVal NPCIndex As Integer) As Byte
 Dim HeadingLoop As Long
 Dim NewHeading As Byte
 Dim nPos As WorldPos
+Dim Damage As Long
 Dim X As Long
 
     Log "Call NPC_AI_Attack(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
@@ -77,18 +78,23 @@ Dim X As Long
 
             'If a legal pos and a user is found attack
             If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex > 0 Then
+                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex
+            
+                'Get the damage
+                Damage = NPC_AttackUser(NPCIndex, X)
 
-                'Face the NPC to the target and tell everyone in the PC area to show the attack animation
-                ConBuf.PreAllocate 7
-                ConBuf.Put_Byte DataCode.User_Rotate
+                'Send the attack packet
+                ConBuf.PreAllocate 12
+                ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                ConBuf.Put_Byte HeadingLoop
-                ConBuf.Put_Byte DataCode.User_Attack
-                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                ConBuf.Put_Integer UserList(X).Char.CharIndex
+                ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
                 Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
-                'Attack
-                NPC_AttackUser NPCIndex, MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex
+                'Apply damage
+                NPC_AttackUser_ApplyDamage NPCIndex, X, Damage
                 NPC_AI_Attack = 1
                 Exit Function
 
@@ -108,22 +114,25 @@ Dim X As Long
 
                 'Check for a valid path
                 If Engine_ClearPath(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y) Then
-    
-                    'Get the new heading
-                    NewHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
-                    NPCList(NPCIndex).Char.Heading = NewHeading
-                    NPCList(NPCIndex).Char.HeadHeading = NewHeading
-    
+
+                    'Get the damage
+                    Damage = NPC_AttackUser(NPCIndex, X)
+
                     'Face the NPC to the target
-                    ConBuf.PreAllocate 4
-                    ConBuf.Put_Byte DataCode.User_Rotate
+                    ConBuf.PreAllocate 13
+                    ConBuf.Put_Byte DataCode.Combo_ProjectileSoundRotateDamage
                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                    ConBuf.Put_Byte NewHeading
+                    ConBuf.Put_Integer UserList(X).Char.CharIndex
+                    ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                    ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
+                    ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                    If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
                     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-       
-                    'Attack the user
-                    NPC_AttackUser NPCIndex, X
+
+                    'Apply damage
+                    NPC_AttackUser_ApplyDamage NPCIndex, X, Damage
                     NPC_AI_Attack = 1
+                    Exit Function
                 
                 End If
             End If
@@ -137,6 +146,7 @@ Private Function NPC_AI_AttackNPC(ByVal NPCIndex As Integer, Optional ByVal NotS
 '*****************************************************************
 'Calls the NPC attack AI to attack another NPC - only call by the NPC_AI routine!
 '*****************************************************************
+Dim Damage As Long
 Dim HeadingLoop As Long
 Dim NewHeading As Byte
 Dim nPos As WorldPos
@@ -154,21 +164,26 @@ Dim X As Long
 
             'If a legal pos and a user is found attack
             If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
-                If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).Attackable Then
-                    If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).Hostile Then
-                        If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).OwnerIndex <> NotSlaveOfUserIndex Then
+                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
+                If NPCList(X).Attackable Then
+                    If NPCList(X).Hostile Then
+                        If NPCList(X).OwnerIndex <> NotSlaveOfUserIndex Then
                         
-                            'Face the NPC to the target and tell everyone in the PC area to show the attack animation
-                            ConBuf.PreAllocate 7
-                            ConBuf.Put_Byte DataCode.User_Rotate
+                            'Get the damage
+                            Damage = NPC_AttackNPC(NPCIndex, X)
+            
+                            'Send the attack packet
+                            ConBuf.PreAllocate 12
+                            ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
                             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                            ConBuf.Put_Byte HeadingLoop
-                            ConBuf.Put_Byte DataCode.User_Attack
-                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                            ConBuf.Put_Integer NPCList(X).Char.CharIndex
+                            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                            If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
                             Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
             
-                            'Attack
-                            NPC_AttackNPC NPCIndex, MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
+                            'Apply damage
+                            NPC_Damage NPCIndex, 0, Damage, NPCList(X).Char.CharIndex
                             NPC_AI_AttackNPC = 1
                             Exit Function
                         
@@ -192,21 +207,24 @@ Dim X As Long
                 'Check for a valid path
                 If Engine_ClearPath(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NPCList(X).Pos.X, NPCList(X).Pos.Y) Then
     
-                    'Get the new heading
-                    NewHeading = Server_FindDirection(NPCList(NPCIndex).Pos, NPCList(X).Pos)
-                    NPCList(NPCIndex).Char.Heading = NewHeading
-                    NPCList(NPCIndex).Char.HeadHeading = NewHeading
-    
+                    'Get the damage
+                    Damage = NPC_AttackUser(NPCIndex, X)
+
                     'Face the NPC to the target
-                    ConBuf.PreAllocate 4
-                    ConBuf.Put_Byte DataCode.User_Rotate
+                    ConBuf.PreAllocate 13
+                    ConBuf.Put_Byte DataCode.Combo_ProjectileSoundRotateDamage
                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                    ConBuf.Put_Byte NewHeading
+                    ConBuf.Put_Integer NPCList(X).Char.CharIndex
+                    ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                    ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
+                    ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                    If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
                     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-       
-                    'Attack the user
-                    NPC_AttackNPC NPCIndex, X
+
+                    'Apply damage
+                    NPC_Damage NPCIndex, 0, Damage, NPCList(X).Char.CharIndex
                     NPC_AI_AttackNPC = 1
+                    Exit Function
                 
                 End If
             End If
@@ -822,7 +840,7 @@ NextNPC:
 
 End Function
 
-Private Sub NPC_AttackNPC(ByVal NPCIndex As Integer, ByVal TargetIndex As Integer)
+Private Function NPC_AttackNPC(ByVal NPCIndex As Integer, ByVal TargetIndex As Integer) As Long
 
 '*****************************************************************
 'Have a NPC attack a NPC
@@ -835,40 +853,11 @@ Dim Hit As Long
     'Check for an action delay
     If NPCList(NPCIndex).Counters.ActionDelay > timeGetTime Then
         Log "NPC_AttackNPC: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
+        Exit Function
     End If
 
     'Set the action delay
     NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
-    
-    'Create the sound effect and make the attack grh
-    If NPCList(NPCIndex).AttackGrh > 0 Then
-        If NPCList(NPCIndex).AttackRange > 1 Then
-            'Play sound effect and make projectile
-            ConBuf.PreAllocate 14
-            ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
-            ConBuf.Put_Byte DataCode.Server_MakeProjectile
-            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-            ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
-            Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
-        Else
-            'Play sound effect and make slash
-            ConBuf.PreAllocate 11
-            ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
-            ConBuf.Put_Byte DataCode.Server_MakeSlash
-            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-            Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
-        End If
-    End If
     
     'Update the hit rate
     HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + 50 'Remember, AGI for NPCs is the hit rate!
@@ -881,7 +870,7 @@ Dim Hit As Long
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
         ConBuf.Put_Integer -1
         Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
-        Exit Sub
+        Exit Function
     End If
 
     'Calculate hit
@@ -890,84 +879,16 @@ Dim Hit As Long
     If Hit < 1 Then Hit = 1
     Log "NPC_AttackNPC: Hit value = " & Hit, CodeTracker '//\\LOGLINE//\\
 
-    'Damage the NPC
-    NPC_Damage TargetIndex, 0, Hit, NPCList(NPCIndex).Char.CharIndex
+    'Return the value
+    NPC_AttackNPC = Hit
     
-End Sub
+End Function
 
-Private Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer)
+Private Sub NPC_AttackUser_ApplyDamage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Hit As Long)
 
 '*****************************************************************
-'Have a NPC attack a User
+'Applies damage on a user
 '*****************************************************************
-Dim HitRate As Long
-Dim Hit As Long
-
-    Log "Call NPC_AttackUser(" & NPCIndex & "," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
-
-    'Check for an action delay
-    If NPCList(NPCIndex).Counters.ActionDelay > timeGetTime Then
-        Log "NPC_AttackUser: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
-    
-    'Don't allow if not logged in completely
-    If UserList(UserIndex).flags.UserLogged = 0 Then
-        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
-
-    'Set the action delay
-    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
-    
-    'Create the sound effect and make the attack grh
-    If NPCList(NPCIndex).AttackGrh > 0 Then
-        If NPCList(NPCIndex).AttackRange > 1 Then
-            'Play sound effect and make projectile
-            ConBuf.PreAllocate 14
-            ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
-            ConBuf.Put_Byte DataCode.Server_MakeProjectile
-            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-            ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
-            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
-        Else
-            'Play sound effect and make slash
-            ConBuf.PreAllocate 11
-            ConBuf.Put_Byte DataCode.Server_PlaySound3D
-            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
-            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
-            ConBuf.Put_Byte DataCode.Server_MakeSlash
-            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
-        End If
-    End If
-    
-    'Update the hit rate
-    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + 50 'Remember, AGI for NPCs is the hit rate!
-
-    'Calculate if they hit
-    If Server_RandomNumber(1, 100) >= (HitRate - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
-        Log "NPC_AttackUser: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
-        ConBuf.PreAllocate 5
-        ConBuf.Put_Byte DataCode.Server_SetCharDamage
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        ConBuf.Put_Integer -1
-        Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-        Exit Sub
-    End If
-
-    'Calculate hit
-    Hit = Server_RandomNumber(NPCList(NPCIndex).ModStat(SID.MinHIT), NPCList(NPCIndex).ModStat(SID.MaxHIT))
-    Hit = Hit - (UserList(UserIndex).Stats.ModStat(SID.DEF) \ 2)
-    If Hit < 1 Then Hit = 1
-    Log "NPC_AttackUser: Hit value = " & Hit, CodeTracker '//\\LOGLINE//\\
 
     'Hit user
     UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) - Hit
@@ -981,7 +902,7 @@ Dim Hit As Long
 
     'User Die
     If UserList(UserIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
-        Log "NPC_AttackUser: NPC's attack killed user", CodeTracker '//\\LOGLINE//\\
+        Log "NPC_AttackUser_ApplyDamage: NPC's attack killed user", CodeTracker '//\\LOGLINE//\\
     
         'Kill user
         ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
@@ -994,6 +915,53 @@ Dim Hit As Long
     End If
 
 End Sub
+
+Private Function NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer) As Long
+
+'*****************************************************************
+'Have a NPC attack a User
+'*****************************************************************
+Dim HitRate As Long
+Dim Hit As Long
+
+    Log "Call NPC_AttackUser(" & NPCIndex & "," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for an action delay
+    If NPCList(NPCIndex).Counters.ActionDelay > timeGetTime Then
+        Log "NPC_AttackUser: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
+        NPC_AttackUser = -1
+        Exit Function
+    End If
+    
+    'Don't allow if not logged in completely
+    If UserList(UserIndex).flags.UserLogged = 0 Then
+        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
+        NPC_AttackUser = -1
+        Exit Function
+    End If
+
+    'Set the action delay
+    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
+    
+    'Update the hit rate
+    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + 50 'Remember, AGI for NPCs is the hit rate!
+
+    'Calculate if they hit
+    If Server_RandomNumber(1, 100) >= (HitRate - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
+        Log "NPC_AttackUser: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
+        NPC_AttackUser = 0
+        Exit Function
+    End If
+
+    'Calculate hit
+    Hit = Server_RandomNumber(NPCList(NPCIndex).ModStat(SID.MinHIT), NPCList(NPCIndex).ModStat(SID.MaxHIT))
+    Hit = Hit - (UserList(UserIndex).Stats.ModStat(SID.DEF) \ 2)
+    If Hit < 1 Then Hit = 1
+    
+    'Return the value
+    NPC_AttackUser = Hit
+
+End Function
 
 Private Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Heading As Byte = 0, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
 
@@ -1158,7 +1126,7 @@ Dim HPB As Byte
 
 End Sub
 
-Public Sub NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0)
+Public Function NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0) As Integer
 
 '*****************************************************************
 'Do damage to a NPC - ONLY USE THIS SUB TO HURT NPCS
@@ -1175,22 +1143,22 @@ Dim i As Integer
     'Check if the NPC can be attacked
     If NPCList(NPCIndex).Attackable = 0 Then
         Log "NPC_Damage: Attackable = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
+        Exit Function
     End If
 
     'If NPC has no health, they can not be attacked
     If NPCList(NPCIndex).ModStat(SID.MaxHP) = 0 Then
         Log "NPC_Damage: ModStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
+        Exit Function
     End If
     If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then
         Log "NPC_Damage: BaseStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
+        Exit Function
     End If
 
     'Make sure the NPC isn't the user's slave (don't damage your slaves)
     If UserIndex > 0 Then
-        If NPCList(NPCIndex).OwnerIndex = UserIndex Then Exit Sub
+        If NPCList(NPCIndex).OwnerIndex = UserIndex Then Exit Function
     End If
     
     'Get the pre-damage percentage
@@ -1198,6 +1166,9 @@ Dim i As Integer
 
     'Lower the NPC's life
     NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).BaseStat(SID.MinHP) - Damage
+    
+    'Return the damage to the function
+    NPC_Damage = Damage
 
     'Check to update health percentage client-side
     If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
@@ -1210,16 +1181,6 @@ Dim i As Integer
             Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
         End If
     End If
-
-    'Turn the NPC aggressive-faced
-    If NPCList(NPCIndex).Counters.AggressiveCounter <= 0 Then
-        ConBuf.PreAllocate 4
-        ConBuf.Put_Byte DataCode.User_AggressiveFace
-        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-        ConBuf.Put_Byte 1
-        Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-    End If
-    NPCList(NPCIndex).Counters.AggressiveCounter = timeGetTime + AGGRESSIVEFACETIME
 
     'Display the damage on the client screen
     ConBuf.PreAllocate 5
@@ -1269,8 +1230,8 @@ Dim i As Integer
             Else
     
                 'Give EXP and gold to just the user
-                User_RaiseExp UserIndex, NPCList(NPCIndex).GiveEXP
                 UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
+                User_RaiseExp UserIndex, NPCList(NPCIndex).GiveEXP
             
             End If
             
@@ -1289,7 +1250,7 @@ Dim i As Integer
                         'The NPC is owned by a user, so give the EXP to the user (or group) like above
                         i = CharList(NPCList(CharList(AttackerCharIndex).Index).OwnerIndex).Index
                         If i > 0 Then
-                            If i < LastUser Then
+                            If i <= LastUser Then
                                 If UserList(i).GroupIndex > 0 Then
                                     Group_EXPandGold i, UserList(i).GroupIndex, NPCList(NPCIndex).GiveEXP, NPCList(NPCIndex).GiveGLD
                                 Else
@@ -1333,7 +1294,7 @@ Dim i As Integer
 
     End If
 
-End Sub
+End Function
 
 Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 
@@ -1494,7 +1455,7 @@ Dim nPos As WorldPos
     If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading) Then
 
         'Set the move delay (we set the lag buffer to 0 since NPCs don't lag)
-        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed), 0)
+        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed))
 
         'Send the movement update packet
         ConBuf.PreAllocate 6

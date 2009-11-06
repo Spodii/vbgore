@@ -25,11 +25,6 @@ Attribute VB_Name = "Declares"
 '**    permission from Spodi directly.                                        **
 '**  - If you are distributing vbGORE or modified code of it, read the        **
 '**    section "Source Distrubution Information" below.                       **
-'**  - If you are told by Spodi to take down an engine or game created with   **
-'**    vbGORE, you must do so. You do have the right to question the decision **
-'**    but if the result does not change, the product must be removed. You    **
-'**    shouldn't need to worry about this unless you do something "borderline"**
-'**    to infringement on this license.                                       **
 '** This license is subject to change at any time. Only the most current      **
 '** version of the license applies, not the copy of the license that came with**
 '** your copy of vbGORE. This means if rules are added for version 1.0, you   **
@@ -89,7 +84,8 @@ Attribute VB_Name = "Declares"
 '** distributed source code which has help this project's creation. The below **
 '** is listed in no particular order of significance:                         **
 '**                                                                           **
-'** Chase and Nex666: Help with mapping, graphics, bug reports, hosting, etc  **
+'** Chase: Help with programming, bug reports, and adding the trading system  **
+'** Nex666: Help with mapping, graphics, bug reports, hosting, etc            **
 '** Graphics (Avatar): Supplied the character sprite graphics, + a few more   **
 '**   http://www.zidev.com/                                                   **
 '** ORE (Aaron Perkins): Used as base engine and for learning experience      **
@@ -100,8 +96,6 @@ Attribute VB_Name = "Declares"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
 '** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
@@ -125,6 +119,7 @@ Public Const ForceUpdateCheck As Boolean = False
 
 'Running speed - make sure you have the same value on the server!
 Public Const RunningSpeed As Byte = 5
+Public Const RunningCost As Long = 1    'How much stamina it cost to run
 
 'Max chat bubble width
 Public Const BubbleMaxWidth As Long = 140
@@ -209,6 +204,26 @@ Public Type ObjData
     WeaponType As Byte          'What type of weapon, if it is a weapon
     Price As Long               'Price of the object
 End Type
+'-----------------------------------------------------------
+'Info On the trade table
+'the gold is going to be considered slot 0 Don't think I need to change anything here
+'********** Trade table ************
+Public Type TradeObj
+    name As String
+    Grh As Long
+    Amount As Integer
+End Type
+Public Type TradeTable
+    User1Name As String              'The name of the table
+    User2Name As String
+    Trade1(1 To 9) As TradeObj  'The objects both indexes have entered
+    Trade2(1 To 9) As TradeObj
+    Gold1 As Long               'The gold both indexes have entered
+    Gold2 As Long
+    MyIndex As Byte             'States whether this client is index 1 or 2
+End Type
+Public TradeTable As TradeTable
+'-----------------------------------------------------------
 
 '********** Other stuff ************
 Public BaseStats(1 To NumStats) As Long
@@ -219,9 +234,6 @@ Public Const AttackDelay As Long = 200  'These constants are client-side only
 Public Const LootDelay As Long = 500    ' - changing these lower wont make it faster server-side!
 Public LastAttackTime As Long
 Public LastLootTime As Long
-
-'How many pings have failed
-Public FailedPings As Byte
 
 'If the map is loading (used to be used for the downloading status of maps)
 Public DownloadingMap As Boolean
@@ -287,6 +299,8 @@ Public sndBuf As DataBuffer
 Public ChatBufferChunk As Single
 Public PTD As Long
 Public SoxID As Long
+Public SocketMoveToIP As String
+Public SocketMoveToPort As Integer
 Public SocketOpen As Byte
 Public TargetCharIndex As Integer
 Public Const DegreeToRadian As Single = 0.01745329251994 'Pi / 180
@@ -335,6 +349,9 @@ Public UseClickWarp As Byte
 
 'Emoticon delay
 Public EmoticonDelay As Long
+
+'How long char remains aggressive-faced after being attacked
+Public Const AGGRESSIVEFACETIME = 4000
 
 'Maximum variable sizes
 Public Const MAXLONG As Long = 2147483647

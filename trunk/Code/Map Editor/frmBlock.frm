@@ -221,6 +221,12 @@ Private Sub BlockChk_MouseMove(Index As Integer, Button As Integer, Shift As Int
     
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     If IsUnloading = 0 Then Cancel = 1

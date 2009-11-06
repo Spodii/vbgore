@@ -99,6 +99,12 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
 Private Sub ScreenLbl_Click()
 Dim X As Integer
 Dim Y As Integer

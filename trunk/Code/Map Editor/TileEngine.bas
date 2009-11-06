@@ -529,10 +529,10 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 '*****************************************************************
 
     'Check for valid position
-    If CharList(CharIndex).Pos.x <= 1 Then Exit Sub
-    If CharList(CharIndex).Pos.x >= MapInfo.Width Then Exit Sub
-    If CharList(CharIndex).Pos.y <= 1 Then Exit Sub
-    If CharList(CharIndex).Pos.y >= MapInfo.Height Then Exit Sub
+    If CharList(CharIndex).Pos.x < 1 Then Exit Sub
+    If CharList(CharIndex).Pos.x > MapInfo.Width Then Exit Sub
+    If CharList(CharIndex).Pos.y < 1 Then Exit Sub
+    If CharList(CharIndex).Pos.y > MapInfo.Height Then Exit Sub
 
     'Make inactive
     CharList(CharIndex).Active = 0
@@ -1206,23 +1206,24 @@ Sub Engine_Init_MapData()
 
 End Sub
 
-Sub Engine_Init_ParticleEngine()
+Sub Engine_Init_ParticleEngine(Optional ByVal SkipToTextures As Boolean = False)
 
 '*****************************************************************
 'Loads all particles into memory - unlike normal textures, these stay in memory. This isn't
 'done for any reason in particular, they just use so little memory since they are so small
 '*****************************************************************
-
 Dim i As Byte
 
-    'Set the particles texture
-    NumEffects = Var_Get(DataPath & "Game.ini", "INIT", "NumEffects")
-    ReDim Effect(1 To NumEffects)
+    If Not SkipToTextures Then
     
-    'Update effects list
-    UpdateEffectList
-
+        'Set the particles texture
+        NumEffects = Var_Get(DataPath & "Game.ini", "INIT", "NumEffects")
+        ReDim Effect(1 To NumEffects)
+    
+    End If
+    
     For i = 1 To UBound(ParticleTexture())
+        If ParticleTexture(i) Is Nothing Then Set ParticleTexture(i) = Nothing
         Set ParticleTexture(i) = D3DX.CreateTextureFromFileEx(D3DDevice, GrhPath & "p" & i & ".png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
     Next i
 
@@ -1272,7 +1273,7 @@ Dim FilePath As String
     If Engine_FileExist(FilePath, vbNormal) Then
 
         'Set the texture
-        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, TexInfo, ByVal 0)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
 
         'Set the size
         SurfaceSize(TextureNum).x = TexInfo.Width
@@ -1670,30 +1671,34 @@ Dim y As Integer
 Dim tX As Integer
 Dim tY As Integer
 
-'Figure out which way to move
-
+    'Figure out which way to move
     Select Case Heading
-    Case NORTH
-        y = -1
-    Case EAST
-        x = 1
-    Case SOUTH
-        y = 1
-    Case WEST
-        x = -1
-    Case NORTHEAST
-        y = -1
-        x = 1
-    Case SOUTHEAST
-        y = 1
-        x = 1
-    Case SOUTHWEST
-        y = 1
-        x = -1
-    Case NORTHWEST
-        y = -1
-        x = -1
+        Case NORTH
+            y = -1
+        Case EAST
+            x = 1
+        Case SOUTH
+            y = 1
+        Case WEST
+            x = -1
+        Case NORTHEAST
+            y = -1
+            x = 1
+        Case SOUTHEAST
+            y = 1
+            x = 1
+        Case SOUTHWEST
+            y = 1
+            x = -1
+        Case NORTHWEST
+            y = -1
+            x = -1
     End Select
+    
+    If x = -1 And x + UserPos.x < MinXBorder Then Exit Sub
+    If x = 1 And x + UserPos.x > MaxXBorder Then Exit Sub
+    If y = -1 And y + UserPos.y < MinYBorder Then Exit Sub
+    If y = 1 And y + UserPos.y > MaxYBorder Then Exit Sub
     
     AddtoUserPos.x = x
     AddtoUserPos.y = y
@@ -2017,19 +2022,21 @@ Dim j As Integer
         'We can not render it all at once because our buffer will be the screen size (default 800x600), so it'd be too small
         'Unless this is the first time rendering this list, we will only draw updated animations
         If GrhData(PreviewGrhList(i).GrhIndex).NumFrames > 1 Or tsDrawAll = 1 Then
-            j = Int(PreviewGrhList(i).FrameCounter)
-            D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-            D3DDevice.BeginScene
-            Engine_Render_Grh PreviewGrhList(i), 0, 0, 0, 1
-            If tsDrawAll = 1 Then j = -1    'tsDrawAll flag will force the draw
-            If j = Int(PreviewGrhList(i).FrameCounter) Then
-                D3DDevice.EndScene
-            Else
-                Engine_Render_Text PreviewGrhList(i).GrhIndex, 0, 0, 30, -16777216
-                Engine_Render_Text PreviewGrhList(i).GrhIndex, 1, 1, 30, -1
-                If GrhData(PreviewGrhList(i).GrhIndex).NumFrames > 1 Then Engine_Render_Text "A", tsTileWidth - 8, tsTileHeight - lngTextHeight, 8, -16711936
-                D3DDevice.EndScene
-                D3DDevice.Present src, dest, frmTileSelect.hWnd, ByVal 0
+            If Engine_ValidateDevice Then
+                j = Int(PreviewGrhList(i).FrameCounter)
+                D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
+                D3DDevice.BeginScene
+                Engine_Render_Grh PreviewGrhList(i), 0, 0, 0, 1
+                If tsDrawAll = 1 Then j = -1    'tsDrawAll flag will force the draw
+                If j = Int(PreviewGrhList(i).FrameCounter) Then
+                    D3DDevice.EndScene
+                Else
+                    Engine_Render_Text PreviewGrhList(i).GrhIndex, 0, 0, 30, -16777216
+                    Engine_Render_Text PreviewGrhList(i).GrhIndex, 1, 1, 30, -1
+                    If GrhData(PreviewGrhList(i).GrhIndex).NumFrames > 1 Then Engine_Render_Text "A", tsTileWidth - 8, tsTileHeight - lngTextHeight, 8, -16711936
+                    D3DDevice.EndScene
+                    D3DDevice.Present src, dest, frmTileSelect.hWnd, ByVal 0
+                End If
             End If
         End If
         
@@ -2464,9 +2471,9 @@ Dim NewX As Single
 Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
+Dim ShadowAdd As Byte
 
-'Load the surface into memory if it is not in memory and reset the timer
-
+    'Load the surface into memory if it is not in memory and reset the timer
     If TextureNum > 0 Then
         If SurfaceTimer(TextureNum) = 0 Then Engine_Init_Texture TextureNum
         SurfaceTimer(TextureNum) = SurfaceTimerMax
@@ -2489,70 +2496,48 @@ Dim CosRad As Single
     'Set shadowed settings - shadows only change on the top 2 points
     If Shadow Then
 
-        SrcWidth = SrcWidth - 1
-
         'Set the top-left corner
-        With VertexArray(0)
-            .x = x + (Width * 0.5)
-            .y = y - (Height * 0.5)
-        End With
+        VertexArray(0).x = x + (Width * 0.5)
+        VertexArray(0).y = y - (Height * 0.5)
 
         'Set the top-right corner
-        With VertexArray(1)
-            .x = x + Width + (Width * 0.5)
-            .y = y - (Height * 0.5)
-        End With
+        VertexArray(1).x = x + Width + (Width * 0.5)
+        VertexArray(1).y = y - (Height * 0.5)
 
     Else
-
-        SrcWidth = SrcWidth + 1
-        SrcHeight = SrcHeight + 1
-
+    
         'Set the top-left corner
-        With VertexArray(0)
-            .x = x
-            .y = y
-        End With
+        VertexArray(0).x = x
+        VertexArray(0).y = y
 
         'Set the top-right corner
-        With VertexArray(1)
-            .x = x + Width
-            .y = y
-        End With
+        VertexArray(1).x = x + Width
+        VertexArray(1).y = y
+
+        ShadowAdd = 1
 
     End If
 
-    'Set the top-left corner
-    With VertexArray(0)
-        .Color = Color0
-        .Tu = SrcX / SrcBitmapWidth
-        .Tv = SrcY / SrcBitmapHeight
-    End With
+    VertexArray(0).Color = Color0
+    VertexArray(1).Color = Color1
+    VertexArray(2).x = x
+    VertexArray(2).y = y + Height
+    VertexArray(2).Color = Color2
+    VertexArray(3).x = x + Width
+    VertexArray(3).y = y + Height
+    VertexArray(3).Color = Color3
 
-    'Set the top-right corner
-    With VertexArray(1)
-        .Color = Color1
-        .Tu = (SrcX + SrcWidth) / SrcBitmapWidth
-        .Tv = SrcY / SrcBitmapHeight
-    End With
+    VertexArray(0).Tu = (SrcX / SrcBitmapWidth)
+    VertexArray(0).Tv = (SrcY / SrcBitmapHeight)
 
-    'Set the bottom-left corner
-    With VertexArray(2)
-        .x = x
-        .y = y + Height
-        .Color = Color2
-        .Tu = SrcX / SrcBitmapWidth
-        .Tv = (SrcY + SrcHeight) / SrcBitmapHeight
-    End With
+    VertexArray(1).Tu = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+    VertexArray(1).Tv = VertexArray(0).Tv
+    
+    VertexArray(2).Tu = VertexArray(0).Tu
+    VertexArray(2).Tv = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
 
-    'Set the bottom-right corner
-    With VertexArray(3)
-        .x = x + Width
-        .y = y + Height
-        .Color = Color3
-        .Tu = (SrcX + SrcWidth) / SrcBitmapWidth
-        .Tv = (SrcY + SrcHeight) / SrcBitmapHeight
-    End With
+    VertexArray(3).Tu = VertexArray(1).Tu
+    VertexArray(3).Tv = VertexArray(2).Tv
 
     'Check if a rotation is required
     If Degrees <> 0 Then
@@ -2766,6 +2751,61 @@ Dim j As Byte
 
 End Sub
 
+Function Engine_ValidateDevice() As Boolean
+
+'***********************************************
+'Makes sure the device settings are valid
+'***********************************************
+Dim j As Long
+Dim DispMode As D3DDISPLAYMODE          'Describes the display mode
+Dim i As Byte
+    
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then
+    
+        On Error GoTo ErrOut
+        
+        'Do a loop while device is lost
+        If D3DDevice.TestCooperativeLevel = D3DERR_DEVICELOST Then
+            Engine_ValidateDevice = False
+            Exit Function
+        End If
+        
+        'Clear all the textures
+        LastTexture = -999
+        For j = 1 To NumGrhFiles
+            Set SurfaceDB(j) = Nothing
+            SurfaceTimer(j) = 0
+            SurfaceSize(j).x = 0
+            SurfaceSize(j).y = 0
+        Next j
+
+        D3D.GetAdapterDisplayMode D3DADAPTER_DEFAULT, DispMode
+        D3DWindow.Windowed = 1
+        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
+        D3DWindow.BackBufferFormat = DispMode.Format
+        Set D3DDevice = Nothing
+        Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmScreen.hWnd, UsedCreateFlags, D3DWindow)
+
+        'Reset the render states
+        Engine_Init_RenderStates
+        
+        Engine_Init_ParticleEngine True
+
+        On Error GoTo 0
+
+    End If
+    
+    'Everything is fine
+    Engine_ValidateDevice = True
+    
+    Exit Function
+    
+ErrOut:
+
+    Engine_ValidateDevice = False
+        
+End Function
+
 Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal PixelOffsetX As Integer, ByVal PixelOffsetY As Integer)
 
 '***********************************************
@@ -2812,7 +2852,10 @@ Dim Layer As Byte
     'Do NOT move this any farther down in the module or you will get "jumps" as the left/top borders on particles
     ParticleOffsetX = (Engine_PixelPosX(ScreenMinX) - PixelOffsetX) * 1
     ParticleOffsetY = (Engine_PixelPosY(ScreenMinY) - PixelOffsetY) * 1
-
+    
+    'Check if we have the device
+    If Not Engine_ValidateDevice Then Exit Sub
+    
     D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
     D3DDevice.BeginScene
     
@@ -2842,7 +2885,10 @@ Dim Layer As Byte
                 Grh.FrameCounter = 1
                 Grh.GrhIndex = Val(frmSetTile.GrhTxt.Text)
                 j = D3DColorARGB(200, 255, 255, 255)
-                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, Val(frmSetTile.ShadowTxt.Text)
+                If frmSetTile.ShadowChk.Value = 1 Then
+                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                End If
+                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, 0
             End If
         End If
         
@@ -2923,7 +2969,10 @@ Dim Layer As Byte
                 Grh.FrameCounter = 1
                 Grh.GrhIndex = Val(frmSetTile.GrhTxt.Text)
                 j = D3DColorARGB(200, 255, 255, 255)
-                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, Val(frmSetTile.ShadowTxt.Text)
+                If frmSetTile.ShadowChk.Value = 1 Then
+                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                End If
+                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, 0
             End If
         End If
         
@@ -3023,6 +3072,8 @@ Dim Layer As Byte
         Engine_Render_Rectangle UserPos.x * tS, UserPos.y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
         
     End If
+    
+    If Not Engine_ValidateDevice Then Exit Sub
 
     D3DDevice.EndScene
     

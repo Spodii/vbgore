@@ -25,11 +25,6 @@ Attribute VB_Name = "Declares"
 '**    permission from Spodi directly.                                        **
 '**  - If you are distributing vbGORE or modified code of it, read the        **
 '**    section "Source Distrubution Information" below.                       **
-'**  - If you are told by Spodi to take down an engine or game created with   **
-'**    vbGORE, you must do so. You do have the right to question the decision **
-'**    but if the result does not change, the product must be removed. You    **
-'**    shouldn't need to worry about this unless you do something "borderline"**
-'**    to infringement on this license.                                       **
 '** This license is subject to change at any time. Only the most current      **
 '** version of the license applies, not the copy of the license that came with**
 '** your copy of vbGORE. This means if rules are added for version 1.0, you   **
@@ -89,7 +84,8 @@ Attribute VB_Name = "Declares"
 '** distributed source code which has help this project's creation. The below **
 '** is listed in no particular order of significance:                         **
 '**                                                                           **
-'** Chase and Nex666: Help with mapping, graphics, bug reports, hosting, etc  **
+'** Chase: Help with programming, bug reports, and adding the trading system  **
+'** Nex666: Help with mapping, graphics, bug reports, hosting, etc            **
 '** Graphics (Avatar): Supplied the character sprite graphics, + a few more   **
 '**   http://www.zidev.com/                                                   **
 '** ORE (Aaron Perkins): Used as base engine and for learning experience      **
@@ -100,8 +96,6 @@ Attribute VB_Name = "Declares"
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=37867&lngWId=1      **
 '** All Files In Folder (Jorge Colaccini): Algorithm implimented into engine  **
 '**   http://pscode.com/vb/scripts/ShowCode.asp?txtCodeId=51435&lngWId=1      **
-'** Game Programming Wiki (All community): Help on many different subjects    **
-'**   http://wwww.gpwiki.org/                                                 **
 '**                                                                           **
 '** Also, all the members of the vbGORE community who have submitted          **
 '** tutorials, bugs, suggestions, criticism and have just stuck around!!      **
@@ -154,10 +148,7 @@ Public Const MaxObjsPerTile As Byte = 5
 
 'Running information
 Public Const RunningSpeed As Byte = 5   'How much to increase speed when running
-Public Const RunningCost As Long = 2    'How much stamina it cost to run
-
-'How long char remains aggressive-faced after being attacked
-Public Const AGGRESSIVEFACETIME = 4000
+Public Const RunningCost As Long = 1    'How much stamina it cost to run
 
 'Calculate the data in/out per sec or ont
 Public Const CalcTraffic As Boolean = True
@@ -171,7 +162,7 @@ Public MOTDBuffer() As Byte
 Public Const STAT_ATTACKWAIT As Long = 1000 'How many ms a user has to wait till he can attack again
 
 'How many quests a user can accept at once
-Public Const MaxQuests As Byte = 5
+Public Const MaxQuests As Byte = 8
 
 'Time that must elapse for NPC to make another action (in miliseconds) after attacking
 Public Const NPCDelayFight As Long = 1000
@@ -252,6 +243,30 @@ Public Type Obj 'Holds info about a object
     ObjIndex As Integer     'Index of the object
     Amount As Integer       'Amount of the object
 End Type
+'--------------------------------------------
+'************ Trading ************
+Public Const TRADESTATE_CLOSED As Byte = 0  'Trading is closed - table not used
+Public Const TRADESTATE_TRADING As Byte = 1 'Objects are still being placed, no confirm yet
+Public Const TRADESTATE_ACCEPT As Byte = 2  'The user has accepted what they have placed, no items can be added / removed
+Public Const TRADESTATE_CONFIRM As Byte = 3 'The user has confirmed the trade - can only happen after accepting
+Public Type TradeTableObj
+    UserInvSlot As Byte
+    Amount As Integer
+End Type
+Public Type TradeTable
+    User1 As Integer
+    User2 As Integer
+    Objs1(1 To 9) As TradeTableObj
+    Objs2(1 To 9) As TradeTableObj
+    Gold1 As Long
+    Gold2 As Long
+    User1State As Byte
+    User2State As Byte
+End Type
+Public TradeTable() As TradeTable
+Public NumTradeTables As Byte
+'--------------------------------------------
+
 
 '************ Map Tiles/Information ************
 Type NPCLoadData    'Used to load NPCs from the .temp map files
@@ -372,13 +387,18 @@ Type UserFlags  'Flags for a user
     QuestNPC As Integer     'The ID of the NPC that the user is talking to about a quest
     InviteGroup As Byte     'The index of the group the user has been invited to
     DoNotSave As Byte       'Used in special cases to define to bypass saving
+    '--------------------------------------------
+    TradeTable As Byte      'The trade table the user is in (0 for none)
+    TradeWith As Integer    'The user index the user wants to trade with
+    '--------------------------------------------
+    CreatedStats As Byte    'If the user's stats object was created
+    StepCounter As Byte     'How many steps the user has taken since MoveCounter value was set
 End Type
 Type UserCounters   'Counters for a user
     IdleCount As Long           'Stores last time the user sent an action packet
     LastPacket As Long          'Stores last time the user sent ANY packet
     AttackCounter As Long       'Stores last time user attacked
     MoveCounter As Long         'Stores last time the user moved
-    AggressiveCounter As Long   'How long the user will remain aggressive-faced
     SpellExhaustion As Long     'Time until another spell can be casted
     BlessCounter As Long        'Time left on bless
     ProtectCounter As Long      'Time left on protection
@@ -390,6 +410,7 @@ Type UserCounters   'Counters for a user
     PacketsInTime As Long       'When the packet counting started
     GroupCounter As Long        'How long the user has to accept to join a group
     SwapCounter As Long         'Time the user must wait to use the /swap command again
+    StepsRan As Byte            'How many steps the user has ran for the StepCounter
 End Type
 Type UserOBJ    'Objects the user has
     ObjIndex As Long    'Index of the object
@@ -418,7 +439,6 @@ Type User   'Holds data for a user
     Char As Char            'Defines users looks
     Desc As String          'User's description
     Pos As WorldPos         'User's current position
-    Gold As Long            'How much gold the user has
     Class As Integer        'User's class
     BankGold As Long        'Amount of gold the user has in the bank
     GroupIndex As Integer   'The index of the group the user is part of (if any)
@@ -459,7 +479,6 @@ Type NPCFlags   'Flags for a NPC
 End Type
 Type NPCCounters    'Counters for a NPC
     RespawnCounter As Long      'Stores the death time to respawn later (if a summoned/thralled NPC, its how long until they die off)
-    AggressiveCounter As Long   'How long the NPC will remain aggressive-faced
     SpellExhaustion As Long     'Time until another spell can be casted
     BlessCounter As Long        'Time left on bless
     ProtectCounter As Long      'Time left on protection
@@ -617,6 +636,9 @@ Public NumBytesForSkills As Long
 
 'Server is unloading
 Public UnloadServer As Byte
+
+'Lets us know if User_CleanArray needs to be called - can NOT be called in the middle of a loop!
+Public CallUserCleanArray As Byte
 
 'Maximum number of NPCs allowed at once per server
 'This value should not be raised without raising the datatype of NPC indexes from integer to long (not recommended)

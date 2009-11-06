@@ -35,9 +35,9 @@ Public Const EffectNum_Rain As Byte = 7             'Exact same as snow, but mov
 Public Const EffectNum_EquationTemplate As Byte = 8 'Template for creating particle effects through equations - a page with some equations can be found here: http://www.vbgore.com/modules.php?name=Forums&file=viewtopic&t=221
 Public Const EffectNum_Waterfall As Byte = 9        'Waterfall effect
 
-Function Effect_EquationTemplate_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Byte
+Function Effect_EquationTemplate_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -80,7 +80,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_EquationTemplate_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_EquationTemplate_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 Dim X As Single
 Dim Y As Single
 Dim R As Single
@@ -96,7 +96,7 @@ Dim R As Single
 
 End Sub
 
-Private Sub Effect_EquationTemplate_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_EquationTemplate_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -167,9 +167,9 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
 End Sub
 
-Function Effect_Bless_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Byte
+Function Effect_Bless_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -213,7 +213,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Bless_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Bless_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
 Dim a As Single
 Dim X As Single
@@ -231,7 +231,7 @@ Dim Y As Single
 
 End Sub
 
-Private Sub Effect_Bless_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Bless_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -327,9 +327,9 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
 End Sub
 
-Function Effect_Fire_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Direction As Byte = 180, Optional ByVal Progression As Byte = 1) As Byte
+Function Effect_Fire_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Direction As Byte = 180, Optional ByVal Progression As Byte = 1) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -373,7 +373,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Fire_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Fire_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
 'Reset the particle
 
@@ -382,7 +382,7 @@ Private Sub Effect_Fire_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
 
 End Sub
 
-Private Sub Effect_Fire_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Fire_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -450,12 +450,10 @@ Dim LoopC As Long
 End Sub
 
 Function Effect_FToDW(F As Single) As Long
-
 Dim Buf As D3DXBuffer
 Dim TempVal As Long
 
-'Cant Say What This Does Since This Is Straight From Almar's Code
-
+    'Converts a single into a long (Float to DWORD)
     Set Buf = D3DX.CreateBuffer(4)
     D3DX.BufferSetData Buf, 0, 4, 1, F
     D3DX.BufferGetData Buf, 0, 4, 1, TempVal
@@ -463,9 +461,9 @@ Dim TempVal As Long
 
 End Function
 
-Function Effect_Heal_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Byte
+Function Effect_Heal_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Progression As Byte = 1) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -508,7 +506,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Heal_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Heal_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
     'Reset the particle
     Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X - 10 + Rnd * 20, Effect(EffectIndex).Y - 10 + Rnd * 20, -Sin((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), Cos((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), 0, 0
@@ -516,7 +514,7 @@ Private Sub Effect_Heal_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
 
 End Sub
 
-Private Sub Effect_Heal_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Heal_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -536,18 +534,28 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     'Update position through character binding
     If Effect(EffectIndex).BindToChar Then
         TargetI = Effect(EffectIndex).BindToChar
-        TargetX = CharList(TargetI).RealPos.X
-        TargetY = CharList(TargetI).RealPos.Y
-        TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
-        Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-        Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
-
-        'Unbind when character is reached
-        If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
-            If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
-                Effect(EffectIndex).BindToChar = 0
-                Effect(EffectIndex).Progression = 0
+        
+        'Check if the character the effect was bound to was removed - if so, end the effect
+        If TargetI <= 0 Then Effect(EffectIndex).Progression = 0
+        If TargetI > LastChar Then Effect(EffectIndex).Progression = 0
+        If CharList(TargetI).Active = 0 Then Effect(EffectIndex).Progression = 0
+        
+        'If we still have the effect going, move it towards the bound character
+        If Effect(EffectIndex).Progression <> 0 Then
+            TargetX = CharList(TargetI).RealPos.X
+            TargetY = CharList(TargetI).RealPos.Y
+            TargetA = Engine_GetAngle(Effect(EffectIndex).X, Effect(EffectIndex).Y, TargetX, TargetY) + 180
+            Effect(EffectIndex).X = Effect(EffectIndex).X - Sin(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+            Effect(EffectIndex).Y = Effect(EffectIndex).Y + Cos(TargetA * DegreeToRadian) * Effect(EffectIndex).BindSpeed
+    
+            'Unbind when character is reached
+            If Abs(Effect(EffectIndex).X - TargetX) < 8 Then
+                If Abs(Effect(EffectIndex).Y - TargetY) < 8 Then
+                    Effect(EffectIndex).BindToChar = 0
+                    Effect(EffectIndex).Progression = 0
+                End If
             End If
+            
         End If
 
     End If
@@ -608,7 +616,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
 End Sub
 
-Sub Effect_Kill(ByVal EffectIndex As Byte, Optional ByVal KillAll As Boolean = False)
+Sub Effect_Kill(ByVal EffectIndex As Integer, Optional ByVal KillAll As Boolean = False)
 
 Dim LoopC As Long
 
@@ -623,17 +631,19 @@ Dim LoopC As Long
             Effect(LoopC).Used = False
 
         Next
+        
     Else
 
         'Stop The Selected Effect
         Effect(EffectIndex).Used = False
+        
     End If
 
 End Sub
 
-Private Function Effect_NextOpenSlot() As Byte
+Private Function Effect_NextOpenSlot() As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 
 'Find The Next Open Effect Slot
 
@@ -650,9 +660,9 @@ Dim EffectIndex As Byte
 
 End Function
 
-Function Effect_Protection_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Byte
+Function Effect_Protection_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -696,7 +706,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Protection_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Protection_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
 Dim a As Single
 Dim X As Single
@@ -714,7 +724,7 @@ Dim Y As Single
 
 End Sub
 
-Private Sub Effect_Protection_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Protection_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -810,7 +820,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
 End Sub
 
-Public Sub Effect_Render(ByVal EffectIndex As Byte)
+Public Sub Effect_Render(ByVal EffectIndex As Integer)
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
@@ -833,9 +843,9 @@ Public Sub Effect_Render(ByVal EffectIndex As Byte)
 
 End Sub
 
-Function Effect_Snow_Begin(ByVal Gfx As Integer, ByVal Particles As Integer) As Byte
+Function Effect_Snow_Begin(ByVal Gfx As Integer, ByVal Particles As Integer) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
     'Get the next open effect slot
@@ -874,7 +884,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Snow_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Optional ByVal FirstReset As Byte = 0)
+Private Sub Effect_Snow_Reset(ByVal EffectIndex As Integer, ByVal Index As Long, Optional ByVal FirstReset As Byte = 0)
 
     If FirstReset = 1 Then
 
@@ -896,7 +906,7 @@ Private Sub Effect_Snow_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Op
 
 End Sub
 
-Private Sub Effect_Snow_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Snow_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -948,9 +958,9 @@ Dim LoopC As Long
 
 End Sub
 
-Function Effect_Strengthen_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Byte
+Function Effect_Strengthen_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer, Optional ByVal Size As Byte = 30, Optional ByVal Time As Single = 10) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
     'Get the next open effect slot
@@ -993,7 +1003,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Strengthen_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Strengthen_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 
 Dim a As Single
 Dim X As Single
@@ -1010,7 +1020,7 @@ Dim Y As Single
 
 End Sub
 
-Private Sub Effect_Strengthen_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Strengthen_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -1134,9 +1144,9 @@ Dim LoopC As Long
 
 End Sub
 
-Function Effect_Rain_Begin(ByVal Gfx As Integer, ByVal Particles As Integer) As Byte
+Function Effect_Rain_Begin(ByVal Gfx As Integer, ByVal Particles As Integer) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -1176,7 +1186,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Rain_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Optional ByVal FirstReset As Byte = 0)
+Private Sub Effect_Rain_Reset(ByVal EffectIndex As Integer, ByVal Index As Long, Optional ByVal FirstReset As Byte = 0)
 
     If FirstReset = 1 Then
 
@@ -1198,7 +1208,7 @@ Private Sub Effect_Rain_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Op
 
 End Sub
 
-Private Sub Effect_Rain_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Rain_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
@@ -1250,7 +1260,7 @@ Dim LoopC As Long
 
 End Sub
 
-Public Sub Effect_Begin(ByVal EffectIndex As Byte, ByVal X As Single, ByVal Y As Single, ByVal GfxIndex As Byte, ByVal Particles As Byte, Optional ByVal Direction As Single = 180)
+Public Sub Effect_Begin(ByVal EffectIndex As Integer, ByVal X As Single, ByVal Y As Single, ByVal GfxIndex As Byte, ByVal Particles As Byte, Optional ByVal Direction As Single = 180)
 
 '*****************************************************************
 'A very simplistic form of initialization for particle effects, should only be used for starting map-based effects
@@ -1268,9 +1278,9 @@ Dim RetNum As Byte
     
 End Sub
 
-Function Effect_Waterfall_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer) As Byte
+Function Effect_Waterfall_Begin(ByVal X As Single, ByVal Y As Single, ByVal Gfx As Integer, ByVal Particles As Integer) As Integer
 
-Dim EffectIndex As Byte
+Dim EffectIndex As Integer
 Dim LoopC As Long
 
 'Get the next open effect slot
@@ -1312,7 +1322,7 @@ Dim LoopC As Long
 
 End Function
 
-Private Sub Effect_Waterfall_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Private Sub Effect_Waterfall_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
 Dim i As Byte
 
     If Int(Rnd * 10) = 1 Then
@@ -1324,7 +1334,7 @@ Dim i As Byte
     
 End Sub
 
-Private Sub Effect_Waterfall_Update(ByVal EffectIndex As Byte)
+Private Sub Effect_Waterfall_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long

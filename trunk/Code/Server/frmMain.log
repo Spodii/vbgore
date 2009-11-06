@@ -1,5 +1,3 @@
-Line 30: Class MSWinsockLib.Winsock of control ServerSocket was not a loaded control class.
-Line 34: The property name _ExtentX in ServerSocket is invalid.
-Line 35: The property name _ExtentY in ServerSocket is invalid.
-Line 36: The property name _Version in ServerSocket is invalid.
-Line 37: The property name LocalPort in ServerSocket is invalid.
+Line 31: Class GOREsock.GOREsockServer of control GOREsock was not a loaded control class.
+Line 34: The property name _ExtentX in GOREsock is invalid.
+Line 35: The property name _ExtentY in GOREsock is invalid.

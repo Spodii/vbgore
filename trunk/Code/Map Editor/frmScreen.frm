@@ -35,6 +35,8 @@ Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y A
 Dim tX As Integer
 Dim tY As Integer
 
+    SetInfo "Left-click to set tile, Ctrl + Left-Click to delete selected grh layer, Ctrl + Shift + Left-Click to delete all layers."
+
     'Convert the click position to tile position
     Engine_ConvertCPtoTP 0, 0, x, y, tX, tY
     HovertX = tX

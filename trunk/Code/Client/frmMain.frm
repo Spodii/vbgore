@@ -1,4 +1,5 @@
 VERSION 5.00
+Object = "{CFFD2C69-2D50-4C10-A50C-89488104482B}#1.0#0"; "GOREsockClient.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -30,6 +31,12 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
+   Begin GOREsock.GOREsockClient GOREsock 
+      Left            =   1080
+      Top             =   120
+      _ExtentX        =   847
+      _ExtentY        =   847
+   End
    Begin VB.Timer PTDTmr 
       Enabled         =   0   'False
       Interval        =   1000
@@ -57,7 +64,7 @@ Private NC As Byte
 Private Declare Function GetCursorPos Lib "user32.dll" (ByRef lpPoint As POINTAPI) As Long
 
 Private Sub DirectXEvent8_DXCallback(ByVal eventid As Long)
-Dim DevData(1 To BufferSize) As DIDEVICEOBJECTDATA
+Dim DevData(1 To 50) As DIDEVICEOBJECTDATA
 Dim NumEvents As Long
 Dim LoopC As Long
 Dim Moved As Byte
@@ -117,7 +124,7 @@ Dim OldMousePos As POINTAPI
             Else
                 If MouseLeftDown = 0 Then   'Clicked down
                     MouseLeftDown = 1
-                    Engine_Input_Mouse_LeftClick
+                    Input_Mouse_LeftClick
                 End If
             End If
 
@@ -125,11 +132,11 @@ Dim OldMousePos As POINTAPI
         Case DIMOFS_BUTTON1
             If DevData(LoopC).lData = 0 Then
                 MouseRightDown = 0
-                Engine_Input_Mouse_RightRelease
+                Input_Mouse_RightRelease
             Else
                 If MouseRightDown = 0 Then  'Clicked down
                     MouseRightDown = 1
-                    Engine_Input_Mouse_RightClick
+                    Input_Mouse_RightClick
                 End If
             End If
         
@@ -155,7 +162,7 @@ Dim OldMousePos As POINTAPI
 
         'Update movement
         If Moved Then
-            Engine_Input_Mouse_Move
+            Input_Mouse_Move
 
             'Reset move variables
             Moved = 0
@@ -173,769 +180,25 @@ ErrOut:
 End Sub
 
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
-Dim TempS() As String
-Dim s As String
-Dim s2 As String
-Dim i As Byte
-Dim j As Long
-    
-    '*************************
-    '***** General input *****
-    '*************************
-    
-    'Hide/show Mini-map
-    If KeyCode = vbKeyTab Then
-        If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0
-    End If
-    
-    'Get object off ground (alt)
-    If KeyCode = 18 Then
-        If LastLootTime + LootDelay < timeGetTime Then
-            LastLootTime = timeGetTime
-            sndBuf.Put_Byte DataCode.User_Get
-        End If
-    End If
-    
-    'Use the quick bar
-    If KeyCode >= vbKeyF1 Then
-        If KeyCode <= vbKeyF12 Then
-            Engine_UseQuickBar KeyCode - vbKeyF1 + 1
-        End If
-    End If
-    
-    'Attack key
-    If KeyCode = vbKeyControl Then
-        If LastAttackTime + AttackDelay < timeGetTime Then
-            
-            'Check for a valid attacking distance
-            If UserAttackRange > 1 Then
-                If TargetCharIndex > 0 Then
-                    If TargetCharIndex <> UserCharIndex Then
-                        If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
-                            LastAttackTime = timeGetTime
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Attack
-                            sndBuf.Put_Byte CharList(UserCharIndex).Heading
-                        Else
-                            Engine_AddToChatTextBuffer Message(91), FontColor_Fight
-                        End If
-                    End If
-                End If
-            Else
-                LastAttackTime = timeGetTime
-                sndBuf.Allocate 2
-                sndBuf.Put_Byte DataCode.User_Attack
-                sndBuf.Put_Byte CharList(UserCharIndex).Heading
-            End If
-            
-        End If
-    End If
-    
-    'Chat buffer stuff
-    If KeyCode = vbKeyPageUp Then
-        If ShowGameWindow(ChatWindow) Then
-            ChatBufferChunk = ChatBufferChunk + 0.5
-            Engine_UpdateChatArray
-        End If
-    End If
-    If KeyCode = vbKeyPageDown Then
-        If ShowGameWindow(ChatWindow) Then
-            If ChatBufferChunk > 1 Then
-                ChatBufferChunk = ChatBufferChunk - 0.5
-                Engine_UpdateChatArray
-            End If
-        End If
-    End If
-    
-    'Hide/show windows
-    If GetAsyncKeyState(vbKeyControl) Then
-        If KeyCode = vbKeyW Then
-            If ShowGameWindow(InventoryWindow) Then
-                ShowGameWindow(InventoryWindow) = 0
-            Else
-                ShowGameWindow(InventoryWindow) = 1
-                LastClickedWindow = InventoryWindow
-            End If
-        ElseIf KeyCode = vbKeyQ Then
-            If ShowGameWindow(QuickBarWindow) Then
-                ShowGameWindow(QuickBarWindow) = 0
-            Else
-                ShowGameWindow(QuickBarWindow) = 1
-                LastClickedWindow = QuickBarWindow
-            End If
-        ElseIf KeyCode = vbKeyC Then
-            If ShowGameWindow(ChatWindow) Then
-                ShowGameWindow(ChatWindow) = 0
-            Else
-                ShowGameWindow(ChatWindow) = 1
-                LastClickedWindow = ChatWindow
-            End If
-        ElseIf KeyCode = vbKeyS Then
-            If ShowGameWindow(StatWindow) Then
-                ShowGameWindow(StatWindow) = 0
-            Else
-                ShowGameWindow(StatWindow) = 1
-                LastClickedWindow = StatWindow
-            End If
-        End If
-    End If
 
-    If KeyCode = vbKeyReturn Then
-        
-        '*************************
-        '***** Amount window *****
-        '*************************
-        If LastClickedWindow = AmountWindow Then
-            If AmountWindowItemIndex Then
-                If AmountWindowValue <> "" Then
-                    If IsNumeric(AmountWindowValue) Then
-                        'Drop into mail
-                        If AmountWindowUsage = AW_InvToMail Then
-                            'Check for duplicate entries
-                            For j = 1 To MaxMailObjs
-                                If WriteMailData.ObjIndex(j) = AmountWindowItemIndex Then
-                                    ShowGameWindow(AmountWindow) = 0
-                                    AmountWindowUsage = 0
-                                    LastClickedWindow = 0
-                                    Exit Sub
-                                End If
-                            Next j
-                            'Find the next free slot
-                            j = 0
-                            Do
-                                j = j + 1
-                                If j > MaxMailObjs Then
-                                    ShowGameWindow(AmountWindow) = 0
-                                    AmountWindowUsage = 0
-                                    LastClickedWindow = 0
-                                    Exit Sub
-                                End If
-                            Loop While WriteMailData.ObjIndex(j) > 0
-                            WriteMailData.ObjIndex(j) = AmountWindowItemIndex
-                            WriteMailData.ObjAmount(j) = CInt(AmountWindowValue)
-                        'Buy from NPC
-                        ElseIf AmountWindowUsage = AW_ShopToInv Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Sell to NPC
-                        ElseIf AmountWindowUsage = AW_InvToShop Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Take from bank
-                        ElseIf AmountWindowUsage = AW_BankToInv Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Bank_TakeItem
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Put in bank
-                        ElseIf AmountWindowUsage = AW_InvToBank Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Bank_PutItem
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Drop on ground
-                        Else
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Drop
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        End If
-                    Else
-                        AmountWindowValue = vbNullString
-                    End If
-                    ShowGameWindow(AmountWindow) = 0
-                    AmountWindowUsage = 0
-                    LastClickedWindow = 0
-                End If
-            End If
-            
-        '*****************************
-        '***** Write mail window *****
-        '*****************************
-        ElseIf LastClickedWindow = WriteMessageWindow Then
-            'Send message
-            If LastMailSendTime + 4000 < timeGetTime Then   'DelayTimeMail (+1000ms for packet delay)
-                If Len(WriteMailData.Subject) > 0 Then
-                    If Len(WriteMailData.Message) > 0 Then
-                        If Len(WriteMailData.RecieverName) > 0 Then
-                            For i = 1 To MaxMailObjs
-                                If WriteMailData.ObjIndex(i) = 0 Then
-                                    i = i - 1
-                                    Exit For
-                                End If
-                            Next i
-                            sndBuf.Allocate 6 + Len(WriteMailData.RecieverName) + Len(WriteMailData.Subject) + Len(WriteMailData.Message)
-                            sndBuf.Put_Byte DataCode.Server_MailCompose
-                            sndBuf.Put_String WriteMailData.RecieverName
-                            sndBuf.Put_String WriteMailData.Subject
-                            sndBuf.Put_StringEX WriteMailData.Message
-                            sndBuf.Put_Byte i   'Number of objects
-                            If i > 0 Then
-                                For j = 1 To i
-                                    sndBuf.Allocate 3
-                                    sndBuf.Put_Byte WriteMailData.ObjIndex(j)
-                                    sndBuf.Put_Integer WriteMailData.ObjAmount(j)
-                                Next j
-                            End If
-                            
-                            WriteMailData.Message = vbNullString
-                            WriteMailData.RecieverName = vbNullString
-                            WriteMailData.Subject = vbNullString
-                            ShowGameWindow(WriteMessageWindow) = 0
-                            LastClickedWindow = 0
-                            LastMailSendTime = timeGetTime
-                        End If
-                    End If
-                End If
-            End If
-            
-        '***********************
-        '***** Chat screen *****
-        '***********************
-        Else
-            If EnterText = True Then
-                If EnterTextBuffer <> "" Then
-                
-                    '***** Check for commands *****
-                    If UCase$(Left$(EnterTextBuffer, 4)) = "/BLI" Then
-                        sndBuf.Put_Byte DataCode.User_Blink
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/LOOKL" Then
-                        sndBuf.Put_Byte DataCode.User_LookLeft
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/LOOKR" Then
-                        sndBuf.Put_Byte DataCode.User_LookRight
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/WHO" Then
-                        sndBuf.Put_Byte DataCode.Server_Who
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/SH" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.Comm_Shout
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/GINFO" Or UCase$(Left$(EnterTextBuffer, 7)) = "/GROUPI" Then
-                        sndBuf.Put_Byte DataCode.User_Group_Info
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/TELL" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        TempS() = Split(s, " ", 2)
-                        If UBound(TempS) < 1 Then Exit Sub
-                        If LenB(Trim$(TempS(0))) = 0 Then Exit Sub
-                        sndBuf.Put_Byte DataCode.Comm_Whisper
-                        sndBuf.Put_String Trim$(TempS(0))
-                        sndBuf.Put_String Trim$(TempS(1))
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/DEP" Then
-                        j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
-                        If j <= 0 Then Exit Sub
-                        sndBuf.Put_Byte DataCode.User_Bank_Deposit
-                        sndBuf.Put_Long j
-                        'We will assume that the deposit was successful
-                        Engine_AddToChatTextBuffer Replace$(Message(118), "<amount>", Str(j)), FontColor_Info
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/WITH" Then
-                        j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
-                        If j <= 0 Then Exit Sub
-                        sndBuf.Put_Byte DataCode.User_Bank_Withdraw
-                        sndBuf.Put_Long j
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/BALAN" Then
-                        sndBuf.Put_Byte DataCode.User_Bank_Balance
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 2)) = "/G" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.Comm_GroupTalk
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 8)) = "/CREATEG" Or UCase$(Left$(EnterTextBuffer, 6)) = "/MAKEG" Or UCase$(Left$(EnterTextBuffer, 5)) = "/NEWG" Then
-                        sndBuf.Put_Byte DataCode.User_Group_Make
-                    
-                    ElseIf UCase$(Left$(EnterTextBuffer, 7)) = "/INVITE" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.User_Group_Invite
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 7)) = "/LEAVEG" Or UCase$(Left$(EnterTextBuffer, 6)) = "/EXITG" Then
-                        sndBuf.Put_Byte DataCode.User_Group_Leave
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/JOING" Then
-                        sndBuf.Put_Byte DataCode.User_Group_Join
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/ME" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.Comm_Emote
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/EM" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.Comm_Emote
-                        sndBuf.Put_String s
-
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
-                        s = LCase$(SplitCommandFromString(EnterTextBuffer))
-                        If Trim$(s) <> vbNullString Then
-                            If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
-                                s = Dir$(MessagePath & s & "*.ini", vbNormal)
-                                s = Left$(s, Len(s) - 4)
-                                Engine_Init_Messages s
-                                Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", s
-                                Engine_AddToChatTextBuffer Replace$(Message(90), "<lang>", s), FontColor_Info
-                            Else
-                                Engine_AddToChatTextBuffer Message(87), FontColor_Info
-                            End If
-                        End If
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/SKIN" Then
-                        s = LCase$(SplitCommandFromString(EnterTextBuffer))
-                        If s = "" Then
-                            Engine_AddToChatTextBuffer Engine_BuildSkinsList, FontColor_Info
-                        Else
-                            If Engine_FileExist(DataPath & "Skins\" & s & "*.ini", vbNormal) Then
-                                s = Dir$(DataPath & "Skins\" & s & "*.ini", vbNormal)
-                                CurrentSkin = Left$(s, Len(s) - 4)
-                                Engine_Init_GUI 0
-                                Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
-                                Engine_AddToChatTextBuffer Replace$(Message(89), "<skin>", CurrentSkin), FontColor_Info
-                            Else
-                                Engine_AddToChatTextBuffer Message(88), FontColor_Info
-                            End If
-                        End If
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/QUEST" Then
-                        If QuestInfoUBound = 0 Then
-                            'No quests in place
-                            Engine_AddToChatTextBuffer Message(103), FontColor_Quest
-                        Else
-                            j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
-                            If j < 1 Or j > QuestInfoUBound Then
-                                'No valid number specified, give the list
-                                Engine_AddToChatTextBuffer Message(104), FontColor_Quest
-                                For i = 1 To QuestInfoUBound
-                                    Engine_AddToChatTextBuffer "  " & i & ". " & QuestInfo(i).name, FontColor_Quest
-                                Next i
-                            Else
-                                'Give the info on the specific quest
-                                Engine_AddToChatTextBuffer QuestInfo(j).name & ":", FontColor_Quest
-                                Engine_AddToChatTextBuffer QuestInfo(j).Desc, FontColor_Quest
-                            End If
-                        End If
-                                
-                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/THR" Then
-                        TempS = Split(EnterTextBuffer)
-                        If UBound(TempS) <> 0 Then
-                            If IsNumeric(TempS(1)) Then
-                                sndBuf.Put_Byte DataCode.GM_Thrall
-                                sndBuf.Put_Integer Val(TempS(1))
-                                If UBound(TempS) > 1 Then
-                                    If IsNumeric(TempS(2)) Then
-                                        sndBuf.Put_Integer Val(TempS(2))
-                                    Else
-                                        sndBuf.Put_Integer 1
-                                    End If
-                                    sndBuf.Put_Integer 1
-                                End If
-                            End If
-                        End If
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/DETHR" Then
-                        sndBuf.Put_Byte DataCode.GM_DeThrall
-                        
-                    ElseIf UCase$(EnterTextBuffer) = "/QUIT" Then
-                        IsUnloading = 1
-                        
-                    ElseIf UCase$(EnterTextBuffer) = "/ACCEPT" Then
-                        sndBuf.Put_Byte DataCode.User_StartQuest
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/DESC" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        sndBuf.Put_Byte DataCode.User_Desc
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(EnterTextBuffer) = "/HELP" Then
-                        sndBuf.Put_Byte DataCode.Server_Help
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/APPR" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.GM_Approach
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/SUM" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.GM_Summon
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/SETGM" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        TempS = Split(s, " ")
-                        If UBound(TempS) > 0 Then
-                            If IsNumeric(TempS(1)) Then
-                                sndBuf.Allocate 3 + Len(TempS(0))
-                                sndBuf.Put_Byte DataCode.GM_SetGMLevel
-                                sndBuf.Put_String TempS(0)
-                                sndBuf.Put_Byte CByte(TempS(1))
-                            End If
-                        End If
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 10)) = "/CLICKWARP" Then
-                        If UseClickWarp = 1 Then UseClickWarp = 0 Else UseClickWarp = 1
-                        Engine_AddToChatTextBuffer Replace$(Message(124), "<value>", UseClickWarp), FontColor_Info
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/BANIP" Then
-                        s = SplitCommandFromString(EnterTextBuffer) 'Remove the command
-                        If LenB(s) < 4 Then 'Not enough information entered
-                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                            Exit Sub
-                        End If
-                        TempS = Split(s, " ", 2)    'Split up the IP and reason
-                        If UBound(TempS) = 0 Then
-                            Engine_AddToChatTextBuffer Message(93), FontColor_Info
-                            Exit Sub
-                        Else
-                            s = TempS(0)
-                            s2 = TempS(1)
-                        End If
-                        TempS = Split(s, ".")
-                        If UBound(TempS) <> 3 Then
-                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                            Exit Sub
-                        End If
-                        For j = 0 To 3
-                            If Val(TempS(j)) < 0 Or Val(TempS(j)) > 255 Then
-                                Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                                Exit Sub
-                            End If
-                        Next j
-                        sndBuf.Put_Byte DataCode.GM_BanIP
-                        sndBuf.Put_String Trim$(s)
-                        sndBuf.Put_String Trim$(s2)
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 8)) = "/UNBANIP" Then
-                        s = SplitCommandFromString(EnterTextBuffer) 'Remove the command
-                        If LenB(s) < 4 Then 'Not enough information entered
-                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                            Exit Sub
-                        End If
-                        TempS = Split(s, ".")
-                        If UBound(TempS) <> 3 Then
-                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                            Exit Sub
-                        End If
-                        For j = 0 To 3
-                            If TempS(j) <> "*" Then
-                                If Val(TempS(j)) < 0 Or Val(TempS(j)) > 255 Then
-                                    Engine_AddToChatTextBuffer Message(92), FontColor_Info
-                                    Exit Sub
-                                End If
-                            End If
-                        Next j
-                        sndBuf.Put_Byte DataCode.GM_UnBanIP
-                        sndBuf.Put_String Trim$(s)
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/KICK" Then
-                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
-                        If s = vbNullString Then Exit Sub
-                        sndBuf.Put_Byte DataCode.GM_Kick
-                        sndBuf.Put_String s
-                        
-                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/RAISE" Then
-                        TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
-                        If UBound(TempS) > 0 Then
-                            If IsNumeric(TempS(1)) Then
-                                sndBuf.Allocate 6 + Len(TempS(0))
-                                sndBuf.Put_Byte DataCode.GM_Raise
-                                sndBuf.Put_String TempS(0)
-                                sndBuf.Put_Long CLng(TempS(1))
-                            End If
-                        End If
-                        
-                    Else
-                        '*** No commands sent, send as text ***
-                        EnterTextBuffer = Trim$(EnterTextBuffer)
-                        sndBuf.Allocate 2 + Len(EnterTextBuffer)
-                        sndBuf.Put_Byte DataCode.Comm_Talk
-                        sndBuf.Put_String EnterTextBuffer
-                        
-                        'We just sent a chat message, so check if it had triggers!
-                        Engine_NPCChat_CheckForChatTriggers EnterTextBuffer
-                        
-                    End If
-                    EnterTextBuffer = vbNullString
-                    EnterTextBufferWidth = 10
-                    ShownText = vbNullString
-                End If
-                
-                EnterText = False
-            Else
-                EnterText = True
-            End If
-        End If
-    End If
-    
-    '*****************************
-    '***** Close last screen *****
-    '*****************************
-    If KeyCode = vbKeyEscape Then
-        If LastClickedWindow = 0 Then
-            If ShowGameWindow(MenuWindow) = 1 Then
-                ShowGameWindow(MenuWindow) = 0
-                LastClickedWindow = 0
-            Else
-                If EnterText Then
-                    EnterTextBuffer = vbNullString
-                    EnterText = False
-                Else
-                    ShowGameWindow(MenuWindow) = 1
-                    LastClickedWindow = MenuWindow
-                End If
-            End If
-        Else
-            If ShowGameWindow(LastClickedWindow) Then
-                ShowGameWindow(LastClickedWindow) = 0
-            End If
-        End If
-        LastClickedWindow = 0
-    End If
-    
-    'Clear the keycode
+    Input_Keys_Down KeyCode, Shift
     KeyCode = 0
+    Shift = 0
 
 End Sub
 
 Private Sub Form_KeyPress(KeyAscii As Integer)
-Dim i As Long
-Dim b As Boolean
 
-    '*************************
-    '***** Amount window *****
-    '*************************
-    If LastClickedWindow = AmountWindow Then
-        'Backspace
-        If KeyAscii = 8 Then
-            If Len(AmountWindowValue) > 0 Then
-                AmountWindowValue = Left$(AmountWindowValue, Len(AmountWindowValue) - 1)
-            End If
-        End If
-        'Number
-        If IsNumeric(Chr$(KeyAscii)) Then
-            AmountWindowValue = AmountWindowValue & Chr$(KeyAscii)
-            If Val(AmountWindowValue) > MAXINT Then AmountWindowValue = Str(MAXINT)
-        End If
-    
-    '*****************************
-    '***** Write mail window *****
-    '*****************************
-    ElseIf LastClickedWindow = WriteMessageWindow Then
-        If WMSelCon Then
-            Select Case WMSelCon
-            Case wmFrom
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.RecieverName) > 0 Then
-                        WriteMailData.RecieverName = Left$(WriteMailData.RecieverName, Len(WriteMailData.RecieverName) - 1)
-                    End If
-                Else
-                    If Len(WriteMailData.RecieverName) < 10 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.RecieverName = WriteMailData.RecieverName & Chr$(KeyAscii)
-                    End If
-                End If
-            Case wmSubject
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.Subject) > 0 Then
-                        WriteMailData.Subject = Left$(WriteMailData.Subject, Len(WriteMailData.Subject) - 1)
-                    End If
-                Else
-                    If Len(WriteMailData.Subject) < 30 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.Subject = WriteMailData.Subject & Chr$(KeyAscii)
-                    End If
-                End If
-            Case wmMessage
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.Message) > 0 Then
-                        WriteMailData.Message = Left$(WriteMailData.Message, Len(WriteMailData.Message) - 1)
-                    End If
-                Else
-                    If Len(WriteMailData.Message) < 500 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.Message = WriteMailData.Message & Chr$(KeyAscii)
-                    End If
-                End If
-            End Select
-        End If
-    
-    '*****************************
-    '***** Text input buffer *****
-    '*****************************
-    Else
-        If EnterText Then
-            'Backspace
-            If KeyAscii = 8 Then
-                If Len(EnterTextBuffer) > 0 Then EnterTextBuffer = Left$(EnterTextBuffer, Len(EnterTextBuffer) - 1)
-                b = True
-            End If
-            'Add to text buffer
-            If Game_ValidCharacter(KeyAscii) Then
-                If Len(EnterTextBuffer) < 85 Then
-                    If Game_ValidCharacter(KeyAscii) Then
-                        EnterTextBuffer = EnterTextBuffer & Chr$(KeyAscii)
-                        b = True
-                    End If
-                End If
-            End If
-            'Update size
-            If b Then
-                EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
-                UpdateShownTextBuffer
-                LastClickedWindow = 0
-            End If
-        Else
-            'Auto-write a reply to the last person to whisper to us
-            If KeyAscii = 114 Then  'Key R
-                If LenB(LastWhisperName) Then
-                    EnterText = True
-                    EnterTextBuffer = "/tell " & LastWhisperName & " "
-                    EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
-                    LastClickedWindow = 0
-                End If
-            End If
-            'Target the closest character
-            If KeyAscii = 116 Then   'Key T
-                i = Game_ClosestTargetNPC
-                If i > 0 Then
-                    sndBuf.Allocate 3
-                    sndBuf.Put_Byte DataCode.User_Target
-                    sndBuf.Put_Integer i
-                End If
-            End If
-        End If
-    End If
-    
-    'Clear the key
+    Input_Keys_Press KeyAscii
     KeyAscii = 0
 
 End Sub
 
 Private Sub Form_KeyUp(KeyCode As Integer, Shift As Integer)
-
-Dim i As Integer
     
-    'Reset skins (F12)
-    If GetAsyncKeyState(vbKeyShift) Then
-        If KeyCode = vbKeyF12 Then
-            Engine_Init_GUI 0
-            Game_Config_Save
-        End If
-    End If
-
-    'Delete mail (Delete)
-    If KeyCode = vbKeyDelete Then
-        If LastClickedWindow = MailboxWindow Then
-            If ShowGameWindow(MailboxWindow) Then
-                If SelMessage > 0 Then
-                    sndBuf.Allocate 2
-                    sndBuf.Put_Byte DataCode.Server_MailDelete
-                    sndBuf.Put_Byte SelMessage
-                End If
-            End If
-        End If
-    End If
-
-    'Send an emoticon - but make sure we're not typing or entering in a mail message
-    If EnterText = False Then
-        If Not LastClickedWindow = WriteMessageWindow Then
-            If Not LastClickedWindow = AmountWindow Then
-                If ShowGameWindow(WriteMessageWindow) = 0 Then
-                    If ShowGameWindow(NPCChatWindow) = 0 Then
-                        If EmoticonDelay < timeGetTime Then
-                            EmoticonDelay = timeGetTime + 1000  'Wait 1000ms (one second) between emoticon usages
-                            
-                            Select Case KeyCode
-                                Case vbKey1
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Dots
-                                    Exit Sub
-                                Case vbKey2
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Exclimation
-                                    Exit Sub
-                                Case vbKey3
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Question
-                                    Exit Sub
-                                Case vbKey4
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Surprised
-                                    Exit Sub
-                                Case vbKey5
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Heart
-                                    Exit Sub
-                                Case vbKey6
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Hearts
-                                    Exit Sub
-                                Case vbKey7
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.HeartBroken
-                                    Exit Sub
-                                Case vbKey8
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Utensils
-                                    Exit Sub
-                                Case vbKey9
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.Meat
-                                    Exit Sub
-                                Case vbKey0
-                                    sndBuf.Allocate 2
-                                    sndBuf.Put_Byte DataCode.User_Emote
-                                    sndBuf.Put_Byte EmoID.ExcliQuestion
-                                    Exit Sub
-                            End Select
-                            
-                        End If
-                        
-                    Else
-                        
-                        If KeyCode >= 49 Then
-                            If KeyCode - 48 <= GameWindow.NPCChat.NumAnswers Then
-                                i = NPCChat(ActiveAsk.ChatIndex).Ask.Ask(ActiveAsk.AskIndex).Answer(KeyCode - 48).GotoID
-                                If i > 0 Then
-                                    Engine_ShowNPCChatWindow ActiveAsk.AskName, ActiveAsk.ChatIndex, i
-                                Else
-                                    ShowGameWindow(NPCChatWindow) = 0
-                                End If
-                            End If
-                        End If
-                    
-                    End If
-                End If
-            End If
-        End If
-    End If
-    
-    'Clear the key
+    Input_Keys_Up KeyCode, Shift
     KeyCode = 0
+    Shift = 0
 
 End Sub
 
@@ -973,11 +236,8 @@ Private Sub ShutdownTimer_Timer()
     'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
     
     'Close down the socket
-    GOREsock_ShutDown
-    GOREsock_UnHook
-    If GOREsock_Loaded Then
-        GOREsock_Terminate
-    Else
+    If frmMain.GOREsock.ShutDown <> soxERROR Then
+        frmMain.GOREsock.UnHook
 
         'Unload the engine
         Engine_Init_UnloadTileEngine
@@ -992,22 +252,170 @@ Private Sub ShutdownTimer_Timer()
 
 End Sub
 
-Private Function SplitCommandFromString(StringBuffer As String) As String
+Private Sub GOREsock_OnDataArrival(inSox As Long, inData() As Byte)
 
-Dim TempSplit() As String
-Dim i As Integer
-    
-    If StringBuffer = "" Then Exit Function
-    If Len(StringBuffer) < 2 Then Exit Function
-    
-    TempSplit() = Split(StringBuffer, " ")
-    
-    If UBound(TempSplit) = 0 Then Exit Function
-    
-    For i = 1 To UBound(TempSplit)
-        SplitCommandFromString = SplitCommandFromString & TempSplit(i) & " "
-    Next i
-    SplitCommandFromString = Left$(SplitCommandFromString, Len(SplitCommandFromString) - 1)
+'*********************************************
+'Retrieve the CommandIDs and send to corresponding data handler
+'*********************************************
 
-End Function
+Dim rBuf As DataBuffer
+Dim CommandID As Byte
+Dim BufUBound As Long
+Static X As Long
 
+    'Display packet
+    If DEBUG_PrintPacket_In Then
+        Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
+    End If
+
+    'Set up the data buffer
+    Set rBuf = New DataBuffer
+    rBuf.Set_Buffer inData
+    BufUBound = UBound(inData)
+    
+    'Uncomment this to see packets going into the client
+    'Dim i As Long
+    'Dim s As String
+    'For i = LBound(inData) To UBound(inData)
+    '    If inData(i) >= 100 Then
+    '        s = s & inData(i) & " "
+    '    ElseIf inData(i) >= 10 Then
+    '        s = s & "0" & inData(i) & " "
+    '    Else
+    '        s = s & "00" & inData(i) & " "
+    '    End If
+    'Next i
+    'Debug.Print s
+
+    Do
+        'Get the Command ID
+        CommandID = rBuf.Get_Byte
+
+        'Make the appropriate call based on the Command ID
+        With DataCode
+            Select Case CommandID
+
+            Case 0
+                If DEBUG_PrintPacketReadErrors Then
+                    X = X + 1
+                    Debug.Print "Empty Command ID #" & X
+                End If
+
+            Case .Comm_Talk: Data_Comm_Talk rBuf
+
+            Case .Map_LoadMap: Data_Map_LoadMap rBuf
+            Case .Map_SendName:  Data_Map_SendName rBuf
+
+            Case .Server_ChangeChar: Data_Server_ChangeChar rBuf
+            Case .Server_ChangeCharType: Data_Server_ChangeCharType rBuf
+            Case .Server_CharHP: Data_Server_CharHP rBuf
+            Case .Server_CharMP: Data_Server_CharMP rBuf
+            Case .Server_Connect: Data_Server_Connect
+            Case .Server_Disconnect: Data_Server_Disconnect
+            Case .Server_EraseChar: Data_Server_EraseChar rBuf
+            Case .Server_EraseObject: Data_Server_EraseObject rBuf
+            Case .Server_IconBlessed: Data_Server_IconBlessed rBuf
+            Case .Server_IconCursed: Data_Server_IconCursed rBuf
+            Case .Server_IconIronSkin: Data_Server_IconIronSkin rBuf
+            Case .Server_IconProtected: Data_Server_IconProtected rBuf
+            Case .Server_IconStrengthened: Data_Server_IconStrengthened rBuf
+            Case .Server_IconWarCursed:  Data_Server_IconWarCursed rBuf
+            Case .Server_IconSpellExhaustion: Data_Server_IconSpellExhaustion rBuf
+            Case .Server_MailBox: Data_Server_Mailbox rBuf
+            Case .Server_MailItemRemove: Data_Server_MailItemRemove rBuf
+            Case .Server_MailMessage: Data_Server_MailMessage rBuf
+            Case .Server_MailObjUpdate: Data_Server_MailObjUpdate rBuf
+            Case .Server_MakeChar: Data_Server_MakeChar rBuf
+            Case .Server_MakeEffect: Data_Server_MakeEffect rBuf
+            Case .Server_MakeSlash: Data_Server_MakeSlash rBuf
+            Case .Server_MakeObject: Data_Server_MakeObject rBuf
+            Case .Server_MakeProjectile: Data_Server_MakeProjectile rBuf
+            Case .Server_Message: Data_Server_Message rBuf
+            Case .Server_MoveChar: Data_Server_MoveChar rBuf
+            Case .Server_PTD: Data_Server_PTD
+            Case .Server_PlaySound: Data_Server_PlaySound rBuf
+            Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
+            Case .Server_SendQuestInfo: Data_Server_SendQuestInfo rBuf
+            Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
+            Case .Server_SetCharSpeed: Data_Server_SetCharSpeed rBuf
+            Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf
+            Case .Server_UserCharIndex: Data_Server_UserCharIndex rBuf
+
+            Case .User_Attack: Data_User_Attack rBuf
+            Case .User_Bank_Open: Data_User_Bank_Open rBuf
+            Case .User_Bank_UpdateSlot: Data_User_Bank_UpdateSlot rBuf
+            Case .User_BaseStat: Data_User_BaseStat rBuf
+            Case .User_Blink: Data_User_Blink rBuf
+            Case .User_CastSkill: Data_User_CastSkill rBuf
+            Case .User_ChangeServer: Data_User_ChangeServer rBuf
+            Case .User_Emote: Data_User_Emote rBuf
+            Case .User_KnownSkills: Data_User_KnownSkills rBuf
+            Case .User_LookLeft: Data_User_LookLeft rBuf
+            Case .User_LookRight: Data_User_LookLeft rBuf
+            Case .User_ModStat: Data_User_ModStat rBuf
+            Case .User_Rotate: Data_User_Rotate rBuf
+            Case .User_SetInventorySlot: Data_User_SetInventorySlot rBuf
+            Case .User_SetWeaponRange: Data_User_SetWeaponRange rBuf
+            Case .User_Target: Data_User_Target rBuf
+            '-----------------------------------------------------------
+            Case .User_Trade_Trade: Data_User_Trade_Trade rBuf
+            Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf
+            '-----------------------------------------------------------
+            
+            Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
+            
+            Case .Combo_ProjectileSoundRotateDamage: Data_Combo_ProjectileSoundRotateDamage rBuf
+            Case .Combo_SlashSoundRotateDamage: Data_Combo_SlashSoundRotateDamage rBuf
+            Case .Combo_SoundRotateDamage: Data_Combo_SoundRotateDamage rBuf
+
+            Case Else
+                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
+                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
+
+            End Select
+        End With
+
+        'Exit when the buffer runs out
+        If rBuf.Get_ReadPos > BufUBound Then Exit Do
+
+    Loop
+
+End Sub
+
+Private Sub GOREsock_OnConnecting(inSox As Long)
+
+    If SocketOpen = 0 Then
+
+        PacketInPos = 0
+        PacketOutPos = 0
+        
+        Sleep 50
+        DoEvents
+        
+        'Pre-saved character
+        If SendNewChar = False Then
+            sndBuf.Put_Byte DataCode.User_Login
+            sndBuf.Put_String UserName
+            sndBuf.Put_String UserPassword
+        Else
+            'New character
+            sndBuf.Put_Byte DataCode.User_NewLogin
+            sndBuf.Put_String UserName
+            sndBuf.Put_String UserPassword
+            sndBuf.Put_Integer UserHead
+            sndBuf.Put_Integer UserBody
+            sndBuf.Put_Byte UserClass
+        End If
+    
+        'Save Game.ini
+        If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+        Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
+        Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+        
+        'Send the data
+        Data_Send
+        DoEvents
+    
+    End If
+    
+End Sub

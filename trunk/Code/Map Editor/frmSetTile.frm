@@ -235,6 +235,12 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
 Private Sub GrhSelectLbl_Click(Index As Integer)
     
     ShowFrmTileSelect Index
@@ -356,6 +362,8 @@ Dim j As Byte
     'Set the view area
     TempRect.bottom = 15
     TempRect.Right = 15
+    
+    If Not Engine_ValidateDevice Then Exit Sub
     
     'Draw the light preview
     For i = 1 To 6

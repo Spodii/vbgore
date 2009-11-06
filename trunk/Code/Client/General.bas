@@ -33,6 +33,28 @@ Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
 
 End Sub
 
+Public Function Engine_ValidChar(ByVal CharIndex As Integer) As Boolean
+
+'***************************************************
+'Checks for a valid char index
+'***************************************************
+
+    If CharIndex <= 0 Then GoTo InvalidChar
+    If CharIndex > LastChar Then GoTo InvalidChar
+    If CharList(CharIndex).Active = 0 Then GoTo InvalidChar
+    
+    Engine_ValidChar = True
+    Exit Function
+    
+InvalidChar:
+
+    sndBuf.Allocate 3
+    sndBuf.Put_Byte DataCode.User_RequestMakeChar
+    sndBuf.Put_Integer CharIndex
+    Engine_ValidChar = False
+    
+End Function
+
 Public Function Engine_BuildSkinsList() As String
 
 '***************************************************
@@ -480,12 +502,12 @@ Dim i As Byte
 
     'Quickbar
     For i = 1 To 12
-        QuickBarID(i).ID = Val(Engine_Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID"))
-        QuickBarID(i).Type = Val(Engine_Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type"))
+        QuickBarID(i).ID = Val(Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID"))
+        QuickBarID(i).Type = Val(Var_Get(DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type"))
     Next i
     
     'Skin
-    CurrentSkin = Engine_Var_Get(DataPath & "Game.ini", "INIT", "CurrentSkin")
+    CurrentSkin = Var_Get(DataPath & "Game.ini", "INIT", "CurrentSkin")
 
 End Sub
 
@@ -538,7 +560,7 @@ Dim b() As Byte
         On Error Resume Next
             For Y = 1 To MapInfo.Width
                 For X = 1 To MapInfo.Height
-                    Engine_Sound_Erase MapData(X, Y).Sfx
+                    Sound_Erase MapData(X, Y).Sfx
                 Next X
             Next Y
         On Error GoTo 0
@@ -702,7 +724,7 @@ Dim b() As Byte
             'Set the sfx
             If ByFlags And 1048576 Then
                 i = MapBuf.Get_Integer
-                Engine_Sound_SetToMap i, X, Y
+                Sound_SetToMap i, X, Y
             End If
             
             'Blocked attack
@@ -765,38 +787,38 @@ Dim i As Byte
 
     'Quickbar
     For i = 1 To 12
-        Engine_Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID", Str$(QuickBarID(i).ID)
-        Engine_Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type", Str$(QuickBarID(i).Type)
+        Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "ID", Str$(QuickBarID(i).ID)
+        Var_Write DataPath & "Game.ini", "QUICKBARVALUES", "Slot" & i & "Type", Str$(QuickBarID(i).Type)
     Next i
     
     'Skin
-    Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
+    Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
     
     'Skin positions
     t = DataPath & "Skins\" & CurrentSkin & ".dat"   'Set the custom positions file for the skin
     With GameWindow
-        Engine_Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.X)
-        Engine_Var_Write t, "QUICKBAR", "ScreenY", Str(.QuickBar.Screen.Y)
-        Engine_Var_Write t, "CHATWINDOW", "ScreenX", Str(.ChatWindow.Screen.X)
-        Engine_Var_Write t, "CHATWINDOW", "ScreenY", Str(.ChatWindow.Screen.Y)
-        Engine_Var_Write t, "INVENTORY", "ScreenX", Str(.Inventory.Screen.X)
-        Engine_Var_Write t, "INVENTORY", "ScreenY", Str(.Inventory.Screen.Y)
-        Engine_Var_Write t, "SHOP", "ScreenX", Str(.Shop.Screen.X)
-        Engine_Var_Write t, "SHOP", "ScreenY", Str(.Shop.Screen.Y)
-        Engine_Var_Write t, "MAILBOX", "ScreenX", Str(.Mailbox.Screen.X)
-        Engine_Var_Write t, "MAILBOX", "ScreenY", Str(.Mailbox.Screen.Y)
-        Engine_Var_Write t, "VIEWMESSAGE", "ScreenX", Str(.ViewMessage.Screen.X)
-        Engine_Var_Write t, "VIEWMESSAGE", "ScreenY", Str(.ViewMessage.Screen.Y)
-        Engine_Var_Write t, "WRITEMESSAGE", "ScreenX", Str(.WriteMessage.Screen.X)
-        Engine_Var_Write t, "WRITEMESSAGE", "ScreenY", Str(.WriteMessage.Screen.Y)
-        Engine_Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.X)
-        Engine_Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
-        Engine_Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.X)
-        Engine_Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
-        Engine_Var_Write t, "BANK", "ScreenX", Str(.Bank.Screen.X)
-        Engine_Var_Write t, "BANK", "ScreenY", Str(.Bank.Screen.Y)
-        Engine_Var_Write t, "NPCCHAT", "ScreenX", Str(.NPCChat.Screen.X)
-        Engine_Var_Write t, "NPCCHAT", "ScreenY", Str(.NPCChat.Screen.Y)
+        Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.X)
+        Var_Write t, "QUICKBAR", "ScreenY", Str(.QuickBar.Screen.Y)
+        Var_Write t, "CHATWINDOW", "ScreenX", Str(.ChatWindow.Screen.X)
+        Var_Write t, "CHATWINDOW", "ScreenY", Str(.ChatWindow.Screen.Y)
+        Var_Write t, "INVENTORY", "ScreenX", Str(.Inventory.Screen.X)
+        Var_Write t, "INVENTORY", "ScreenY", Str(.Inventory.Screen.Y)
+        Var_Write t, "SHOP", "ScreenX", Str(.Shop.Screen.X)
+        Var_Write t, "SHOP", "ScreenY", Str(.Shop.Screen.Y)
+        Var_Write t, "MAILBOX", "ScreenX", Str(.Mailbox.Screen.X)
+        Var_Write t, "MAILBOX", "ScreenY", Str(.Mailbox.Screen.Y)
+        Var_Write t, "VIEWMESSAGE", "ScreenX", Str(.ViewMessage.Screen.X)
+        Var_Write t, "VIEWMESSAGE", "ScreenY", Str(.ViewMessage.Screen.Y)
+        Var_Write t, "WRITEMESSAGE", "ScreenX", Str(.WriteMessage.Screen.X)
+        Var_Write t, "WRITEMESSAGE", "ScreenY", Str(.WriteMessage.Screen.Y)
+        Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.X)
+        Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
+        Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.X)
+        Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
+        Var_Write t, "BANK", "ScreenX", Str(.Bank.Screen.X)
+        Var_Write t, "BANK", "ScreenY", Str(.Bank.Screen.Y)
+        Var_Write t, "NPCCHAT", "ScreenX", Str(.NPCChat.Screen.X)
+        Var_Write t, "NPCCHAT", "ScreenY", Str(.NPCChat.Screen.Y)
     End With
 
 End Sub
@@ -842,6 +864,8 @@ Sub Main()
 '*****************************************************************
 'Main
 '*****************************************************************
+Dim PacketKeys() As String
+Dim LastUnloadTime As Long
 Dim StartTime As Long
 Dim FileNum As Byte
 Dim i As Integer
@@ -876,7 +900,9 @@ Dim i As Integer
     End If
     
     'Generate the packet keys
-    GenerateEncryptionKeys
+    GenerateEncryptionKeys PacketKeys
+    frmMain.GOREsock.ClearPicture
+    frmMain.GOREsock.SetEncryption PacketEncTypeServerIn, PacketEncTypeServerOut, PacketKeys()
     
     'Number of bytes required to fill the skills
     NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
@@ -885,8 +911,9 @@ Dim i As Integer
     Engine_Init_FontSettings
     
     'Load the messages
-    Engine_Init_Messages LCase$(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Language"))
-
+    Engine_Init_Messages LCase$(Var_Get(DataPath & "Game.ini", "INIT", "Language"))
+    Engine_Init_Signs LCase$(Var_Get(DataPath & "Game.ini", "INIT", "Language"))
+    
     'Fill startup variables for the tile engine
     TilePixelWidth = 32
     TilePixelHeight = 32
@@ -908,7 +935,7 @@ Dim i As Integer
     ShowGameWindow(ChatWindow) = 1
 
     'Set the array sizes by the number of graphic files
-    NumGrhFiles = CLng(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
+    NumGrhFiles = CLng(Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
     ReDim SurfaceDB(1 To NumGrhFiles)
     ReDim SurfaceSize(1 To NumGrhFiles)
     ReDim SurfaceTimer(1 To NumGrhFiles)
@@ -921,7 +948,6 @@ Dim i As Integer
     Engine_Init_HeadData
     Engine_Init_HairData
     Engine_Init_MapData
-    Engine_Init_Signs
     
     'Load the config
     Game_Config_Load
@@ -961,62 +987,60 @@ Dim i As Integer
                 Engine_ShowNextFrame
 
                 'Check for key inputs
-                Engine_Input_CheckKeys
+                Input_Keys_General
                 
                 'Keep the music looping
-                If MapInfo.Music > 0 Then Engine_Music_Loop 1
-
-                'Check to unload surfaces
-                For i = 1 To NumGrhFiles
-
-                    'Only update surfaces in use
-                    If SurfaceTimer(i) > 0 Then
-
-                        'Lower the counter
-                        SurfaceTimer(i) = SurfaceTimer(i) - ElapsedTime
-
-                        'Unload the surface
-                        If SurfaceTimer(i) <= 0 Then
-                            Set SurfaceDB(i) = Nothing
-                            SurfaceTimer(i) = 0
-                        End If
-
-                    End If
-
-                Next i
-                
-                'Check to unload sound buffers
-                For i = 1 To NumSfx
-                
-                    'Only update sound buffers in use
-                    If SoundBufferTimer(i) > 0 Then
-                        
-                        'Lower the counter
-                        SoundBufferTimer(i) = SoundBufferTimer(i) - ElapsedTime
-                        
-                        'Unload the sound buffer
-                        If SoundBufferTimer(i) <= 0 Then
-                            Set DSBuffer(i) = Nothing
-                            SoundBufferTimer(i) = 0
-                        End If
-                        
-                    End If
-                    
-                Next i
+                If MapInfo.Music > 0 Then Music_Loop 1
 
             End If
         End If
-
-        If SocketOpen Then
         
-            'Send the data buffer
-            Data_Send
+        'Send the data buffer
+        If SocketOpen Then Data_Send
 
+        'Check to unload stuff from memory (only check every 5 seconds)
+        If LastUnloadTime + 5000 < timeGetTime Then
+            For i = 1 To NumGrhFiles    'Check to unload surfaces
+                If SurfaceTimer(i) > 0 Then 'Only update surfaces in use
+                    If SurfaceTimer(i) < timeGetTime Then   'Unload the surface
+                        Set SurfaceDB(i) = Nothing
+                        SurfaceTimer(i) = 0
+                    End If
+                End If
+            Next i
+            For i = 1 To NumSfx 'Check to unload sound buffers
+                If SoundBufferTimer(i) > 0 Then 'Only update sound buffers in use
+                    If SoundBufferTimer(i) < timeGetTime Then   'Unload the sound buffer
+                        Set DSBuffer(i) = Nothing
+                        SoundBufferTimer(i) = 0
+                    End If
+                End If
+            Next i
         End If
         
-        'Too many failed pings, we disconnect
-        If FailedPings > 2 Then IsUnloading = 1
-        
+        'Check to change servers
+        If SocketMoveToPort > 0 Then
+            If frmMain.GOREsock.ShutDown <> soxERROR Then
+                
+                'Set up the socket
+                SoxID = frmMain.GOREsock.Connect(SocketMoveToIP, SocketMoveToPort)
+                SocketOpen = 1
+                
+                'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
+                If SoxID = -1 Then
+                    MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
+                    IsUnloading = 1
+                Else
+                    frmMain.GOREsock.SetOption SoxID, soxSO_TCP_NODELAY, True
+                End If
+                
+                'Clear the temp values
+                SocketMoveToPort = 0
+                SocketMoveToIP = vbNullString
+                
+            End If
+        End If
+
         'Do other events
         DoEvents
         
@@ -1034,3 +1058,119 @@ Dim i As Integer
     frmMain.ShutdownTimer.Enabled = True
 
 End Sub
+
+Function Var_Get(File As String, Main As String, Var As String) As String
+
+'*****************************************************************
+'Gets a Var from a text file
+'*****************************************************************
+
+Dim sSpaces As String ' This will hold the input that the program will retrieve
+Dim szReturn As String ' This will be the defaul value if the string is not found
+
+    szReturn = vbNullString
+
+    sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
+    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
+    Var_Get = RTrim$(sSpaces)
+    If Len(Var_Get) > 0 Then
+        Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
+    Else
+        Var_Get = ""
+    End If
+    
+End Function
+
+Sub Var_Write(File As String, Main As String, Var As String, Value As String)
+
+'*****************************************************************
+'Writes a var to a text file
+'*****************************************************************
+
+    writeprivateprofilestring Main, Var, Value, File
+
+End Sub
+
+Public Function Engine_WordWrap(ByVal Text As String, ByVal MaxLineLen As Integer, Optional ByVal ReplaceChar As String = vbNewLine) As String
+
+'************************************************************
+'Wrap a long string to multiple lines by vbNewLine
+'************************************************************
+Dim TempSplit() As String
+Dim TSLoop As Long
+Dim LastSpace As Long
+Dim Size As Long
+Dim i As Long
+Dim b As Long
+Dim j As Long
+
+    'Too small of text
+    If Len(Text) < 2 Then
+        Engine_WordWrap = Text
+        Exit Function
+    End If
+
+    'Check if there are any line breaks - if so, we will support them
+    TempSplit = Split(Text, vbNewLine)
+    
+    For TSLoop = 0 To UBound(TempSplit)
+    
+        'Clear the values for the new line
+        Size = 0
+        b = 1
+        LastSpace = 1
+        
+        'Add back in the vbNewLines
+        If TSLoop < UBound(TempSplit()) Then TempSplit(TSLoop) = TempSplit(TSLoop) & vbNewLine
+        
+        'Loop through all the characters
+        For i = 1 To Len(TempSplit(TSLoop))
+        
+            'If it is a space, store it so we can easily break at it
+            Select Case Mid$(TempSplit(TSLoop), i, 1)
+                Case " ": LastSpace = i
+                Case "_": LastSpace = i
+                Case "-": LastSpace = i
+            End Select
+
+            'Add up the size - Do not count the "|" character (high-lighter)!
+            If Not Mid$(TempSplit(TSLoop), i, 1) = "|" Then
+                Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            End If
+            
+            'Check for too large of a size
+            If Size > MaxLineLen Then
+                
+                'Check if the last space was too far back
+                If i - LastSpace > 4 Then
+                    
+                    'Too far away to the last space, so break at the last character
+                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
+                    b = i - 1
+                    Size = 0
+                    
+                Else
+                
+                    'Break at the last space to preserve the word
+                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)) & vbNewLine
+                    b = LastSpace + 1
+                    
+                    'Count all the words we ignored (the ones that weren't printed, but are before "i")
+                    Size = Engine_GetTextWidth(Mid$(TempSplit(TSLoop), LastSpace, i - LastSpace))
+                    
+                End If
+                
+            End If
+            
+            'This handles the remainder
+            If i = Len(TempSplit(TSLoop)) Then
+                If b <> i Then
+                    Engine_WordWrap = Engine_WordWrap & Mid$(TempSplit(TSLoop), b, i)
+                End If
+            End If
+            
+        Next i
+        
+    Next TSLoop
+
+End Function

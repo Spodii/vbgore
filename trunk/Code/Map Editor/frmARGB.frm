@@ -205,7 +205,7 @@ Private Sub ATxt_Change()
 
 End Sub
 
-Private Sub ATxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub ATxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Alpha color value (ex: 255 for opaque / solid, 0 for invisible, 128 for 50% transparency)."
 
@@ -217,7 +217,7 @@ Private Sub BTxt_Change()
 
 End Sub
 
-Private Sub BTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub BTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Blue color value."
 
@@ -230,13 +230,26 @@ Private Sub Form_Load()
 
 End Sub
 
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
+
+End Sub
+
 Private Sub GTxt_Change()
 
     ARGBtoLONG
 
 End Sub
 
-Private Sub GTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub GTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Green color value."
 
@@ -272,7 +285,7 @@ Private Sub ARGBtoLONG()
 
 End Sub
 
-Private Sub LongTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LongTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "The LONG value created by the entered ARGB value. This is the value that the engine uses."
 
@@ -284,7 +297,7 @@ Private Sub RTxt_Change()
     
 End Sub
 
-Private Sub RTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub RTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Red color value."
 

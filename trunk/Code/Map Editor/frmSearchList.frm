@@ -30,6 +30,31 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub Form_Load()
+    
+    Me.Width = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "W"))
+    Me.Height = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "H"))
+    Me.Left = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "X"))
+    Me.Top = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "Y"))
+
+End Sub
+
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+
+End Sub
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    Var_Write Data2Path & "MapEditor.ini", Me.Name, "W", Me.Width
+    Var_Write Data2Path & "MapEditor.ini", Me.Name, "H", Me.Height
+    Var_Write Data2Path & "MapEditor.ini", Me.Name, "X", Me.Left
+    Var_Write Data2Path & "MapEditor.ini", Me.Name, "Y", Me.Top
+    Form_Resize
+    
+End Sub
+
 Private Sub Form_Resize()
 
     SearchLst.Width = Me.ScaleWidth
@@ -42,4 +67,10 @@ Private Sub SearchLst_Click()
     If LoadTextureToForm(frmSearchTexture, DescResults(SearchLst.ListIndex + 1)) = 0 Then Exit Sub
     SearchTextureFileNum = DescResults(SearchLst.ListIndex + 1)
 
+End Sub
+
+Private Sub SearchLst_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
+    
 End Sub

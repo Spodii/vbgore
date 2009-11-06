@@ -16,6 +16,22 @@ Begin VB.Form frmParticles
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   201
    ShowInTaskbar   =   0   'False
+   Begin VB.Timer Timer1 
+      Interval        =   1000
+      Left            =   2400
+      Top             =   0
+   End
+   Begin VB.CheckBox EditChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H80000005&
+      Caption         =   "Edit Mode"
+      ForeColor       =   &H80000008&
+      Height          =   255
+      Left            =   1800
+      TabIndex        =   17
+      Top             =   1980
+      Width           =   1095
+   End
    Begin VB.TextBox DirTxt 
       Appearance      =   0  'Flat
       Height          =   285
@@ -342,16 +358,66 @@ Private Sub CreateLbl_Click()
 End Sub
 
 Private Sub CreateBtnl_Click()
+Dim Gfx As Byte
+Dim Particles As Integer
+Dim EffectIndex As Integer
+Dim Dir As Single
+Dim X As Single
+Dim Y As Single
+
+On Error GoTo ErrOut
+
+    'Set the values to the variables first, just to be sure an invalid range is caught
+    Gfx = Val(GfxTxt.Text)
+    Particles = Val(ParticlesTxt.Text)
+    EffectIndex = Val(IndexTxt.Text)
+    If EffectIndex < 1 Then GoTo ErrOut
+    Dir = Val(DirTxt.Text)
+    X = Val(XTxt.Text)
+    Y = Val(YTxt.Text)
+
+    'Create the particle effect
+    Effect_Begin EffectIndex, X - (ParticleOffsetX - 288), Y - (ParticleOffsetY - 288), Gfx, Particles, Dir
+
+    'Update list
+    UpdateEffectList
+
+Exit Sub
+
+ErrOut:
+
+    MsgBox "Error creating the particle effect! Aborting...", vbOKOnly
+
+End Sub
+
+Private Sub CreateBtnl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Create a particle effect with the defined values."
+
+End Sub
+
+Private Sub DirTxt_Change()
+Dim Parts As Integer
+
+    If EditChk.Value = 0 Then Exit Sub
+    On Error GoTo ErrOut
+    
+    Parts = Val(ParticlesTxt.Text)
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).Direction = Parts
+    
+ErrOut:
 
 End Sub
 
 Private Sub DirTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -362,10 +428,22 @@ Private Sub DirTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y
 
 End Sub
 
+Private Sub EditChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "When enabled, modifying effect values will update the current effect. When off, changes have no affect."
+
+End Sub
+
 Private Sub Form_Load()
 
     'Update list
     UpdateEffectList
+
+End Sub
+
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo vbNullString
 
 End Sub
 
@@ -376,11 +454,30 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 End Sub
 
+Private Sub GfxTxt_Change()
+Dim Gfx As Byte
+
+    If EditChk.Value = 0 Then Exit Sub
+    On Error GoTo ErrOut
+    
+    Gfx = Val(GfxTxt.Text)
+    If Gfx < 1 Then GoTo ErrOut
+    If Gfx > UBound(ParticleTexture) Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).Gfx = Gfx
+    
+ErrOut:
+
+End Sub
+
 Private Sub GfxTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -391,11 +488,29 @@ Private Sub GfxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y
 
 End Sub
 
+Private Sub IndexTxt_Change()
+Dim Gfx As Byte
+
+    If EditChk.Value = 0 Then Exit Sub
+    On Error GoTo ErrOut
+    
+    Gfx = Val(GfxTxt.Text)
+    If Gfx < 1 Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).EffectNum = Gfx
+    
+ErrOut:
+
+End Sub
+
 Private Sub IndexTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -406,17 +521,26 @@ Private Sub IndexTxt_MouseMove(Button As Integer, Shift As Integer, X As Single,
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-Dim c As Control
+Private Sub ParticlesList_Click()
+
+    On Error GoTo ErrOut
+
+    If Effect(ParticlesList.ListIndex + 1).Used = False Then GoTo ErrOut
+    If WeatherEffectIndex = ParticlesList.ListIndex + 1 Then GoTo ErrOut
     
-    For Each c In Me
-        If TypeName(c) = "cButton" Then
-            c.Refresh
-            c.DrawState = 0
-        End If
-    Next c
-    Set c = Nothing
+    With Effect(ParticlesList.ListIndex + 1)
+        IndexTxt.Text = .EffectNum
+        ParticlesTxt.Text = .ParticleCount
+        GfxTxt.Text = .Gfx
+        XTxt.Text = .X + ParticleOffsetX
+        YTxt.Text = .Y + ParticleOffsetY
+        DirTxt.Text = .Direction
+    End With
     
+    Exit Sub
+    
+ErrOut:
+
 End Sub
 
 Private Sub ParticlesList_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -444,11 +568,39 @@ Private Sub ParticlesList_MouseMove(Button As Integer, Shift As Integer, X As Si
 
 End Sub
 
+Private Sub ParticlesTxt_Change()
+Dim Parts As Long
+Dim j As Long
+
+    If EditChk.Value = 0 Then Exit Sub
+    On Error GoTo ErrOut
+    
+    Parts = Val(ParticlesTxt.Text)
+    If Parts < 1 Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then
+        ReDim Effect(ParticlesList.ListIndex + 1).Particles(0 To Parts)
+        ReDim Effect(ParticlesList.ListIndex + 1).PartVertex(0 To Parts)
+        For j = 0 To Parts
+            Set Effect(ParticlesList.ListIndex + 1).Particles(j) = New Particle
+            Effect(ParticlesList.ListIndex + 1).Particles(j).Used = True
+            Effect(ParticlesList.ListIndex + 1).PartVertex(j).Rhw = 1
+        Next j
+        Effect(ParticlesList.ListIndex + 1).ParticleCount = Parts
+    End If
+    
+ErrOut:
+
+End Sub
+
 Private Sub ParticlesTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -471,11 +623,37 @@ Private Sub RefreshBtn_MouseMove(Button As Integer, Shift As Integer, X As Singl
 
 End Sub
 
+Private Sub Timer1_Timer()
+
+    If frmParticles.Visible Then
+        UpdateEffectList
+    End If
+
+End Sub
+
+Private Sub XTxt_Change()
+Dim X As Single
+
+    On Error GoTo ErrOut
+    
+    If EditChk.Value = 0 Then Exit Sub
+    X = Val(XTxt.Text) - ParticleOffsetX
+    If X < 1 Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).X = X
+    
+ErrOut:
+
+End Sub
+
 Private Sub XTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -486,11 +664,29 @@ Private Sub XTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y A
 
 End Sub
 
+Private Sub YTxt_Change()
+Dim Y As Single
+
+    On Error GoTo ErrOut
+    
+    If EditChk.Value = 0 Then Exit Sub
+    Y = Val(YTxt.Text) - ParticleOffsetY
+    If Y < 1 Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).Y = Y
+    
+ErrOut:
+
+End Sub
+
 Private Sub YTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> vbKeyDelete Then
+                If KeyAscii <> vbKeyBack Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub

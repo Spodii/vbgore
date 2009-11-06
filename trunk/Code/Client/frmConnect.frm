@@ -104,8 +104,8 @@ Option Explicit
 Private Sub Form_Load()
 
     'Get the username/password
-    NameTxt.Text = Engine_Var_Get(DataPath & "Game.ini", "INIT", "Name")
-    PasswordTxt.Text = Engine_Var_Get(DataPath & "Game.ini", "INIT", "Password")
+    NameTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Name")
+    PasswordTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Password")
     
     'Get the background
     Me.Picture = LoadPicture(App.Path & "\Grh\Connect.bmp")
@@ -139,11 +139,11 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     If Engine_Collision_Rect(X, Y, 1, 1, 29, 174, 141, 36) Then
     
         'Save the game ini
-        Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
+        Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", ""
+            Var_Write DataPath & "Game.ini", "INIT", "Password", ""
         Else
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
+            Var_Write DataPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
         End If
     
         'End program
