@@ -70,7 +70,7 @@ Dim lY As Byte
                         If lX < MaxXBorder Then
                             If lY > MinYBorder Then
                                 If lY < MaxYBorder Then
-                                    If Not (MapData(Map, lX, lY).Blocked And BlockedAll) Then
+                                    If MapData(Map, lX, lY).Blocked = 0 Then
                                         If MapData(Map, lX, lY).NumObjs < MaxObjsPerTile Then
                                             
                                             'Spot is useable
@@ -2797,23 +2797,20 @@ Dim Levels As Integer
         
         'Set the number of levels gained
         Levels = Levels + 1
-        
-        'Raise the user's points
-        UserList(UserIndex).Stats.BaseStat(SID.Points) = UserList(UserIndex).Stats.BaseStat(SID.Points) + 5
-
-        'Raise stats
+    
+        'Raise stats / level requirements
         With UserList(UserIndex).Stats
+            .BaseStat(SID.MinHIT) = .BaseStat(SID.MinHIT) + 1
             .BaseStat(SID.MaxHIT) = .BaseStat(SID.MaxHIT) + 1
             .BaseStat(SID.MaxHP) = .BaseStat(SID.MaxHP) + 10
             .BaseStat(SID.MaxMAN) = .BaseStat(SID.MaxMAN) + 10
             .BaseStat(SID.MaxSTA) = .BaseStat(SID.MaxSTA) + 10
-            .BaseStat(SID.MinHIT) = .BaseStat(SID.MinHIT) + 1
+            .BaseStat(SID.Points) = .BaseStat(SID.Points) + 5
+            
+            .BaseStat(SID.ELV) = .BaseStat(SID.ELV) + 1
+            .BaseStat(SID.EXP) = .BaseStat(SID.EXP) - .BaseStat(SID.ELU)
+            .BaseStat(SID.ELU) = .BaseStat(SID.ELV) * 5
         End With
-        
-        'Reset the level requirements
-        UserList(UserIndex).Stats.BaseStat(SID.ELV) = UserList(UserIndex).Stats.BaseStat(SID.ELV) + 1
-        UserList(UserIndex).Stats.BaseStat(SID.EXP) = UserList(UserIndex).Stats.BaseStat(SID.EXP) - UserList(UserIndex).Stats.BaseStat(SID.ELU)
-        UserList(UserIndex).Stats.BaseStat(SID.ELU) = Int(UserList(UserIndex).Stats.BaseStat(SID.ELV) * 5)
 
     Loop
 
@@ -2828,7 +2825,7 @@ Dim Levels As Integer
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     ElseIf Levels > 1 Then
-        Log "User_RaiseExp: User ganed multiple levels (" & Levels & ")", CodeTracker '//\\LOGLINE//\\
+        Log "User_RaiseExp: User gained multiple levels (" & Levels & ")", CodeTracker '//\\LOGLINE//\\
 
         'Say the user's level raised
         ConBuf.Clear

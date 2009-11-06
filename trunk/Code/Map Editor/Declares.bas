@@ -6,6 +6,8 @@ Public Const NumSkills As Byte = 8
 
 Public Const DegreeToRadian As Single = 0.0174532925
 
+Public GrhCatFlags() As Long
+
 'Position displayed in the form's caption
 Public HoverX As Long
 Public HoverY As Long

@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.5            ************
+'************            Official Release: Version 0.2.7            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -102,6 +102,9 @@ Public Const ForceUpdateCheck As Boolean = False
 'Running speed - make sure you have the same value on the server!
 Public Const RunningSpeed As Byte = 5
 
+'If we are in windowed mode or not
+Public Const Windowed As Boolean = False
+
 '********** Object types ************
 Public Type ObjData
     Name As String              'Name
@@ -177,9 +180,6 @@ Public Const DegreeToRadian As Single = 0.01745329251994 'Pi / 180
 
 'Holds the skin the user is using at the time
 Public CurrentSkin As String
-
-'If we are in windowed mode or not
-Public Const Windowed As Boolean = False
 
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1

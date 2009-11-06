@@ -431,16 +431,18 @@ Public Function ByteArrayToStr(ByRef ByteArray() As Byte) As String
 
 On Error GoTo ErrOut
 
+Dim Char As String
 Dim i As Long
     
     Log "ByteArrayToStr: ByteArray LBound() = " & LBound(ByteArray) & " UBound() = " & UBound(ByteArray), CodeTracker '//\\LOGLINE//\\
     For i = LBound(ByteArray) To UBound(ByteArray)
+        If ByteArray(i) > 32 Then Char = Chr$(ByteArray(i)) Else Char = " "
         If ByteArray(i) >= 100 Then
-            ByteArrayToStr = ByteArrayToStr & ByteArray(i) & "[" & Chr$(ByteArray(i)) & "] "
+            ByteArrayToStr = ByteArrayToStr & ByteArray(i) & "[" & Char & "] "
         ElseIf ByteArray(i) >= 10 Then
-            ByteArrayToStr = ByteArrayToStr & "0" & ByteArray(i) & "[" & Chr$(ByteArray(i)) & "] "
+            ByteArrayToStr = ByteArrayToStr & "0" & ByteArray(i) & "[" & Char & "] "
         Else
-            ByteArrayToStr = ByteArrayToStr & "00" & ByteArray(i) & "[" & Chr$(ByteArray(i)) & "] "
+            ByteArrayToStr = ByteArrayToStr & "00" & ByteArray(i) & "[" & Char & "] "
         End If
     Next i
     ByteArrayToStr = Left$(ByteArrayToStr, Len(ByteArrayToStr) - 1)

@@ -197,7 +197,7 @@ Dim Byt1 As Byte
         Case 41
             Str1 = rBuf.Get_String
             Int1 = rBuf.Get_Integer
-            TempStr = Replace$(Message(40), "<name>", Str1)
+            TempStr = Replace$(Message(41), "<name>", Str1)
             Engine_AddToChatTextBuffer Replace$(TempStr, "<power>", Int1), FontColor_Info
         Case 42
             Str1 = rBuf.Get_String

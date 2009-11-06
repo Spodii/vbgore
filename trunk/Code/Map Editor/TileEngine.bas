@@ -960,8 +960,11 @@ Sub Engine_Init_Grh(ByRef Grh As Grh, ByVal GrhIndex As Long, Optional ByVal Sta
 End Sub
 
 Sub Engine_Init_GrhData()
+Dim FileNum As Byte
 Dim Grh As Long
 Dim Frame As Long
+Dim TempSplit() As String
+Dim j As String
 
     'Get Number of Graphics
     GrhPath = App.Path & "\Grh\"
@@ -969,7 +972,37 @@ Dim Frame As Long
     
     'Resize arrays
     ReDim GrhData(1 To NumGrhs) As GrhData
+    ReDim GrhCatFlags(1 To NumGrhs)
     
+    'Get the category information
+    FileNum = FreeFile
+    Open Data2Path & "GrhRaw.txt" For Input As #FileNum
+        Do While EOF(FileNum) = False
+            Line Input #FileNum, j
+            If j <> "" Then
+                If InStr(1, j, "(") Then
+                    If InStr(1, j, "=") Then
+                        
+                        'Get the category flags
+                        TempSplit = Split(j, "(")
+                        Frame = Val(Left$(TempSplit(1), Len(TempSplit(1)) - 1))
+                        
+                        'Get the Grh
+                        TempSplit = Split(j, "=")
+                        Grh = Val(Right$(TempSplit(0), Len(TempSplit(0)) - 3))
+                        
+                        'Store
+                        GrhCatFlags(Grh) = Frame
+
+                    End If
+                End If
+            End If
+        Loop
+    Close #FileNum
+                              
+    Frame = 0
+    Grh = 0
+                              
     'Open files
     Open DataPath & "Grh.dat" For Binary As #1
     Seek #1, 1
@@ -989,7 +1022,7 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To GrhData(Grh).NumFrames)
             For Frame = 1 To GrhData(Grh).NumFrames
                 Get #1, , GrhData(Grh).Frames(Frame)
-                If GrhData(Grh).Frames(Frame) <= 0 Or GrhData(Grh).Frames(Frame) > NumGrhs Then
+                If GrhData(Grh).Frames(Frame) <= 0 Then
                     GoTo ErrorHandler
                 End If
             Next Frame
@@ -1806,6 +1839,8 @@ Public Sub Engine_SetTileSelectionArray()
 '***************************************************
 Dim CurrentGrh As Long
 Dim i As Long
+Dim j As Long
+Dim b As Byte
 
     'We are changing out list, so we will draw everything again
     frmTileSelect.Cls
@@ -1824,14 +1859,24 @@ Dim i As Long
         
         'Only use graphics in use
         If GrhData(CurrentGrh).NumFrames > 0 Then
+        
+            'If the appropriate flags are ticked
+            b = 0
+            For j = frmTSOpt.CatChk.LBound To frmTSOpt.CatChk.UBound
+                If frmTSOpt.CatChk(j).Value = 1 Then
+                    If GrhCatFlags(CurrentGrh) And (2 ^ j) Then b = 1
+                End If
+            Next j
+            If b Then
+
+                'Set the graphic
+                Engine_Init_Grh PreviewGrhList(i), CurrentGrh
+                
+                'Check if we hit the end of the list
+                i = i + 1
+                If i > UBound(PreviewGrhList) Then Exit Do
             
-            'Set the graphic
-            Engine_Init_Grh PreviewGrhList(i), CurrentGrh
-            
-            'Check if we hit the end of the list
-            i = i + 1
-            If i > UBound(PreviewGrhList) Then Exit Do
-            
+            End If
         End If
         
         'Update the currentgrh value - allows us to set the next grh

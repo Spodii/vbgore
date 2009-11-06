@@ -3,7 +3,7 @@ Begin VB.Form frmTSOpt
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
    Caption         =   "Tile Select Options"
-   ClientHeight    =   1875
+   ClientHeight    =   4110
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2640
@@ -11,11 +11,187 @@ Begin VB.Form frmTSOpt
    MaxButton       =   0   'False
    MinButton       =   0   'False
    Picture         =   "frmTSOpt.frx":0000
-   ScaleHeight     =   125
+   ScaleHeight     =   274
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   176
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Misc (Hidden)"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   7
+      Left            =   240
+      TabIndex        =   15
+      Top             =   3480
+      Value           =   1  'Checked
+      Width           =   1575
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Misc (Displayed)"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   6
+      Left            =   240
+      TabIndex        =   14
+      Top             =   3240
+      Value           =   1  'Checked
+      Width           =   1815
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Inside Objects"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   5
+      Left            =   240
+      TabIndex        =   13
+      Top             =   3000
+      Value           =   1  'Checked
+      Width           =   1575
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Outside Objects"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   4
+      Left            =   240
+      TabIndex        =   12
+      Top             =   2760
+      Value           =   1  'Checked
+      Width           =   1695
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Buildings"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   3
+      Left            =   240
+      TabIndex        =   11
+      Top             =   2520
+      Value           =   1  'Checked
+      Width           =   1095
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Vegetation"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   2
+      Left            =   240
+      TabIndex        =   10
+      Top             =   2280
+      Value           =   1  'Checked
+      Width           =   1335
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Inside Tiles"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   1
+      Left            =   240
+      TabIndex        =   9
+      Top             =   2040
+      Value           =   1  'Checked
+      Width           =   1335
+   End
+   Begin VB.CheckBox CatChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Outside Tiles"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   0
+      Left            =   240
+      TabIndex        =   7
+      Top             =   1800
+      Value           =   1  'Checked
+      Width           =   1455
+   End
    Begin VB.TextBox HeightTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -52,6 +228,26 @@ Begin VB.Form frmTSOpt
       Top             =   720
       Width           =   975
    End
+   Begin VB.Label Label1 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Show Options:"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   120
+      TabIndex        =   8
+      Top             =   1560
+      Width           =   1245
+   End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
@@ -69,7 +265,7 @@ Begin VB.Form frmTSOpt
       Height          =   195
       Index           =   2
       Left            =   120
-      TabIndex        =   7
+      TabIndex        =   6
       Top             =   1200
       Width           =   1365
    End
@@ -90,7 +286,7 @@ Begin VB.Form frmTSOpt
       Height          =   195
       Index           =   1
       Left            =   120
-      TabIndex        =   6
+      TabIndex        =   5
       Top             =   960
       Width           =   1305
    End
@@ -111,29 +307,9 @@ Begin VB.Form frmTSOpt
       Height          =   195
       Index           =   0
       Left            =   120
-      TabIndex        =   5
+      TabIndex        =   4
       Top             =   720
       Width           =   1185
-   End
-   Begin VB.Label CancelLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Cancel"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   1800
-      TabIndex        =   4
-      Top             =   1560
-      Width           =   600
    End
    Begin VB.Label SaveLbl 
       AutoSize        =   -1  'True
@@ -150,9 +326,9 @@ Begin VB.Form frmTSOpt
       EndProperty
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   120
+      Left            =   1200
       TabIndex        =   3
-      Top             =   1560
+      Top             =   3840
       Width           =   1245
    End
 End
@@ -162,6 +338,10 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+
+Private Sub CancelLbl_Click()
+
+End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 

@@ -483,7 +483,7 @@ Dim i As Long
         .Desc = Trim$(DB_RS!Descr)
         .AttackGrh = Val(DB_RS!AttackGrh)
         .AttackRange = Val(DB_RS!AttackRange)
-        .Movement = Val(DB_RS!Movement)
+        .AI = Val(DB_RS!AI)
         .RespawnWait = Val(DB_RS!RespawnWait)
         .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
         .Attackable = Val(DB_RS!Attackable)

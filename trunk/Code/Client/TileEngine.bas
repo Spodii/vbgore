@@ -2010,7 +2010,7 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To GrhData(Grh).NumFrames)
             For Frame = 1 To GrhData(Grh).NumFrames
                 Get #1, , GrhData(Grh).Frames(Frame)
-                If GrhData(Grh).Frames(Frame) <= 0 Or GrhData(Grh).Frames(Frame) > NumGrhs Then
+                If GrhData(Grh).Frames(Frame) <= 0 Then
                     GoTo ErrorHandler
                 End If
             Next Frame
@@ -4697,6 +4697,7 @@ Dim FileNum As Integer
                     Loop
                 Else
                     Grh.Started = 0
+                    Grh.FrameCounter = GrhData(Grh.GrhIndex).NumFrames  'Force the last frame and stick with it
                     Exit Sub
                 End If
             End If

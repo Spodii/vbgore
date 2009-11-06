@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{C7B4A030-D912-4416-A588-3658960C7145}#1.0#0"; "vbgoresocketstring.ocx"
+Object = "{5D0A4D01-701F-4AEF-8518-952FB5EC23FF}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -26,7 +26,7 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   287
    StartUpPosition =   2  'CenterScreen
-   Begin SoxOCX.Sox Socket 
+   Begin SoxOCXBinary.SoxBinary Socket 
       Height          =   420
       Left            =   3480
       Top             =   1320
@@ -332,7 +332,6 @@ Private Sub GameTimer_Timer()
 Dim UserIndex As Integer
 Dim NPCIndex As Integer
 Dim Recover As Boolean
-Dim Update As Boolean
 Dim MapIndex As Integer
 Dim CheckGroundObjs As Byte
 Dim X As Byte
@@ -554,7 +553,23 @@ Dim ObjIndex As Byte
                 If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
 
                     'Check to update mod stats
-                    If Update Then NPC_UpdateModStats NPCIndex
+                    If NPCList(NPCIndex).Flags.UpdateStats Then
+                        NPCList(NPCIndex).Flags.UpdateStats = 0
+                        NPC_UpdateModStats NPCIndex
+                    End If
+                    
+                    'Update spell exhaustion
+                    If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
+                        NPCList(NPCIndex).Counters.SpellExhaustion = NPCList(NPCIndex).Counters.SpellExhaustion - Elapsed
+                        If NPCList(NPCIndex).Counters.SpellExhaustion <= 0 Then
+                            NPCList(NPCIndex).Counters.SpellExhaustion = 0
+                            ConBuf.Clear
+                            ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+                            ConBuf.Put_Byte 0
+                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                        End If
+                    End If
 
                     'Call the NPC AI
                     NPC_AI NPCIndex

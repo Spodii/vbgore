@@ -160,6 +160,9 @@ Dim t2 As Byte
 Dim Y As Long
 Dim X As Long
 Dim b As Byte
+Dim tX As Long
+Dim tY As Long
+Dim i As Integer
 
     Log "Call NPC_AI(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -177,7 +180,7 @@ Dim b As Byte
     End If
 
     'Movement
-    Select Case NPCList(NPCIndex).Movement
+    Select Case NPCList(NPCIndex).AI
     
         '*** Random movement ***
         Case 2
@@ -220,30 +223,30 @@ Dim b As Byte
                 
                     'Move towards alternate positions (the two directions that surround the selected direction)
                     Select Case tHeading
-                        Case 1
-                            t1 = 5
-                            t2 = 8
-                        Case 2
-                            t1 = 5
-                            t2 = 6
-                        Case 3
-                            t1 = 7
-                            t2 = 6
-                        Case 4
-                            t1 = 7
-                            t2 = 8
-                        Case 5
-                            t1 = 1
-                            t2 = 2
-                        Case 6
-                            t1 = 2
-                            t2 = 3
-                        Case 7
-                            t1 = 3
-                            t2 = 4
-                        Case 8
-                            t1 = 4
-                            t2 = 1
+                        Case NORTH
+                            t1 = NORTHEAST
+                            t2 = NORTHWEST
+                        Case EAST
+                            t1 = NORTHEAST
+                            t2 = SOUTHEAST
+                        Case SOUTH
+                            t1 = SOUTHWEST
+                            t2 = SOUTHEAST
+                        Case WEST
+                            t1 = SOUTHWEST
+                            t2 = NORTHWEST
+                        Case NORTHEAST
+                            t1 = NORTH
+                            t2 = EAST
+                        Case SOUTHEAST
+                            t1 = EAST
+                            t2 = SOUTH
+                        Case SOUTHWEST
+                            t1 = SOUTH
+                            t2 = WEST
+                        Case NORTHWEST
+                            t1 = WEST
+                            t2 = NORTH
                     End Select
                     
                     'Do the alternate movement
@@ -268,12 +271,156 @@ Dim b As Byte
                 Exit Sub
             Else
             
+                'Run away (movement)
+                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y, 3, 3) Then
+                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
+                    Select Case tHeading
+                        Case NORTH: tHeading = SOUTH
+                        Case NORTHEAST: tHeading = SOUTHWEST
+                        Case EAST: tHeading = WEST
+                        Case SOUTHEAST: tHeading = NORTHWEST
+                        Case SOUTH: tHeading = NORTH
+                        Case SOUTHWEST: tHeading = NORTHEAST
+                        Case WEST: tHeading = EAST
+                        Case NORTHWEST: tHeading = SOUTHEAST
+                    End Select
+                    If NPC_MoveChar(NPCIndex, tHeading) = 0 Then
+                        Select Case tHeading
+                            Case NORTH
+                                t1 = NORTHEAST
+                                t2 = NORTHWEST
+                            Case EAST
+                                t1 = NORTHEAST
+                                t2 = SOUTHEAST
+                            Case SOUTH
+                                t1 = SOUTHWEST
+                                t2 = SOUTHEAST
+                            Case WEST
+                                t1 = SOUTHWEST
+                                t2 = NORTHWEST
+                            Case NORTHEAST
+                                t1 = NORTH
+                                t2 = EAST
+                            Case SOUTHEAST
+                                t1 = EAST
+                                t2 = SOUTH
+                            Case SOUTHWEST
+                                t1 = SOUTH
+                                t2 = WEST
+                            Case NORTHWEST
+                                t1 = WEST
+                                t2 = NORTH
+                        End Select
+                        If NPC_MoveChar(NPCIndex, t1) = 0 Then
+                            Log "NPC_AI: Using alternate movement method for AI 4", CodeTracker '//\\LOGLINE//\\
+                            NPC_MoveChar NPCIndex, t2   'If this doesn't happen, then we're out of stuff to do
+                        End If
+                    End If
+                    Exit Sub
+                End If
+                    
                 'Attack
                 b = NPC_AI_Attack(NPCIndex)
                 If b Then
                     NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
                     Exit Sub
                 End If
+                
+            End If
+            
+        '*** Heal the nearest NPC, and run from users ***
+        Case 5
+            
+            'Look for a user
+            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            If X = 0 Then
+                NPCList(NPCIndex).Flags.ActionDelay = 1000
+                Exit Sub
+            Else
+            
+                'Run away (movement)
+                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y, 3, 3) Then
+                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
+                    Select Case tHeading
+                        Case NORTH: tHeading = SOUTH
+                        Case NORTHEAST: tHeading = SOUTHWEST
+                        Case EAST: tHeading = WEST
+                        Case SOUTHEAST: tHeading = NORTHWEST
+                        Case SOUTH: tHeading = NORTH
+                        Case SOUTHWEST: tHeading = NORTHEAST
+                        Case WEST: tHeading = EAST
+                        Case NORTHWEST: tHeading = SOUTHEAST
+                    End Select
+                    If NPC_MoveChar(NPCIndex, tHeading) = 0 Then
+                        Select Case tHeading
+                            Case NORTH
+                                t1 = NORTHEAST
+                                t2 = NORTHWEST
+                            Case EAST
+                                t1 = NORTHEAST
+                                t2 = SOUTHEAST
+                            Case SOUTH
+                                t1 = SOUTHWEST
+                                t2 = SOUTHEAST
+                            Case WEST
+                                t1 = SOUTHWEST
+                                t2 = NORTHWEST
+                            Case NORTHEAST
+                                t1 = NORTH
+                                t2 = EAST
+                            Case SOUTHEAST
+                                t1 = EAST
+                                t2 = SOUTH
+                            Case SOUTHWEST
+                                t1 = SOUTH
+                                t2 = WEST
+                            Case NORTHWEST
+                                t1 = WEST
+                                t2 = NORTH
+                        End Select
+                        If NPC_MoveChar(NPCIndex, t1) = 0 Then
+                            Log "NPC_AI: Using alternate movement method for AI 4", CodeTracker '//\\LOGLINE//\\
+                            NPC_MoveChar NPCIndex, t2   'If this doesn't happen, then we're out of stuff to do
+                        End If
+                    End If
+                    Exit Sub
+                End If
+                    
+                'Heal
+                If NPCList(NPCIndex).Flags.ActionDelay <= 0 Then
+                    If NPCList(NPCIndex).Counters.SpellExhaustion <= 0 Then
+                
+                        'Loop through the NPCs in range
+                        For tX = 1 To MaxServerDistanceX - 1
+                            For tY = 1 To MaxServerDistanceY - 1
+                                For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
+                                    For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
+                                        If X > MinXBorder Then
+                                            If X < MaxXBorder Then
+                                                If Y > MinYBorder Then
+                                                    If Y < MaxYBorder Then
+                                                        If MapData(NPCList(NPCIndex).Pos.Map, X, Y).NPCIndex > 0 Then
+                                                            i = MapData(NPCList(NPCIndex).Pos.Map, X, Y).NPCIndex
+                                                            If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
+                                                                If Skill_Heal_NPCtoNPC(NPCIndex, i) Then
+                                                                    NPCList(NPCIndex).Flags.ActionDelay = Heal_Exhaust
+                                                                    Exit Sub
+                                                                End If
+                                                            End If
+                                                        End If
+                                                    End If
+                                                End If
+                                            End If
+                                        End If
+                                    Next Y
+                                Next X
+                            Next tY
+                        Next tX
+                        NPCList(NPCIndex).Flags.ActionDelay = 2000
+                        
+                    End If
+                End If
+                NPCList(NPCIndex).Flags.ActionDelay = 250
                 
             End If
 
@@ -320,6 +467,48 @@ Dim Y As Integer
     Next tX
     
     Log "Rtrn NPC_AI_ClosestPC = " & NPC_AI_ClosestPC, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Public Function NPC_AI_ClosestNPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte) As Integer
+
+'*****************************************************************
+'Return the index of the closest player character (PC)
+'*****************************************************************
+Dim tX As Integer
+Dim tY As Integer
+Dim X As Integer
+Dim Y As Integer
+
+    Log "Call NPC_AI_ClosestNPC(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Expand the search range
+    For tX = 1 To SearchX
+        For tY = 1 To SearchY
+            'Loop through the search area (only look on the outside of the search rectangle to prevent checking the same thing multiple times)
+            For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
+                For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
+                    'Make sure tile is legal
+                    If X > MinXBorder Then
+                        If X < MaxXBorder Then
+                            If Y > MinYBorder Then
+                                If Y < MaxYBorder Then
+                                    'Look for a npc
+                                    If MapData(NPCList(NPCIndex).Pos.Map, X, Y).NPCIndex > 0 Then
+                                        NPC_AI_ClosestNPC = MapData(NPCList(NPCIndex).Pos.Map, X, Y).NPCIndex
+                                        Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
+                                        Exit Function
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                Next Y
+            Next X
+        Next tY
+    Next tX
+    
+    Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -429,11 +618,11 @@ Dim ChangeFlags As Byte
 
     'Check for a valid NPC
     If NPCIndex <= 0 Then
-        Log "NPC_ChangeChar: NPCIndex <= 0 - aborting", CriticalError
+        Log "NPC_ChangeChar: NPCIndex <= 0 - aborting", CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
     If NPCIndex > LastNPC Then
-        Log "NPC_ChangeChar: NPCIndex > LastNPC - aborting", CriticalError
+        Log "NPC_ChangeChar: NPCIndex > LastNPC - aborting", CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
     
@@ -514,6 +703,37 @@ Sub NPC_Close(ByVal NPCIndex As Integer)
         NumNPCs = NumNPCs - 1
     End If
     Log "NPC_Close: NumNPCs = " & NumNPCs, CodeTracker '//\\LOGLINE//\\
+
+End Sub
+
+Public Sub NPC_Heal(ByVal NPCIndex As Integer, ByVal Value As Integer)
+
+'*****************************************************************
+'Raise a NPC's HP - ONLY USE THIS SUB TO RAISE NPC HP
+'*****************************************************************
+Dim HPA As Byte
+Dim HPB As Byte
+
+    'Get the pre-healing percentage
+    HPA = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+
+    'Raise the HP
+    NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).BaseStat(SID.MinHP) + Value
+    
+    'Don't go over the limit
+    If NPCList(NPCIndex).BaseStat(SID.MinHP) > NPCList(NPCIndex).ModStat(SID.MaxHP) Then NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
+
+    'Check to update health percentage client-side
+    If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
+        HPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+        If HPA <> HPB Then
+            ConBuf.Clear
+            ConBuf.Put_Byte DataCode.Server_CharHP
+            ConBuf.Put_Byte HPB
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+        End If
+    End If
 
 End Sub
 

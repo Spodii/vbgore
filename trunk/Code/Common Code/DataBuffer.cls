@@ -67,8 +67,7 @@ End Function
 
 Public Function Get_Buffer() As Byte()
 
-'Return the byte array buffer
-
+    'Return the byte array buffer
     Get_Buffer = ByteBuffer
 
 End Function
@@ -77,15 +76,15 @@ Public Function Get_Byte() As Byte
 
 'Retrieve a byte from the buffer (1 byte)
 
-    On Error GoTo ErrOut
-    If GetBytePos > UBound(ByteBuffer) Then GoTo ErrOut
+    On Error GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
 
     CopyMemory Get_Byte, ByteBuffer(GetBytePos), 1
     GetBytePos = GetBytePos + 1
 
-Exit Function
+Exit Function '//\\LOGLINE//\\
 
-ErrOut:
+ErrOut: '//\\LOGLINE//\\
 
     Log "Get_Byte: Could not acquire BYTE from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
@@ -95,15 +94,15 @@ Public Function Get_Integer() As Integer
 
 'Retrieve an integer from the buffer (2 bytes)
 
-    On Error GoTo ErrOut
-    If GetBytePos + 1 > UBound(ByteBuffer) Then GoTo ErrOut
+    On Error GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 1 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
 
     CopyMemory Get_Integer, ByteBuffer(GetBytePos), 2
     GetBytePos = GetBytePos + 2
 
-Exit Function
+Exit Function '//\\LOGLINE//\\
 
-ErrOut:
+ErrOut: '//\\LOGLINE//\\
 
     Log "Get_Integer: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
@@ -113,15 +112,15 @@ Public Function Get_Long() As Long
 
 'Retrieve a long from the buffer (4 bytes)
 
-    On Error GoTo ErrOut
-    If GetBytePos + 3 > UBound(ByteBuffer) Then GoTo ErrOut
+    On Error GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 3 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
 
     CopyMemory Get_Long, ByteBuffer(GetBytePos), 4
     GetBytePos = GetBytePos + 4
 
-Exit Function
+Exit Function '//\\LOGLINE//\\
 
-ErrOut:
+ErrOut: '//\\LOGLINE//\\
 
     Log "Get_Long: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
@@ -148,13 +147,13 @@ Public Function Get_String() As String
 Dim tempB() As Byte
 Dim ArraySize As Byte
 
-    On Error GoTo ErrOut
+    On Error GoTo ErrOut '//\\LOGLINE//\\
 
     'Retrieve a string from the buffer
     ArraySize = Get_Byte    'Get the size of the string
 
     'Check for a valid size before sizing the array
-    If ArraySize = 0 Then GoTo ErrOut
+    If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -166,9 +165,9 @@ Dim ArraySize As Byte
     Get_String = StrConv(tempB, vbUnicode)
     GetBytePos = GetBytePos + ArraySize
 
-Exit Function
+Exit Function '//\\LOGLINE//\\
 
-ErrOut:
+ErrOut: '//\\LOGLINE//\\
 
     Log "Get_String: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
@@ -179,13 +178,13 @@ Public Function Get_StringEX() As String
 Dim tempB() As Byte
 Dim ArraySize As Integer
 
-    On Error GoTo ErrOut
+    On Error GoTo ErrOut '//\\LOGLINE//\\
 
     'Retrieve a very long string from the buffer
     ArraySize = Get_Integer 'Get the size of the string
 
     'Check for a valid size before sizing the array
-    If ArraySize = 0 Then GoTo ErrOut
+    If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -197,9 +196,9 @@ Dim ArraySize As Integer
     Get_StringEX = StrConv(tempB, vbUnicode)
     GetBytePos = GetBytePos + ArraySize
 
-Exit Function
+Exit Function '//\\LOGLINE//\\
 
-ErrOut:
+ErrOut: '//\\LOGLINE//\\
 
     Log "Get_StringEX: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
@@ -209,7 +208,7 @@ Public Sub Put_Byte(ByVal Value As Byte)
 
 'Store a byte (1 byte)
 
-    ReDim Preserve ByteBuffer(0 To PutBytePos + 1)
+    ReDim Preserve ByteBuffer(0 To PutBytePos)
     CopyMemory ByteBuffer(PutBytePos), Value, 1
     PutBytePos = PutBytePos + 1
 
@@ -219,7 +218,7 @@ Public Sub Put_Integer(ByVal Value As Integer)
 
 'Store an integer (2 bytes)
 
-    ReDim Preserve ByteBuffer(0 To PutBytePos + 2)
+    ReDim Preserve ByteBuffer(0 To PutBytePos + 1)
     CopyMemory ByteBuffer(PutBytePos), Value, 2
     PutBytePos = PutBytePos + 2
 
@@ -229,7 +228,7 @@ Public Sub Put_Long(ByVal Value As Long)
 
 'Store a long (4 bytes)
 
-    ReDim Preserve ByteBuffer(0 To PutBytePos + 4)
+    ReDim Preserve ByteBuffer(0 To PutBytePos + 3)
     CopyMemory ByteBuffer(PutBytePos), Value, 4
     PutBytePos = PutBytePos + 4
 
@@ -254,7 +253,7 @@ Dim tempB() As Byte
     Put_Byte UBound(tempB) + 1
 
     'Resize the array to fit the string
-    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB) + 1)
+    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB))
 
     'Store the byte array of the string into the buffer byte array
     CopyMemory ByteBuffer(PutBytePos), tempB(0), UBound(tempB) + 1
@@ -281,7 +280,7 @@ Dim tempB() As Byte
     Put_Integer UBound(tempB) + 1
  
     'Resize the array to fit the string
-    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB) + 1)
+    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB))
 
     'Store the byte array of the string into the buffer byte array
     CopyMemory ByteBuffer(PutBytePos), tempB(0), UBound(tempB) + 1
@@ -304,5 +303,6 @@ End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 27  Code: 236  Total: 263 Lines
 ':) CommentOnly: 54 (20.5%)  Commented: 2 (0.8%)  Empty: 96 (36.5%)  Max Logic Depth: 1
+
 
 

@@ -73,7 +73,7 @@ Dim Lines As Long
     Open Data2Path & "GrhRaw.txt" For Input As #2
 
     'Set the buffer's initial size
-    ReDim GrhBuffer(1 To 2000000)
+    ReDim GrhBuffer(1 To 20000000)
 
     'Do a loop to check for repeat numbers
     While Not EOF(2)
@@ -125,10 +125,11 @@ Dim Lines As Long
 
             Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
             If Grh > LastGrh Then LastGrh = Grh
-
+            
             ln = Right$(TempLine, Len(TempLine) - Len(CStr(Grh)) - 1)
 
             If ln <> "" Then
+            
                 'Get number of frames and check
                 NumFrames = Val(ReadField(1, ln, "-"))
                 If NumFrames <= 0 Then GoTo ErrorHandler

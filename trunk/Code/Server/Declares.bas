@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.5            ************
+'************            Official Release: Version 0.2.7            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -382,6 +382,7 @@ Type NPCFlags   'Flags for a NPC
     GoalX As Byte           'The position the NPC is trying to get to with the walkpath
     GoalY As Byte
     Thralled As Byte        'If the NPC is thralled (if so, it does not get saved or respawn)
+    UpdateStats As Byte     'If to update the mod stats
 End Type
 Type NPCCounters    'Counters for a NPC
     RespawnCounter As Long  'Stores the death time to respawn later
@@ -399,7 +400,7 @@ Type NPC    'Holds all the NPC variables
     Pos As WorldPos         'Current NPC Postion
     StartPos As WorldPos    'Spawning location of the NPC
     NPCNumber As Integer    'The NPC index within NPC.dat
-    Movement As Byte        'Movement style
+    AI As Byte              'Used AI algorithm
     RespawnWait As Long     'How long for the NPC to respawn
     Attackable As Byte      'If the NPC is attackable
     Hostile As Byte         'If the NPC is hostile

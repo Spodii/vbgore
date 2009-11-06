@@ -454,7 +454,8 @@ Dim j As Integer
     For i = 0 To NumFiles
         If Engine_FileExist(App.Path & "\_Compressed" & FileListShortName(i), vbNormal) Then Kill App.Path & "\_Compressed" & FileListShortName(i)
         MakeSureDirectoryPathExists App.Path & "\_Compressed" & FileListShortName(i)
-        Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), RLE_Loop
+        Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), LZW
+        DoEvents
     Next i
     
     StatusLbl.Caption = "Creating socket"

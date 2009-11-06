@@ -86,7 +86,7 @@ Dim Y As Single
 Dim R As Single
     
     Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.1
-    R = (Index / 20) * Exp(Index / Effect(EffectIndex).Progression Mod 3)
+    R = (Index / 20) * EXP(Index / Effect(EffectIndex).Progression Mod 3)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     
@@ -510,10 +510,9 @@ End Function
 
 Private Sub Effect_Heal_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
 
-'Reset the particle
-
+    'Reset the particle
     Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X - 10 + Rnd * 20, Effect(EffectIndex).Y - 10 + Rnd * 20, -Sin((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), Cos((180 + (Rnd * 90) - 45) * 0.0174533) * 8 + (Rnd * 3), 0, 0
-    Effect(EffectIndex).Particles(Index).ResetColor 0.8, 0.2, 0.2, 0.6 + (Rnd * 0.2), 0.04 + (Rnd * 0.2)
+    Effect(EffectIndex).Particles(Index).ResetColor 0.8, 0.2, 0.2, 0.6 + (Rnd * 0.2), 0.05 + (Rnd * 0.05)
 
 End Sub
 
@@ -526,8 +525,7 @@ Dim TargetY As Integer
 Dim TargetI As Integer  'Bound character's index
 Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
@@ -564,7 +562,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
 
             'Random clear
-            If Int(Rnd * 10000 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
+            If Int(Rnd * 100 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Check if the particle is ready to die
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then

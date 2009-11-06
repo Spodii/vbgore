@@ -891,6 +891,7 @@ Dim i As Long
             MapData(tX, tY).TileExit.X = 0
             MapData(tX, tY).TileExit.Y = 0
             MapData(tX, tY).UserIndex = 0
+            MapData(tX, tY).BlockedAttack = 0
             
         Next tY
     Next tX

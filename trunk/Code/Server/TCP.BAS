@@ -707,8 +707,8 @@ Dim LoopC As Long
     On Error Resume Next
     
     'Set the copy size
-    CopySize = UBound(sndData())
-    
+    CopySize = UBound(sndData()) + 1
+
     'Check the send routes
     Select Case sndRoute
     
@@ -1417,24 +1417,44 @@ Dim i As Integer
 
     'Call the skill by the SkillID
     Select Case SkillID
+    
         Case SkID.Bless
-            If Server_CheckTargetedDistance(UserIndex) = 0 Then Exit Sub
-            Skill_Bless TargetIndex, UserIndex, TargetType, CharType_PC
+            If TargetType = CharType_PC Then
+                Skill_Bless_PCtoPC UserIndex, TargetIndex
+            Else
+                Skill_Bless_PCtoNPC UserIndex, TargetIndex
+            End If
+            
         Case SkID.Protection
-            If Server_CheckTargetedDistance(UserIndex) = 0 Then Exit Sub
-            Skill_Protection TargetIndex, UserIndex, TargetType, CharType_PC
+            If TargetType = CharType_PC Then
+                Skill_Protection_PCtoPC UserIndex, TargetIndex
+            Else
+                Skill_Protection_PCtoNPC UserIndex, TargetIndex
+            End If
+            
         Case SkID.Heal
-            If Server_CheckTargetedDistance(UserIndex) = 0 Then Exit Sub
-            Skill_Heal TargetIndex, UserIndex, TargetType, CharType_PC
+            If TargetType = CharType_PC Then
+                Skill_Heal_PCtoPC UserIndex, TargetIndex
+            ElseIf TargetType = CharType_NPC Then
+                Skill_Heal_PCtoNPC UserIndex, TargetIndex
+            End If
+            
         Case SkID.IronSkin
-            Skill_IronSkin UserIndex
+            Skill_IronSkin_PC UserIndex
+            
         Case SkID.SpikeField
             Skill_SpikeField UserIndex
+            
         Case SkID.Strengthen
-            If Server_CheckTargetedDistance(UserIndex) = 0 Then Exit Sub
-            Skill_Strengthen TargetIndex, UserIndex, TargetType, CharType_PC
+            If TargetType = CharType_PC Then
+                Skill_Strengthen_PCtoPC UserIndex, TargetIndex
+            Else
+                Skill_Strengthen_PCtoNPC UserIndex, TargetIndex
+            End If
+            
         Case SkID.Warcry
-            Skill_Warcry UserIndex
+            Skill_Warcry_PC UserIndex
+            
     End Select
 
 End Sub
@@ -2374,7 +2394,7 @@ Dim Count As Byte
 
     'Send welcome message
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "Welcome to vbGORE Version 0.2.5!"
+    ConBuf.Put_String "Welcome to vbGORE Version 0.2.7!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Info
 
     ConBuf.Put_Byte DataCode.Comm_Talk
@@ -2395,6 +2415,10 @@ Dim Count As Byte
 
     ConBuf.Put_Byte DataCode.Comm_Talk
     ConBuf.Put_String "Questions, code, help, etc can be found there. :)"
+    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    
+    ConBuf.Put_Byte DataCode.Comm_Talk
+    ConBuf.Put_String "Remember to go under the waterfall to fight some enemies!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Info
 
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
@@ -2456,8 +2480,6 @@ Dim i As Byte
     If Body <> 1 Then Exit Sub
 
     'Check for valid name and password
-    If Server_LegalString(Name) = False Then Exit Sub
-    If Server_LegalString(Password) = False Then Exit Sub
     If Len(Name) > 10 Then
         Log "User_ConnectNew: Name too long", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -2474,7 +2496,15 @@ Dim i As Byte
         Log "User_ConnectNew: Password too short", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-
+    If Server_LegalString(Name) = False Then
+        Log "User_ConnectNew: Invalid name string", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Server_LegalString(Password) = False Then
+        Log "User_ConnectNew: Invalid password string", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    
     'Clear user character
     TempConnID = UserList(UserIndex).ConnID 'Transfer over the ConnID or else it'd be 0
     ZeroMemory UserList(UserIndex), Len(UserList(UserIndex))
@@ -2490,7 +2520,7 @@ Dim i As Byte
         'Tell the client we're disconnecting
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_String 84
+        ConBuf.Put_Byte 84
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_Send_Buffer UserIndex
         Exit Sub

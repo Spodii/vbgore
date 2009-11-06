@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{AB821988-DB15-4670-8E48-EBDC44135294}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{5D0A4D01-701F-4AEF-8518-952FB5EC23FF}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,7 +31,7 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin SoxOCX.Sox Socket 
+   Begin SoxOCXBinary.SoxBinary Socket 
       Height          =   420
       Left            =   1080
       Top             =   120
@@ -388,7 +388,7 @@ Dim i As Byte
                         sndBuf.Put_Byte DataCode.User_StartQuest
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/DESC" Then
                         sndBuf.Put_Byte DataCode.User_Desc
-                        sndBuf.Put_Byte SplitCommandFromString(EnterTextBuffer)
+                        sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
                     ElseIf UCase$(EnterTextBuffer) = "/HELP" Then
                         sndBuf.Put_Byte DataCode.Server_Help
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/APPR" Then
@@ -799,33 +799,31 @@ Dim i As Integer
 
 End Function
 
-Private Sub Socket_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
+Private Sub Socket_OnConnecting(inSox As Long)
 
-    If inState = soxConnecting Then
-        If SocketOpen = 0 Then
-    
-            'Pre-saved character
-            If SendNewChar = False Then
-                sndBuf.Put_Byte DataCode.User_Login
-                sndBuf.Put_String UserName
-                sndBuf.Put_String UserPassword
-            Else
-                'New character
-                sndBuf.Put_Byte DataCode.User_NewLogin
-                sndBuf.Put_String UserName
-                sndBuf.Put_String UserPassword
-            End If
-        
-            'Save Game.ini
-            If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
-            
-            'Send the data
-            Data_Send
-            DoEvents
-        
+    If SocketOpen = 0 Then
+
+        'Pre-saved character
+        If SendNewChar = False Then
+            sndBuf.Put_Byte DataCode.User_Login
+            sndBuf.Put_String UserName
+            sndBuf.Put_String UserPassword
+        Else
+            'New character
+            sndBuf.Put_Byte DataCode.User_NewLogin
+            sndBuf.Put_String UserName
+            sndBuf.Put_String UserPassword
         End If
+    
+        'Save Game.ini
+        If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+        Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
+        Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+        
+        'Send the data
+        Data_Send
+        DoEvents
+    
     End If
     
 End Sub

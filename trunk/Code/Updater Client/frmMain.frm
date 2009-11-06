@@ -378,7 +378,7 @@ Dim b() As Byte
         TempStr = Left$(rData, Len(rData) - 17) 'Crop out the ENDOFFILE to recieve the last bit of data
         If Len(TempStr) Then Put #WriteFileNum, , TempStr   'Write the last data
         Close #WriteFileNum     'Close the file since we're done
-        Compression_DeCompress App.Path & RecFileName & ".compressed", App.Path & RecFileName, RLE_Loop 'Take the compressed file and decompress it
+        Compression_DeCompress App.Path & RecFileName & ".compressed", App.Path & RecFileName, LZW 'Take the compressed file and decompress it
         'Kill App.Path & RecFileName & ".compressed" 'Kill the compressed file
         PercentLbl.Caption = "0%"
         Exit Sub
