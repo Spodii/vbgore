@@ -151,6 +151,7 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
             UserList(TargetIndex).Counters.BlessCounter = 300000
             UserList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.BlessCounter = 300000
             NPCList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
@@ -188,6 +189,7 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
             UserList(TargetIndex).Counters.BlessCounter = 300000
             UserList(TargetIndex).Skills.Bless = NPCList(CasterIndex).BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.BlessCounter = 300000
             NPCList(TargetIndex).Skills.Bless = NPCList(CasterIndex).BaseStat(SID.Mag)
@@ -245,7 +247,7 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
         Exit Sub
     End If
     If CasterType = CharType_PC Then
-        If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Sub
+        If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Sub
         If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     ElseIf CasterType = CharType_NPC Then
         If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
@@ -412,6 +414,8 @@ Public Sub Skill_IronSkin(ByVal UserIndex As Integer)
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
     End If
+    
+    UserList(UserIndex).Stats.Update = 1
 
 End Sub
 
@@ -551,6 +555,7 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
             UserList(TargetIndex).Counters.ProtectCounter = 300000
             UserList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.ProtectCounter = 300000
             NPCList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
@@ -588,6 +593,7 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
             UserList(TargetIndex).Counters.ProtectCounter = 300000
             UserList(TargetIndex).Skills.Protect = NPCList(CasterIndex).BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.ProtectCounter = 300000
             NPCList(TargetIndex).Skills.Protect = NPCList(CasterIndex).BaseStat(SID.Mag)
@@ -938,6 +944,7 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
             UserList(TargetIndex).Counters.StrengthenCounter = 300000
             UserList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.StrengthenCounter = 300000
             NPCList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
@@ -975,6 +982,7 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
             UserList(TargetIndex).Counters.StrengthenCounter = 300000
             UserList(TargetIndex).Skills.Strengthen = NPCList(CasterIndex).BaseStat(SID.Mag)
+            UserList(TargetIndex).Stats.Update = 1
         ElseIf TargetType = CharType_NPC Then
             NPCList(TargetIndex).Counters.StrengthenCounter = 300000
             NPCList(TargetIndex).Skills.Strengthen = NPCList(CasterIndex).BaseStat(SID.Mag)

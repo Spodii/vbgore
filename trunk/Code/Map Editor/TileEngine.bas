@@ -182,6 +182,7 @@ End Type
 'Holds info about each tile position
 Type MapBlock
     Blocked As Byte             'If the tile is blocked
+    BlockedAttack As Byte       'If you can not attack through the tile
     Graphic(1 To 6) As Grh      'Index of the 4 graphic layers
     Light(1 To 24) As Long      'Holds the light values - retrieve with Index = Light * Layer
     UserIndex As Integer        'Index of the user on the tile
@@ -735,7 +736,8 @@ Dim Start_Time As Long
 
     'Calculate elapsed time
     Engine_ElapsedTime = Start_Time - EndTime
-
+    If Engine_ElapsedTime > 1000 Then Engine_ElapsedTime = 1000
+    
     'Get next end time
     EndTime = Start_Time
 
@@ -2736,6 +2738,13 @@ Dim j As Long
                     End If
                     If MapData(X, Y).Blocked And 8 Then 'West
                         Grh.GrhIndex = 653
+                        Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
+                    End If
+                End If
+                'No-attack tiles
+                If Not (X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder) Then
+                    If MapData(X, Y).BlockedAttack Then
+                        Grh.GrhIndex = 10
                         Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
                     End If
                 End If

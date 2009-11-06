@@ -98,6 +98,9 @@ Public Const DEBUG_RecordPacketsOut As Boolean = False
 'Change to 1 to enable database optimization on runtime
 Public Const OptimizeDatabase As Byte = 0
 
+'If we run the server in high priority (recommended to use unless on a test server)
+Public Const RunHighPriority As Byte = 0
+
 'How long objects can be on the ground (in miliseconds) before being removed
 Public Const GroundObjLife As Long = 300000    '5 minutes
 
@@ -110,6 +113,10 @@ Public Const MailCost As Long = 0
 
 'Maximum amount of objects allowed on a single tile
 Public Const MaxObjsPerTile As Byte = 5
+
+'Running information
+Public Const RunningSpeed As Byte = 5   'How much to increase speed when running
+Public Const RunningCost As Long = 2    'How much stamina it cost to run
 
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1
@@ -170,22 +177,25 @@ End Type
 Public Const MAX_INVENTORY_OBJS = 9999  'Maximum number of objects per slot (same obj)
 Public Const MAX_INVENTORY_SLOTS = 49   'Maximum number of slots
 Public Type ObjData
-    Name As String              'Name
-    ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Long            'Graphic index
-    SpriteBody As Integer       'Index of the body sprite to change to
-    SpriteWeapon As Integer     'Index of the weapon sprite to change to
-    SpriteHair As Integer       'Index of the hair sprite to change to
-    SpriteHead As Integer       'Index of the head sprite to change to
-    SpriteWings As Integer      'Index of the wings sprite to change to
-    WeaponType As Byte          'What type of weapon, if it is a weapon
-    Price As Long               'Price of the object
-    RepHP As Long               'How much HP to replenish
-    RepMP As Long               'How much MP to replenish
-    RepSP As Long               'How much SP to replenish
-    RepHPP As Integer           'Percentage of HP to replenish
-    RepMPP As Integer           'Percentage of MP to replenish
-    RepSPP As Integer           'Percentage of SP to replenish
+    Name As String                  'Name
+    ObjType As Byte                 'Type (armor, weapon, item, etc)
+    GrhIndex As Long                'Graphic index
+    SpriteBody As Integer           'Index of the body sprite to change to
+    SpriteWeapon As Integer         'Index of the weapon sprite to change to
+    SpriteHair As Integer           'Index of the hair sprite to change to
+    SpriteHead As Integer           'Index of the head sprite to change to
+    SpriteWings As Integer          'Index of the wings sprite to change to
+    WeaponType As Byte              'What type of weapon, if it is a weapon
+    WeaponRange As Byte             'Range of the weapon (only applicable if a ranged WeaponType)
+    UseGrh As Long                  'Grh of the object when used (projectile for ranged, slash for melee, effects for use-once)
+    ProjectileRotateSpeed As Byte   'How fast the projectile rotates (if at all)
+    Price As Long                   'Price of the object
+    RepHP As Long                   'How much HP to replenish
+    RepMP As Long                   'How much MP to replenish
+    RepSP As Long                   'How much SP to replenish
+    RepHPP As Integer               'Percentage of HP to replenish
+    RepMPP As Integer               'Percentage of MP to replenish
+    RepSPP As Integer               'Percentage of SP to replenish
     AddStat(1 To NumStats) As Long  'How much to add to the stat by the SID
 End Type
 Public ObjData() As ObjData
@@ -389,13 +399,16 @@ Type NPC    'Holds all the NPC variables
     Pos As WorldPos         'Current NPC Postion
     StartPos As WorldPos    'Spawning location of the NPC
     NPCNumber As Integer    'The NPC index within NPC.dat
-    Movement As Integer     'Movement style
+    Movement As Byte        'Movement style
     RespawnWait As Long     'How long for the NPC to respawn
     Attackable As Byte      'If the NPC is attackable
     Hostile As Byte         'If the NPC is hostile
     GiveEXP As Long         'How much exp given on death
     GiveGLD As Long         'How much gold given on death
     Quest As Integer        'Quest index
+    AttackRange As Byte     'The NPC's attack range
+    AttackGrh As Long       'Grh used when the NPC attacks
+    ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
     BaseStat(1 To NumStats) As Long 'Declares the NPC's stats
     ModStat(1 To NumStats) As Long  'Declares the NPC's stats
@@ -416,13 +429,14 @@ Public NPCList() As NPC     'Holds data for each NPC
 
 'Weapon type constants
 Public Enum WeaponType
-    Hand = 0        'If the weapon uses hand skill
-    Staff = 1       'If the weapon uses staff skill
-    Dagger = 2      'If the weapon uses dagger skill
-    Sword = 3       'If the weapon uses sword skill
+    Hand = 0        'Weapon is hand-based
+    Staff = 1       'Weapon is a staff
+    Dagger = 2      'Weapon is a dagger
+    Sword = 3       'Weapon is a sword
+    Throwing = 4    'Weapon is thrown (ninja stars, throwing knives, etc)
 End Enum
 #If False Then
-Private Hand, Staff, Dagger, Sword
+Private Hand, Staff, Dagger, Sword, Bow, Gun
 #End If
 
 'Object types

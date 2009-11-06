@@ -24,7 +24,8 @@ Public Const ToNPCMove = 7          'Same as ToUserMove, but if a NPC moves
 'How many miliseconds must go by for a packet to be sent (even if PP_High, the time must be waited)
 ' Keep in mind the highest frame rate is 60 (~17ms), so it is not recommended to go below that value
 ' or else you are just wasting bandwidth.
-Public Const Packet_WaitTime As Long = 50   'Recommended about 200~300 at highest, about 50 at lowest
+'0 is used in the demo so people don't get the wrong idea on the ping times.
+Public Const Packet_WaitTime As Long = 0   'Recommended about 200~300 at highest, about 50 at lowest
 
 '*************************
 '*** PACKET PRIORITIES ***
@@ -1097,7 +1098,7 @@ Dim MsgData As MailData
 
     'Check to make sure the user is still next to the same mailbox
     If UserList(UserIndex).Pos.Map = UserList(UserIndex).MailboxPos.Map Then
-        If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(UserIndex).MailboxPos.X, UserList(UserIndex).MailboxPos.Y, 1, 1) Then
+        If Not Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(UserIndex).MailboxPos.X, UserList(UserIndex).MailboxPos.Y, 1, 1) Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 57
@@ -1702,13 +1703,20 @@ Sub Data_User_Move(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 '*****************************************************************
 
 Dim Dir As Byte
+Dim Running As Byte
 
     Log "Call Data_User_Move([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     Dir = rBuf.Get_Byte
+    
+    'Check if running
+    If Dir > 128 Then
+        Running = 1
+        Dir = Dir Xor 128
+    End If
 
     'Invalid values handled by sub
-    User_MoveChar UserIndex, Dir
+    User_MoveChar UserIndex, Dir, Running
 
 End Sub
 
@@ -1950,7 +1958,7 @@ Dim Slot As Byte
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
-    If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, 6, 6) Then
+    If Not Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, 6, 6) Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 36
@@ -2308,9 +2316,6 @@ Dim Count As Byte
     UserList(UserIndex).Counters.IdleCount = timeGetTime
     UserList(UserIndex).Counters.LastPacket = timeGetTime
 
-    'Set name
-    UserList(UserIndex).Name = Name
-
     'Set switching map flag
     UserList(UserIndex).Flags.SwitchingMaps = 1
     
@@ -2357,8 +2362,17 @@ Dim Count As Byte
     'Refresh list box and send log on string
     Server_RefreshUserListBox
 
-    'Send welcome message
+
+    'If the user already has a weapon equiped with a range, tell what that range is
     ConBuf.Clear
+    If UserList(UserIndex).WeaponEqpObjIndex > 0 Then
+        If ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange > 0 Then
+            ConBuf.Put_Byte DataCode.User_SetWeaponRange
+            ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange
+        End If
+    End If
+
+    'Send welcome message
     ConBuf.Put_Byte DataCode.Comm_Talk
     ConBuf.Put_String "Welcome to vbGORE Version 0.2.5!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Info
@@ -2436,7 +2450,11 @@ Dim i As Byte
 
     'Make sure the user is not in use
     If UserList(UserIndex).Flags.UserLogged Then Exit Sub
-    
+
+    'Check for a valid body and head
+    If Head <> 1 Then Exit Sub
+    If Body <> 1 Then Exit Sub
+
     'Check for valid name and password
     If Server_LegalString(Name) = False Then Exit Sub
     If Server_LegalString(Password) = False Then Exit Sub
@@ -2500,6 +2518,7 @@ Dim i As Byte
     UserList(UserIndex).Pos.Y = StartPos.Y
 
     'Set the user's starting stats
+    UserList(UserIndex).Stats.BaseStat(SID.ELU) = 10
     UserList(UserIndex).Stats.BaseStat(SID.ELV) = 1
     UserList(UserIndex).Stats.BaseStat(SID.Str) = 1
     UserList(UserIndex).Stats.BaseStat(SID.Agi) = 1
@@ -2526,6 +2545,8 @@ Dim i As Byte
     UserList(UserIndex).Object(2).Amount = 1
     UserList(UserIndex).Object(3).ObjIndex = 3
     UserList(UserIndex).Object(3).Amount = 1
+    UserList(UserIndex).Object(7).ObjIndex = 8
+    UserList(UserIndex).Object(7).Amount = 1
     
     'Equipt the armor
     UserList(UserIndex).Object(4).ObjIndex = 5
@@ -2559,7 +2580,7 @@ Dim i As Byte
 
     'Write a test message to the user
     For i = 1 To 5
-        Server_WriteMail -1, UserList(UserIndex).Name, "Test Message", "This is a test message that simply shows the pwnification of the mailing system.", "1,1,1,1,1,1,1,1,1,1", "1,2,3,4,94,95,96,97,98,99"
+        Server_WriteMail -1, UserList(UserIndex).Name, "Test Message", "This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! " & Rnd * 100, "1,1,1,1,1,1,1,1,1,1", "1,2,3,4,94,95,96,97,98,99"
     Next i
     
     'Disconnect the user so we can re-connect them through the connect sub

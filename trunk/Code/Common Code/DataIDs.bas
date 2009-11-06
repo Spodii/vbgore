@@ -62,6 +62,8 @@ Public Type DataCode
     Server_Connect As Byte
     Server_Message As Byte
     Server_SetCharSpeed As Byte
+    Server_MakeProjectile As Byte
+    Server_MakeSlash As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_DoneSwitching As Byte
@@ -94,6 +96,7 @@ Public Type DataCode
     User_ChangeInvSlot As Byte
     User_Emote As Byte
     User_StartQuest As Byte
+    User_SetWeaponRange As Byte
     GM_Approach As Byte
     GM_Summon As Byte
     GM_Kick As Byte
@@ -271,6 +274,9 @@ Public Sub InitDataCommands()
         .GM_DeThrall = 80
         .Server_PlaySound3D = 81
         .Server_SetCharSpeed = 82
+        .User_SetWeaponRange = 83
+        .Server_MakeProjectile = 84
+        .Server_MakeSlash = 85
     End With
 
 End Sub

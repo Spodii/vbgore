@@ -222,9 +222,11 @@ Private Sub Form_Load()
     timeBeginPeriod 1
     
     'Set the server priority
-    SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
-    SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
-
+    If RunHighPriority Then
+        SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
+        SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
+    End If
+    
     'Start the server
     StartServer
 

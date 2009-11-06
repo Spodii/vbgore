@@ -5,6 +5,37 @@ Option Explicit
 'recieved then buffer size, then becomes slower (recommended to leave as is)
 Public Const TCPBufferSize As Long = 512
 
+Sub Data_Server_MakeProjectile(ByRef rBuf As DataBuffer)
+'*********************************************
+'Create a projectile from a ranged weapon
+'<AttackerIndex(I)><TargetIndex(I)><GrhIndex(L)><Rotate(B)>
+'*********************************************
+Dim AttackerIndex As Integer
+Dim TargetIndex As Integer
+Dim GrhIndex As Long
+Dim Rotate As Byte
+
+    AttackerIndex = rBuf.Get_Integer
+    TargetIndex = rBuf.Get_Integer
+    GrhIndex = rBuf.Get_Long
+    Rotate = rBuf.Get_Byte
+    
+    'Create the projectile
+    Engine_Projectile_Create AttackerIndex, TargetIndex, GrhIndex, Rotate
+    
+End Sub
+
+Sub Data_User_SetWeaponRange(ByRef rBuf As DataBuffer)
+'*********************************************
+'Set the range of the current weapon used so we can do client-side
+' distance checks before sending the attack to the server
+'<Range(B)>
+'*********************************************
+
+    UserAttackRange = rBuf.Get_Byte
+
+End Sub
+
 Sub Data_Server_SetCharSpeed(ByRef rBuf As DataBuffer)
 '*********************************************
 'Update a char's speed so we can move them the right speed
@@ -206,6 +237,7 @@ Dim Byt1 As Byte
             Str2 = rBuf.Get_String
             TempStr = Replace$(Message(52), "<name>", Str1)
             Engine_AddToChatTextBuffer Replace$(TempStr, "<message>", Str2), FontColor_Talk
+            LastWhisperName = Str1  'Set the name of the last person to whisper us
         Case 53
             Str1 = rBuf.Get_String
             Str2 = rBuf.Get_String
@@ -946,12 +978,18 @@ Dim Y As Integer
 Dim nX As Integer
 Dim nY As Integer
 Dim Heading As Byte
-
+Dim Running As Byte
+    
     CharIndex = rBuf.Get_Integer
-
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
     Heading = rBuf.Get_Byte
+    
+    'Check if running
+    If Heading > 128 Then
+        Heading = Heading Xor 128
+        Running = 1
+    End If
     
     'Make sure the char is the right starting position
     Select Case Heading
@@ -967,7 +1005,8 @@ Dim Heading As Byte
     CharList(CharIndex).Pos.X = X - nX
     CharList(CharIndex).Pos.Y = Y - nY
     
-    Engine_Char_Move_ByPos CharIndex, X, Y
+    'Move the character
+    Engine_Char_Move_ByPos CharIndex, X, Y, Running
 
 End Sub
 
@@ -1031,6 +1070,7 @@ Dim Damage As Integer
     Damage = rBuf.Get_Integer
     
     'Check for invalid conditions
+    If CharIndex = 0 Then Exit Sub
     If CharIndex > UBound(CharList()) Then Exit Sub
 
     'Create the blood
@@ -1066,6 +1106,11 @@ Dim Y As Byte
     UserPos.X = X
     UserPos.Y = Y
     CharList(UserCharIndex).Pos = UserPos
+    
+    'If there is a targeted char, check if the path is valid
+    If TargetCharIndex > 0 Then
+        ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
+    End If
 
 End Sub
 
@@ -1115,7 +1160,12 @@ Dim CharIndex As Integer
     
     'Check for invalid conditions
     If CharIndex > UBound(CharList()) Then Exit Sub
-
+    
+    'Start the attack animation
+    CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).Started = 1
+    CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).FrameCounter = 1
+    CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).LastCount = timeGetTime
+    CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading).FrameCounter = 1
     CharList(CharIndex).ActionIndex = 2
 
 End Sub
@@ -1332,6 +1382,46 @@ Dim Y As Long
 
 End Sub
 
+Sub Data_Server_MakeSlash(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Create an effect on the effects layer
+'<CharIndex(I)><GrhIndex(L)>
+'*********************************************
+
+Dim CharIndex As Integer
+Dim GrhIndex As Long
+Dim Angle As Single
+    
+    'Get the values
+    CharIndex = rBuf.Get_Integer
+    GrhIndex = rBuf.Get_Long
+    
+    'Get the new heading
+    Select Case CharList(CharIndex).Heading
+        Case NORTH
+            Angle = 0
+        Case NORTHEAST
+            Angle = 45
+        Case EAST
+            Angle = 90
+        Case SOUTHEAST
+            Angle = 135
+        Case SOUTH
+            Angle = 180
+        Case SOUTHWEST
+            Angle = 225
+        Case WEST
+            Angle = 270
+        Case NORTHWEST
+            Angle = 315
+    End Select
+
+    'Create the effect
+    Engine_Effect_Create CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y, GrhIndex, Angle, 150, 0
+    
+End Sub
+
 Sub Data_User_Emote(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -1523,6 +1613,9 @@ Sub Data_User_Target(ByRef rBuf As DataBuffer)
 '*********************************************
 
     TargetCharIndex = rBuf.Get_Integer
+    
+    'Check if the path to the targeted character is valid (if any)
+    If TargetCharIndex > 0 Then ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
 
 End Sub
 

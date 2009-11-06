@@ -121,8 +121,8 @@ End Type
 'Holds data about where a png can be found,
 'How big it is and animation info
 Public Type GrhData
-    sX As Integer
-    sY As Integer
+    SX As Integer
+    SY As Integer
     FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
@@ -199,6 +199,7 @@ Public Type Char
     Wings As WingData
     Moving As Byte
     Speed As Byte
+    Running As Byte
     Aggressive As Byte
     MoveOffset As FloatPos
     BlinkTimer As Single        'The length of the actual blinking
@@ -218,6 +219,7 @@ End Type
 
 'Holds info about each tile position
 Public Type MapBlock
+    BlockedAttack As Byte
     Graphic(1 To 6) As Grh
     Light(1 To 24) As Long
     Shadow(1 To 6) As Byte
@@ -252,6 +254,15 @@ Private Type FloatSurface
     Pos As WorldPos
     Offset As Position
     Grh As Grh
+End Type
+
+'Describes the effects layer
+Private Type EffectSurface
+    Pos As WorldPos
+    Grh As Grh
+    Angle As Single
+    Time As Long
+    Animated As Byte
 End Type
 
 'Describes the damage counters
@@ -312,6 +323,7 @@ Public LastObj As Integer       'Last object
 Public LastBlood As Integer     'Last blood splatter index used
 Public LastEffect As Integer    'Last effect index used
 Public LastDamage As Integer    'Last damage counter text index used
+Public LastProjectile As Integer    'Last projectile index used
 
 'Screen positioning
 Public minY As Integer          'Start Y pos on current screen + tilebuffer
@@ -450,6 +462,7 @@ Private Type ChatWindow         'Chat buffer/input window
 End Type
 
 Private Type WindowMenu
+    Text As Rectangle
     Screen As Rectangle
     QuitLbl As Rectangle
     SkinGrh As Grh
@@ -531,21 +544,32 @@ Private VertexArray(0 To 3) As TLVERTEX
 Private ChatArray() As TLVERTEX
 Private ChatVB As Direct3DVertexBuffer8
 
+Public Type Projectile
+    X As Single
+    Y As Single
+    tX As Single
+    tY As Single
+    RotateSpeed As Byte
+    Rotate As Single
+    Grh As Grh
+End Type
+
 '********** Public ARRAYS ***********
-Public GrhData() As GrhData         'Holds data for the graphic structure
-Public SurfaceSize() As Point       'Holds the size of the surfaces for SurfaceDB()
-Public BodyData() As BodyData       'Holds data about body structure
-Public HeadData() As HeadData       'Holds data about head structure
-Public HairData() As HairData       'Holds data about hair structure
-Public WeaponData() As WeaponData   'Holds data about weapon structure
-Public WingData() As WingData       'Holds data about wing structure
-Public MapData() As MapBlock        'Holds map data for current map
-Public MapInfo As MapInfo           'Holds map info for current map
-Public CharList() As Char           'Holds info about all characters on the map
-Public OBJList() As FloatSurface    'Holds info about all objects on the map
-Public BloodList() As FloatSurface  'Holds info about all the active blood splatters
-Public EffectList() As FloatSurface 'Holds info about all the active effects of all types
-Public DamageList() As DamageTxt    'Holds info on the damage displays
+Public GrhData() As GrhData             'Holds data for the graphic structure
+Public SurfaceSize() As Point           'Holds the size of the surfaces for SurfaceDB()
+Public BodyData() As BodyData           'Holds data about body structure
+Public HeadData() As HeadData           'Holds data about head structure
+Public HairData() As HairData           'Holds data about hair structure
+Public WeaponData() As WeaponData       'Holds data about weapon structure
+Public WingData() As WingData           'Holds data about wing structure
+Public MapData() As MapBlock            'Holds map data for current map
+Public MapInfo As MapInfo               'Holds map info for current map
+Public CharList() As Char               'Holds info about all characters on the map
+Public OBJList() As FloatSurface        'Holds info about all objects on the map
+Public BloodList() As FloatSurface      'Holds info about all the active blood splatters
+Public EffectList() As EffectSurface    'Holds info about all the active effects of all types
+Public ProjectileList() As Projectile   'Holds info about all the active projectiles (arrows, ninja stars, bullets, etc)
+Public DamageList() As DamageTxt        'Holds info on the damage displays
 
 'FPS
 Public EndTime As Long
@@ -950,7 +974,8 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
     'Check for targeted character
     If TargetCharIndex = CharIndex Then TargetCharIndex = 0
-
+    If CharIndex = 0 Then Exit Sub
+    
     'Make inactive
     CharList(CharIndex).Active = 0
 
@@ -1019,7 +1044,7 @@ Dim EmptyChar As Char
 
 End Sub
 
-Sub Engine_Char_Move_ByHead(ByVal CharIndex As Integer, ByVal nHeading As Byte)
+Sub Engine_Char_Move_ByHead(ByVal CharIndex As Integer, ByVal nHeading As Byte, ByVal Running As Byte)
 
 '*****************************************************************
 'Starts the movement of a character in nHeading direction
@@ -1076,10 +1101,11 @@ Dim nY As Integer
     CharList(CharIndex).ScrollDirectionX = AddX
     CharList(CharIndex).ScrollDirectionY = AddY
     CharList(CharIndex).ActionIndex = 1
+    CharList(CharIndex).Running = Running
 
 End Sub
 
-Sub Engine_Char_Move_ByPos(ByVal CharIndex As Integer, ByVal nX As Integer, ByVal nY As Integer)
+Sub Engine_Char_Move_ByPos(ByVal CharIndex As Integer, ByVal nX As Integer, ByVal nY As Integer, ByVal Running As Byte)
 
 '*****************************************************************
 'Starts the movement of a character to nX,nY
@@ -1115,6 +1141,7 @@ Dim nHeading As Byte
     End If
 
     'Update the character position and settings
+    CharList(CharIndex).Running = Running
     CharList(CharIndex).Pos.X = nX
     CharList(CharIndex).Pos.Y = nY
     CharList(CharIndex).MoveOffset.X = -1 * (TilePixelWidth * AddX)
@@ -1125,6 +1152,13 @@ Dim nHeading As Byte
     CharList(CharIndex).ScrollDirectionX = Sgn(AddX)
     CharList(CharIndex).ScrollDirectionY = Sgn(AddY)
     CharList(CharIndex).ActionIndex = 1
+    
+    'If the targeted character move, re-check if the path is blocked
+    If TargetCharIndex > 0 Then
+        If CharIndex = UserCharIndex Or CharIndex = TargetCharIndex Then
+            ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y)
+        End If
+    End If
 
 End Sub
 
@@ -1241,10 +1275,48 @@ Dim j As Integer
 
 End Sub
 
-Public Sub Engine_Effect_Create(ByVal X As Integer, ByVal Y As Integer, ByVal GrhIndex As Long)
+Public Sub Engine_Projectile_Create(ByVal AttackerIndex As Integer, ByVal TargetIndex As Integer, ByVal GrhIndex As Long, ByVal Rotation As Byte)
+
+'*****************************************************************
+'Creates a projectile for a ranged weapon
+'*****************************************************************
+
+Dim ProjectileIndex As Integer
+
+    If AttackerIndex = 0 Then Exit Sub
+    If TargetIndex = 0 Then Exit Sub
+    If AttackerIndex > UBound(CharList) Then Exit Sub
+    If TargetIndex > UBound(CharList) Then Exit Sub
+
+    'Get the next open projectile slot
+    Do
+        ProjectileIndex = ProjectileIndex + 1
+        
+        'Update LastProjectile if we go over the size of the current array
+        If ProjectileIndex > LastProjectile Then
+            LastProjectile = ProjectileIndex
+            ReDim Preserve ProjectileList(1 To LastProjectile)
+            Exit Do
+        End If
+        
+    Loop While ProjectileList(ProjectileIndex).Grh.GrhIndex > 0
+    
+    'Fill in the values
+    ProjectileList(ProjectileIndex).Rotate = 0
+    ProjectileList(ProjectileIndex).tX = CharList(TargetIndex).Pos.X * 32
+    ProjectileList(ProjectileIndex).tY = CharList(TargetIndex).Pos.Y * 32
+    ProjectileList(ProjectileIndex).RotateSpeed = Rotation
+    ProjectileList(ProjectileIndex).X = CharList(AttackerIndex).Pos.X * 32
+    ProjectileList(ProjectileIndex).Y = CharList(AttackerIndex).Pos.Y * 32
+    Engine_Init_Grh ProjectileList(ProjectileIndex).Grh, GrhIndex
+    
+End Sub
+
+Public Sub Engine_Effect_Create(ByVal X As Integer, ByVal Y As Integer, ByVal GrhIndex As Long, Optional ByVal Angle As Single = 0, Optional ByVal Time As Long = 0, Optional ByVal Animated As Byte = 1)
 
 '*****************************************************************
 'Creates an effect layer for spells and such
+'Life is only used if the effect is looped
 '*****************************************************************
 
 Dim EffectIndex As Integer
@@ -1264,9 +1336,49 @@ Dim EffectIndex As Integer
     Loop While EffectList(EffectIndex).Grh.GrhIndex > 0
 
     'Fill in the values
+    If Time > 0 Then EffectList(EffectIndex).Time = timeGetTime + Time Else EffectList(EffectIndex).Time = 0
+    EffectList(EffectIndex).Animated = Animated
+    EffectList(EffectIndex).Angle = Angle
     EffectList(EffectIndex).Pos.X = X
     EffectList(EffectIndex).Pos.Y = Y
     Engine_Init_Grh EffectList(EffectIndex).Grh, GrhIndex
+
+End Sub
+
+Public Sub Engine_Projectile_Erase(ByVal ProjectileIndex As Integer)
+
+'*****************************************************************
+'Erase a projectile by the projectile index
+'*****************************************************************
+
+Dim j As Integer
+
+    'Clear the selected index
+    ProjectileList(ProjectileIndex).Grh.FrameCounter = 0
+    ProjectileList(ProjectileIndex).Grh.GrhIndex = 0
+    ProjectileList(ProjectileIndex).X = 0
+    ProjectileList(ProjectileIndex).Y = 0
+    ProjectileList(ProjectileIndex).tX = 0
+    ProjectileList(ProjectileIndex).tY = 0
+    ProjectileList(ProjectileIndex).Rotate = 0
+    ProjectileList(ProjectileIndex).RotateSpeed = 0
+    
+    'Update LastProjectile
+    If j = LastProjectile Then
+        Do Until ProjectileList(ProjectileIndex).Grh.GrhIndex > 1
+            
+            'Move down one index
+            LastProjectile = LastProjectile - 1
+            
+            If LastProjectile = 0 Then
+                Exit Sub
+            Else
+                'We still have projectiles left, resize the array to end at the last used slot
+                ReDim Preserve ProjectileList(1 To LastProjectile)
+            End If
+            
+        Loop
+    End If
 
 End Sub
 
@@ -1284,12 +1396,13 @@ Dim j As Integer
     EffectList(EffectIndex).Grh.GrhIndex = 0
     EffectList(EffectIndex).Pos.X = 0
     EffectList(EffectIndex).Pos.Y = 0
+    EffectList(EffectIndex).Time = 0
 
     'Update LastEffect
     If j = LastEffect Then
         Do Until EffectList(LastEffect).Grh.GrhIndex > 1
 
-            'Move down one splatter
+            'Move down one effect
             LastEffect = LastEffect - 1
 
             If LastEffect = 0 Then
@@ -1318,6 +1431,7 @@ Dim Start_Time As Long
 
     'Calculate elapsed time
     Engine_ElapsedTime = Start_Time - EndTime
+    If Engine_ElapsedTime > 1000 Then Engine_ElapsedTime = 1000
 
     'Get next end time
     EndTime = Start_Time
@@ -1347,10 +1461,10 @@ Public Function Engine_GetAngle(ByVal CenterX As Integer, ByVal CenterY As Integ
 '************************************************************
 'Gets the angle between two points in a 2d plane
 '************************************************************
-
-    On Error GoTo ErrOut
 Dim SideA As Single
 Dim SideC As Single
+
+    On Error GoTo ErrOut
 
     'Check for horizontal lines (90 or 270 degrees)
     If CenterY = TargetY Then
@@ -1600,15 +1714,15 @@ Public Sub Engine_Sound_UpdateMap()
 '************************************************************
 'Update the panning and volume on the map's sfx
 '************************************************************
-Dim sX As Integer
-Dim sY As Integer
+Dim SX As Integer
+Dim SY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
 
     'Set the user's position to sX/sY
-    sX = CharList(UserCharIndex).Pos.X
-    sY = CharList(UserCharIndex).Pos.Y
+    SX = CharList(UserCharIndex).Pos.X
+    SY = CharList(UserCharIndex).Pos.Y
     
     'Loop through all the map tiles
     For X = XMinMapSize To XMaxMapSize
@@ -1618,7 +1732,7 @@ Dim L As Long
             If Not MapData(X, Y).Sfx Is Nothing Then
                 
                 'Calculate the volume and check for valid range
-                L = Engine_Sound_CalcVolume(sX, sY, X, Y)
+                L = Engine_Sound_CalcVolume(SX, SY, X, Y)
                 If L < -5000 Then
                     MapData(X, Y).Sfx.Stop
                 Else
@@ -1628,7 +1742,7 @@ Dim L As Long
                 End If
                 
                 'Calculate the panning and check for a valid range
-                L = Engine_Sound_CalcPan(sX, X)
+                L = Engine_Sound_CalcPan(SX, X)
                 If L > 10000 Then L = 10000
                 If L < -10000 Then L = -10000
                 MapData(X, Y).Sfx.SetPan L
@@ -1688,8 +1802,8 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 '************************************************************
 'Play a pseudo-3D sound by the sound buffer ID
 '************************************************************
-Dim sX As Integer
-Dim sY As Integer
+Dim SX As Integer
+Dim SY As Integer
 
     'Make sure we have the UserCharIndex, or else we cant play the sound! :o
     If UserCharIndex = 0 Then Exit Sub
@@ -1706,14 +1820,14 @@ Dim sY As Integer
     DSBuffer(SoundID).SetCurrentPosition 0
     
     'Set the user's position to sX/sY
-    sX = CharList(UserCharIndex).Pos.X
-    sY = CharList(UserCharIndex).Pos.Y
+    SX = CharList(UserCharIndex).Pos.X
+    SY = CharList(UserCharIndex).Pos.Y
     
     'Calculate the panning
-    Engine_Sound_Pan DSBuffer(SoundID), Engine_Sound_CalcPan(sX, TileX)
+    Engine_Sound_Pan DSBuffer(SoundID), Engine_Sound_CalcPan(SX, TileX)
     
     'Calculate the volume
-    Engine_Sound_Volume DSBuffer(SoundID), Engine_Sound_CalcVolume(sX, sY, TileX, TileY)
+    Engine_Sound_Volume DSBuffer(SoundID), Engine_Sound_CalcVolume(SX, SY, TileX, TileY)
     
     'Play the sound
     DSBuffer(SoundID).Play DSBPLAY_DEFAULT
@@ -1746,7 +1860,7 @@ Dim Dist As Single
     Engine_Sound_CalcVolume = -(Dist * 80) + (Abs(x1 - x2) * 25)
     
     'Once we get out of the screen (>= 13 tiles away) then we want to fade fast
-    If Dist >= 13 Then Engine_Sound_CalcVolume = Engine_Sound_CalcVolume - ((Dist - 13) * 180)
+    If Dist > 13 Then Engine_Sound_CalcVolume = Engine_Sound_CalcVolume - ((Dist - 13) * 180)
     
 End Function
 
@@ -1920,10 +2034,10 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To 1)
             Get #1, , GrhData(Grh).FileNum
             If GrhData(Grh).FileNum <= 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).sX
-            If GrhData(Grh).sX < 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).sY
-            If GrhData(Grh).sY < 0 Then GoTo ErrorHandler
+            Get #1, , GrhData(Grh).SX
+            If GrhData(Grh).SX < 0 Then GoTo ErrorHandler
+            Get #1, , GrhData(Grh).SY
+            If GrhData(Grh).SY < 0 Then GoTo ErrorHandler
             Get #1, , GrhData(Grh).pixelWidth
             If GrhData(Grh).pixelWidth <= 0 Then GoTo ErrorHandler
             Get #1, , GrhData(Grh).pixelHeight
@@ -2042,6 +2156,10 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
         End If
         .Screen.Width = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenWidth"))
         .Screen.Height = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenHeight"))
+        .Text.X = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatX"))
+        .Text.Y = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatY"))
+        .Text.Width = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatWidth"))
+        .Text.Height = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatHeight"))
         Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "CHATWINDOW", "Grh"))
     End With
 
@@ -2720,7 +2838,7 @@ Sub Engine_Input_CheckKeys()
 
     'Don't allow any these keys during movement..
     If UserMoving = 0 Then
-        If GetAsyncKeyState(vbKeyShift) Then
+        If GetAsyncKeyState(vbKeyTab) Then
             'Move Up-Right
             If GetKeyState(vbKeyUp) < 0 And GetKeyState(vbKeyRight) < 0 Then
                 Engine_ChangeHeading NORTHEAST
@@ -2894,7 +3012,7 @@ Dim tY As Integer
     If DrawSkillList Then
         If SkillListSize Then
             For tX = 1 To SkillListSize
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, SkillList(tX).X, SkillList(tX).Y, 32, 32) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, SkillList(tX).X, SkillList(tX).Y, 32, 32) Then
                     QuickBarID(QuickBarSetSlot).ID = SkillList(tX).SkillID
                     QuickBarID(QuickBarSetSlot).Type = QuickBarType_Skill
                     DrawSkillList = 0
@@ -2971,12 +3089,11 @@ Dim j As Byte
     Case MenuWindow
         If ShowGameWindow(MenuWindow) Then
             With GameWindow.Menu
-                'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = MenuWindow
                     'Quit button
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .QuitLbl.X, .Screen.Y + .QuitLbl.Y, .QuitLbl.Width, .QuitLbl.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .QuitLbl.X, .Screen.Y + .QuitLbl.Y, .QuitLbl.Width, .QuitLbl.Height) Then
                         IsUnloading = 1
                         Exit Function
                     End If
@@ -2989,21 +3106,21 @@ Dim j As Byte
         If ShowGameWindow(StatWindow) Then
             With GameWindow.StatWindow
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = StatWindow
                     'Raise str
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddStr.X, .Screen.Y + .AddStr.Y, .AddStr.Width, .AddStr.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddStr.X, .Screen.Y + .AddStr.Y, .AddStr.Width, .AddStr.Height) Then
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Str
                     End If
                     'Raise agi
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddAgi.X, .Screen.Y + .AddAgi.Y, .AddAgi.Width, .AddAgi.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddAgi.X, .Screen.Y + .AddAgi.Y, .AddAgi.Width, .AddAgi.Height) Then
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Agi
                     End If
                     'Raise mag
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddMag.X, .Screen.Y + .AddMag.Y, .AddMag.Width, .AddMag.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddMag.X, .Screen.Y + .AddMag.Y, .AddMag.Width, .AddMag.Height) Then
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Mag
                     End If
@@ -3016,7 +3133,10 @@ Dim j As Byte
         If ShowGameWindow(ChatWindow) Then
             With GameWindow.ChatWindow
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Text.X, .Screen.Y + .Text.Y, .Text.Width, .Text.Height) Then
+                        EnterText = True
+                    End If
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = ChatWindow
                     SelGameWindow = ChatWindow
@@ -3029,12 +3149,12 @@ Dim j As Byte
         If ShowGameWindow(QuickBarWindow) Then
             With GameWindow.QuickBar
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = QuickBarWindow
                     'Check if an item was clicked
                     For i = 1 To 12
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If GetAsyncKeyState(vbKeyShift) Then
                                 QuickBarSetSlot = i
                                 DrawSkillList = 1
@@ -3055,12 +3175,12 @@ Dim j As Byte
         If ShowGameWindow(InventoryWindow) Then
             With GameWindow.Inventory
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = InventoryWindow
                     'Check if an item was clicked
                     For i = 1 To 49
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If GetAsyncKeyState(vbKeyShift) Then
                                 If Game_ClickItem(i) Then
                                     If UserInventory(i).Amount = 1 Then
@@ -3094,12 +3214,12 @@ Dim j As Byte
         If ShowGameWindow(ShopWindow) Then
             With GameWindow.Shop
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = ShopWindow
                     'Check if an item was clicked
                     For i = 1 To 49
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
                             sndBuf.Put_Byte i
                             sndBuf.Put_Integer 1
@@ -3117,11 +3237,11 @@ Dim j As Byte
         If ShowGameWindow(MailboxWindow) Then
             With GameWindow.Mailbox
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = MailboxWindow
                     'Check if Write was clicked
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .WriteLbl.X, .Screen.Y + .WriteLbl.Y, .WriteLbl.Width, .WriteLbl.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .WriteLbl.X, .Screen.Y + .WriteLbl.Y, .WriteLbl.Width, .WriteLbl.Height) Then
                         ShowGameWindow(MailboxWindow) = 0
                         ShowGameWindow(WriteMessageWindow) = 1
                         LastClickedWindow = WriteMessageWindow
@@ -3129,22 +3249,22 @@ Dim j As Byte
                     End If
                     If SelMessage > 0 Then
                         'Check if Delete was clicked
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .DeleteLbl.X, .Screen.Y + .DeleteLbl.Y, .DeleteLbl.Width, .DeleteLbl.Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .DeleteLbl.X, .Screen.Y + .DeleteLbl.Y, .DeleteLbl.Width, .DeleteLbl.Height) Then
                             sndBuf.Put_Byte DataCode.Server_MailDelete
                             sndBuf.Put_Byte SelMessage
                             Exit Function
                         End If
                         'Check if Read was clicked
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .ReadLbl.X, .Screen.Y + .ReadLbl.Y, .ReadLbl.Width, .ReadLbl.Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .ReadLbl.X, .Screen.Y + .ReadLbl.Y, .ReadLbl.Width, .ReadLbl.Height) Then
                             sndBuf.Put_Byte DataCode.Server_MailMessage
                             sndBuf.Put_Byte SelMessage
                             Exit Function
                         End If
                     End If
                     'Check if List was clicked
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .List.X + .List.X, .Screen.Y + .List.Y, .List.Width, .List.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .List.X + .List.X, .Screen.Y + .List.Y, .List.Width, .List.Height) Then
                         For i = 1 To (.List.Height \ Font_Default.CharHeight)
-                            If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .List.X + .List.X, .Screen.Y + .List.Y + ((i - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight) Then
+                            If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .List.X + .List.X, .Screen.Y + .List.Y + ((i - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight) Then
                                 If SelMessage = i Then
                                     sndBuf.Put_Byte DataCode.Server_MailMessage
                                     sndBuf.Put_Byte i
@@ -3166,12 +3286,12 @@ Dim j As Byte
         If ShowGameWindow(ViewMessageWindow) Then
             With GameWindow.ViewMessage
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = ViewMessageWindow
                     'Click an item
                     For i = 1 To MaxMailObjs
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
                             sndBuf.Put_Byte DataCode.Server_MailItemTake
                             sndBuf.Put_Byte i
                             Exit Function
@@ -3187,27 +3307,27 @@ Dim j As Byte
         If ShowGameWindow(WriteMessageWindow) Then
             With GameWindow.WriteMessage
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = WriteMessageWindow
                     'Click From
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .From.X + .Screen.X, .From.Y + .Screen.Y, .From.Width, .From.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .From.X + .Screen.X, .From.Y + .Screen.Y, .From.Width, .From.Height) Then
                         WMSelCon = wmFrom
                         Exit Function
                     End If
                     'Click Subject
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Subject.X + .Screen.X, .Subject.Y + .Screen.Y, .Subject.Width, .Subject.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Subject.X + .Screen.X, .Subject.Y + .Screen.Y, .Subject.Width, .Subject.Height) Then
                         WMSelCon = wmSubject
                         Exit Function
                     End If
                     'Click Message
-                    If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Message.X + .Screen.X, .Message.Y + .Screen.Y, .Message.Width, .Message.Height) Then
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Message.X + .Screen.X, .Message.Y + .Screen.Y, .Message.Width, .Message.Height) Then
                         WMSelCon = wmMessage
                         Exit Function
                     End If
                     'Click an item
                     For i = 1 To MaxMailObjs
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
                             WriteMailData.ObjIndex(i) = 0
                             WriteMailData.ObjAmount(i) = 0
                             Exit Function
@@ -3223,7 +3343,7 @@ Dim j As Byte
         If ShowGameWindow(AmountWindow) Then
             With GameWindow.Amount
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = AmountWindow
                 End If
@@ -3406,12 +3526,12 @@ Dim i As Integer
         If ShowGameWindow(QuickBarWindow) Then
             With GameWindow.QuickBar
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_RightClick_Window = 1
                     LastClickedWindow = QuickBarWindow
                     'Check if an item was clicked
                     For i = 1 To 12
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             'An item in the quickbar was clicked - get description
                             If QuickBarID(i).Type = QuickBarType_Item Then
                                 Engine_SetItemDesc UserInventory(QuickBarID(i).ID).Name, UserInventory(QuickBarID(i).ID).Amount
@@ -3433,12 +3553,12 @@ Dim i As Integer
         If ShowGameWindow(InventoryWindow) Then
             With GameWindow.Inventory
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_RightClick_Window = 1
                     LastClickedWindow = InventoryWindow
                     'Check if an item was clicked
                     For i = 1 To 49
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             Temp = 1
                             If UserInventory(i).GrhIndex > 0 Then Engine_SetItemDesc UserInventory(i).Name, UserInventory(i).Amount
                             DragItemSlot = i
@@ -3456,12 +3576,12 @@ Dim i As Integer
         If ShowGameWindow(ShopWindow) Then
             With GameWindow.Shop
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_RightClick_Window = 1
                     LastClickedWindow = ShopWindow
                     'Check if an item was clicked
                     For i = 1 To 49
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             Temp = 1
                             If i <= NPCTradeItemArraySize Then
                                 If NPCTradeItems(i).GrhIndex > 0 Then
@@ -3482,12 +3602,12 @@ Dim i As Integer
         If ShowGameWindow(ViewMessageWindow) Then
             With GameWindow.ViewMessage
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_RightClick_Window = 1
                     LastClickedWindow = ViewMessageWindow
                     'Click an item
                     For i = 1 To MaxMailObjs
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
                             sndBuf.Put_Byte DataCode.Server_MailItemInfo
                             sndBuf.Put_Byte i
                             Temp = 1
@@ -3505,12 +3625,12 @@ Dim i As Integer
         If ShowGameWindow(WriteMessageWindow) Then
             With GameWindow.WriteMessage
                 'Check if the screen was clicked
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_RightClick_Window = 1
                     LastClickedWindow = WriteMessageWindow
                     'Click an item
                     For i = 1 To MaxMailObjs
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
                             Temp = 1
                             Exit For
                         End If
@@ -3541,9 +3661,9 @@ Dim i As Byte
         'Check for release over inventory window
         If ShowGameWindow(InventoryWindow) Then
             With GameWindow.Inventory
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     For i = 1 To 49
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If DragItemSlot <> i Then
                                 'Switch slots
                                 sndBuf.Put_Byte DataCode.User_ChangeInvSlot
@@ -3562,9 +3682,9 @@ Dim i As Byte
         'Check for release over quick bar
         If ShowGameWindow(QuickBarWindow) Then
             With GameWindow.QuickBar
-                If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     For i = 1 To 12
-                        If Engine_RectCollision(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             'Drop into quick use slot
                             QuickBarID(i).Type = QuickBarType_Item
                             QuickBarID(i).ID = DragItemSlot
@@ -3696,9 +3816,10 @@ Sub Engine_MoveUser(ByVal Direction As Byte)
 '*****************************************************************
 'Move user in appropriate direction
 '*****************************************************************
-
+Dim Running As Byte
 Dim aX As Integer
 Dim aY As Integer
+
 'Figure out the AddX and AddY values
 
     Select Case Direction
@@ -3737,12 +3858,21 @@ Dim aY As Integer
     'Check for legal position
     If Engine_LegalPos(UserPos.X + aX, UserPos.Y + aY, Direction) Then
 
+        'If running
+        If GetAsyncKeyState(vbKeyShift) Then Running = 1
+
         'Send the information to the server
         sndBuf.Put_Byte DataCode.User_Move
-        sndBuf.Put_Byte Direction
+        
+        'Running or not
+        If Running Then
+            sndBuf.Put_Byte Direction Or 128
+        Else
+            sndBuf.Put_Byte Direction
+        End If
 
         'Move the screen and character
-        Engine_Char_Move_ByHead UserCharIndex, Direction
+        Engine_Char_Move_ByHead UserCharIndex, Direction, Running
         Engine_MoveScreen Direction
         
         'Update the map sounds
@@ -3886,18 +4016,118 @@ Dim Seperator As String
 
 End Function
 
-Function Engine_RectCollision(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal Width1 As Integer, ByVal Height1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer, ByVal Width2 As Integer, ByVal Height2 As Integer)
+Private Function Engine_Collision_Between(ByVal Value As Single, ByVal Bound1 As Single, ByVal Bound2 As Single) As Byte
 
-'******************************************
+'*****************************************************************
+'Find if a value is between two other values (used for line collision)
+'*****************************************************************
+
+    'Checks if a value lies between two bounds
+    If Bound1 > Bound2 Then
+        If Value >= Bound2 Then
+            If Value <= Bound1 Then Engine_Collision_Between = 1
+        End If
+    Else
+        If Value >= Bound1 Then
+            If Value <= Bound2 Then Engine_Collision_Between = 1
+        End If
+    End If
+    
+End Function
+
+Public Function Engine_Collision_Line(ByVal L1X1 As Long, ByVal L1Y1 As Long, ByVal L1X2 As Long, ByVal L1Y2 As Long, ByVal L2X1 As Long, ByVal L2Y1 As Long, ByVal L2X2 As Long, ByVal L2Y2 As Long) As Byte
+
+'*****************************************************************
+'Check if two lines intersect (return 1 if true)
+'*****************************************************************
+
+Dim m1 As Single
+Dim M2 As Single
+Dim B1 As Single
+Dim B2 As Single
+Dim IX As Single
+
+    'This will fix problems with vertical lines
+    If L1X1 = L1X2 Then L1X1 = L1X1 + 1
+    If L2X1 = L2X2 Then L2X1 = L2X1 + 1
+
+    'Find the first slope
+    m1 = (L1Y2 - L1Y1) / (L1X2 - L1X1)
+    B1 = L1Y2 - m1 * L1X2
+
+    'Find the second slope
+    M2 = (L2Y2 - L2Y1) / (L2X2 - L2X1)
+    B2 = L2Y2 - M2 * L2X2
+    
+    'Check if the slopes are the same
+    If M2 - m1 = 0 Then
+    
+        If B2 = B1 Then
+            'The lines are the same
+            Engine_Collision_Line = 1
+        Else
+            'The lines are parallel (can never intersect)
+            Engine_Collision_Line = 0
+        End If
+        
+    Else
+        
+        'An intersection is a point that lies on both lines. To find this, we set the Y equations equal and solve for X.
+        'M1X+B1 = M2X+B2 -> M1X-M2X = -B1+B2 -> X = B1+B2/(M1-M2)
+        IX = ((B2 - B1) / (m1 - M2))
+        
+        'Check for the collision
+        If Engine_Collision_Between(IX, L1X1, L1X2) Then
+            If Engine_Collision_Between(IX, L2X1, L2X2) Then Engine_Collision_Line = 1
+        End If
+        
+    End If
+    
+End Function
+
+Public Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+
+'*****************************************************************
+'Check if a line intersects with a rectangle (returns 1 if true)
+'*****************************************************************
+
+    'Top line
+    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+    
+    'Right line
+    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+    'Bottom line
+    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+    'Left line
+    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+End Function
+
+Function Engine_Collision_Rect(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal Width1 As Integer, ByVal Height1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer, ByVal Width2 As Integer, ByVal Height2 As Integer)
+
+'*****************************************************************
 'Check for collision between two rectangles
-'******************************************
+'*****************************************************************
 
 Dim RetRect As RECT
 Dim Rect1 As RECT
 Dim Rect2 As RECT
 
-'Build the rectangles
-
+    'Build the rectangles
     Rect1.Left = x1
     Rect1.Right = x1 + Width1
     Rect1.Top = Y1
@@ -3908,18 +4138,18 @@ Dim Rect2 As RECT
     Rect2.bottom = Y2 + Height2
 
     'Call collision API
-    Engine_RectCollision = IntersectRect(RetRect, Rect1, Rect2)
+    Engine_Collision_Rect = IntersectRect(RetRect, Rect1, Rect2)
 
 End Function
 
 Private Sub Engine_Render_Char(ByVal CharIndex As Long, ByVal PixelOffsetX As Single, ByVal PixelOffsetY As Single)
 
-'***************************************************
+'*****************************************************************
 'Draw a character to the screen by the CharIndex
 'First variables are set, then all shadows drawn, then character drawn, then extras (emoticons, icons, etc)
 'Any variables not handled in "Set the variables" are set in Shadow calls - do not call a second time in the
 'normal character rendering calls
-'***************************************************
+'*****************************************************************
 
 Dim TempGrh As Grh
 Dim Moved As Boolean
@@ -3953,10 +4183,20 @@ Dim WingsGrh As Grh
 
     'Check for selected NPC
     If CharIndex = TargetCharIndex Then
-        RenderColor(1) = D3DColorARGB(255, 100, 255, 100)
-        RenderColor(2) = RenderColor(1)
-        RenderColor(3) = RenderColor(1)
-        RenderColor(4) = RenderColor(1)
+    
+        'Clear pathway to the targeted character
+        If ClearPathToTarget Then
+            RenderColor(1) = D3DColorARGB(255, 100, 255, 100)
+            RenderColor(2) = RenderColor(1)
+            RenderColor(3) = RenderColor(1)
+            RenderColor(4) = RenderColor(1)
+        Else
+            RenderColor(1) = D3DColorARGB(255, 255, 100, 100)
+            RenderColor(2) = RenderColor(1)
+            RenderColor(3) = RenderColor(1)
+            RenderColor(4) = RenderColor(1)
+        End If
+        
     Else
         RenderColor(1) = TempBlock2.Light(1)
         RenderColor(2) = TempBlock2.Light(2)
@@ -3968,7 +4208,7 @@ Dim WingsGrh As Grh
 
         'If needed, move left and right
         If CharList(CharIndex).ScrollDirectionX <> 0 Then
-            CharList(CharIndex).MoveOffset.X = CharList(CharIndex).MoveOffset.X + (ScrollPixelsPerFrameX + CharList(CharIndex).Speed) * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
+            CharList(CharIndex).MoveOffset.X = CharList(CharIndex).MoveOffset.X + (ScrollPixelsPerFrameX + CharList(CharIndex).Speed + (RunningSpeed * CharList(CharIndex).Running)) * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -3986,7 +4226,7 @@ Dim WingsGrh As Grh
 
         'If needed, move up and down
         If CharList(CharIndex).ScrollDirectionY <> 0 Then
-            CharList(CharIndex).MoveOffset.Y = CharList(CharIndex).MoveOffset.Y + (ScrollPixelsPerFrameY + CharList(CharIndex).Speed) * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
+            CharList(CharIndex).MoveOffset.Y = CharList(CharIndex).MoveOffset.Y + (ScrollPixelsPerFrameY + CharList(CharIndex).Speed + (RunningSpeed * CharList(CharIndex).Running)) * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -4035,17 +4275,13 @@ Dim WingsGrh As Grh
 
         'Shadow
         Engine_Render_Grh CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-        Engine_Render_Grh CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, True, True, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+        Engine_Render_Grh CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
 
     Else
 
-        'Start attack animation
-        CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).Started = 0
-        CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading).FrameCounter = 1
-
         'Shadow
         Engine_Render_Grh CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-        Engine_Render_Grh CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, True, True, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+        Engine_Render_Grh CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
 
         'Check if animation has stopped
         If CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).Started = 0 Then CharList(CharIndex).ActionIndex = 0
@@ -4260,7 +4496,7 @@ Dim Chunk As Integer
 
 End Sub
 
-Sub Engine_Render_GrhEX(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Degrees As Byte = 0, Optional ByVal Shadow As Byte = 0)
+Sub Engine_Render_GrhEX(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal Shadow As Byte = 0)
 
 '*****************************************************************
 'Draws a GRH transparently to a X and Y position with more options then the non-EX
@@ -4289,10 +4525,14 @@ Dim NewY As Single
         If Grh.Started = 1 Then
             Grh.FrameCounter = Grh.FrameCounter + (TimerMultiplier * GrhData(Grh.GrhIndex).Speed)
             If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
-                Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
-                    Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
-                Loop
-                If LoopAnim <> True Then Grh.Started = 0
+                If LoopAnim = True Then
+                    Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
+                        Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
+                    Loop
+                Else
+                    Grh.Started = 0
+                    Exit Sub
+                End If
             End If
         End If
     End If
@@ -4367,30 +4607,30 @@ Dim NewY As Single
                         VertexArray(1).Y = Y
                 
                     End If
-                
+
                     'Set the top-left corner
                     VertexArray(0).Color = Light1
-                    VertexArray(0).tu = GrhData(CurrGrhIndex).sX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(0).tv = GrhData(CurrGrhIndex).sY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
+                    VertexArray(0).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
+                    VertexArray(0).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
                 
                     'Set the top-right corner
                     VertexArray(1).Color = Light2
-                    VertexArray(1).tu = (GrhData(CurrGrhIndex).sX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(1).tv = GrhData(CurrGrhIndex).sY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
+                    VertexArray(1).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
+                    VertexArray(1).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
                 
                     'Set the bottom-left corner
                     VertexArray(2).X = X
                     VertexArray(2).Y = Y + GrhData(CurrGrhIndex).pixelHeight
                     VertexArray(2).Color = Light3
-                    VertexArray(2).tu = GrhData(CurrGrhIndex).sX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(2).tv = (GrhData(CurrGrhIndex).sY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
+                    VertexArray(2).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
+                    VertexArray(2).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
                 
                     'Set the bottom-right corner
                     VertexArray(3).X = X + GrhData(CurrGrhIndex).pixelWidth
                     VertexArray(3).Y = Y + GrhData(CurrGrhIndex).pixelHeight
                     VertexArray(3).Color = Light4
-                    VertexArray(3).tu = (GrhData(CurrGrhIndex).sX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(3).tv = (GrhData(CurrGrhIndex).sY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
+                    VertexArray(3).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
+                    VertexArray(3).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
                 
                     'Check if a rotation is required
                     If Degrees <> 0 Then
@@ -4410,12 +4650,12 @@ Dim NewY As Single
                         For Index = 0 To 3
                 
                             'Calculates the new X and Y co-ordinates of the vertices for the given angle around the center co-ordinates
-                            NewX = CenterX + (VertexArray(Index).X - CenterX) * CosRad - (VertexArray(Index).Y - CenterY) * SinRad
-                            NewY = CenterY + (VertexArray(Index).Y - CenterY) * CosRad + (VertexArray(Index).X - CenterX) * SinRad
+                            NewX = ((VertexArray(Index).X - CenterX) * CosRad) - ((VertexArray(Index).Y - CenterY) * SinRad)
+                            NewY = ((VertexArray(Index).X - CenterX) * SinRad) + ((VertexArray(Index).Y - CenterY) * CosRad)
                 
                             'Applies the new co-ordinates to the buffer
-                            VertexArray(Index).X = NewX
-                            VertexArray(Index).Y = NewY
+                            VertexArray(Index).X = NewX + CenterX
+                            VertexArray(Index).Y = NewY + CenterY
                 
                         Next Index
                 
@@ -4451,10 +4691,14 @@ Dim FileNum As Integer
             Grh.FrameCounter = Grh.FrameCounter + ((timeGetTime - Grh.LastCount) * GrhData(Grh.GrhIndex).Speed * 0.0009)
             Grh.LastCount = timeGetTime
             If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
-                Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
-                    Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
-                Loop
-                If LoopAnim <> True Then Grh.Started = 0
+                If LoopAnim = True Then
+                    Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
+                        Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
+                    Loop
+                Else
+                    Grh.Started = 0
+                    Exit Sub
+                End If
             End If
         End If
     End If
@@ -4535,27 +4779,27 @@ Dim FileNum As Integer
                 
                     'Set the top-left corner
                     VertexArray(0).Color = Light1
-                    VertexArray(0).tu = GrhData(CurrGrhIndex).sX / SurfaceSize(FileNum).X
-                    VertexArray(0).tv = GrhData(CurrGrhIndex).sY / SurfaceSize(FileNum).Y
+                    VertexArray(0).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(FileNum).X
+                    VertexArray(0).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(FileNum).Y
                 
                     'Set the top-right corner
                     VertexArray(1).Color = Light2
-                    VertexArray(1).tu = (GrhData(CurrGrhIndex).sX + SrcWidth) / SurfaceSize(FileNum).X
-                    VertexArray(1).tv = GrhData(CurrGrhIndex).sY / SurfaceSize(FileNum).Y
+                    VertexArray(1).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(FileNum).X
+                    VertexArray(1).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(FileNum).Y
                 
                     'Set the bottom-left corner
                     VertexArray(2).X = X
                     VertexArray(2).Y = Y + GrhData(CurrGrhIndex).pixelHeight
                     VertexArray(2).Color = Light3
-                    VertexArray(2).tu = GrhData(CurrGrhIndex).sX / SurfaceSize(FileNum).X
-                    VertexArray(2).tv = (GrhData(CurrGrhIndex).sY + SrcHeight) / SurfaceSize(FileNum).Y
+                    VertexArray(2).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(FileNum).X
+                    VertexArray(2).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(FileNum).Y
                 
                     'Set the bottom-right corner
                     VertexArray(3).X = X + GrhData(CurrGrhIndex).pixelWidth
                     VertexArray(3).Y = Y + GrhData(CurrGrhIndex).pixelHeight
                     VertexArray(3).Color = Light4
-                    VertexArray(3).tu = (GrhData(CurrGrhIndex).sX + SrcWidth) / SurfaceSize(FileNum).X
-                    VertexArray(3).tv = (GrhData(CurrGrhIndex).sY + SrcHeight) / SurfaceSize(FileNum).Y
+                    VertexArray(3).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(FileNum).X
+                    VertexArray(3).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(FileNum).Y
 
                     'Render the texture to the device
                     D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
@@ -4728,9 +4972,9 @@ End Sub
 
 Public Sub Engine_Render_Inventory(Optional ByVal InventoryType As Long = 1)
 
-'***************************************************
+'*****************************************************************
 'Renders the inventory
-'***************************************************
+'*****************************************************************
 
 Dim TempGrh As Grh
 Dim DestX As Single
@@ -4939,6 +5183,7 @@ Dim Y2 As Long
 Dim Y As Long           'Keeps track of where on map we are
 Dim X As Long
 Dim j As Long
+Dim Angle As Single
 
     minXOffset = 0
     minYOffset = 0
@@ -5217,29 +5462,93 @@ Dim j As Long
 
     '************** Effects **************
     'Loop to do drawing
-    For j = 1 To LastEffect
-        If EffectList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(minXOffset + (EffectList(j).Pos.X - minX)) + PixelOffsetX
-            Y = Engine_PixelPosY(minYOffset + (EffectList(j).Pos.Y - minY)) + PixelOffsetY
-            If Y >= -32 Then
-                If Y <= 632 Then
-                    If X >= -32 Then
-                        If X <= 832 Then
-                            Engine_Render_Grh EffectList(j).Grh, X, Y, 1, 1, False
+    If LastEffect > 0 Then
+        For j = 1 To LastEffect
+            If EffectList(j).Grh.GrhIndex Then
+                X = Engine_PixelPosX(minXOffset + (EffectList(j).Pos.X - minX)) + PixelOffsetX
+                Y = Engine_PixelPosY(minYOffset + (EffectList(j).Pos.Y - minY)) + PixelOffsetY
+                If EffectList(j).Time <> 0 Then
+                    If EffectList(j).Time < timeGetTime Then
+                        EffectList(j).Time = 0
+                    End If
+                End If
+                If Y >= -32 Then
+                    If Y <= 632 Then
+                        If X >= -32 Then
+                            If X <= 832 Then
+                                Engine_Render_GrhEX EffectList(j).Grh, X, Y, 1, 1, 0, , , , , EffectList(j).Angle
+                            End If
                         End If
                     End If
                 End If
             End If
-        End If
-    Next j
+        Next j
+    
+        'Seperate loop to remove the unused - I dont like removing while drawing
+        For j = 1 To LastEffect
+            If EffectList(j).Grh.GrhIndex Then
+                If EffectList(j).Animated = 1 Then
+                    If EffectList(j).Grh.Started = 0 Then Engine_Effect_Erase j
+                ElseIf EffectList(j).Time = 0 Then
+                    Engine_Effect_Erase j
+                End If
+            End If
+        Next j
+        
+    End If
+    
+    '************** Projectiles **************
+    'Loop to do drawing
+    If LastProjectile > 0 Then
+        For j = 1 To LastProjectile
+            If ProjectileList(j).Grh.GrhIndex Then
+                
+                'Update the position
+                Angle = DegreeToRadian * Engine_GetAngle(ProjectileList(j).X, ProjectileList(j).Y, ProjectileList(j).tX, ProjectileList(j).tY)
+                ProjectileList(j).X = ProjectileList(j).X + Sin(Angle) * 10
+                ProjectileList(j).Y = ProjectileList(j).Y - Cos(Angle) * 10
+                
+                'Update the rotation
+                If ProjectileList(j).RotateSpeed > 0 Then
+                    ProjectileList(j).Rotate = ProjectileList(j).Rotate + (ProjectileList(j).RotateSpeed * ElapsedTime * 0.01)
+                    Do While ProjectileList(j).Rotate > 360
+                        ProjectileList(j).Rotate = ProjectileList(j).Rotate - 360
+                    Loop
+                End If
 
-    'Seperate loop to remove the unused - I dont like removing while drawing
-    For j = 1 To LastEffect
-        If EffectList(j).Grh.GrhIndex Then
-            If EffectList(j).Grh.Started = 0 Then Engine_Effect_Erase j
-        End If
-    Next j
-
+                'Draw if within range
+                X = ((minXOffset - minX - 1) * 32) + ProjectileList(j).X + PixelOffsetX
+                Y = ((minYOffset - minY - 1) * 32) + ProjectileList(j).Y + PixelOffsetY
+                If Y >= -32 Then
+                    If Y <= 632 Then
+                        If X >= -32 Then
+                            If X <= 832 Then
+                                If ProjectileList(j).Rotate = 0 Then
+                                    Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 1, 1, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                                    Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 0, 1
+                                Else
+                                    Engine_Render_GrhEX ProjectileList(j).Grh, X, Y, 0, 0, 1, ShadowColor, ShadowColor, ShadowColor, ShadowColor, ProjectileList(j).Rotate, 1
+                                    Engine_Render_GrhEX ProjectileList(j).Grh, X, Y, 0, 1, 1, , , , , ProjectileList(j).Rotate
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+                
+            End If
+        Next j
+        
+        'Check if it is close enough to the target to remove
+        For j = 1 To LastProjectile
+            If Abs(ProjectileList(j).X - ProjectileList(j).tX) < 20 Then
+                If Abs(ProjectileList(j).Y - ProjectileList(j).tY) < 20 Then
+                    Engine_Projectile_Erase j
+                End If
+            End If
+        Next j
+        
+    End If
+    
     '************** Blood Splatters **************
     'Loop to do drawing
     For j = 1 To LastBlood
@@ -5334,8 +5643,255 @@ Dim j As Long
 
     'Show FPS & Lag
     Engine_Render_Text "FPS: " & FPS & vbCrLf & "Ping: " & Ping, 730, 2, -1
-
+    
 End Sub
+
+Public Function Engine_ClearPath(ByVal UserX As Long, ByVal UserY As Long, ByVal TargetX As Long, ByVal TargetY As Long) As Byte
+
+'***************************************************
+'Check if the path is clear from the user to the target of blocked tiles
+'For the line-rect collision, we pretend that each tile is 2 units wide so we can give them a width of 1 to center things
+'***************************************************
+Dim X As Long
+Dim Y As Long
+
+    '****************************************
+    '***** Target is on top of the user *****
+    '****************************************
+    
+    'If the target position = user position, we must be targeting ourself, so nothing can be blocking us from us (I hope o.O )
+    If UserX = TargetX Then
+        If UserY = TargetY Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+
+    '********************************************
+    '***** Target is right next to the user *****
+    '********************************************
+    
+    'Target is at one of the 4 diagonals of the user
+    If Abs(UserX - TargetX) = 1 Then
+        If Abs(UserY - TargetY) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Target is above or below the user
+    If UserX = TargetX Then
+        If Abs(UserY - TargetY) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Target is to the left or right of the user
+    If UserY = TargetY Then
+        If Abs(UserX - TargetX) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    '********************************************
+    '***** Target is diagonal from the user *****
+    '********************************************
+    
+    'Check if the target is diagonal from the user - only do the following checks if diagonal from the target
+    If Abs(UserX - TargetX) = Abs(UserY - TargetY) Then
+
+        If UserX > TargetX Then
+                        
+            'Diagonal to the top-left
+            If UserY > TargetY Then
+                For X = TargetX To UserX - 1
+                    For Y = TargetY To UserY - 1
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            
+            'Diagonal to the bottom-left
+            Else
+                For X = TargetX To UserX - 1
+                    For Y = UserY + 1 To TargetY
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            End If
+
+        End If
+        
+        If UserX < TargetX Then
+        
+            'Diagonal to the top-right
+            If UserY > TargetY Then
+                For X = UserX + 1 To TargetX
+                    For Y = TargetY To UserY - 1
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+                
+            'Diagonal to the bottom-right
+            Else
+                For X = UserX + 1 To TargetX
+                    For Y = UserY + 1 To TargetY
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            End If
+        
+        End If
+    
+        Engine_ClearPath = 1
+        Exit Function
+    
+    End If
+
+    '*******************************************************************
+    '***** Target is directly vertical or horizontal from the user *****
+    '*******************************************************************
+    
+    'Check if target is directly above the user
+    If UserX = TargetX Then 'Check if x values are the same (straight line between the two)
+        If UserY > TargetY Then
+            For Y = TargetY + 1 To UserY - 1
+                If MapData(UserX, Y).BlockedAttack Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next Y
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly below the user
+    If UserX = TargetX Then
+        If UserY < TargetY Then
+            For Y = UserY + 1 To TargetY - 1
+                If MapData(UserX, Y).BlockedAttack Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next Y
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly to the left of the user
+    If UserY = TargetY Then
+        If UserX > TargetX Then
+            For X = TargetX + 1 To UserX - 1
+                If MapData(X, UserY).BlockedAttack Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly to the right of the user
+    If UserY = TargetY Then
+        If UserX < TargetX Then
+            For X = UserX + 1 To TargetX - 1
+                If MapData(X, UserY).BlockedAttack Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+
+    '***************************************************
+    '***** Target is directly not in a direct path *****
+    '***************************************************
+    
+    
+    If UserY > TargetY Then
+    
+        'Check if the target is to the top-left of the user
+        If UserX > TargetX Then
+            For X = TargetX To UserX - 1
+                For Y = TargetY To UserY - 1
+                    'We must do * 2 on the tiles so we can use +1 to get the center (its like * 32 and + 16 - this does the same affect)
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+    
+        'Check if the target is to the top-right of the user
+        Else
+            For X = UserX + 1 To TargetX
+                For Y = TargetY To UserY - 1
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        End If
+        
+    Else
+    
+        'Check if the target is to the bottom-left of the user
+        If UserX > TargetX Then
+            For X = TargetX To UserX - 1
+                For Y = UserY + 1 To TargetY
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        
+        'Check if the target is to the bottom-right of the user
+        Else
+            For X = UserX + 1 To TargetX
+                For Y = UserY + 1 To TargetY
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(X, Y).BlockedAttack Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        End If
+    
+    End If
+    
+    Engine_ClearPath = 1
+
+End Function
 
 Public Sub Engine_Render_Skills()
 
@@ -5509,7 +6065,7 @@ Sub Engine_ShowNextFrame()
         
             '****** Move screen Left and Right if needed ******
             If AddtoUserPos.X <> 0 Then
-                OffsetCounterX = OffsetCounterX - (ScrollPixelsPerFrameX + CharList(UserCharIndex).Speed) * AddtoUserPos.X * TickPerFrame
+                OffsetCounterX = OffsetCounterX - (ScrollPixelsPerFrameX + CharList(UserCharIndex).Speed + (RunningSpeed * CharList(UserCharIndex).Running)) * AddtoUserPos.X * TickPerFrame
                 If Abs(OffsetCounterX) >= Abs(TilePixelWidth * AddtoUserPos.X) Then
                     OffsetCounterX = 0
                     AddtoUserPos.X = 0
@@ -5519,7 +6075,7 @@ Sub Engine_ShowNextFrame()
             
             '****** Move screen Up and Down if needed ******
             If AddtoUserPos.Y <> 0 Then
-                OffsetCounterY = OffsetCounterY - (ScrollPixelsPerFrameY + CharList(UserCharIndex).Speed) * AddtoUserPos.Y * TickPerFrame
+                OffsetCounterY = OffsetCounterY - (ScrollPixelsPerFrameY + CharList(UserCharIndex).Speed + (RunningSpeed * CharList(UserCharIndex).Running)) * AddtoUserPos.Y * TickPerFrame
                 If Abs(OffsetCounterY) >= Abs(TilePixelHeight * AddtoUserPos.Y) Then
                     OffsetCounterY = 0
                     AddtoUserPos.Y = 0
@@ -5557,9 +6113,9 @@ End Sub
 
 Public Function Engine_SkillIDtoGRHID(ByVal SkillID As Byte) As Integer
 
-'***************************************************
+'*****************************************************************
 'Takes in a SkillID and returns the GrhIndex used for that SkillID
-'***************************************************
+'*****************************************************************
 
     Select Case SkillID
         Case SkID.Bless: Engine_SkillIDtoGRHID = 46
@@ -5575,9 +6131,9 @@ End Function
 
 Public Function Engine_SkillIDtoSkillName(ByVal SkillID As Byte) As String
 
-'***************************************************
+'*****************************************************************
 'Takes in a SkillID and returns the name of that skill
-'***************************************************
+'*****************************************************************
 
     Select Case SkillID
         Case SkID.Bless: Engine_SkillIDtoSkillName = "Bless"
@@ -5652,6 +6208,16 @@ Dim frm As Form
 
 End Sub
 
+Function Engine_Distance(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer) As Single
+
+'*****************************************************************
+'Finds the distance between two points
+'*****************************************************************
+
+    Engine_Distance = Sqr(((Y1 - Y2) ^ 2 + (x1 - x2) ^ 2))
+    
+End Function
+
 Sub Engine_UseQuickBar(ByVal Slot As Byte)
 
 '******************************************
@@ -5670,9 +6236,14 @@ Sub Engine_UseQuickBar(ByVal Slot As Byte)
         'Use a skill
     Case QuickBarType_Skill
         If QuickBarID(Slot).ID > 0 Then
-            sndBuf.Put_Byte DataCode.User_CastSkill
-            sndBuf.Put_Byte QuickBarID(Slot).ID
-            sndBuf.Put_Integer TargetCharIndex
+            If LastAttackTime + AttackDelay < timeGetTime Then
+                If CharList(UserCharIndex).CharStatus.Exhausted = 0 Then
+                    LastAttackTime = timeGetTime
+                    sndBuf.Put_Byte DataCode.User_CastSkill
+                    sndBuf.Put_Byte QuickBarID(Slot).ID
+                    sndBuf.Put_Integer TargetCharIndex
+                End If
+            End If
         End If
 
     End Select

@@ -152,7 +152,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
 '*****************************************************************
     
     'New
-    If Engine_RectCollision(X, Y, 1, 1, 29, 85, 141, 36) Then
+    If Engine_Collision_Rect(X, Y, 1, 1, 29, 85, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -162,7 +162,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     End If
     
     'Connect
-    If Engine_RectCollision(X, Y, 1, 1, 29, 129, 141, 36) Then
+    If Engine_Collision_Rect(X, Y, 1, 1, 29, 129, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -172,7 +172,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     End If
     
     'Exit
-    If Engine_RectCollision(X, Y, 1, 1, 29, 174, 141, 36) Then
+    If Engine_Collision_Rect(X, Y, 1, 1, 29, 174, 141, 36) Then
         'Save the game ini
         Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then
@@ -186,4 +186,28 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
         
     End If
     
+End Sub
+
+Private Sub NameTxt_Change()
+
+    'Make sure the string is legal
+    If Len(NameTxt.Text) > 0 Then
+        If Game_LegalString(NameTxt.Text) = False Then
+            NameTxt.Text = Left$(NameTxt.Text, Len(NameTxt.Text) - 1)
+            NameTxt.SelStart = Len(NameTxt.Text)
+        End If
+    End If
+
+End Sub
+
+Private Sub PasswordTxt_Change()
+
+    'Make sure the string is legal
+    If Len(PasswordTxt.Text) > 0 Then
+        If Game_LegalString(PasswordTxt.Text) = False Then
+            PasswordTxt.Text = Left$(PasswordTxt.Text, Len(PasswordTxt.Text) - 1)
+            PasswordTxt.SelStart = Len(PasswordTxt.Text)
+        End If
+    End If
+
 End Sub

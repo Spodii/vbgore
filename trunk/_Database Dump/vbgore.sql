@@ -4,7 +4,7 @@ Source Host: localhost
 Source Database: vbgore
 Target Host: localhost
 Target Database: vbgore
-Date: 1/12/2007 10:58:21 AM
+Date: 1/19/2007 12:47:06 AM
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -40,6 +40,9 @@ CREATE TABLE `npcs` (
   `movement` smallint(6) NOT NULL default '0' COMMENT 'Movement style (see Server.NPC.NPC_AI)',
   `respawnwait` int(11) NOT NULL default '0' COMMENT 'Time it takes to respawn (in miliseconds)',
   `attackable` tinyint(4) NOT NULL default '0' COMMENT 'If the NPC is attackable (1 = yes, 0 = no)',
+  `attackgrh` int(11) NOT NULL default '0' COMMENT 'Grh the NPC uses when attacking (works like UseGrh)',
+  `attackrange` tinyint(4) NOT NULL default '0' COMMENT 'If the NPC has a ranged attack (0 or 1 for melee)',
+  `projectilerotatespeed` tinyint(4) NOT NULL default '0' COMMENT 'If a ranged attack, how fast the projectile rotates',
   `hostile` tinyint(4) NOT NULL default '0' COMMENT 'If the NPC is hostile (1 = yes, 0 = no)',
   `quest` smallint(6) NOT NULL default '0' COMMENT 'ID of the quest the NPC gives',
   `drops` mediumtext NOT NULL COMMENT 'List of NPC drops',
@@ -72,32 +75,35 @@ CREATE TABLE `objects` (
   `name` varchar(255) NOT NULL COMMENT 'Name',
   `price` int(11) NOT NULL default '0' COMMENT 'Price object is bought for',
   `objtype` tinyint(4) NOT NULL COMMENT 'Object type (see Server.Declares for OBJTYPE_ consts)',
-  `weapontype` tinyint(4) default NULL COMMENT 'Weapon type (Only valid if obj=weapon - see Server.Declares)',
+  `weapontype` tinyint(4) NOT NULL COMMENT 'Weapon type (Only valid if obj=weapon - see Server.Declares)',
+  `weaponrange` tinyint(4) NOT NULL default '0' COMMENT 'Range of the weapon''s attack (if ranged)',
   `grhindex` int(11) NOT NULL COMMENT 'Index of the object graphic (by Grh value)',
-  `sprite_body` smallint(6) default '-1' COMMENT 'Paperdolling body changed to upon usage (-1 for no change)',
-  `sprite_weapon` smallint(6) default '-1' COMMENT 'Paperdolling weapon changed to upon usage (-1 for no change)',
-  `sprite_hair` smallint(6) default '-1' COMMENT 'Paperdolling hair changed to upon usage (-1 for no change)',
-  `sprite_head` smallint(6) default '-1' COMMENT 'Paperdolling head changed to upon usage (-1 for no change)',
-  `sprite_wings` smallint(6) default '-1' COMMENT 'Paperdolling wings changed to upon usage (-1 for no change)',
-  `replenish_hp` int(11) default '0' COMMENT 'Amount of HP replenished upon usage',
-  `replenish_mp` int(11) default '0' COMMENT 'Amount of MP replenished upon usage',
-  `replenish_sp` int(11) default '0' COMMENT 'Amount of SP replenished upon usage',
-  `replenish_hp_percent` int(11) default '0' COMMENT 'Percent of HP replenished upon usage',
-  `replenish_mp_percent` int(11) default '0' COMMENT 'Percent of MP replenished upon usage',
-  `replenish_sp_percent` int(11) default '0' COMMENT 'Percent of SP replenished upon usage',
-  `stat_str` int(11) default '0' COMMENT 'Strength raised upon usage',
-  `stat_agi` int(11) default '0' COMMENT 'Agility raised upon usage',
-  `stat_mag` int(11) default '0' COMMENT 'Magic raised upon usage',
-  `stat_def` int(11) default '0' COMMENT 'Defence raised upon usage',
-  `stat_speed` int(11) default '0' COMMENT 'Walk speed raised upon usage',
-  `stat_hit_min` int(11) default '0' COMMENT 'Minimum hit raised upon usage',
-  `stat_hit_max` int(11) default '0' COMMENT 'Maximum hit raised upon usage',
-  `stat_hp` int(11) default '0' COMMENT 'Health raised upon usage',
-  `stat_mp` int(11) default '0' COMMENT 'Magic raised upon usage',
-  `stat_sp` int(11) default '0' COMMENT 'Stamina raised upon usage',
-  `stat_exp` int(11) default '0' COMMENT 'Experienced raised upon usage',
-  `stat_points` int(11) default '0' COMMENT 'Update points raised upon usage',
-  `stat_gold` int(11) default '0' COMMENT 'Gold raised upon usage',
+  `usegrh` int(11) NOT NULL default '0' COMMENT 'Grh for the weapon''s attack',
+  `projectilerotatespeed` tinyint(4) NOT NULL COMMENT 'If a projectile, how fast it rotates (0 for no rotate)',
+  `sprite_body` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling body changed to upon usage (-1 for no change)',
+  `sprite_weapon` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling weapon changed to upon usage (-1 for no change)',
+  `sprite_hair` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling hair changed to upon usage (-1 for no change)',
+  `sprite_head` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling head changed to upon usage (-1 for no change)',
+  `sprite_wings` smallint(6) NOT NULL default '-1' COMMENT 'Paperdolling wings changed to upon usage (-1 for no change)',
+  `replenish_hp` int(11) NOT NULL default '0' COMMENT 'Amount of HP replenished upon usage',
+  `replenish_mp` int(11) NOT NULL default '0' COMMENT 'Amount of MP replenished upon usage',
+  `replenish_sp` int(11) NOT NULL default '0' COMMENT 'Amount of SP replenished upon usage',
+  `replenish_hp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of HP replenished upon usage',
+  `replenish_mp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of MP replenished upon usage',
+  `replenish_sp_percent` int(11) NOT NULL default '0' COMMENT 'Percent of SP replenished upon usage',
+  `stat_str` int(11) NOT NULL default '0' COMMENT 'Strength raised upon usage',
+  `stat_agi` int(11) NOT NULL default '0' COMMENT 'Agility raised upon usage',
+  `stat_mag` int(11) NOT NULL default '0' COMMENT 'Magic raised upon usage',
+  `stat_def` int(11) NOT NULL default '0' COMMENT 'Defence raised upon usage',
+  `stat_speed` int(11) NOT NULL default '0' COMMENT 'Walk speed raised upon usage',
+  `stat_hit_min` int(11) NOT NULL default '0' COMMENT 'Minimum hit raised upon usage',
+  `stat_hit_max` int(11) NOT NULL default '0' COMMENT 'Maximum hit raised upon usage',
+  `stat_hp` int(11) NOT NULL default '0' COMMENT 'Health raised upon usage',
+  `stat_mp` int(11) NOT NULL default '0' COMMENT 'Magic raised upon usage',
+  `stat_sp` int(11) NOT NULL default '0' COMMENT 'Stamina raised upon usage',
+  `stat_exp` int(11) NOT NULL default '0' COMMENT 'Experienced raised upon usage',
+  `stat_points` int(11) NOT NULL default '0' COMMENT 'Update points raised upon usage',
+  `stat_gold` int(11) NOT NULL default '0' COMMENT 'Gold raised upon usage',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -183,21 +189,23 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records 
 -- ----------------------------
-INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-01-12', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-01-12', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-01-12', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-01-12', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-01-12', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
+INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-01-19', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 70.55475', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
+INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-01-19', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 53.3424', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
+INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-01-19', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 57.95186', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
+INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-01-19', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 28.95625', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
+INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-01-19', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 30.1948', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
 INSERT INTO `mail_lastid` VALUES ('5');
-INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
-INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '5000', '1', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '3', '1', '2', '2', '2', '2');
-INSERT INTO `npcs` VALUES ('3', 'Shopkeeper', 'Just a humble shopkeeper.', '0', '0', '0', '0', '0', '', '0', '0', '1 -1\r\n2 -1\r\n3 -1\r\n4 -1\r\n5 -1\r\n6 -1\r\n7 -1', '1', '1', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
-INSERT INTO `objects` VALUES ('1', 'Healing Potion', '10', '1', '0', '4', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('2', 'Healing Potion', '10', '1', '0', '4', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('3', 'Healing Potion', '10', '1', '0', '4', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('4', 'Healing Potion', '10', '1', '0', '4', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('5', 'Newbie Armor', '10', '3', '0', '1000', '2', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3', '0', '0', '0', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('6', 'Newbie Dagger', '30', '2', '1', '1300', '-1', '1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', '4', '0', '0', '0', '0', '0', '0');
-INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '1200', '-1', '-1', '-1', '-1', '1', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '0', '1', '1', '20', '10', '10', '0', '0', '0');
+INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '0', '0', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '5000', '1', '26', '0', '100', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '3', '1', '2', '2', '2', '2');
+INSERT INTO `npcs` VALUES ('3', 'Shopkeeper', 'Just a humble shopkeeper.', '0', '0', '0', '0', '0', '0', '0', '0', '', '0', '0', '1 -1\r\n2 -1\r\n3 -1\r\n4 -1\r\n5 -1\r\n6 -1\r\n7 -1', '1', '1', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
+INSERT INTO `npcs` VALUES ('4', 'Ninja', 'A sneaky little ninja with a hand full of ninja stars', '4', '10000', '1', '11', '10', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '25', '20', '', '0', '1', '1', '1', '1', '3', '3', '0', '0', '5', '2', '4', '10', '10', '10');
+INSERT INTO `objects` VALUES ('1', 'Healing Potion', '10', '1', '0', '0', '4', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('2', 'Healing Potion', '10', '1', '0', '0', '4', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('3', 'Healing Potion', '10', '1', '0', '0', '4', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('4', 'Healing Potion', '10', '1', '0', '0', '4', '0', '0', '-1', '-1', '-1', '-1', '-1', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('5', 'Newbie Armor', '10', '3', '0', '0', '1000', '0', '0', '2', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '3', '0', '0', '0', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('6', 'Newbie Dagger', '30', '2', '1', '0', '1300', '26', '0', '-1', '1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', '4', '0', '0', '0', '0', '0', '0');
+INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '0', '1200', '0', '0', '-1', '-1', '-1', '-1', '1', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '0', '1', '1', '20', '10', '10', '0', '0', '0');
+INSERT INTO `objects` VALUES ('8', 'Ninja Stars', '100', '2', '4', '10', '11', '11', '100', '-1', '0', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '6', '0', '0', '0', '0', '0', '0');
 INSERT INTO `quests` VALUES ('1', 'Kill Bandits', '1', 'Help me get revenge!', 'Thanks for the help! Kill 3 bandits that hide in the waterfall!', 'Just because I have no head doesn\'t mean I have no brain...', 'Sweet d00d, that\'ll show them whos boss! ^_^', '1', '0', '0', '10', '5', '0', '0', '1', '0', '0', '2', '3', '200', '400', '2', '60', '2');
-INSERT INTO `users` VALUES ('Spodi', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '29', '34', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '0', '0', '1', '1', '54', '50', '54', '50', '54', '50', '0');
+INSERT INTO `users` VALUES ('Spodi', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '27', '32', '1', '1', '1', '2', '1', '1', '3', '2', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '0', '0', '1', '1', '56', '50', '56', '50', '56', '50', '0');

@@ -1,6 +1,427 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Public Function Engine_GetAngle(ByVal CenterX As Integer, ByVal CenterY As Integer, ByVal TargetX As Integer, ByVal TargetY As Integer) As Single
+
+'************************************************************
+'Gets the angle between two points in a 2d plane
+'************************************************************
+Dim SideA As Single
+Dim SideC As Single
+
+    On Error GoTo ErrOut
+
+    'Check for horizontal lines (90 or 270 degrees)
+    If CenterY = TargetY Then
+
+        'Check for going right (90 degrees)
+        If CenterX < TargetX Then
+            Engine_GetAngle = 90
+
+            'Check for going left (270 degrees)
+        Else
+            Engine_GetAngle = 270
+        End If
+
+        'Exit the function
+        Exit Function
+
+    End If
+
+    'Check for horizontal lines (360 or 180 degrees)
+    If CenterX = TargetX Then
+
+        'Check for going up (360 degrees)
+        If CenterY > TargetY Then
+            Engine_GetAngle = 360
+
+            'Check for going down (180 degrees)
+        Else
+            Engine_GetAngle = 180
+        End If
+
+        'Exit the function
+        Exit Function
+
+    End If
+
+    'Calculate Side C
+    SideC = Sqr(Abs(TargetX - CenterX) ^ 2 + Abs(TargetY - CenterY) ^ 2)
+
+    'Side B = CenterY
+
+    'Calculate Side A
+    SideA = Sqr(Abs(TargetX - CenterX) ^ 2 + TargetY ^ 2)
+
+    'Calculate the angle
+    Engine_GetAngle = (SideA ^ 2 - CenterY ^ 2 - SideC ^ 2) / (CenterY * SideC * -2)
+    Engine_GetAngle = (Atn(-Engine_GetAngle / Sqr(-Engine_GetAngle * Engine_GetAngle + 1)) + 1.5708) * 57.29583
+
+    'If the angle is >180, subtract from 360
+    If TargetX < CenterX Then Engine_GetAngle = 360 - Engine_GetAngle
+
+    'Exit function
+
+Exit Function
+
+    'Check for error
+ErrOut:
+
+    'Return a 0 saying there was an error
+    Engine_GetAngle = 0
+
+Exit Function
+
+End Function
+
+Private Function Engine_Collision_Line(ByVal L1X1 As Long, ByVal L1Y1 As Long, ByVal L1X2 As Long, ByVal L1Y2 As Long, ByVal L2X1 As Long, ByVal L2Y1 As Long, ByVal L2X2 As Long, ByVal L2Y2 As Long) As Byte
+
+'*****************************************************************
+'Check if two lines intersect (return 1 if true)
+'*****************************************************************
+
+Dim m1 As Single
+Dim M2 As Single
+Dim B1 As Single
+Dim B2 As Single
+Dim IX As Single
+
+    'This will fix problems with vertical lines
+    If L1X1 = L1X2 Then L1X1 = L1X1 + 1
+    If L2X1 = L2X2 Then L2X1 = L2X1 + 1
+
+    'Find the first slope
+    m1 = (L1Y2 - L1Y1) / (L1X2 - L1X1)
+    B1 = L1Y2 - m1 * L1X2
+
+    'Find the second slope
+    M2 = (L2Y2 - L2Y1) / (L2X2 - L2X1)
+    B2 = L2Y2 - M2 * L2X2
+    
+    'Check if the slopes are the same
+    If M2 - m1 = 0 Then
+    
+        If B2 = B1 Then
+            'The lines are the same
+            Engine_Collision_Line = 1
+        Else
+            'The lines are parallel (can never intersect)
+            Engine_Collision_Line = 0
+        End If
+        
+    Else
+        
+        'An intersection is a point that lies on both lines. To find this, we set the Y equations equal and solve for X.
+        'M1X+B1 = M2X+B2 -> M1X-M2X = -B1+B2 -> X = B1+B2/(M1-M2)
+        IX = ((B2 - B1) / (m1 - M2))
+        
+        'Check for the collision
+        If Engine_Collision_Between(IX, L1X1, L1X2) Then
+            If Engine_Collision_Between(IX, L2X1, L2X2) Then Engine_Collision_Line = 1
+        End If
+        
+    End If
+    
+End Function
+
+Public Function Engine_ClearPath(ByVal Map As Integer, ByVal UserX As Long, ByVal UserY As Long, ByVal TargetX As Long, ByVal TargetY As Long) As Byte
+
+'***************************************************
+'Check if the path is clear from the user to the target of blocked tiles
+'For the line-rect collision, we pretend that each tile is 2 units wide so we can give them a width of 1 to center things
+'***************************************************
+Dim X As Long
+Dim Y As Long
+
+    '****************************************
+    '***** Target is on top of the user *****
+    '****************************************
+    
+    'If the target position = user position, we must be targeting ourself, so nothing can be blocking us from us (I hope o.O )
+    If UserX = TargetX Then
+        If UserY = TargetY Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+
+    '********************************************
+    '***** Target is right next to the user *****
+    '********************************************
+    
+    'Target is at one of the 4 diagonals of the user
+    If Abs(UserX - TargetX) = 1 Then
+        If Abs(UserY - TargetY) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Target is above or below the user
+    If UserX = TargetX Then
+        If Abs(UserY - TargetY) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Target is to the left or right of the user
+    If UserY = TargetY Then
+        If Abs(UserX - TargetX) = 1 Then
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    '********************************************
+    '***** Target is diagonal from the user *****
+    '********************************************
+    
+    'Check if the target is diagonal from the user - only do the following checks if diagonal from the target
+    If Abs(UserX - TargetX) = Abs(UserY - TargetY) Then
+
+        If UserX > TargetX Then
+                        
+            'Diagonal to the top-left
+            If UserY > TargetY Then
+                For X = TargetX To UserX - 1
+                    For Y = TargetY To UserY - 1
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            
+            'Diagonal to the bottom-left
+            Else
+                For X = TargetX To UserX - 1
+                    For Y = UserY + 1 To TargetY
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            End If
+
+        End If
+        
+        If UserX < TargetX Then
+        
+            'Diagonal to the top-right
+            If UserY > TargetY Then
+                For X = UserX + 1 To TargetX
+                    For Y = TargetY To UserY - 1
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+                
+            'Diagonal to the bottom-right
+            Else
+                For X = UserX + 1 To TargetX
+                    For Y = UserY + 1 To TargetY
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    Next Y
+                Next X
+            End If
+        
+        End If
+    
+        Engine_ClearPath = 1
+        Exit Function
+    
+    End If
+
+    '*******************************************************************
+    '***** Target is directly vertical or horizontal from the user *****
+    '*******************************************************************
+    
+    'Check if target is directly above the user
+    If UserX = TargetX Then 'Check if x values are the same (straight line between the two)
+        If UserY > TargetY Then
+            For Y = TargetY + 1 To UserY - 1
+                If MapData(Map, UserX, Y).Blocked And 128 Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next Y
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly below the user
+    If UserX = TargetX Then
+        If UserY < TargetY Then
+            For Y = UserY + 1 To TargetY - 1
+                If MapData(Map, UserX, Y).Blocked And 128 Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next Y
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly to the left of the user
+    If UserY = TargetY Then
+        If UserX > TargetX Then
+            For X = TargetX + 1 To UserX - 1
+                If MapData(Map, X, UserY).Blocked And 128 Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+    
+    'Check if the target is directly to the right of the user
+    If UserY = TargetY Then
+        If UserX < TargetX Then
+            For X = UserX + 1 To TargetX - 1
+                If MapData(Map, X, UserY).Blocked And 128 Then
+                    Engine_ClearPath = 0
+                    Exit Function
+                End If
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+        End If
+    End If
+
+    '*******************************************************************
+    '***** Target is directly vertical or horizontal from the user *****
+    '*******************************************************************
+    
+    
+    If UserY > TargetY Then
+    
+        'Check if the target is to the top-left of the user
+        If UserX > TargetX Then
+            For X = TargetX To UserX - 1
+                For Y = TargetY To UserY - 1
+                    'We must do * 2 on the tiles so we can use +1 to get the center (its like * 32 and + 16 - this does the same affect)
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+            Engine_ClearPath = 1
+            Exit Function
+    
+        'Check if the target is to the top-right of the user
+        Else
+            For X = UserX + 1 To TargetX
+                For Y = TargetY To UserY - 1
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        End If
+        
+    Else
+    
+        'Check if the target is to the bottom-left of the user
+        If UserX > TargetX Then
+            For X = TargetX To UserX - 1
+                For Y = UserY + 1 To TargetY
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        
+        'Check if the target is to the bottom-right of the user
+        Else
+            For X = UserX + 1 To TargetX
+                For Y = UserY + 1 To TargetY
+                    If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
+                        If MapData(Map, X, Y).Blocked And 128 Then
+                            Engine_ClearPath = 0
+                            Exit Function
+                        End If
+                    End If
+                Next Y
+            Next X
+        End If
+    
+    End If
+    
+    Engine_ClearPath = 1
+
+End Function
+
+Private Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+
+'*****************************************************************
+'Check if a line intersects with a rectangle (returns 1 if true)
+'*****************************************************************
+
+    'Top line
+    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+    
+    'Right line
+    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+    'Bottom line
+    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+    'Left line
+    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
+        Engine_Collision_LineRect = 1
+        Exit Function
+    End If
+
+End Function
+
+Private Function Engine_Collision_Between(ByVal Value As Single, ByVal Bound1 As Single, ByVal Bound2 As Single) As Byte
+
+'*****************************************************************
+'Find if a value is between two other values (used for line collision)
+'*****************************************************************
+
+    'Checks if a value lies between two bounds
+    If Bound1 > Bound2 Then
+        If Value >= Bound2 Then
+            If Value <= Bound1 Then Engine_Collision_Between = 1
+        End If
+    Else
+        If Value >= Bound1 Then
+            If Value <= Bound2 Then Engine_Collision_Between = 1
+        End If
+    End If
+    
+End Function
+
 Public Function ByteArrayToStr(ByRef ByteArray() As Byte) As String
 
 '*****************************************************************
@@ -31,7 +452,7 @@ ErrOut:
     
 End Function
 
-Function Server_WalkTimePerTile(ByVal Speed As Long) As Long
+Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBuffer As Byte = 150) As Long
 '*****************************************************************
 'Takes a speed value and returns the time it takes to walk a tile
 'To fine the value:
@@ -48,7 +469,7 @@ Function Server_WalkTimePerTile(ByVal Speed As Long) As Long
     '150 = We have to give some slack for network lag and client lag - raise this value if people skip too much
     '     and lower it if people are speedhacking and getting too much extra speed
     '1000 = Miliseconds in a second
-    Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - 150
+    Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - LagBuffer
     
     Log "Rtrn Server_WalkTimePerSecond = " & Server_WalkTimePerTile, CodeTracker '//\\LOGLINE//\\
 
@@ -188,7 +609,7 @@ Function Server_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
 
     Log "Call Server_ValidCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
 
-    If KeyAscii > 32 Then Server_ValidCharacter = True
+    If KeyAscii >= 32 Then Server_ValidCharacter = True
 
 End Function
 

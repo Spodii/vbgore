@@ -133,7 +133,7 @@ Function Game_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
 
     Log "Call Game_ValidCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
 
-    If KeyAscii > 32 Then Game_ValidCharacter = True
+    If KeyAscii >= 32 Then Game_ValidCharacter = True
 
 End Function
 
@@ -421,6 +421,9 @@ Dim X As Byte
                 Get #MapNum, , i
                 Engine_Sound_SetToMap i, X, Y
             End If
+            
+            'Blocked attack
+            If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
 
         Next X
     Next Y

@@ -324,12 +324,15 @@ Dim Y As Byte
         If Button = vbLeftButton Then
             If Not Shift Then
                 If Not (tX < MinXBorder Or tX > MaxXBorder Or tY < MinYBorder Or tY > MaxYBorder) Then  'Worthless to block in the border, waste of map space
-                    b = 0   'Build the blocked value
-                    If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
-                    If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
-                    If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
-                    If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
-                    MapData(tX, tY).Blocked = b
+                    If frmBlock.SetWalkChk.Value = 1 Then
+                        b = 0   'Build the blocked value
+                        If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
+                        If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
+                        If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
+                        If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
+                        MapData(tX, tY).Blocked = b
+                    End If
+                    If frmBlock.SetAttackChk.Value = 1 Then MapData(tX, tY).BlockedAttack = frmBlock.BlockAttackChk.Value
                 End If
             End If
         End If
@@ -593,6 +596,9 @@ Dim X As Byte
             MapData(X, Y).Sfx = 0
             If ByFlags And 1048576 Then Get #MapNum, , MapData(X, Y).Sfx
             
+            'Blocked attack tiles
+            If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
+            
             '*** Inf File ***
 
             'Flags
@@ -780,6 +786,9 @@ Dim i As Integer
             
             'Sfx
             If MapData(X, Y).Sfx > 0 Then ByFlags = ByFlags Or 1048576
+            
+            'Blocked attack tile
+            If MapData(X, Y).BlockedAttack = 1 Then ByFlags = ByFlags Or 2097152
 
             '**********************
             'Store data

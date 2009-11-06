@@ -205,7 +205,7 @@ Dim i As Long
     If DB_RS.EOF = False Then
         
         'Apply the values
-        Load_Mail.Subject = Trim$(DB_RS!sub)
+        Load_Mail.Subject = Trim$(DB_RS!Sub)
         Load_Mail.WriterName = Trim$(DB_RS!By)
         Load_Mail.RecieveDate = DB_RS!Date
         Load_Mail.Message = Trim$(DB_RS!msg)
@@ -306,7 +306,8 @@ Dim i As Long
                 Get #FileNumMap, , ByFlags
 
                 'Blocked
-                If ByFlags And 1 Then Get #FileNumMap, , MapData(Map, X, Y).Blocked Else MapData(Map, X, Y).Blocked = 0
+                MapData(Map, X, Y).Blocked = 0
+                If ByFlags And 1 Then Get #FileNumMap, , MapData(Map, X, Y).Blocked
 
                 'Graphic layers (values dont need to be stored)
                 If ByFlags And 2 Then Get #FileNumMap, , TempLng
@@ -355,6 +356,9 @@ Dim i As Long
                 If ByFlags And 1048576 Then
                     Get #FileNumMap, , TempInt
                 End If
+                
+                'Blocked attack
+                If ByFlags And 2097152 Then MapData(Map, X, Y).Blocked = MapData(Map, X, Y).Blocked Or 128
                 
                 '.inf file
 
@@ -477,8 +481,11 @@ Dim i As Long
     With NPCList(NPCIndex)
         .Name = Trim$(DB_RS!Name)
         .Desc = Trim$(DB_RS!Descr)
+        .AttackGrh = Val(DB_RS!AttackGrh)
+        .AttackRange = Val(DB_RS!AttackRange)
         .Movement = Val(DB_RS!Movement)
         .RespawnWait = Val(DB_RS!RespawnWait)
+        .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
         .Attackable = Val(DB_RS!Attackable)
         .Hostile = Val(DB_RS!Hostile)
         .Quest = Val(DB_RS!Quest)
@@ -591,6 +598,9 @@ Sub Load_OBJs()
             .Price = Val(DB_RS!Price)
             .ObjType = Val(DB_RS!ObjType)
             .WeaponType = Val(DB_RS!WeaponType)
+            .WeaponRange = Val(DB_RS!WeaponRange)
+            .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
+            .UseGrh = Val(DB_RS!UseGrh)
             .GrhIndex = Val(DB_RS!GrhIndex)
             .SpriteBody = Val(DB_RS!sprite_body)
             .SpriteWeapon = Val(DB_RS!sprite_weapon)
@@ -887,7 +897,7 @@ Dim i As Long
     
     'Put the data in the recordset
     DB_RS!id = Str$(MailIndex)
-    DB_RS!sub = MailData.Subject
+    DB_RS!Sub = MailData.Subject
     DB_RS!By = MailData.WriterName
     DB_RS!Date = MailData.RecieveDate
     DB_RS!msg = MailData.Message

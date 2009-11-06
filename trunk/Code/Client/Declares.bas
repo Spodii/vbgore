@@ -99,6 +99,9 @@ Public Const DEBUG_PrintPacket_In As Boolean = False        'Shows packets comin
 'Set this to true to force updater check
 Public Const ForceUpdateCheck As Boolean = False
 
+'Running speed - make sure you have the same value on the server!
+Public Const RunningSpeed As Byte = 5
+
 '********** Object types ************
 Public Type ObjData
     Name As String              'Name
@@ -117,6 +120,12 @@ End Type
 
 Public BaseStats(1 To NumStats) As Long
 Public ModStats(1 To NumStats) As Long
+
+'Delay timers for packet-related actions (so to not spam the server)
+Public Const AttackDelay As Long = 200  'These constants are client-side only
+Public Const LootDelay As Long = 500    ' - changing these lower wont make it faster server-side!
+Public LastAttackTime As Long
+Public LastLootTime As Long
 
 'If the map is loading (used to be used for the downloading status of maps)
 Public DownloadingMap As Boolean
@@ -145,8 +154,14 @@ Public Message() As String
 'Known user skills/spells
 Public UserKnowSkill(1 To NumSkills)
 
+'Attack range
+Public UserAttackRange As Byte
+
 'User status vars
 Public UserInventory(1 To MAX_INVENTORY_SLOTS) As Inventory
+
+'If there is a clear path to the target (if any)
+Public ClearPathToTarget As Byte
 
 'Used during login
 Public SendNewChar As Boolean
@@ -158,7 +173,7 @@ Public Ping As Long
 Public SoxID As Long
 Public SocketOpen As Byte
 Public TargetCharIndex As Integer
-Public Const DegreeToRadian As Single = 0.0174532925
+Public Const DegreeToRadian As Single = 0.01745329251994 'Pi / 180
 
 'Holds the skin the user is using at the time
 Public CurrentSkin As String
@@ -182,6 +197,9 @@ Public IsUnloading As Byte
 'User login information
 Public UserPassword As String
 Public UserName As String
+
+'Holds the name of the last person to whisper to the client
+Public LastWhisperName As String
 
 'Disable / enable input (for debugging purposes on multiple clients so all clients dont move at once)
 Public DisableInput As Byte

@@ -1238,6 +1238,121 @@ Dim NewSlot As Byte
 
 End Sub
 
+Private Sub User_Attack_Ranged(ByVal UserIndex As Integer)
+
+'*****************************************************************
+'Begin an attack sequence (from ranged)
+'*****************************************************************
+Dim NewHeading As Byte
+Dim TargetPos As WorldPos
+Dim TargetIndex As Integer
+Dim Angle As Single
+    
+    'Get the target index based on the NPCList() or UserList() arrays instead of CharList() value
+    TargetIndex = CharList(UserList(UserIndex).Flags.TargetIndex).Index
+
+    'Check if a NPC or PC
+    Select Case UserList(UserIndex).Flags.Target
+        Case 1  'PC
+            With UserList(TargetIndex).Pos
+                TargetPos.Map = .Map
+                TargetPos.X = .X
+                TargetPos.Y = .Y
+            End With
+            
+        Case 2  'NPC
+            
+            'Check for a valid NPC
+            If NPCList(TargetIndex).Attackable = 0 Then Exit Sub
+            
+            With NPCList(TargetIndex).Pos
+                TargetPos.Map = .Map
+                TargetPos.X = .X
+                TargetPos.Y = .Y
+            End With
+            
+            
+        Case Else
+            Exit Sub
+        
+    End Select
+    
+    'Check for a valid distance
+    If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) > ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange Then Exit Sub
+    
+    'Check for a valid target
+    If Engine_ClearPath(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) Then
+                
+        'Play attack sound
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_PlaySound3D
+        ConBuf.Put_Byte SOUND_SWING
+        ConBuf.Put_Byte UserList(UserIndex).Pos.X
+        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+        Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+        
+        'Get the new heading
+        Angle = Engine_GetAngle(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y)
+        If Angle >= 337.5 Or Angle <= 22.5 Then '337.5 to 22.5
+            NewHeading = NORTH
+        ElseIf Angle <= 67.5 Then   '22.5 to 67.5
+            NewHeading = NORTHEAST
+        ElseIf Angle <= 112.5 Then  '67.5 to 112.5
+            NewHeading = EAST
+        ElseIf Angle <= 157.5 Then  '112.5 to 157.5
+            NewHeading = SOUTHEAST
+        ElseIf Angle <= 202.5 Then  '157.5 to 202.5
+            NewHeading = SOUTH
+        ElseIf Angle <= 247.5 Then  '202.5 to 247.5
+            NewHeading = SOUTHWEST
+        ElseIf Angle <= 292.5 Then  '247.5 to 292.5
+            NewHeading = WEST
+        Else                        '292.5 to 337.5
+            NewHeading = NORTHWEST
+        End If
+        
+        Select Case UserList(UserIndex).Flags.Target
+        
+            'Attacking user
+            Case 1
+
+                'Send the data
+                ConBuf.Clear
+                If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+                    ConBuf.Put_Byte DataCode.Server_MakeProjectile
+                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                    ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
+                    ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+                    ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).ProjectileRotateSpeed
+                End If
+                ConBuf.Put_Byte DataCode.User_Rotate
+                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                ConBuf.Put_Byte NewHeading
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                User_AttackUser UserIndex, TargetIndex
+            
+            'Attacking NPC
+            Case 2
+                ConBuf.Clear
+                If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+                    ConBuf.Put_Byte DataCode.Server_MakeProjectile
+                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                    ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+                    ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+                    ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).ProjectileRotateSpeed
+                End If
+                ConBuf.Put_Byte DataCode.User_Rotate
+                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                ConBuf.Put_Byte NewHeading
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                User_AttackNPC UserIndex, TargetIndex
+                
+        End Select
+        
+    End If
+
+End Sub
+
 Sub User_Attack(ByVal UserIndex As Integer)
 
 '*****************************************************************
@@ -1267,6 +1382,13 @@ Dim AttackPos As WorldPos
     'Update counters
     UserList(UserIndex).Counters.AttackCounter = timeGetTime
 
+    'Check for ranged attack
+    If ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange > 1 Then
+        If UserList(UserIndex).Flags.TargetIndex = 0 Then Exit Sub
+        User_Attack_Ranged UserIndex
+        Exit Sub
+    End If
+
     'Get tile user is attacking
     AttackPos = UserList(UserIndex).Pos
     Server_HeadToPos UserList(UserIndex).Char.Heading, AttackPos
@@ -1287,6 +1409,11 @@ Dim AttackPos As WorldPos
         ConBuf.Put_Byte SOUND_SWING
         ConBuf.Put_Byte UserList(UserIndex).Pos.X
         ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+        If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+            ConBuf.Put_Byte DataCode.Server_MakeSlash
+            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+            ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+        End If
         Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
         'Go to the user attacking user sub
@@ -1310,12 +1437,17 @@ Dim AttackPos As WorldPos
                 Exit Sub
             End If
 
-            'Play attack sound
+            'Play attack sound and create the graphic
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
             ConBuf.Put_Byte SOUND_SWING
             ConBuf.Put_Byte UserList(UserIndex).Pos.X
             ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+            If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+                ConBuf.Put_Byte DataCode.Server_MakeSlash
+                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+            End If
             Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
             'Go to user attacking npc sub
@@ -2150,7 +2282,7 @@ Dim MsgData As MailData
 
             'Only check mail if right next to the mailbox
             If UserList(UserIndex).Pos.Map = Map Then
-                If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, CInt(X), CInt(Y), 1, 1) Then
+                If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, X, Y, 1, 1) Then
 
                     'Store the position of the mailbox for later reference in case user tries to use items away from mailbox
                     UserList(UserIndex).MailboxPos.Map = Map
@@ -2460,7 +2592,7 @@ Dim CharIndex As Integer
 
 End Sub
 
-Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte)
+Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte, ByVal Running As Byte)
 
 '*****************************************************************
 'Moves a User from one tile to another
@@ -2471,8 +2603,7 @@ Dim i As Long
 
     Log "Call User_MoveChar(" & UserIndex & "," & nHeading & ")", CodeTracker '//\\LOGLINE//\\
 
-'Check for invalid values
-
+    'Check for invalid values
     If UserIndex <= 0 Then
         Log "User_MoveChar: UserIndex <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -2503,12 +2634,22 @@ Dim i As Long
         Exit Sub
 
     End If
-
+    
+    'Check the running value
+    If Running > 0 Then
+        If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) < RunningCost Then
+            Running = 0
+        Else
+            Running = 1 'Make sure the value is 1, no higher
+            UserList(UserIndex).Stats.BaseStat(SID.MinSTA) = UserList(UserIndex).Stats.BaseStat(SID.MinSTA) - RunningCost
+        End If
+    End If
+    
     'Clear the pending quest NPC number
     UserList(UserIndex).Flags.QuestNPC = 0
 
     'Get the new time
-    UserList(UserIndex).Counters.MoveCounter = timeGetTime + Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed))
+    UserList(UserIndex).Counters.MoveCounter = timeGetTime + Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed) + Running * RunningSpeed)
 
     'Get the new position
     nPos = UserList(UserIndex).Pos
@@ -2523,7 +2664,11 @@ Dim i As Long
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Byte nPos.X
         ConBuf.Put_Byte nPos.Y
-        ConBuf.Put_Byte nHeading
+        If Running Then
+            ConBuf.Put_Byte nHeading Or 128
+        Else
+            ConBuf.Put_Byte nHeading
+        End If
         Data_Send ToUserMove, UserIndex, ConBuf.Get_Buffer
 
         'Update map and user pos
@@ -2666,9 +2811,9 @@ Dim Levels As Integer
         End With
         
         'Reset the level requirements
-        UserList(UserIndex).Stats.BaseStat(SID.ELU) = UserList(UserIndex).Stats.BaseStat(SID.ELU) + 1
+        UserList(UserIndex).Stats.BaseStat(SID.ELV) = UserList(UserIndex).Stats.BaseStat(SID.ELV) + 1
         UserList(UserIndex).Stats.BaseStat(SID.EXP) = UserList(UserIndex).Stats.BaseStat(SID.EXP) - UserList(UserIndex).Stats.BaseStat(SID.ELU)
-        UserList(UserIndex).Stats.BaseStat(SID.ELU) = Int(UserList(UserIndex).Stats.BaseStat(SID.ELU) * 5)
+        UserList(UserIndex).Stats.BaseStat(SID.ELU) = Int(UserList(UserIndex).Stats.BaseStat(SID.ELV) * 5)
 
     Loop
 
@@ -2716,6 +2861,12 @@ Dim Obj As ObjData
         'Check for weapon
     Case OBJTYPE_WEAPON
         Log "User_RemoveInvItem: Object type OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
+        
+        'Update the weapon distance on the client
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_SetWeaponRange
+        ConBuf.Put_Byte 0
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         
         'Set the equipted variables
         UserList(UserIndex).Object(Slot).Equipped = 0
@@ -3113,6 +3264,12 @@ Dim Obj As ObjData
         UserList(UserIndex).WeaponEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
         UserList(UserIndex).WeaponEqpSlot = Slot
         UserList(UserIndex).WeaponType = Obj.WeaponType
+        
+        'Update the weapon distance on the client
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_SetWeaponRange
+        ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
         'Set the paper-doll
         If Obj.SpriteHair <> -1 Then UserList(UserIndex).Char.Hair = Obj.SpriteHair

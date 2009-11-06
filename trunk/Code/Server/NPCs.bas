@@ -59,19 +59,107 @@ Dim i As Long
 
 End Sub
 
+Private Function NPC_AI_Attack(ByVal NPCIndex As Integer) As Byte
+
+'*****************************************************************
+'Calls the NPC attack AI - only call by the NPC_AI routine!
+'*****************************************************************
+Dim HeadingLoop As Long
+Dim NewHeading As Byte
+Dim nPos As WorldPos
+Dim Angle As Single
+Dim X As Long
+
+    Log "Call NPC_AI_Attack(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    '*** Melee attacking ***
+    If NPCList(NPCIndex).AttackRange <= 1 Then
+        
+        'Check in all directions
+        For HeadingLoop = NORTH To NORTHWEST
+            nPos = NPCList(NPCIndex).Pos
+            Server_HeadToPos HeadingLoop, nPos
+
+            'If a legal pos and a user is found attack
+            If MapData(nPos.Map, nPos.X, nPos.Y).UserIndex > 0 Then
+
+                'Face the NPC to the target and tell everyone in the PC area to show the attack animation
+                ConBuf.Clear
+                ConBuf.Put_Byte DataCode.User_Rotate
+                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                ConBuf.Put_Byte HeadingLoop
+                ConBuf.Put_Byte DataCode.User_Attack
+                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+
+                'Attack
+                NPC_AttackUser NPCIndex, MapData(nPos.Map, nPos.X, nPos.Y).UserIndex
+                NPC_AI_Attack = 1
+                Exit Function
+
+            End If
+            
+        Next HeadingLoop
+        
+    '*** Ranged attacking ***
+    Else
+        
+        'Check for the closest user
+        X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+        If X > 0 Then
+            
+            'Check for a valid range
+            If Server_Distance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y) <= NPCList(NPCIndex).AttackRange Then
+
+                'Get the new heading
+                Angle = Engine_GetAngle(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y)
+                If Angle >= 337.5 Or Angle <= 22.5 Then '337.5 to 22.5
+                    NewHeading = NORTH
+                ElseIf Angle <= 67.5 Then   '22.5 to 67.5
+                    NewHeading = NORTHEAST
+                ElseIf Angle <= 112.5 Then  '67.5 to 112.5
+                    NewHeading = EAST
+                ElseIf Angle <= 157.5 Then  '112.5 to 157.5
+                    NewHeading = SOUTHEAST
+                ElseIf Angle <= 202.5 Then  '157.5 to 202.5
+                    NewHeading = SOUTH
+                ElseIf Angle <= 247.5 Then  '202.5 to 247.5
+                    NewHeading = SOUTHWEST
+                ElseIf Angle <= 292.5 Then  '247.5 to 292.5
+                    NewHeading = WEST
+                Else                        '292.5 to 337.5
+                    NewHeading = NORTHWEST
+                End If
+
+                'Face the NPC to the target
+                ConBuf.Clear
+                ConBuf.Put_Byte DataCode.User_Rotate
+                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                ConBuf.Put_Byte NewHeading
+                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+   
+                'Attack the user
+                NPC_AttackUser NPCIndex, X
+                NPC_AI_Attack = 1
+                Exit Function
+                
+            End If
+        End If
+    End If
+
+End Function
+
 Sub NPC_AI(ByVal NPCIndex As Integer)
 
 '*****************************************************************
 'Moves NPC based on it's .movement value
 '*****************************************************************
-
-Dim nPos As WorldPos
-Dim HeadingLoop As Long
 Dim tHeading As Byte
 Dim t1 As Byte
 Dim t2 As Byte
 Dim Y As Long
 Dim X As Long
+Dim b As Byte
 
     Log "Call NPC_AI(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -86,59 +174,44 @@ Dim X As Long
         Log "NPC_AI: NPC's action delay > 0 - aborting", CodeTracker '//\\LOGLINE//\\
         NPCList(NPCIndex).Flags.ActionDelay = NPCList(NPCIndex).Flags.ActionDelay - Elapsed
         Exit Sub
-        
-    Else
-    
-        'Look for someone to attack if hostile
-        If NPCList(NPCIndex).Hostile Then
-            Log "NPC_AI: NPC looking for something to attack", CodeTracker '//\\LOGLINE//\\
-    
-            'Check in all directions
-            For HeadingLoop = NORTH To NORTHWEST
-                nPos = NPCList(NPCIndex).Pos
-                Server_HeadToPos HeadingLoop, nPos
-    
-                'If a legal pos and a user is found attack
-                If MapData(nPos.Map, nPos.X, nPos.Y).UserIndex > 0 Then
-    
-                    'Face NPC to target
-                    NPC_ChangeChar ToMap, NPCIndex, NPCIndex, NPCList(NPCIndex).Char.Body, NPCList(NPCIndex).Char.Head, CByte(HeadingLoop), NPCList(NPCIndex).Char.Weapon, NPCList(NPCIndex).Char.Hair, NPCList(NPCIndex).Char.Wings
-    
-                    'Tell everyone in the PC area to show the attack animation
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.User_Attack
-                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-    
-                    'Attack
-                    NPC_AttackUser NPCIndex, MapData(nPos.Map, nPos.X, nPos.Y).UserIndex
-    
-                    'Don't move if fighting
-                    Exit Sub
-    
-                End If
-                
-            Next HeadingLoop
-        End If
-        
     End If
-    
-    Log "NPC_AI: NPC did not attack, looking for movement (movement type = " & NPCList(NPCIndex).Movement & ")", CodeTracker '//\\LOGLINE//\\
 
     'Movement
     Select Case NPCList(NPCIndex).Movement
     
         '*** Random movement ***
         Case 2
+        
+            'Attack
+            If NPCList(NPCIndex).Hostile Then b = NPC_AI_Attack(NPCIndex)
+            If b = 1 Then
+                NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
+                Exit Sub
+            End If
+            
+            'Move
             NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
-    
+
         '*** Go towards nearby players - simple/fast AI ***
         Case 3
     
+            'Attack
+            If NPCList(NPCIndex).Hostile Then b = NPC_AI_Attack(NPCIndex)
+            If b = 1 Then
+                NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
+                Exit Sub
+            End If
+            
             'Look for a user
             X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
-            If X > 0 Then
-    
+            
+            'If no users are nearby, then put a moderate delay to lighten the CPU load
+            If X = 0 Then
+                NPCList(NPCIndex).Flags.ActionDelay = 1000
+                Exit Sub
+            
+            Else
+            
                 'Find the direction to move
                 tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
                 
@@ -183,6 +256,25 @@ Dim X As Long
                     
                 Exit Sub
     
+            End If
+            
+        '*** Attack the nearest player, and run from them ***
+        Case 4
+            
+            'Look for a user
+            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            If X = 0 Then
+                NPCList(NPCIndex).Flags.ActionDelay = 1000
+                Exit Sub
+            Else
+            
+                'Attack
+                b = NPC_AI_Attack(NPCIndex)
+                If b Then
+                    NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
+                    Exit Sub
+                End If
+                
             End If
 
     End Select
@@ -262,12 +354,25 @@ Dim Hit As Integer
     'Set the action delay
     NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
     
-    'Sound effect
+    'Create the sound effect and make the attack grh
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_PlaySound3D
     ConBuf.Put_Byte SOUND_SWING
     ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
     ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
+    If NPCList(NPCIndex).AttackGrh > 0 Then
+        If NPCList(NPCIndex).AttackRange > 1 Then
+            ConBuf.Put_Byte DataCode.Server_MakeProjectile
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+            ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
+        Else
+            ConBuf.Put_Byte DataCode.Server_MakeSlash
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+        End If
+    End If
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
     'Calculate if they hit
@@ -675,8 +780,8 @@ Dim nPos As WorldPos
     'Move if legal pos
     If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading) = True Then
 
-        'Set the move delay
-        NPCList(NPCIndex).Flags.ActionDelay = Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed))
+        'Set the move delay (we set the lag buffer to 0 since NPCs don't lag)
+        NPCList(NPCIndex).Flags.ActionDelay = Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed), 0)
 
         'Send the movement update packet
         ConBuf.Clear

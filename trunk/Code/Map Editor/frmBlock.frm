@@ -1,78 +1,183 @@
 VERSION 5.00
 Begin VB.Form frmBlock 
-   BackColor       =   &H00FFFFFF&
+   BackColor       =   &H000000FF&
    BorderStyle     =   0  'None
    Caption         =   "Blocks"
-   ClientHeight    =   1500
+   ClientHeight    =   2850
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   1200
+   ClientWidth     =   1455
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
    Picture         =   "frmBlock.frx":0000
-   ScaleHeight     =   100
+   ScaleHeight     =   190
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   80
+   ScaleWidth      =   97
    ShowInTaskbar   =   0   'False
+   Begin VB.CheckBox SetAttackChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Set attack"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   120
+      TabIndex        =   9
+      ToolTipText     =   "Set the attacking block value on click"
+      Top             =   840
+      Width           =   1215
+   End
+   Begin VB.CheckBox SetWalkChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Caption         =   "Set walk"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   120
+      TabIndex        =   8
+      ToolTipText     =   "Set the walking block values on click"
+      Top             =   600
+      Width           =   1215
+   End
+   Begin VB.CheckBox BlockAttackChk 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      Enabled         =   0   'False
+      ForeColor       =   &H80000008&
+      Height          =   255
+      Left            =   1080
+      TabIndex        =   7
+      ToolTipText     =   "Can not attack through the tile"
+      Top             =   2370
+      Width           =   200
+   End
    Begin VB.CheckBox BlockAllChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
-      Left            =   510
+      Left            =   630
       TabIndex        =   4
       ToolTipText     =   "Block/Unblock all directions"
-      Top             =   840
+      Top             =   1680
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
       Index           =   4
-      Left            =   270
+      Left            =   390
       TabIndex        =   3
       ToolTipText     =   "Block movement going West"
-      Top             =   840
+      Top             =   1680
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
       Index           =   3
-      Left            =   510
+      Left            =   630
       TabIndex        =   2
       ToolTipText     =   "Block movement going South"
-      Top             =   1080
+      Top             =   1920
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
       Index           =   2
-      Left            =   750
+      Left            =   870
       TabIndex        =   1
       ToolTipText     =   "Block movement going East"
-      Top             =   840
+      Top             =   1680
       Width           =   200
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
       Index           =   1
-      Left            =   510
+      Left            =   630
       TabIndex        =   0
       ToolTipText     =   "Block movement going North"
-      Top             =   600
+      Top             =   1440
       Width           =   200
+   End
+   Begin VB.Label Label1 
+      Appearance      =   0  'Flat
+      AutoSize        =   -1  'True
+      BackColor       =   &H80000005&
+      BackStyle       =   0  'Transparent
+      Caption         =   "No Attack"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   1
+      Left            =   120
+      TabIndex        =   6
+      Top             =   2400
+      Width           =   870
+   End
+   Begin VB.Label Label1 
+      Appearance      =   0  'Flat
+      AutoSize        =   -1  'True
+      BackColor       =   &H80000005&
+      BackStyle       =   0  'Transparent
+      Caption         =   "No Walk"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   0
+      Left            =   360
+      TabIndex        =   5
+      Top             =   1200
+      Width           =   750
    End
 End
 Attribute VB_Name = "frmBlock"
@@ -118,5 +223,21 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
             End If
         End If
     End If
+
+End Sub
+
+Private Sub SetAttackChk_Click()
+
+    BlockAttackChk.Enabled = (SetAttackChk.Value = 1)
+
+End Sub
+
+Private Sub SetWalkChk_Click()
+Dim i As Long
+
+    BlockAllChk.Enabled = (SetWalkChk.Value = 1)
+    For i = 1 To 4
+        BlockChk(i).Enabled = (SetWalkChk.Value = 1)
+    Next i
 
 End Sub

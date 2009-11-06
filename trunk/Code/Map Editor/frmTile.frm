@@ -1032,12 +1032,14 @@ Public Sub SetInfo(ByVal tX As Byte, ByVal tY As Byte)
         If MapData(tX, tY).Blocked And 2 Then frmBlock.BlockChk(2).Value = 1 Else frmBlock.BlockChk(2).Value = 0
         If MapData(tX, tY).Blocked And 4 Then frmBlock.BlockChk(3).Value = 1 Else frmBlock.BlockChk(3).Value = 0
         If MapData(tX, tY).Blocked And 8 Then frmBlock.BlockChk(4).Value = 1 Else frmBlock.BlockChk(4).Value = 0
+        If MapData(tX, tY).BlockedAttack Then frmBlock.BlockAttackChk.Value = 1 Else frmBlock.BlockAttackChk.Value = 0
     End If
     WMapTxt.Text = MapData(tX, tY).TileExit.Map
     WXTxt.Text = MapData(tX, tY).TileExit.X
     WYTxt.Text = MapData(tX, tY).TileExit.Y
     XLbl.Caption = tX
     YLbl.Caption = tY
+    MailboxTxt.Text = MapData(tX, tY).Mailbox
     LayerLbl_Click SelectedLayer
     
 End Sub

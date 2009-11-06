@@ -174,8 +174,46 @@ Dim i As Byte
         End If
     End If
     
+    '*************************
+    '***** General input *****
+    '*************************
+    
+    'Get object off ground (alt)
+    If KeyCode = 18 Then
+        If LastLootTime + LootDelay < timeGetTime Then
+            LastLootTime = timeGetTime
+            sndBuf.Put_Byte DataCode.User_Get
+        End If
+    End If
+    
+    'Use the quick bar
+    If KeyCode >= vbKeyF1 Then
+        If KeyCode <= vbKeyF12 Then
+            Engine_UseQuickBar KeyCode - vbKeyF1 + 1
+        End If
+    End If
+    
     'Attack key
-    If KeyCode = vbKeyControl Then sndBuf.Put_Byte DataCode.User_Attack
+    If KeyCode = vbKeyControl Then
+        If LastAttackTime + AttackDelay < timeGetTime Then
+            
+            'Check for a valid attacking distance
+            If UserAttackRange > 1 Then
+                If TargetCharIndex > 0 Then
+                    If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
+                        LastAttackTime = timeGetTime
+                        sndBuf.Put_Byte DataCode.User_Attack
+                    Else
+                        Engine_AddToChatTextBuffer "You are too far away to attack!", FontColor_Fight
+                    End If
+                End If
+            Else
+                LastAttackTime = timeGetTime
+                sndBuf.Put_Byte DataCode.User_Attack
+            End If
+            
+        End If
+    End If
     
     'Chat buffer stuff
     If KeyCode = vbKeyPageUp Then
@@ -193,10 +231,45 @@ Dim i As Byte
         End If
     End If
     
-    'Enter text
+    'Hide/show windows
+    If GetAsyncKeyState(vbKeyControl) Then
+        If KeyCode = vbKeyW Then
+            If ShowGameWindow(InventoryWindow) Then
+                ShowGameWindow(InventoryWindow) = 0
+            Else
+                ShowGameWindow(InventoryWindow) = 1
+                LastClickedWindow = InventoryWindow
+            End If
+        ElseIf KeyCode = vbKeyQ Then
+            If ShowGameWindow(QuickBarWindow) Then
+                ShowGameWindow(QuickBarWindow) = 0
+            Else
+                ShowGameWindow(QuickBarWindow) = 1
+                LastClickedWindow = QuickBarWindow
+            End If
+        ElseIf KeyCode = vbKeyC Then
+            If ShowGameWindow(ChatWindow) Then
+                ShowGameWindow(ChatWindow) = 0
+            Else
+                ShowGameWindow(ChatWindow) = 1
+                LastClickedWindow = ChatWindow
+            End If
+        ElseIf KeyCode = vbKeyS Then
+            If ShowGameWindow(StatWindow) Then
+                ShowGameWindow(StatWindow) = 0
+            Else
+                ShowGameWindow(StatWindow) = 1
+                LastClickedWindow = StatWindow
+            End If
+        End If
+    End If
+
     If KeyCode = vbKeyReturn Then
+        
+        '*************************
+        '***** Amount window *****
+        '*************************
         If LastClickedWindow = AmountWindow Then
-            'Use the amount window
             If AmountWindowDropIndex Then
                 If AmountWindowValue <> "" Then
                     If IsNumeric(AmountWindowValue) Then
@@ -210,6 +283,10 @@ Dim i As Byte
                     LastClickedWindow = 0
                 End If
             End If
+            
+        '*****************************
+        '***** Write mail window *****
+        '*****************************
         ElseIf LastClickedWindow = WriteMessageWindow Then
             'Send message
             If Len(WriteMailData.Subject) > 0 Then
@@ -239,6 +316,10 @@ Dim i As Byte
                     End If
                 End If
             End If
+            
+        '***********************
+        '***** Chat screen *****
+        '***********************
         Else
             If EnterText = True Then
                 EnterText = False
@@ -349,40 +430,10 @@ Dim i As Byte
             End If
         End If
     End If
-    'Hide/show windows
-    If GetAsyncKeyState(vbKeyControl) Then
-        If KeyCode = vbKeyW Then
-            If ShowGameWindow(InventoryWindow) Then
-                ShowGameWindow(InventoryWindow) = 0
-            Else
-                ShowGameWindow(InventoryWindow) = 1
-                LastClickedWindow = InventoryWindow
-            End If
-        ElseIf KeyCode = vbKeyQ Then
-            If ShowGameWindow(QuickBarWindow) Then
-                ShowGameWindow(QuickBarWindow) = 0
-            Else
-                ShowGameWindow(QuickBarWindow) = 1
-                LastClickedWindow = QuickBarWindow
-            End If
-        ElseIf KeyCode = vbKeyC Then
-            If ShowGameWindow(ChatWindow) Then
-                ShowGameWindow(ChatWindow) = 0
-            Else
-                ShowGameWindow(ChatWindow) = 1
-                LastClickedWindow = ChatWindow
-            End If
-        ElseIf KeyCode = vbKeyS Then
-            If ShowGameWindow(StatWindow) Then
-                ShowGameWindow(StatWindow) = 0
-            Else
-                ShowGameWindow(StatWindow) = 1
-                LastClickedWindow = StatWindow
-            End If
-        End If
-    End If
     
-    'Close screen
+    '*****************************
+    '***** Close last screen *****
+    '*****************************
     If KeyCode = vbKeyEscape Then
         If LastClickedWindow = 0 Then
             If ShowGameWindow(MenuWindow) = 1 Then
@@ -411,8 +462,9 @@ End Sub
 Private Sub Form_KeyPress(KeyAscii As Integer)
 Dim b As Boolean
 
-'Update amount window
-
+    '*************************
+    '***** Amount window *****
+    '*************************
     If LastClickedWindow = AmountWindow Then
         'Backspace
         If KeyAscii = 8 Then
@@ -422,7 +474,10 @@ Dim b As Boolean
         End If
         'Number
         If IsNumeric(Chr$(KeyAscii)) Then AmountWindowValue = AmountWindowValue & Chr$(KeyAscii)
-        'Write mail window
+    
+    '*****************************
+    '***** Write mail window *****
+    '*****************************
     ElseIf LastClickedWindow = WriteMessageWindow Then
         If WMSelCon Then
             Select Case WMSelCon
@@ -458,7 +513,10 @@ Dim b As Boolean
                 End If
             End Select
         End If
-        'Send text
+    
+    '*********************
+    '***** Send text *****
+    '*********************
     Else
         If EnterText Then
             'Backspace
@@ -478,6 +536,16 @@ Dim b As Boolean
                 EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
                 LastClickedWindow = 0
             End If
+        Else
+            'Auto-write a reply to the last person to whisper to us
+            If KeyAscii = 114 Then  'Key R
+                If LastWhisperName <> "" Then
+                    EnterText = True
+                    EnterTextBuffer = "/tell " & LastWhisperName & " "
+                    EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
+                    LastClickedWindow = 0
+                End If
+            End If
         End If
     End If
     
@@ -489,14 +557,13 @@ End Sub
 Private Sub Form_KeyUp(KeyCode As Integer, Shift As Integer)
 
 Dim i As Integer
-
-    'Get object off ground (alt)
-    If KeyCode = 18 Then sndBuf.Put_Byte DataCode.User_Get
     
     'Reset skins (F12)
-    If KeyCode = vbKeyF12 Then
-        Engine_Init_GUI 0
-        Game_Config_Save
+    If GetAsyncKeyState(vbKeyShift) Then
+        If KeyCode = vbKeyF12 Then
+            Engine_Init_GUI 0
+            Game_Config_Save
+        End If
     End If
 
     'Delete mail (Delete)
@@ -508,13 +575,6 @@ Dim i As Integer
                     sndBuf.Put_Byte SelMessage
                 End If
             End If
-        End If
-    End If
-
-    'Use the quick bar
-    If KeyCode >= vbKeyF1 Then
-        If KeyCode <= vbKeyF12 Then
-            Engine_UseQuickBar KeyCode - vbKeyF1 + 1
         End If
     End If
 
@@ -677,7 +737,9 @@ Static X As Long
             Case .Server_MailItemRemove: Data_Server_MailItemRemove rBuf
             Case .Server_MailMessage: Data_Server_MailMessage rBuf
             Case .Server_MakeChar: Data_Server_MakeChar rBuf
+            Case .Server_MakeSlash: Data_Server_MakeSlash rBuf
             Case .Server_MakeObject: Data_Server_MakeObject rBuf
+            Case .Server_MakeProjectile: Data_Server_MakeProjectile rBuf
             Case .Server_Message: Data_Server_Message rBuf
             Case .Server_MoveChar: Data_Server_MoveChar rBuf
             Case .Server_Ping: Data_Server_Ping
@@ -700,6 +762,7 @@ Static X As Long
             Case .User_ModStat: Data_User_ModStat rBuf
             Case .User_Rotate: Data_User_Rotate rBuf
             Case .User_SetInventorySlot: Data_User_SetInventorySlot rBuf
+            Case .User_SetWeaponRange: Data_User_SetWeaponRange rBuf
             Case .User_Target: Data_User_Target rBuf
             Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
 
