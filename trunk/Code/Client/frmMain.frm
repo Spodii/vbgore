@@ -48,7 +48,7 @@ Begin VB.Form frmMain
    End
    Begin VB.Timer PingTmr 
       Enabled         =   0   'False
-      Interval        =   2000
+      Interval        =   10000
       Left            =   600
       Top             =   120
    End
@@ -519,12 +519,10 @@ End Sub
 
 Private Sub PingTmr_Timer()
 
-'Ping the server
-
+    'Ping the server
     sndBuf.Put_Byte DataCode.Server_Ping
     PingSTime = timeGetTime
-
-    If NonRetPings < 250 Then NonRetPings = NonRetPings + 1
+    NonRetPings = NonRetPings + 1
 
 End Sub
 
@@ -619,7 +617,6 @@ Static x As Long
                 End If
 
             Case .Comm_Talk: Data_Comm_Talk rBuf
-            Case .Comm_UMsgbox: Data_Comm_UMsgBox rBuf
 
             Case .Map_DoneSwitching: Data_Map_DoneSwitching
             Case .Map_LoadMap: Data_Map_LoadMap rBuf

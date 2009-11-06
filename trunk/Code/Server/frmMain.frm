@@ -56,6 +56,7 @@ Begin VB.Form frmMain
       Left            =   2520
       Locked          =   -1  'True
       TabIndex        =   5
+      ToolTipText     =   "Overall average KBytes/sec uploaded to the clients (41 byte TCP/IP packet headers included)"
       Top             =   360
       Width           =   1695
    End
@@ -75,12 +76,13 @@ Begin VB.Form frmMain
       Left            =   2520
       Locked          =   -1  'True
       TabIndex        =   4
+      ToolTipText     =   "Overall average KBytes/sec downloaded from the clients (41 byte TCP/IP packet headers included)"
       Top             =   960
       Width           =   1695
    End
    Begin VB.Timer GameTimer 
       Enabled         =   0   'False
-      Interval        =   50
+      Interval        =   5
       Left            =   1560
       Top             =   0
    End
@@ -218,9 +220,9 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
 
-    Select Case X
+    Select Case x
     Case MouseMove
     Case LeftUp
     Case LeftDown
@@ -252,7 +254,6 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
-
 Dim LoopC As Long
 
     If Sox.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
@@ -265,6 +266,9 @@ Dim LoopC As Long
     Else
         Sox.UnHook  'The reason is VB closes my Mod which stores the WindowProc function used for SubClassing and VB doesn't know that! So it closes the Mod before the Control!
     End If
+    
+    'Kill the database connection
+    DB_Conn.Close
     
     'Save the maps
     Save_MapData
@@ -320,16 +324,16 @@ Dim Update As Boolean
             If DEBUG_PacketFlood = False Then
                 If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_UMsgbox
-                    ConBuf.Put_String "Sorry you have been idle to long. Disconnected."
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 85
                     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     Server_CloseSocket UserIndex
                     Exit Sub
                 End If
                 If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
                     ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Comm_UMsgbox
-                    ConBuf.Put_String "Sorry you have been idle to long. Disconnected."
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 85
                     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     Server_CloseSocket UserIndex
                     Exit Sub
@@ -404,16 +408,6 @@ Dim Update As Boolean
                 End If
             End If
 
-            'Update blink timer
-            UserList(UserIndex).Counters.BlinkCounter = UserList(UserIndex).Counters.BlinkCounter - Elapsed
-            If UserList(UserIndex).Counters.BlinkCounter <= 0 Then
-                UserList(UserIndex).Counters.BlinkCounter = 3000 + Int(Rnd * 7000)
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.User_Blink
-                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-            End If
-
             'Update aggressive-face timer
             If UserList(UserIndex).Counters.AggressiveCounter > 0 Then
                 UserList(UserIndex).Counters.AggressiveCounter = UserList(UserIndex).Counters.AggressiveCounter - Elapsed
@@ -426,9 +420,26 @@ Dim Update As Boolean
                     UserList(UserIndex).Counters.AggressiveCounter = 0
                 End If
             End If
-
-            'Send data buffer if there is anything left
-            Data_SendBuffer UserIndex
+            
+            'Check if the packet wait time has passed
+            If UserList(UserIndex).PacketWait > 0 Then UserList(UserIndex).PacketWait = UserList(UserIndex).PacketWait - Elapsed
+            If UserList(UserIndex).PacketWait <= 0 Then
+                
+                'Send the packet buffer to the user
+                If UserList(UserIndex).PPValue = PP_High Then
+                    
+                    'High priority - send asap
+                    Data_SendBuffer UserIndex
+                    
+                ElseIf UserList(UserIndex).PPValue = PP_Low Then
+                    
+                    'Low priority - check counter for sending
+                    If UserList(UserIndex).PPCount > 0 Then UserList(UserIndex).PPCount = UserList(UserIndex).PPCount - Elapsed
+                    If UserList(UserIndex).PPCount <= 0 Then Data_SendBuffer UserIndex
+                
+                End If
+                
+            End If
             
             UserList(UserIndex).Stats.SendUpdatedStats
 
@@ -472,16 +483,6 @@ Dim Update As Boolean
 
                     'Call the NPC AI
                     NPC_AI NPCIndex
-
-                    'Update blink timer
-                    NPCList(NPCIndex).Counters.BlinkCounter = NPCList(NPCIndex).Counters.BlinkCounter - Elapsed
-                    If NPCList(NPCIndex).Counters.BlinkCounter <= 0 Then
-                        NPCList(NPCIndex).Counters.BlinkCounter = 3000 + Int(Rnd * 7000)
-                        ConBuf.Clear
-                        ConBuf.Put_Byte DataCode.User_Blink
-                        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                        Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-                    End If
 
                     'Update aggressive-face timer
                     If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
@@ -567,7 +568,7 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Static X As Long
+Static x As Long
 
     'Get the UserIndex
     Index = User_IndexFromSox(inSox)
@@ -625,8 +626,8 @@ Static X As Long
             Select Case CommandID
             Case 0
                 If DEBUG_PrintPacketReadErrors Then
-                    X = X + 1
-                    Debug.Print "---Blank Byte #" & X
+                    x = x + 1
+                    Debug.Print "---Blank Byte #" & x
                 End If
             Case .Comm_Emote: Data_Comm_Emote rBuf, Index
             Case .Comm_Shout: Data_Comm_Shout rBuf, Index
@@ -752,7 +753,9 @@ Dim LoopC As Long
     '*** Listen ***
     frmMain.Caption = "Loading sockets..."
     frmMain.Refresh
-    LocalSoxID = Sox.Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
+    
+    'Change the 127.0.0.1 to 0.0.0.0 or your internal IP to make the server public
+    LocalSoxID = Sox.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
     Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
 
     '*** Misc ***

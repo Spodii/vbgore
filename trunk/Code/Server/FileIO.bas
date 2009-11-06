@@ -521,8 +521,10 @@ Dim i As Long
     UserChar.Stats.BaseStat(SID.MinSTA) = Val(DB_RS!stat_sp_min)
     
     'Update the user as being online
-    DB_RS!online = 1
-    DB_RS.Update
+    If MySQLUpdate_Online Then
+        DB_RS!online = 1
+        DB_RS.Update
+    End If
     
     'Close the recordset
     DB_RS.Close
@@ -560,10 +562,10 @@ Dim i As Long
     If CurQStr <> "" Then
         TempStr = Split(CurQStr, vbCrLf)    'Split up the quests
         For i = 0 To UBound(TempStr)
-            If i < MaxQuests Then 'Make sure we are within limit
+            If i + 1 < MaxQuests Then 'Make sure we are within limit
                 TempStr2 = Split(TempStr(i), " ")   'Split up the QuestID and NPCKills (in that order)
-                UserChar.Quest(i) = Val(TempStr2(0))
-                UserChar.QuestStatus(i).NPCKills = Val(TempStr2(1))
+                UserChar.Quest(i + 1) = Val(TempStr2(0))
+                UserChar.QuestStatus(i + 1).NPCKills = Val(TempStr2(1))
             End If
         Next i
     End If
@@ -707,6 +709,12 @@ Dim i As Long
 
     With UserChar
     
+        'Make sure we are trying to save a valid user by testing a few variables first
+        If Len(.Name) < 3 Then Exit Sub
+        If Len(.Name) > 10 Then Exit Sub
+        If Len(.Password) < 3 Then Exit Sub
+        If Len(.Password) > 10 Then Exit Sub
+    
         'If we are updating the user, then the record must be deleted, so make sure it isn't there (or else we get a duplicate key entry error)
         Server_UserExist .Name, True
             
@@ -754,7 +762,6 @@ Dim i As Long
         End If
         DB_RS!Name = .Name
         DB_RS!gm = .Flags.GMLevel
-        DB_RS!IP = .IP
         DB_RS!Desc = .Desc
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr

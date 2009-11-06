@@ -1,9 +1,9 @@
 Type=Exe
 Form=Code\Packet Sender\frmMain.frm
-Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\STDOLE2.TLB#OLE Automation
+Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\WINDOWS\system32\stdole2.tlb#OLE Automation
 Class=DataBuffer; Code\Common Code\DataBuffer.cls
 Module=General; Code\Packet Sender\General.bas
-Object={D1EE5822-4214-490C-81BE-49A1E232B2F0}#1.0#0; vbgoresocketbinary.ocx
+Object={C1A38C00-7EC2-4319-A304-FE5B3519AF73}#1.0#0; vbgoresocketbinary.ocx
 IconForm="frmMain"
 Startup="frmMain"
 HelpFile=""

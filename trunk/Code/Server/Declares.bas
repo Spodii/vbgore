@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.0            ************
+'************            Official Release: Version 0.2.1            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -100,7 +100,7 @@ Public Const DEBUG_DebugMode As Boolean = True              'If we display criti
 '********** Public CONSTANTS ***********
 
 'Change this value to add a cost to sending mail
-Public Const MailCost As Long = 1
+Public Const MailCost As Long = 0
 
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1
@@ -284,7 +284,6 @@ Type UserCounters   'Counters for a user
     AttackCounter As Long       'Stores last time user attacked
     MoveCounter As Long         'Stores last time the user moved
     SendMapCounter As WorldPos  'Stores map counter information
-    BlinkCounter As Long        'How long until the user has to blink automatically
     AggressiveCounter As Long   'How long the user will remain aggressive-faced
     SpellExhaustion As Long     'Time until another spell can be casted
     BlessCounter As Long        'Time left on bless
@@ -321,9 +320,11 @@ Type User   'Holds data for a user
     Desc As String      'User's description
     Pos As WorldPos     'User's current position
     Gold As Long        'How much gold the user has
-    IP As String            'User Ip
     ConnID As Long          'Connection ID
     SendBuffer() As Byte    'Buffer for sending data
+    PPValue As Byte         'Packet priority value
+    PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
+    PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
     Object(1 To MAX_INVENTORY_SLOTS) As UserOBJ 'The user's inventory
     WeaponEqpObjIndex As Integer    'The index of the equipted weapon
     WeaponEqpSlot As Byte           'Slot of the equipted weapon
@@ -356,7 +357,6 @@ Type NPCFlags   'Flags for a NPC
 End Type
 Type NPCCounters    'Counters for a NPC
     RespawnCounter As Long  'Stores the death time to respawn later
-    BlinkCounter As Long    'How long until the NPC blinks again
     AggressiveCounter As Long   'How long the NPC will remain aggressive-faced
     SpellExhaustion As Long     'Time until another spell can be casted
     BlessCounter As Long        'Time left on bless

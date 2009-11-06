@@ -1,11 +1,11 @@
 Attribute VB_Name = "TCP"
 Option Explicit
 
-Public Const MTU_Nondialup  As Integer = 1472
-Public Const MTU_Dialup As Integer = 576
-
-Public Const SOCKET_BUFFER_SIZE As Integer = MTU_Nondialup  'Buffer in bytes for each socket
-Public Const UserBufferSize As Integer = SOCKET_BUFFER_SIZE - 2
+'Packet priorities constants (influncing when packets are sent)
+Public Const PP_None As Byte = 0        'Does not force sending
+Public Const PP_Low As Byte = 1         'Enables a count-down timer
+Public Const PP_High As Byte = 2        'Packet sent as soon as possible
+Public Const PP_Time As Long = 1000     'How much time must pass for a PP_Low packet to be sent
 
 'Constants used in the Data_Send sub
 Public Const ToIndex = 0            'Send data to a single User index
@@ -14,6 +14,69 @@ Public Const ToMap = 2              'Send it to all users in a map
 Public Const ToPCArea = 3           'Send to all users in a user's area
 Public Const ToMapButIndex = 4      'Send to all on a map but the index
 Public Const ToNPCArea = 5          'Send to all users in a NPC's area
+
+'How many miliseconds must go by for a packet to be sent (even if PP_High, the time must be waited)
+' Keep in mind the highest frame rate is 60 (~17ms), so it is not recommended to go below that value
+' or else you are just wasting bandwidth.
+Public Const Packet_WaitTime As Long = 50   'Recommended about 200~300 at highest, about 50 at lowest
+
+'MTU size (how large the packet buffer can be)
+Public Const MTU_Nondialup  As Integer = 1472
+Public Const MTU_Dialup As Integer = 576
+Public Const SOCKET_BUFFER_SIZE As Integer = MTU_Dialup 'Buffer in bytes for each socket
+Public Const UserBufferSize As Integer = SOCKET_BUFFER_SIZE - 2
+
+
+'*************************
+'*** PACKET PRIORITIES ***
+'*************************
+
+'Packet priorities (placed here for easy changing - for advanced users -
+' recommended to go packet-by-packet and decide what you want)
+'If you have more bandwidth then you could possibly use, then just set
+' all the packet priorities to HIGH. Packet priorities is aimed for those
+' who want and need an extra booster from their bandwidth.
+'vbGORE, by default, aims for the lowest packet priority values that will
+' affect the gameplay the least (most stuff not listed as HIGH you wont notice the lag time)
+
+'*** Option 1 - Optimized for minimal bandwidth usage ***
+
+'Communication
+'Public Const PP_GlobalChat As Byte = PP_Low     'Talking to everyone online (shout)
+'Public Const PP_LocalChat As Byte = PP_Low      'Talking to people locally (normal chat, emoting)
+'Public Const PP_PrivateChat As Byte = PP_Low    'Talking to someone privately (private messages, NOT mailing)
+'Public Const PP_GMMessages As Byte = PP_Low     'Messages sent back from using a GM command (only GMs can see)
+'Public Const PP_GlobalMessage As Byte = PP_None 'Messages sent by the server globally not specified above (kicking a user, server messages, etc)
+
+'Misc
+'Public Const PP_ChangeChar As Byte = PP_None    'Updating character paperdoll values
+'Public Const PP_NewMail As Byte = PP_None       '"You just got new mail" message
+'Public Const PP_Connect As Byte = PP_Low        '"User xxx connected" message
+'Public Const PP_Stat As Byte = PP_Low           'Base/mod stat updating
+'Public Const PP_StatPercent As Byte = PP_Low    'Stat percentage (MP and SP bars) updating
+'Public Const PP_Blink As Byte = PP_None         'Sending character eye blinks
+'Public Const PP_Look As Byte = PP_Low           'Change looking direction (lookleft, lookright)
+'Public Const PP_Rotate As Byte = PP_Low         'Change body direction (rotating)
+
+'*** Option 2 - Optimized for speed and performance ***
+
+'Communication
+Public Const PP_GlobalChat As Byte = PP_High    'Talking to everyone online (shout)
+Public Const PP_LocalChat As Byte = PP_High     'Talking to people locally (normal chat, emoting)
+Public Const PP_PrivateChat As Byte = PP_High   'Talking to someone privately (private messages, NOT mailing)
+Public Const PP_GMMessages As Byte = PP_High    'Messages sent back from using a GM command (only GMs can see)
+Public Const PP_GlobalMessage As Byte = PP_High 'Messages sent by the server globally not specified above (kicking a user, server messages, etc)
+
+'Misc
+Public Const PP_ChangeChar As Byte = PP_High    'Updating character paperdoll values
+Public Const PP_NewMail As Byte = PP_High       '"You just got new mail" message
+Public Const PP_Connect As Byte = PP_High       '"User xxx connected" message
+Public Const PP_Stat As Byte = PP_High          'Base/mod stat updating
+Public Const PP_StatPercent As Byte = PP_High   'Stat percentage (MP and SP bars) updating
+Public Const PP_Blink As Byte = PP_High         'Sending character eye blinks
+Public Const PP_Look As Byte = PP_High          'Change looking direction (lookleft, lookright)
+Public Const PP_Rotate As Byte = PP_High        'Change body direction (rotating)
+
 
 Sub Data_Comm_Emote(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
@@ -34,7 +97,7 @@ Dim txt As String
     ConBuf.Put_Byte DataCode.Comm_Talk
     ConBuf.Put_String UserList(UserIndex).Name & " " & txt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk
-    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_LocalChat
 
 End Sub
 
@@ -58,7 +121,7 @@ Dim txt As String
     ConBuf.Put_Byte 76
     ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_String txt
-    Data_Send ToAll, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToAll, UserIndex, ConBuf.Get_Buffer, , PP_GlobalChat
 
 End Sub
 
@@ -81,7 +144,7 @@ Dim txt As String
     ConBuf.Put_Byte DataCode.Comm_Talk
     ConBuf.Put_String UserList(UserIndex).Name & ": " & txt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk
-    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_LocalChat
 
 End Sub
 
@@ -139,7 +202,7 @@ Dim TempStr() As String
     ConBuf.Put_Byte 52
     ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_String tMessage
-    Data_Send ToIndex, tIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, tIndex, ConBuf.Get_Buffer, , PP_PrivateChat
 
     'Tell the whisperer what they whispered
     ConBuf.Clear
@@ -147,7 +210,7 @@ Dim TempStr() As String
     ConBuf.Put_Byte 53
     ConBuf.Put_String UserList(tIndex).Name
     ConBuf.Put_String tMessage
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_PrivateChat
 
 ErrOut:
 
@@ -188,7 +251,7 @@ Dim GMLevel As Byte
     ConBuf.Put_Byte 54
     ConBuf.Put_String TargetName
     ConBuf.Put_Byte GMLevel
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, PP_GMMessages
 
 End Sub
 
@@ -214,7 +277,7 @@ Dim nPos As WorldPos
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 51
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
         Exit Sub
     End If
 
@@ -223,7 +286,7 @@ Dim nPos As WorldPos
 
     'Find closest legal position and warp there
     Server_ClosestLegalPos UserList(TargetIndex).Pos, nPos
-    If Server_LegalPos(nPos.Map, nPos.X, nPos.Y, 0) Then User_WarpChar UserIndex, nPos.Map, nPos.X, nPos.Y
+    If Server_LegalPos(nPos.Map, nPos.x, nPos.Y, 0) Then User_WarpChar UserIndex, nPos.Map, nPos.x, nPos.Y
 
 End Sub
 
@@ -248,7 +311,7 @@ Dim TargetIndex As Integer
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 51
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
         Exit Sub
     End If
 
@@ -258,7 +321,7 @@ Dim TargetIndex As Integer
     ConBuf.Put_Byte 77
     ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_String UserList(TargetIndex).Name
-    Data_Send ToAll, 0, ConBuf.Get_Buffer
+    Data_Send ToAll, 0, ConBuf.Get_Buffer, , PP_GlobalMessage
 
     'Close the user
     Server_CloseSocket TargetIndex
@@ -289,7 +352,7 @@ Dim RaiseValue As Long
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 51
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
         Exit Sub
     End If
 
@@ -341,7 +404,7 @@ Dim nPos As WorldPos
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 51
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
         Exit Sub
     End If
 
@@ -352,8 +415,8 @@ Dim nPos As WorldPos
     Server_ClosestLegalPos UserList(UserIndex).Pos, nPos
 
     'If the position is legal, warp the user then tell them they have warped
-    If Server_LegalPos(nPos.Map, nPos.X, nPos.Y, 0) Then
-        User_WarpChar TargetIndex, nPos.Map, nPos.X, nPos.Y
+    If Server_LegalPos(nPos.Map, nPos.x, nPos.Y, 0) Then
+        User_WarpChar TargetIndex, nPos.Map, nPos.x, nPos.Y
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 56
@@ -395,7 +458,22 @@ Sub Data_Map_DoneLoadingMap(ByVal UserIndex As Integer)
 
 End Sub
 
-Sub Data_Send(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByRef sndData() As Byte, Optional ByVal sndMap As Integer)
+Private Sub Data_Send_UpdatePP(ByVal UserIndex As Integer, ByVal Priority As Byte)
+
+    'Update the wait time
+    If UserList(UserIndex).PacketWait <= 0 Then UserList(UserIndex).PacketWait = Packet_WaitTime
+
+    'Check if moving from PP_None to PP_Low
+    If UserList(UserIndex).PPValue = PP_None And Priority = PP_Low Then
+        UserList(UserIndex).PPCount = PP_Time
+    End If
+    
+    'Update the PP value
+    If UserList(UserIndex).PPValue < Priority Then UserList(UserIndex).PPValue = Priority
+
+End Sub
+
+Sub Data_Send(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByRef sndData() As Byte, Optional ByVal sndMap As Integer, Optional ByVal Priority As Byte = PP_High)
 
 '*****************************************************************
 'Sends data to sendRoute
@@ -411,84 +489,90 @@ Dim LoopC As Long
     If CopySize = 0 Then Exit Sub
     
     Select Case sndRoute
-
-        'Send to the sndIndex
-    Case ToIndex
-        If UserList(sndIndex).Flags.UserLogged = 0 Then Exit Sub
-        If sndIndex > UBound(UserList()) Then Exit Sub
-        If UBound(UserList(sndIndex).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer sndIndex
-        CopyPos = UBound(UserList(sndIndex).SendBuffer) + 1
-        ReDim Preserve UserList(sndIndex).SendBuffer(UBound(UserList(sndIndex).SendBuffer) + CopySize)
-        CopyMemory UserList(sndIndex).SendBuffer(CopyPos), sndData(0), CopySize
-
-        'Send to All
-    Case ToAll
-        For LoopC = 1 To LastUser
-            If UserList(LoopC).Flags.UserLogged Then
-                If UBound(UserList(LoopC).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer LoopC
-                CopyPos = UBound(UserList(LoopC).SendBuffer) + 1
-                ReDim Preserve UserList(LoopC).SendBuffer(UBound(UserList(LoopC).SendBuffer) + CopySize)
-                CopyMemory UserList(LoopC).SendBuffer(CopyPos), sndData(0), CopySize
-            End If
-        Next LoopC
-
-        'Send to Map
-    Case ToMap
-        If sndMap = 0 Then Exit Sub
-        For LoopC = 1 To MapInfo(sndMap).NumUsers
-            If UserList(LoopC).Flags.UserLogged = 1 Then
-                If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
-                CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
-                ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
-                CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
-            End If
-        Next LoopC
-
-        'Send to everone on map but sndIndex
-    Case ToMapButIndex
-        If sndMap = 0 Then Exit Sub
-        For LoopC = 1 To MapInfo(sndMap).NumUsers
-            If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
-                If ConnectionGroups(sndMap).UserIndex(LoopC) <> sndIndex Then
+    
+            'Send to the sndIndex
+        Case ToIndex
+            If UserList(sndIndex).Flags.UserLogged = 0 Then Exit Sub
+            If sndIndex > UBound(UserList()) Then Exit Sub
+            If UBound(UserList(sndIndex).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer sndIndex
+            CopyPos = UBound(UserList(sndIndex).SendBuffer) + 1
+            ReDim Preserve UserList(sndIndex).SendBuffer(UBound(UserList(sndIndex).SendBuffer) + CopySize)
+            CopyMemory UserList(sndIndex).SendBuffer(CopyPos), sndData(0), CopySize
+            Data_Send_UpdatePP sndIndex, Priority
+    
+            'Send to All
+        Case ToAll
+            For LoopC = 1 To LastUser
+                If UserList(LoopC).Flags.UserLogged Then
+                    If UBound(UserList(LoopC).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer LoopC
+                    CopyPos = UBound(UserList(LoopC).SendBuffer) + 1
+                    ReDim Preserve UserList(LoopC).SendBuffer(UBound(UserList(LoopC).SendBuffer) + CopySize)
+                    CopyMemory UserList(LoopC).SendBuffer(CopyPos), sndData(0), CopySize
+                    Data_Send_UpdatePP LoopC, Priority
+                End If
+            Next LoopC
+    
+            'Send to Map
+        Case ToMap
+            If sndMap = 0 Then Exit Sub
+            For LoopC = 1 To MapInfo(sndMap).NumUsers
+                If UserList(LoopC).Flags.UserLogged = 1 Then
                     If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
                     CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
                     ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
                     CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
+                    Data_Send_UpdatePP LoopC, Priority
                 End If
+            Next LoopC
+    
+            'Send to everone on map but sndIndex
+        Case ToMapButIndex
+            If sndMap = 0 Then Exit Sub
+            For LoopC = 1 To MapInfo(sndMap).NumUsers
+                If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
+                    If ConnectionGroups(sndMap).UserIndex(LoopC) <> sndIndex Then
+                        If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
+                        CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
+                        ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
+                        CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
+                        Data_Send_UpdatePP LoopC, Priority
+                    End If
+                End If
+            Next LoopC
+    
+            'Send to PC Area
+        Case ToPCArea
+            sndMap = UserList(sndIndex).Pos.Map
+            If sndMap > 0 Then
+                For LoopC = 1 To MapInfo(sndMap).NumUsers
+                    If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
+                        If Server_Distance(UserList(sndIndex).Pos.x, UserList(sndIndex).Pos.Y, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.x, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.Y) <= Max_Server_Distance Then
+                            If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
+                            CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
+                            ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
+                            CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
+                            Data_Send_UpdatePP LoopC, Priority
+                        End If
+                    End If
+                Next LoopC
             End If
-        Next LoopC
-
-        'Send to PC Area
-    Case ToPCArea
-        sndMap = UserList(sndIndex).Pos.Map
-        If sndMap > 0 Then
-            For LoopC = 1 To MapInfo(sndMap).NumUsers
-                If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
-                    If Server_Distance(UserList(sndIndex).Pos.X, UserList(sndIndex).Pos.Y, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.X, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.Y) <= Max_Server_Distance Then
-                        If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
-                        CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
-                        ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
-                        CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
+    
+            'Send to NPC Area
+        Case ToNPCArea
+            sndMap = NPCList(sndIndex).Pos.Map
+            If sndMap > 0 Then
+                For LoopC = 1 To MapInfo(sndMap).NumUsers
+                    If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
+                        If Server_Distance(NPCList(sndIndex).Pos.x, NPCList(sndIndex).Pos.Y, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.x, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.Y) <= Max_Server_Distance Then
+                            If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
+                            CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
+                            ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
+                            CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
+                            Data_Send_UpdatePP LoopC, Priority
+                        End If
                     End If
-                End If
-            Next LoopC
-        End If
-
-        'Send to NPC Area
-    Case ToNPCArea
-        sndMap = NPCList(sndIndex).Pos.Map
-        If sndMap > 0 Then
-            For LoopC = 1 To MapInfo(sndMap).NumUsers
-                If UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Flags.UserLogged Then
-                    If Server_Distance(NPCList(sndIndex).Pos.X, NPCList(sndIndex).Pos.Y, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.X, UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).Pos.Y) <= Max_Server_Distance Then
-                        If UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1 + CopySize >= UserBufferSize Then Data_SendBuffer ConnectionGroups(sndMap).UserIndex(LoopC)
-                        CopyPos = UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + 1
-                        ReDim Preserve UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(UBound(UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer) + CopySize)
-                        CopyMemory UserList(ConnectionGroups(sndMap).UserIndex(LoopC)).SendBuffer(CopyPos), sndData(0), CopySize
-                    End If
-                End If
-            Next LoopC
-        End If
+                Next LoopC
+            End If
 
     End Select
     
@@ -548,11 +632,16 @@ Dim bArray() As Byte
             frmMain.Sox.SendData UserList(UserIndex).ConnID, bArray()
 
             'Calculate bandwidth usage
-            If CalcTraffic = True Then DataOut = DataOut + UBound(bArray) + 1
+            If CalcTraffic = True Then DataOut = DataOut + UBound(bArray) + 42  '1 for the array ofset, 20 for the TCP header, 20 for IPv4 header, 1 for Sox header
 
             'Clear the buffer
             ReDim UserList(UserIndex).SendBuffer(0)
-
+            
+            'Clear packet values
+            UserList(UserIndex).PPCount = 0
+            UserList(UserIndex).PPValue = 0
+            UserList(UserIndex).PacketWait = 0
+            
         End If
     End If
 
@@ -717,7 +806,7 @@ Dim MsgData As MailData
 
     'Check to make sure the user is still next to the same mailbox
     If UserList(UserIndex).Pos.Map = UserList(UserIndex).MailboxPos.Map Then
-        If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(UserIndex).MailboxPos.X, UserList(UserIndex).MailboxPos.Y) > 2 Then
+        If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, UserList(UserIndex).MailboxPos.x, UserList(UserIndex).MailboxPos.Y) > 2 Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 57
@@ -959,9 +1048,11 @@ Sub Data_User_Blink(ByVal UserIndex As Integer)
 '<>
 '*****************************************************************
 
-'Reset the user's blinking counter
-
-    UserList(UserIndex).Counters.BlinkCounter = 0
+    'Force a blink to everyone on the map
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Blink
+    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_Blink
 
 End Sub
 
@@ -1087,6 +1178,14 @@ Dim Desc As String
         ConBuf.Put_Byte 61
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     End If
+    
+    'Update the database
+    If MySQLUpdate_Desc Then
+        DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+        DB_RS!Desc = Desc
+        DB_RS.Update
+        DB_RS.Close
+    End If
 
 End Sub
 
@@ -1104,7 +1203,7 @@ Dim Amount As Integer
     Amount = rBuf.Get_Integer
 
     'Invalid values handled by sub
-    User_DropObj UserIndex, ObjSlot, Amount, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+    User_DropObj UserIndex, ObjSlot, Amount, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y
 
 End Sub
 
@@ -1165,14 +1264,14 @@ Sub Data_User_LeftClick(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 '<X(B)><Y(B)>
 '*****************************************************************
 
-Dim X As Byte
+Dim x As Byte
 Dim Y As Byte
 
-    X = rBuf.Get_Byte
+    x = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
     'Invalid values handled by sub
-    User_LookAtTile UserIndex, UserList(UserIndex).Pos.Map, X, Y, vbLeftButton
+    User_LookAtTile UserIndex, UserList(UserIndex).Pos.Map, x, Y, vbLeftButton
 
 End Sub
 
@@ -1216,7 +1315,7 @@ Sub Data_User_LookLeft(ByVal UserIndex As Integer)
     ConBuf.Put_Byte DataCode.User_LookLeft
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(UserIndex).Char.HeadHeading
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_Look
 
 End Sub
 
@@ -1241,7 +1340,7 @@ Sub Data_User_LookRight(ByVal UserIndex As Integer)
     ConBuf.Put_Byte DataCode.User_LookLeft
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(UserIndex).Char.HeadHeading
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_Look
 
 End Sub
 
@@ -1286,14 +1385,14 @@ Sub Data_User_RightClick(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 '<X(B)><Y(B)>
 '*****************************************************************
 
-Dim X As Byte
+Dim x As Byte
 Dim Y As Byte
 
-    X = rBuf.Get_Byte
+    x = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
     'Invalid values handled by sub
-    User_LookAtTile UserIndex, UserList(UserIndex).Pos.Map, CInt(X), CInt(Y), vbRightButton
+    User_LookAtTile UserIndex, UserList(UserIndex).Pos.Map, CInt(x), CInt(Y), vbRightButton
 
 End Sub
 
@@ -1321,7 +1420,7 @@ Dim Dir As Byte
     ConBuf.Put_Byte DataCode.User_Rotate
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     ConBuf.Put_Byte Dir
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_Rotate
 
 End Sub
 
@@ -1343,7 +1442,7 @@ Dim i As Integer
     'Check the distance of the user to the NPC
     QuestNPC = UserList(UserIndex).Flags.QuestNPC
     If NPCList(QuestNPC).Pos.Map = UserList(UserIndex).Pos.Map Then
-        If Server_Distance(NPCList(QuestNPC).Pos.X, NPCList(QuestNPC).Pos.Y, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y) < Max_Server_Distance + 2 Then 'Add a little bit extra to distance, in case NPC moves
+        If Server_Distance(NPCList(QuestNPC).Pos.x, NPCList(QuestNPC).Pos.Y, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y) < Max_Server_Distance + 2 Then 'Add a little bit extra to distance, in case NPC moves
 
             'Check the requirements
             If QuestData(NPCList(QuestNPC).Quest).AcceptReqLvl > UserList(UserIndex).Stats.BaseStat(SID.ELV) Then
@@ -1469,7 +1568,7 @@ Dim Slot As Byte
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
-    If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y) > 5 Then
+    If Server_Distance(UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.x, NPCList(NPCIndex).Pos.Y) > 5 Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 36
@@ -1715,14 +1814,17 @@ Dim Count As Byte
         Set UserList(UserIndex).Stats = New UserStats
         UserList(UserIndex).Stats.UserIndex = UserIndex
     End If
+    
+    'Set the user as logged in
+    UserList(UserIndex).Flags.UserLogged = 1
 
     'Check to see is user already logged with name
     If Server_CheckForSameName(UserIndex, Name) = True Then
 
         'Tell the client we're disconnecting
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "Sorry, a user with the same name is already logged on."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 79
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
@@ -1734,8 +1836,9 @@ Dim Count As Byte
 
         'Tell the client we're disconnecting
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "Character " & Name & " does not exist."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 80
+        ConBuf.Put_String Name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
@@ -1747,7 +1850,15 @@ Dim Count As Byte
     If DB_PasswordKey <> "" Then
         TempPass = Encryption_RC4_DecryptString(Trim$(DB_RS(0)), DB_PasswordKey)
     Else
-        TempPass = Trim$(DB_RS(0))
+        
+        'Error getting the password
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 81
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_SendBuffer UserIndex
+        Exit Sub
+        
     End If
     DB_RS.Close
     
@@ -1756,8 +1867,8 @@ Dim Count As Byte
 
         'Tell the client we're disconnecting
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "Invalid password entered."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 82
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
@@ -1767,17 +1878,14 @@ Dim Count As Byte
     'Load character information from file
     Load_User UserList(UserIndex), Name
 
-    'Set the user as logged since we have loaded their information
-    UserList(UserIndex).Flags.UserLogged = 1
-
     'Get closest legal pos
     Server_ClosestLegalPos UserList(UserIndex).Pos, UserList(UserIndex).Pos
-    If Server_LegalPos(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, 0) = False Then
+    If Server_LegalPos(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y, 0) = False Then
 
         'Tell the client we're disconnecting
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "No legal position found. Please try again."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 83
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
@@ -1791,9 +1899,8 @@ Dim Count As Byte
     'Set name
     UserList(UserIndex).Name = Name
 
-    'Set the user information
+    'Set the password
     UserList(UserIndex).Password = Password
-    UserList(UserIndex).IP = frmMain.Sox.Address(UserList(UserIndex).ConnID)
 
     'Set switching map flag
     UserList(UserIndex).Flags.SwitchingMaps = 1
@@ -1837,7 +1944,7 @@ Dim Count As Byte
     CharList(CharIndex).CharType = CharType_PC
 
     'Show Character to others
-    User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+    User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.x, UserList(UserIndex).Pos.Y
 
     'Refresh list box and send log on string
     Server_RefreshUserListBox
@@ -1845,7 +1952,7 @@ Dim Count As Byte
     'Send welcome message
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "Welcome to vbGORE Version 0.2.0!"
+    ConBuf.Put_String "Welcome to vbGORE Version 0.2.1!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Info
 
     ConBuf.Put_Byte DataCode.Comm_Talk
@@ -1903,7 +2010,7 @@ Dim Count As Byte
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 72
     ConBuf.Put_String UserList(UserIndex).Name
-    Data_Send ToAll, 0, ConBuf.Get_Buffer
+    Data_Send ToAll, 0, ConBuf.Get_Buffer, , PP_Connect
 
 End Sub
 
@@ -1923,6 +2030,8 @@ Dim i As Byte
     If Server_LegalString(Password) = False Then Exit Sub
     If Len(Name) > 10 Then Exit Sub
     If Len(Password) > 10 Then Exit Sub
+    If Len(Name) < 3 Then Exit Sub
+    If Len(Password) < 3 Then Exit Sub
     
     'Check to remove the Packetflooder char
     If DEBUG_PacketFlood Then
@@ -1936,14 +2045,17 @@ Dim i As Byte
     ZeroMemory UserList(UserIndex), Len(UserList(UserIndex))
     UserList(UserIndex).ConnID = TempConnID
     ReDim UserList(UserIndex).SendBuffer(0)
+    
+    'Set the user as logged in
+    UserList(UserIndex).Flags.UserLogged = 1
 
     'Check for character file
     If Server_UserExist(Name) Then
 
         'Tell the client we're disconnecting
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "Character already exist."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_String 84
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_SendBuffer UserIndex
         Exit Sub
@@ -1965,7 +2077,7 @@ Dim i As Byte
     UserList(UserIndex).Counters.IdleCount = timeGetTime
     UserList(UserIndex).Stats.UserIndex = UserIndex
     UserList(UserIndex).Pos.Map = StartPos.Map
-    UserList(UserIndex).Pos.X = StartPos.X
+    UserList(UserIndex).Pos.x = StartPos.x
     UserList(UserIndex).Pos.Y = StartPos.Y
 
     'Set the user's starting stats
@@ -2029,6 +2141,9 @@ Dim i As Byte
     For i = 1 To 5
         Server_WriteMail -1, UserList(UserIndex).Name, "Test Message", "This is a test message that simply shows the pwnification of the mailing system.", "1,1,1,1,1,1,1,1,1,1", "1,2,3,4,94,95,96,97,98,99"
     Next i
+    
+    'Disconnect the user so we can re-connect them through the connect sub
+    UserList(UserIndex).Flags.UserLogged = 0
 
     'Go through regular connecting routine
     User_Connect UserIndex, Name, Password, True

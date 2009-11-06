@@ -301,27 +301,6 @@ Sub Quest_SayIncomplete(ByVal UserIndex As Integer, ByVal NPCIndex As Integer)
 
 End Sub
 
-Function Server_CheckForSameIP(ByVal UserIndex As Integer, ByVal UserIP As String) As Boolean
-
-'*****************************************************************
-'Checks for a user with the same IP
-'*****************************************************************
-
-Dim LoopC As Long
-
-    For LoopC = 1 To LastUser
-        If UserList(LoopC).Flags.UserLogged = 1 Then
-            If UserList(LoopC).IP = UserIP And UserIndex <> LoopC Then
-                Server_CheckForSameIP = True
-                Exit Function
-            End If
-        End If
-    Next LoopC
-
-    Server_CheckForSameIP = False
-
-End Function
-
 Function Server_CheckForSameName(ByVal UserIndex As Integer, ByVal Name As String) As Boolean
 
 '*****************************************************************
@@ -410,8 +389,7 @@ Dim LoopC As Integer
 Dim tX As Long
 Dim tY As Long
 
-'Set the new map
-
+    'Set the new map
     nPos.Map = Pos.Map
 
     'Keep looping while the position is not legal
@@ -855,13 +833,13 @@ Dim i As Long
                     ConBuf.Put_Byte DataCode.Server_Message
                     ConBuf.Put_Byte 18
                     ConBuf.Put_String UserList(WriterIndex).Name
-                    Data_Send ToIndex, LoopC, ConBuf.Get_Buffer
+                    Data_Send ToIndex, LoopC, ConBuf.Get_Buffer, , PP_NewMail
                 Else
                     'Send message to receiver that it was from the game admin
                     ConBuf.Clear
                     ConBuf.Put_Byte DataCode.Server_Message
                     ConBuf.Put_Byte 20
-                    Data_Send ToIndex, LoopC, ConBuf.Get_Buffer
+                    Data_Send ToIndex, LoopC, ConBuf.Get_Buffer, , PP_NewMail
                 End If
                 
                 'Check for sending cost
@@ -891,6 +869,7 @@ Dim i As Long
     TempStr = DB_RS!mail
     TempSplit = Split(TempStr, vbCrLf)
     If UBound(TempSplit) >= MaxMailPerUser Then 'No room for the mail
+        DB_RS.Close
         If WriterIndex <> -1 Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
@@ -898,7 +877,6 @@ Dim i As Long
             ConBuf.Put_String ReceiverName
             Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
         End If
-        DB_RS.Close
         Exit Sub
     Else    'Save the mail ID in the user
         If TempStr <> "" Then TempStr = TempStr & vbCrLf
@@ -1187,7 +1165,7 @@ Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Use
     ConBuf.Put_Integer Weapon
     ConBuf.Put_Integer Hair
     ConBuf.Put_Integer Wings
-    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_ChangeChar
 
 End Sub
 
@@ -1537,8 +1515,8 @@ Dim TempPos As WorldPos
     Call Server_ClosestLegalPos(ResPos, TempPos)
     If Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) = False Then
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Comm_UMsgbox
-        ConBuf.Put_String "No legal position found. Please try again."
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 83
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         User_Close UserIndex
         Exit Sub
@@ -2264,7 +2242,35 @@ Dim i As Integer
                 End If
             End If
         Next i
-
+        
+        'Strengthen
+        If UserList(UserIndex).Skills.Strengthen > 0 Then
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Strengthen
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Strengthen
+        End If
+        
+        'Protection
+        If UserList(UserIndex).Skills.Strengthen > 0 Then
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Protect
+        End If
+        
+        'Bless
+        If UserList(UserIndex).Skills.Strengthen > 0 Then
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless * 0.5
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless * 0.5
+            .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless * 0.5
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Bless * 0.25
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Bless * 0.25
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Bless * 0.25
+        End If
+        
+        'Iron skin
+        If UserList(UserIndex).Skills.Strengthen > 0 Then
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.IronSkin * 2
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - UserList(UserIndex).Skills.IronSkin * 1.5
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - UserList(UserIndex).Skills.IronSkin * 1.5
+        End If
+        
     End With
     
 End Sub
@@ -2410,6 +2416,15 @@ Dim LoopC As Long
     UserList(UserIndex).Pos.Map = Map
 
     If (OldMap <> Map) Or ForceSwitch = True Then
+    
+        'Check to update the database
+        If MySQLUpdate_UserMap Then
+            DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS!pos_map = Map
+            DB_RS.Update
+            DB_RS.Close
+        End If
+        
         'Set switchingmap flag
         UserList(UserIndex).Flags.SwitchingMaps = 1
 

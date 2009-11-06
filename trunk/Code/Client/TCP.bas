@@ -289,6 +289,21 @@ Dim Byt1 As Byte
         Case 78
             Int1 = rBuf.Get_Integer
             Engine_AddToChatTextBuffer Replace$(Message(78), "<value>", Int1), FontColor_Info
+        Case 79
+            MsgBox Message(79)
+        Case 80
+            Str1 = rBuf.Get_String
+            MsgBox Replace$(Message(80), "<name>", Str1)
+        Case 81
+            MsgBox Message(81)
+        Case 82
+            MsgBox Message(82)
+        Case 83
+            MsgBox Message(83)
+        Case 84
+            MsgBox Message(84)
+        Case 85
+            MsgBox Message(85)
     End Select
 
 End Sub
@@ -371,18 +386,6 @@ Dim TempByte As Byte
         TempLng = FontColor_Talk
     End Select
     Engine_AddToChatTextBuffer TempStr, TempLng
-
-End Sub
-
-Sub Data_Comm_UMsgBox(ByRef rBuf As DataBuffer)
-
-'*********************************************
-'Create an urgent messagebox
-'<Text(S)>
-'*********************************************
-
-    MsgBox rBuf.Get_String, vbApplicationModal
-    frmMain.Sox.Shut SoxID
 
 End Sub
 
@@ -1105,7 +1108,8 @@ Dim CharIndex As Integer
     If CharIndex > LastChar Then Exit Sub
     If CharIndex <= 0 Then Exit Sub
 
-    CharList(CharIndex).BlinkTimer = 300
+    CharList(CharIndex).StartBlinkTimer = 0
+    CharList(CharIndex).BlinkTimer = 0
 
 End Sub
 

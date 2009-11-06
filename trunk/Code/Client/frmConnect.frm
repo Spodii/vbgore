@@ -125,6 +125,9 @@ Private Sub InitSoxSocket()
     Else
         Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
     End If
+    
+    'Clean out the socket so we can make a fresh new connection
+    frmMain.Sox.ShutDown
 
     'Set up the socket
     SoxID = frmMain.Sox.Connect("127.0.0.1", 10200)

@@ -249,7 +249,7 @@ Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCI
     ConBuf.Put_Integer Weapon
     ConBuf.Put_Integer Hair
     ConBuf.Put_Integer Wings
-    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_ChangeChar
 
 End Sub
 

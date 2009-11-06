@@ -46,8 +46,7 @@ End Property
 
 Public Property Let BaseStat(ByVal StatID As Byte, ByVal Value As Long)
 
-'Let the stat value
-
+    'Let the stat value
     If BaseStats(StatID) = Value Then Exit Property
     BaseStats(StatID) = Value
     UpdateBaseStats(StatID) = 1
@@ -86,7 +85,7 @@ Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
     If ModStat(StatID) = Value Then Exit Property
     ModStats(StatID) = Value
     UpdateModStats(StatID) = 1
-
+    
 End Property
 
 Public Sub SendUpdatedStats()
@@ -128,7 +127,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     Next i
 
     'Send the stats
-    If j Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    If j Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Stat
 
     'Check the HP Percent
     If LastHPPercent <> CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
@@ -137,7 +136,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
         ConBuf.Put_Byte DataCode.Server_CharHP
         ConBuf.Put_Byte LastHPPercent
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
     End If
 
     'Check the MP Percent
@@ -147,7 +146,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
         ConBuf.Put_Byte DataCode.Server_CharMP
         ConBuf.Put_Byte LastMPPercent
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
     End If
 
 End Sub

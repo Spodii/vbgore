@@ -21,7 +21,6 @@ Public EmoID As EmoID
 'Data String Codenames (Reduces all data transfers to 1 byte tags)
 Public Type DataCode
     Comm_Talk As Byte
-    Comm_UMsgbox As Byte
     Comm_Shout As Byte
     Comm_Emote As Byte
     Comm_Whisper As Byte
@@ -187,7 +186,6 @@ Public Sub InitDataCommands()
     End With
 
     With DataCode
-        .Comm_UMsgbox = 2
         .Server_IconSpellExhaustion = 3
         .Comm_Shout = 4
         .Server_UserCharIndex = 5

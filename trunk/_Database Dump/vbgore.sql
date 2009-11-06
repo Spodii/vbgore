@@ -4,7 +4,7 @@ Source Host: localhost
 Source Database: vbgore
 Target Host: localhost
 Target Database: vbgore
-Date: 12/2/2006 1:42:15 AM
+Date: 12/7/2006 12:01:00 AM
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -26,7 +26,8 @@ CREATE TABLE `mail` (
 -- Table structure for mail_lastid
 -- ----------------------------
 CREATE TABLE `mail_lastid` (
-  `lastid` int(11) NOT NULL default '0'
+  `lastid` int(11) NOT NULL default '0',
+  PRIMARY KEY  (`lastid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ----------------------------
@@ -136,7 +137,6 @@ CREATE TABLE `users` (
   `gm` tinyint(4) NOT NULL,
   `password` varchar(255) NOT NULL COMMENT 'Password',
   `desc` varchar(255) NOT NULL COMMENT 'Description',
-  `ip` varchar(255) NOT NULL COMMENT 'Last used IP address',
   `inventory` mediumtext NOT NULL,
   `mail` mediumtext NOT NULL,
   `knownskills` text NOT NULL COMMENT 'Skills known by the user (1 = known, 0 = unknown)',
@@ -179,12 +179,7 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records 
 -- ----------------------------
-INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2006-12-02', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2006-12-02', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2006-12-02', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2006-12-02', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2006-12-02', 'This is a test message that simply shows the pwnification of the mailing system.', '1', '1 1\r\n1 2\r\n1 3\r\n1 4\r\n1 94\r\n1 95\r\n1 96\r\n1 97\r\n1 98\r\n1 99');
-INSERT INTO `mail_lastid` VALUES ('5');
+INSERT INTO `mail_lastid` VALUES ('0');
 INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '0', '0', '0', '1', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '1', '1', '10', '10', '10');
 INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '5000', '1', '1', '0', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '1', '2', '2', '2', '2');
 INSERT INTO `npcs` VALUES ('3', 'Shopkeeper', 'Just a humble shopkeeper.', '0', '0', '0', '0', '0', '0', '0', '1 -1\r\n2 -1\r\n3 -1\r\n4 -1\r\n5 -1\r\n6 -1\r\n7 -1', '1', '1', '1', '0', '1', '3', '3', '0', '0', '1', '1', '10', '10', '10');
@@ -196,4 +191,3 @@ INSERT INTO `objects` VALUES ('5', 'Newbie Armor', '10', '3', '0', '1000', '2', 
 INSERT INTO `objects` VALUES ('6', 'Newbie Dagger', '30', '2', '1', '1300', '-1', '1', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', '4', '0', '0', '0', '0', '0', '0');
 INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '1200', '-1', '-1', '-1', '-1', '1', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '20', '10', '10', '0', '0', '0');
 INSERT INTO `quests` VALUES ('1', 'Kill Bandits', '1', 'Help me get revenge!', 'Thanks for the help! Kill 3 bandits that hide in the waterfall!', 'Just because I have no head doesn\'t mean I have no brain...', 'Sweet d00d, that\'ll show them whos boss! ^_^', '1', '0', '0', '100', '0', '0', '0', '8', '0', '0', '2', '3', '200', '400', '2', '60', '1');
-INSERT INTO `users` VALUES ('Spodi', '0', 'xžç(ãÙ', '', '127.0.0.1', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8', '', '', '17', '22', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '100', '0', '1', '0', '0', '1', '1', '52', '50', '52', '50', '52', '50', '0');

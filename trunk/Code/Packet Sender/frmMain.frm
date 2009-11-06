@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{D1EE5822-4214-490C-81BE-49A1E232B2F0}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{C1A38C00-7EC2-4319-A304-FE5B3519AF73}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    AutoRedraw      =   -1  'True
    BackColor       =   &H00000000&
@@ -26,6 +26,15 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   504
    StartUpPosition =   2  'CenterScreen
+   Begin SoxOCX.Sox Sox 
+      Height          =   420
+      Left            =   0
+      Top             =   0
+      Visible         =   0   'False
+      Width           =   420
+      _ExtentX        =   741
+      _ExtentY        =   741
+   End
    Begin VB.TextBox ByteTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
@@ -291,15 +300,6 @@ Begin VB.Form frmMain
       Interval        =   500
       Left            =   480
       Top             =   0
-   End
-   Begin SoxOCX.Sox Sox 
-      Height          =   420
-      Left            =   0
-      Top             =   0
-      Visible         =   0   'False
-      Width           =   420
-      _ExtentX        =   741
-      _ExtentY        =   741
    End
 End
 Attribute VB_Name = "frmMain"
