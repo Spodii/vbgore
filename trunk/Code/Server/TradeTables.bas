@@ -44,7 +44,6 @@ Public Sub TradeTable_RequestFinish(ByVal UserIndex As Integer)
 '*****************************************************************
 Dim TradeTableIndex As Byte
 Dim UserTableIndex As Byte
-Dim i As Long
 
     'Make sure the user has a trade table
     TradeTableIndex = UserList(UserIndex).flags.TradeTable
@@ -72,25 +71,27 @@ Dim i As Long
     End If
     
     'Check if both users have finished
-    If TradeTable(TradeTableIndex).User1State = TRADESTATE_FINISHED And TradeTable(TradeTableIndex).User2State = TRADESTATE_FINISHED Then
+    If TradeTable(TradeTableIndex).User1State = TRADESTATE_FINISHED Then
+        If TradeTable(TradeTableIndex).User2State = TRADESTATE_FINISHED Then
+            
+            'Confirm the user 1 has enough free slots
+            If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User1) < TradeTable_NumObjectsInTable(TradeTableIndex, 1) Then
+                Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(131).Data()
+                Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(130).Data()
+                Exit Sub
+            End If
+            
+            'Confirm the user 2 has enough free slots
+            If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User2) < TradeTable_NumObjectsInTable(TradeTableIndex, 2) Then
+                Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(130).Data()
+                Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(131).Data()
+                Exit Sub
+            End If
+            
+            'Go to the finish routine
+            TradeTable_Finish TradeTableIndex
         
-        'Confirm the user 1 has enough free slots
-        If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User1) < TradeTable_NumObjectsInTable(TradeTableIndex, 1) Then
-            Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(131).Data()
-            Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(130).Data()
-            Exit Sub
         End If
-        
-        'Confirm the user 2 has enough free slots
-        If User_NumFreeInvSlots(TradeTable(TradeTableIndex).User2) < TradeTable_NumObjectsInTable(TradeTableIndex, 2) Then
-            Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(130).Data()
-            Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(131).Data()
-            Exit Sub
-        End If
-        
-        'Go to the finish routine
-        TradeTable_Finish TradeTableIndex
-        
     End If
 
 End Sub
@@ -219,7 +220,6 @@ Public Sub TradeTable_Close(ByVal TradeTableIndex As Byte)
 '*****************************************************************
 'User wants to cancel a trade
 '*****************************************************************
-Dim UserTableIndex As Byte
 
     'Make sure the user has a trade table
     If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index

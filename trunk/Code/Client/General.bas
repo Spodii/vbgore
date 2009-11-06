@@ -20,7 +20,6 @@ Public NumBytesForSkills As Long
 
 Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
-Private SkillPos As Long
 
 Public FPSCap As Long   'The FPS cap the user defined to use (in milliseconds, not FPS)
 
@@ -32,7 +31,7 @@ Private Declare Sub GetSystemTime Lib "kernel32.dll" Alias "GetSystemTimeAsFileT
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 
 'Like the Shell function, but more powerful - used to call another application to load it
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
 
@@ -85,38 +84,13 @@ Dim i As Long
             
             'Crop out the skin name and add it to the function
             TempSplit() = Split(Files(i), "\")
-            If Engine_BuildSkinsList <> "" Then Engine_BuildSkinsList = Engine_BuildSkinsList & vbCrLf
+            If LenB(Engine_BuildSkinsList) <> 0 Then Engine_BuildSkinsList = Engine_BuildSkinsList & vbCrLf
             Engine_BuildSkinsList = Engine_BuildSkinsList & " * |" & Left$(TempSplit(UBound(TempSplit)), Len(TempSplit(UBound(TempSplit))) - 4) & "|"
 
         End If
     Next i
     
 End Function
-
-Private Sub Draw_Stat(ByVal SkillName As String, ByVal Base As Long, ByVal Modi As Long)
-
-'***************************************************
-'Renders the skills to the skill box
-'***************************************************
-
-Dim RaiseCost As Long
-
-'Calculate the cost to raise the skill
-
-    RaiseCost = Game_GetEXPCost(Base)
-
-    'Draw the skill's information
-    If BaseStats(SID.Points) >= RaiseCost Then
-        Engine_Render_Text "+", 0, SkillPos, -16777216    'ARGB(255,0,0,0)
-    End If
-    Engine_Render_Text SkillName, 8, SkillPos, -16777216
-    Engine_Render_Text Base & "(" & Modi & ")", 90, SkillPos, -16777216  'ARGB(255,0,0,0)
-    Engine_Render_Text Str$(RaiseCost), 150, SkillPos, -16777216 'ARGB(255,0,0,0)
-
-    'Raise the skill pos
-    SkillPos = SkillPos + 12
-
-End Sub
 
 Sub Game_BuildFilter()
 
@@ -126,7 +100,6 @@ Sub Game_BuildFilter()
 Dim sGroup() As String
 Dim sSplit() As String
 Dim i As Long
-Dim j As Long
 
     'Check if we even have filtered words
     If LenB(FilterString) = 0 Then Exit Sub
@@ -306,7 +279,6 @@ Function Game_CheckUserData() As Boolean
 '*****************************************************************
 'Checks all user data for mistakes and reports them.
 '*****************************************************************
-Dim LoopC As Integer
 
     'Password
     If Len(UserPassword) < 3 Then
@@ -370,16 +342,6 @@ Function Game_ClickItem(ByVal ItemIndex As Byte, Optional ByVal InventoryType As
 
 End Function
 
-Function Game_GetEXPCost(BaseSkill As Long) As Long
-
-'*****************************************************************
-'Calculate the exp required to raise a skill up to the next point
-'*****************************************************************
-
-    Game_GetEXPCost = Int(0.17376 * (BaseSkill ^ 3) + 0.44 * (BaseSkill ^ 2) - 0.48 * BaseSkill + 1.035) + 1
-
-End Function
-
 Function Game_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
 
 '*****************************************************************
@@ -403,27 +365,35 @@ Function Game_LegalCharacter(ByVal KeyAscii As Byte) As Boolean
     On Error GoTo ErrOut
 
     'Allow numbers between 0 and 9
-    If KeyAscii >= 48 And KeyAscii <= 57 Then
-        Game_LegalCharacter = True
-        Exit Function
+    If KeyAscii >= 48 Then
+        If KeyAscii <= 57 Then
+            Game_LegalCharacter = True
+            Exit Function
+        End If
     End If
     
     'Allow characters A to Z
-    If KeyAscii >= 65 And KeyAscii <= 90 Then
-        Game_LegalCharacter = True
-        Exit Function
+    If KeyAscii >= 65 Then
+        If KeyAscii <= 90 Then
+            Game_LegalCharacter = True
+            Exit Function
+        End If
     End If
     
     'Allow characters a to z
-    If KeyAscii >= 97 And KeyAscii <= 122 Then
-        Game_LegalCharacter = True
-        Exit Function
+    If KeyAscii >= 97 Then
+        If KeyAscii <= 122 Then
+            Game_LegalCharacter = True
+            Exit Function
+        End If
     End If
     
     'Allow foreign characters
-    If KeyAscii >= 128 And KeyAscii <= 168 Then
-        Game_LegalCharacter = True
-        Exit Function
+    If KeyAscii >= 128 Then
+        If KeyAscii <= 168 Then
+            Game_LegalCharacter = True
+            Exit Function
+        End If
     End If
     
 Exit Function
@@ -539,6 +509,7 @@ Dim i As Integer
 Dim Y As Byte
 Dim X As Byte
 Dim b() As Byte
+Dim TempInt As Integer
 
     'Check if there was a map before this one - if so, clear it up
     If MapInfo.Width > 0 Then
@@ -587,7 +558,7 @@ Dim b() As Byte
     Erase b()
 
     'Map Header
-    MapInfo.MapVersion = MapBuf.Get_Integer
+    TempInt = MapBuf.Get_Integer    'Not stored in memory
     MapInfo.Width = MapBuf.Get_Byte
     MapInfo.Height = MapBuf.Get_Byte
     
@@ -704,8 +675,8 @@ Dim b() As Byte
                 SaveLightBuffer(X, Y).Light(i) = MapData(X, Y).Light(i)
             Next i
 
-            'Mailbox
-            If ByFlags And 8192 Then MapData(X, Y).Mailbox = 1 Else MapData(X, Y).Mailbox = 0
+            'Mailbox - Not used by the client
+            'If ByFlags And 8192 Then MapData(X, Y).Mailbox = 1 Else MapData(X, Y).Mailbox = 0
 
             'Shadows
             If ByFlags And 16384 Then MapData(X, Y).Shadow(1) = 1 Else MapData(X, Y).Shadow(1) = 0
@@ -797,28 +768,28 @@ Dim i As Byte
     'Skin positions
     t = DataPath & "Skins\" & CurrentSkin & ".dat"   'Set the custom positions file for the skin
     With GameWindow
-        Var_Write t, "QUICKBAR", "ScreenX", Str(.QuickBar.Screen.X)
-        Var_Write t, "QUICKBAR", "ScreenY", Str(.QuickBar.Screen.Y)
-        Var_Write t, "CHATWINDOW", "ScreenX", Str(.ChatWindow.Screen.X)
-        Var_Write t, "CHATWINDOW", "ScreenY", Str(.ChatWindow.Screen.Y)
-        Var_Write t, "INVENTORY", "ScreenX", Str(.Inventory.Screen.X)
-        Var_Write t, "INVENTORY", "ScreenY", Str(.Inventory.Screen.Y)
-        Var_Write t, "SHOP", "ScreenX", Str(.Shop.Screen.X)
-        Var_Write t, "SHOP", "ScreenY", Str(.Shop.Screen.Y)
-        Var_Write t, "MAILBOX", "ScreenX", Str(.Mailbox.Screen.X)
-        Var_Write t, "MAILBOX", "ScreenY", Str(.Mailbox.Screen.Y)
-        Var_Write t, "VIEWMESSAGE", "ScreenX", Str(.ViewMessage.Screen.X)
-        Var_Write t, "VIEWMESSAGE", "ScreenY", Str(.ViewMessage.Screen.Y)
-        Var_Write t, "WRITEMESSAGE", "ScreenX", Str(.WriteMessage.Screen.X)
-        Var_Write t, "WRITEMESSAGE", "ScreenY", Str(.WriteMessage.Screen.Y)
-        Var_Write t, "AMOUNT", "ScreenX", Str(.Amount.Screen.X)
-        Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
-        Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.X)
-        Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
-        Var_Write t, "BANK", "ScreenX", Str(.Bank.Screen.X)
-        Var_Write t, "BANK", "ScreenY", Str(.Bank.Screen.Y)
-        Var_Write t, "NPCCHAT", "ScreenX", Str(.NPCChat.Screen.X)
-        Var_Write t, "NPCCHAT", "ScreenY", Str(.NPCChat.Screen.Y)
+        Var_Write t, "QUICKBAR", "ScreenX", Str$(.QuickBar.Screen.X)
+        Var_Write t, "QUICKBAR", "ScreenY", Str$(.QuickBar.Screen.Y)
+        Var_Write t, "CHATWINDOW", "ScreenX", Str$(.ChatWindow.Screen.X)
+        Var_Write t, "CHATWINDOW", "ScreenY", Str$(.ChatWindow.Screen.Y)
+        Var_Write t, "INVENTORY", "ScreenX", Str$(.Inventory.Screen.X)
+        Var_Write t, "INVENTORY", "ScreenY", Str$(.Inventory.Screen.Y)
+        Var_Write t, "SHOP", "ScreenX", Str$(.Shop.Screen.X)
+        Var_Write t, "SHOP", "ScreenY", Str$(.Shop.Screen.Y)
+        Var_Write t, "MAILBOX", "ScreenX", Str$(.Mailbox.Screen.X)
+        Var_Write t, "MAILBOX", "ScreenY", Str$(.Mailbox.Screen.Y)
+        Var_Write t, "VIEWMESSAGE", "ScreenX", Str$(.ViewMessage.Screen.X)
+        Var_Write t, "VIEWMESSAGE", "ScreenY", Str$(.ViewMessage.Screen.Y)
+        Var_Write t, "WRITEMESSAGE", "ScreenX", Str$(.WriteMessage.Screen.X)
+        Var_Write t, "WRITEMESSAGE", "ScreenY", Str$(.WriteMessage.Screen.Y)
+        Var_Write t, "AMOUNT", "ScreenX", Str$(.Amount.Screen.X)
+        Var_Write t, "AMOUNT", "ScreenY", Str$(.Amount.Screen.Y)
+        Var_Write t, "MENU", "ScreenX", Str$(.Menu.Screen.X)
+        Var_Write t, "MENU", "ScreenY", Str$(.Menu.Screen.Y)
+        Var_Write t, "BANK", "ScreenX", Str$(.Bank.Screen.X)
+        Var_Write t, "BANK", "ScreenY", Str$(.Bank.Screen.Y)
+        Var_Write t, "NPCCHAT", "ScreenX", Str$(.NPCChat.Screen.X)
+        Var_Write t, "NPCCHAT", "ScreenY", Str$(.NPCChat.Screen.Y)
     End With
 
 End Sub
@@ -829,7 +800,6 @@ Sub UpdateShownTextBuffer()
 'Updates the ShownTextBuffer
 '*****************************************************************
 Dim X As Long
-Dim Y As Long
 Dim j As Long
     
     'Check if the width is larger then the screen
@@ -868,12 +838,11 @@ Dim KeyClearTime As Long
 Dim PacketKeys() As String
 Dim LastUnloadTime As Long
 Dim StartTime As Long
-Dim FileNum As Byte
 Dim i As Integer
 
-    'This MUST be called before any timeGetTime calls
-    InitTimeGetTime
-
+    'Set the high-resolution timer
+    timeBeginPeriod 1
+    
     'Init file paths
     InitFilePaths
     
@@ -894,7 +863,7 @@ Dim i As Integer
             frmConnect.Hide
             
             'Load the updater
-            ShellExecute frmConnect.hWnd, vbNullString, App.Path & "\UpdateClient.exe", vbNullString, vbNullString, 1   'The 1 means "show normal"
+            ShellExecute frmConnect.hwnd, vbNullString, App.Path & "\UpdateClient.exe", vbNullString, vbNullString, 1   'The 1 means "show normal"
     
             'Unload the client
             Engine_UnloadAllForms
@@ -907,6 +876,7 @@ Dim i As Integer
     GenerateEncryptionKeys PacketKeys
     frmMain.GOREsock.ClearPicture
     frmMain.GOREsock.SetEncryption PacketEncTypeServerIn, PacketEncTypeServerOut, PacketKeys()
+    Erase PacketKeys
     
     'Number of bytes required to fill the skills
     NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
@@ -926,7 +896,6 @@ Dim i As Integer
     EnterTextBufferWidth = 1
     EngineBaseSpeed = 0.011
     ReDim SkillListIDs(1 To NumSkills)
-    LineBreakChr = Chr$(10)
 
     'Set intial user position
     UserPos.X = 1
@@ -951,7 +920,6 @@ Dim i As Integer
     Engine_Init_WingData
     Engine_Init_HeadData
     Engine_Init_HairData
-    Engine_Init_MapData
     
     'Load the config
     Game_Config_Load
@@ -972,8 +940,6 @@ Dim i As Integer
 
     'Display connect window
     frmConnect.Visible = True
-    
-    Input_Keys_ClearQueue
 
     'Main Loop
     Do
@@ -986,9 +952,9 @@ Dim i As Integer
         If IsUnloading = 1 Then Exit Do
         
         'Clear the key cache
-        If KeyClearTime > timeGetTime Then
+        If KeyClearTime < timeGetTime Then
             Input_Keys_ClearQueue
-            KeyClearTime = 500
+            KeyClearTime = timeGetTime + 200
         End If
         
         'Don't draw frame is window is minimized or there is no map loaded
@@ -1011,7 +977,7 @@ Dim i As Integer
         If SocketOpen Then Data_Send
 
         'Check to unload stuff from memory (only check every 5 seconds)
-        If LastUnloadTime + 5000 < timeGetTime Then
+        If LastUnloadTime < timeGetTime Then
             For i = 1 To NumGrhFiles    'Check to unload surfaces
                 If SurfaceTimer(i) > 0 Then 'Only update surfaces in use
                     If SurfaceTimer(i) < timeGetTime Then   'Unload the surface
@@ -1028,6 +994,7 @@ Dim i As Integer
                     End If
                 End If
             Next i
+            LastUnloadTime = timeGetTime + 5000 'States we will check the unload routine again in 5000 milliseconds
         End If
         
         'Check to change servers
@@ -1073,29 +1040,20 @@ Dim i As Integer
 
 End Sub
 
-Function Var_Get(File As String, Main As String, Var As String) As String
+Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
 
 '*****************************************************************
 'Gets a Var from a text file
 '*****************************************************************
 
-Dim sSpaces As String ' This will hold the input that the program will retrieve
-Dim szReturn As String ' This will be the defaul value if the string is not found
+    Var_Get = Space$(1000)
+    getprivateprofilestring Main, Var, vbNullString, Var_Get, 1000, File
+    Var_Get = RTrim$(Var_Get)
+    If LenB(Var_Get) <> 0 Then Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
 
-    szReturn = vbNullString
-
-    sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
-    Var_Get = RTrim$(sSpaces)
-    If Len(Var_Get) > 0 Then
-        Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
-    Else
-        Var_Get = ""
-    End If
-    
 End Function
 
-Sub Var_Write(File As String, Main As String, Var As String, Value As String)
+Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As String, ByVal Value As String)
 
 '*****************************************************************
 'Writes a var to a text file
@@ -1105,7 +1063,7 @@ Sub Var_Write(File As String, Main As String, Var As String, Value As String)
 
 End Sub
 
-Public Function Engine_WordWrap(ByVal Text As String, ByVal MaxLineLen As Integer, Optional ByVal ReplaceChar As String = vbNewLine) As String
+Public Function Engine_WordWrap(ByVal Text As String, ByVal MaxLineLen As Integer) As String
 
 '************************************************************
 'Wrap a long string to multiple lines by vbNewLine
@@ -1116,7 +1074,6 @@ Dim LastSpace As Long
 Dim Size As Long
 Dim i As Long
 Dim b As Long
-Dim j As Long
 
     'Too small of text
     If Len(Text) < 2 Then
@@ -1186,43 +1143,5 @@ Dim j As Long
         Next i
         
     Next TSLoop
-
-End Function
-
-Public Sub InitTimeGetTime()
-
-'*****************************************************************
-'Gets the offset time for the timer so we can start at 0 instead of
-'the returned system time, allowing us to not have a time roll-over until
-'the program is running for 25 days
-'*****************************************************************
-
-    'Get the initial time
-    GetSystemTime GetSystemTimeOffset
-    
-    'Subtract to the lowest value so we start at -(2^31) instead of 0
-    'Doubles the time we can run the program (50 days instead of 25) before a rollover
-    'This isn't done because of the way vbGORE already handles some timers
-    'Not like it is needed for the client, but some servers may last 25 days without a reset
-    'Maybe if it ever becomes a problem, then some day, someone may fix it... ;)
-    'GetSystemTimeOffset = GetSystemTimeOffset + (2 ^ 31) - 1
-
-End Sub
-
-Public Function timeGetTime() As Long
-Dim CurrentTime As Currency
-
-'*****************************************************************
-'Grabs the time from the 64-bit system timer and returns it in 32-bit
-'after calculating it with the offset - allows us to have the
-'"no roll-over" advantage of 64-bit timers with the RAM usage of 32-bit
-'though we limit things slightly, so the rollover still happens, but after 25 days
-'*****************************************************************
-
-    'Grab the current time (we have to pass a variable ByRef instead of a function return like the other timers)
-    GetSystemTime CurrentTime
-    
-    'Calculate the difference between the 64-bit times, return as a 32-bit time
-    timeGetTime = CurrentTime - GetSystemTimeOffset
 
 End Function

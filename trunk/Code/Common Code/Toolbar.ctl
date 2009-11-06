@@ -86,8 +86,8 @@ Private Const SW_SHOW                As Long = 5
 Private Declare Function ShowWindow Lib "user32" (ByVal hWnd As Long, ByVal nCmdShow As Long) As Long
 
 Private Type POINTAPI
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
 End Type
 
 Private Type RECT2
@@ -97,7 +97,6 @@ Private Type RECT2
     y2 As Long
 End Type
 
-Private Declare Function GetClientRect Lib "user32" (ByVal hWnd As Long, lpRect As RECT2) As Long
 Private Declare Function MapWindowPoints Lib "user32" (ByVal hWndFrom As Long, ByVal hwndTo As Long, lppt As Any, ByVal cPoints As Long) As Long
 
 '//
@@ -110,10 +109,7 @@ Private Declare Function SendMessageLong Lib "user32" Alias "SendMessageA" (ByVa
 
 Private Const GWL_STYLE        As Long = (-16)
 
-Private Const WS_DISABLED      As Long = &H8000000
-Private Const WS_VISIBLE       As Long = &H10000000
 Private Const WS_CHILD         As Long = &H40000000
-Private Const WS_EX_CLIENTEDGE As Long = &H200
 
 Private Const WM_SIZE          As Long = &H5
 Private Const WM_ERASEBKGND    As Long = &H14
@@ -121,10 +117,10 @@ Private Const WM_SETFONT       As Long = &H30
 Private Const WM_NOTIFY        As Long = &H4E
 Private Const WM_COMMAND       As Long = &H111
 
-Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExA" (ByVal dwExStyle As Long, ByVal lpClassName As String, ByVal lpWindowName As String, ByVal dwStyle As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, lpParam As Any) As Long
+Private Declare Function CreateWindowEx Lib "user32" Alias "CreateWindowExA" (ByVal dwExStyle As Long, ByVal lpClassName As String, ByVal lpWindowName As String, ByVal dwStyle As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hWndParent As Long, ByVal hMenu As Long, ByVal hInstance As Long, lpParam As Any) As Long
 Private Declare Function DestroyWindow Lib "user32" (ByVal hWnd As Long) As Long
 Private Declare Function GetWindowLong Lib "user32" Alias "GetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long) As Long
-Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal x As Long, ByVal y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
+Private Declare Function MoveWindow Lib "user32" (ByVal hWnd As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal bRepaint As Long) As Long
 
 '== Image list
 
@@ -170,18 +166,8 @@ Private Type TBBUTTONINFO
    cchText   As Long
 End Type
 
-Private Type TBADDBITMAP
-    hInst As Long
-    nID   As Long
-End Type
-
 Private Const TBIF_IMAGE              As Long = &H1
 Private Const TBIF_TEXT               As Long = &H2
-Private Const TBIF_STATE              As Long = &H4
-Private Const TBIF_STYLE              As Long = &H8
-Private Const TBIF_LPARAM             As Long = &H10
-Private Const TBIF_COMMAND            As Long = &H20
-Private Const TBIF_SIZE               As Long = &H40
 
 Private Const TBSTYLE_BUTTON          As Long = &H0
 Private Const TBSTYLE_SEP             As Long = &H1
@@ -205,7 +191,6 @@ Private Const TBSTYLE_EX_DRAWDDARROWS As Long = &H1
 Private Const WM_USER                 As Long = &H400
 Private Const TB_SETSTATE             As Long = (WM_USER + 17)
 Private Const TB_GETSTATE             As Long = (WM_USER + 18)
-Private Const TB_ADDBITMAP            As Long = (WM_USER + 19)
 Private Const TB_ADDBUTTONS           As Long = (WM_USER + 20)
 Private Const TB_BUTTONCOUNT          As Long = (WM_USER + 24)
 Private Const TB_GETITEMRECT          As Long = (WM_USER + 29)
@@ -285,7 +270,6 @@ End Enum
 '-- Private variables:
 
 Private m_bInitialized As Boolean
-Private m_hModShell32  As Long
 Private m_hToolbar     As Long
 Private m_hImageList   As Long
 Private m_hFont        As Long
@@ -296,7 +280,7 @@ Private m_sTipText()   As String
 Public Event ButtonClick(ByVal Button As Long)
 Public Event ButtonLeave(ByVal Button As Long)
 Public Event ButtonEnter(ByVal Button As Long)
-Public Event ButtonDropDown(ByVal Button As Long, ByVal x As Long, ByVal y As Long)
+Public Event ButtonDropDown(ByVal Button As Long, ByVal X As Long, ByVal Y As Long)
 Public Event ToolbarLeave()
 Public Event ToolbarEnter()
 
@@ -340,12 +324,8 @@ Private sc_pSWL                      As Long                                    
 Private Declare Sub RtlMoveMemory Lib "kernel32" (Destination As Any, Source As Any, ByVal Length As Long)
 Private Declare Function GetModuleHandleA Lib "kernel32" (ByVal lpModuleName As String) As Long
 Private Declare Function GetProcAddress Lib "kernel32" (ByVal hModule As Long, ByVal lpProcName As String) As Long
-Private Declare Function GlobalAlloc Lib "kernel32" (ByVal wFlags As Long, ByVal dwBytes As Long) As Long
-Private Declare Function GlobalFree Lib "kernel32" (ByVal hMem As Long) As Long
 Private Declare Function SetWindowLongA Lib "user32" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function VirtualProtect Lib "kernel32" (lpAddress As Any, ByVal dwSize As Long, ByVal flNewProtect As Long, lpflOldProtect As Long) As Long
-
-
 
 '========================================================================================
 ' Subclass handler - MUST be the first Public routine in this file. That includes public properties also
@@ -394,15 +374,15 @@ Public Sub zSubclass_Proc(ByVal bBefore As Boolean, ByRef bHandled As Boolean, B
                                 Call CopyMemory(uNMTB, ByVal lParam, Len(uNMTB))
                                 
                                 Call SendMessage(m_hToolbar, TB_GETITEMRECT, uNMTB.iItem - 1, uRct)
-                                uPt.x = uRct.x1
-                                uPt.y = uRct.y2
+                                uPt.X = uRct.x1
+                                uPt.Y = uRct.y2
                                 
                                 Call MapWindowPoints(m_hToolbar, UserControl.Parent.hWnd, uPt, 1)
                                 On Error Resume Next
-                                uPt.x = UserControl.ScaleX(uPt.x, vbPixels, UserControl.Parent.ScaleMode)
-                                uPt.y = UserControl.ScaleY(uPt.y, vbPixels, UserControl.Parent.ScaleMode)
+                                uPt.X = UserControl.ScaleX(uPt.X, vbPixels, UserControl.Parent.ScaleMode)
+                                uPt.Y = UserControl.ScaleY(uPt.Y, vbPixels, UserControl.Parent.ScaleMode)
                                 On Error GoTo 0
-                                RaiseEvent ButtonDropDown(uNMTB.iItem, uPt.x, uPt.y)
+                                RaiseEvent ButtonDropDown(uNMTB.iItem, uPt.X, uPt.Y)
                             End If
                             
                         Case TBN_HOTITEMCHANGE
@@ -777,8 +757,7 @@ Private Function pvCreate(ByVal ImageSize As Long, _
 
   Dim lStyle  As Long
   Dim uButton As TBBUTTON
-  Dim uTBAB   As TBADDBITMAP
-    
+  
     '-- Define style
     lStyle = WS_CHILD
     lStyle = lStyle Or CCS_NORESIZE Or -(Not Divider) * CCS_NODIVIDER

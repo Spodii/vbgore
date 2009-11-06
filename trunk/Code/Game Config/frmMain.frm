@@ -2,7 +2,7 @@ VERSION 5.00
 Begin VB.Form frmMain 
    BackColor       =   &H80000005&
    Caption         =   "Game Configuration"
-   ClientHeight    =   7005
+   ClientHeight    =   7230
    ClientLeft      =   60
    ClientTop       =   450
    ClientWidth     =   6120
@@ -10,7 +10,7 @@ Begin VB.Form frmMain
    KeyPreview      =   -1  'True
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   467
+   ScaleHeight     =   482
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   408
    StartUpPosition =   2  'CenterScreen
@@ -18,32 +18,36 @@ Begin VB.Form frmMain
       Caption         =   "Default Controls"
       Height          =   255
       Left            =   1560
-      TabIndex        =   62
-      Top             =   6600
+      TabIndex        =   65
+      TabStop         =   0   'False
+      Top             =   6840
       Width           =   1335
    End
    Begin VB.CommandButton CloseCmd 
       Caption         =   "Close"
       Height          =   255
       Left            =   4440
-      TabIndex        =   61
-      Top             =   6600
+      TabIndex        =   64
+      TabStop         =   0   'False
+      Top             =   6840
       Width           =   1335
    End
    Begin VB.CommandButton SaveCmd 
       Caption         =   "Save"
       Height          =   255
       Left            =   3000
-      TabIndex        =   60
-      Top             =   6600
+      TabIndex        =   63
+      TabStop         =   0   'False
+      Top             =   6840
       Width           =   1335
    End
    Begin VB.CommandButton LoadCmd 
       Caption         =   "Load"
       Height          =   255
       Left            =   120
-      TabIndex        =   59
-      Top             =   6600
+      TabIndex        =   62
+      TabStop         =   0   'False
+      Top             =   6840
       Width           =   1335
    End
    Begin VB.Frame Frame3 
@@ -51,14 +55,14 @@ Begin VB.Form frmMain
       Caption         =   "Quick Bar Hot-Keys"
       Height          =   1935
       Left            =   120
-      TabIndex        =   46
-      Top             =   2880
+      TabIndex        =   49
+      Top             =   3120
       Width           =   5895
       Begin VB.TextBox KeyTxt 
          Height          =   285
          Index           =   27
          Left            =   4320
-         TabIndex        =   22
+         TabIndex        =   25
          Text            =   "Text1"
          Top             =   1440
          Width           =   1455
@@ -67,7 +71,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   26
          Left            =   2400
-         TabIndex        =   21
+         TabIndex        =   24
          Text            =   "Text1"
          Top             =   1440
          Width           =   1455
@@ -76,7 +80,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   25
          Left            =   480
-         TabIndex        =   20
+         TabIndex        =   23
          Text            =   "Text1"
          Top             =   1440
          Width           =   1455
@@ -85,7 +89,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   24
          Left            =   4320
-         TabIndex        =   19
+         TabIndex        =   22
          Text            =   "Text1"
          Top             =   1080
          Width           =   1455
@@ -94,7 +98,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   23
          Left            =   2400
-         TabIndex        =   18
+         TabIndex        =   21
          Text            =   "Text1"
          Top             =   1080
          Width           =   1455
@@ -103,7 +107,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   22
          Left            =   480
-         TabIndex        =   17
+         TabIndex        =   20
          Text            =   "Text1"
          Top             =   1080
          Width           =   1455
@@ -112,7 +116,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   21
          Left            =   4320
-         TabIndex        =   16
+         TabIndex        =   19
          Text            =   "Text1"
          Top             =   720
          Width           =   1455
@@ -121,7 +125,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   20
          Left            =   2400
-         TabIndex        =   15
+         TabIndex        =   18
          Text            =   "Text1"
          Top             =   720
          Width           =   1455
@@ -130,7 +134,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   19
          Left            =   480
-         TabIndex        =   14
+         TabIndex        =   17
          Text            =   "Text1"
          Top             =   720
          Width           =   1455
@@ -139,7 +143,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   18
          Left            =   4320
-         TabIndex        =   13
+         TabIndex        =   16
          Text            =   "Text1"
          Top             =   360
          Width           =   1455
@@ -148,7 +152,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   17
          Left            =   2400
-         TabIndex        =   12
+         TabIndex        =   15
          Text            =   "Text1"
          Top             =   360
          Width           =   1455
@@ -157,7 +161,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   16
          Left            =   480
-         TabIndex        =   11
+         TabIndex        =   14
          Text            =   "Text1"
          Top             =   360
          Width           =   1455
@@ -168,7 +172,7 @@ Begin VB.Form frmMain
          Caption         =   "12:"
          Height          =   195
          Left            =   3960
-         TabIndex        =   58
+         TabIndex        =   61
          Top             =   1440
          Width           =   255
       End
@@ -178,7 +182,7 @@ Begin VB.Form frmMain
          Caption         =   "11:"
          Height          =   195
          Left            =   2040
-         TabIndex        =   57
+         TabIndex        =   60
          Top             =   1440
          Width           =   255
       End
@@ -188,7 +192,7 @@ Begin VB.Form frmMain
          Caption         =   "10:"
          Height          =   195
          Left            =   120
-         TabIndex        =   56
+         TabIndex        =   59
          Top             =   1440
          Width           =   255
       End
@@ -198,7 +202,7 @@ Begin VB.Form frmMain
          Caption         =   "9:"
          Height          =   195
          Left            =   3960
-         TabIndex        =   55
+         TabIndex        =   58
          Top             =   1080
          Width           =   255
       End
@@ -208,7 +212,7 @@ Begin VB.Form frmMain
          Caption         =   "8:"
          Height          =   195
          Left            =   2040
-         TabIndex        =   54
+         TabIndex        =   57
          Top             =   1080
          Width           =   255
       End
@@ -218,7 +222,7 @@ Begin VB.Form frmMain
          Caption         =   "7:"
          Height          =   195
          Left            =   120
-         TabIndex        =   53
+         TabIndex        =   56
          Top             =   1080
          Width           =   255
       End
@@ -228,7 +232,7 @@ Begin VB.Form frmMain
          Caption         =   "6:"
          Height          =   195
          Left            =   3960
-         TabIndex        =   52
+         TabIndex        =   55
          Top             =   720
          Width           =   255
       End
@@ -238,7 +242,7 @@ Begin VB.Form frmMain
          Caption         =   "5:"
          Height          =   195
          Left            =   2040
-         TabIndex        =   51
+         TabIndex        =   54
          Top             =   720
          Width           =   255
       End
@@ -248,7 +252,7 @@ Begin VB.Form frmMain
          Caption         =   "4:"
          Height          =   195
          Left            =   120
-         TabIndex        =   50
+         TabIndex        =   53
          Top             =   720
          Width           =   255
       End
@@ -258,7 +262,7 @@ Begin VB.Form frmMain
          Caption         =   "3:"
          Height          =   195
          Left            =   3960
-         TabIndex        =   49
+         TabIndex        =   52
          Top             =   360
          Width           =   255
       End
@@ -268,7 +272,7 @@ Begin VB.Form frmMain
          Caption         =   "2:"
          Height          =   195
          Left            =   2040
-         TabIndex        =   48
+         TabIndex        =   51
          Top             =   360
          Width           =   255
       End
@@ -278,7 +282,7 @@ Begin VB.Form frmMain
          Caption         =   "1:"
          Height          =   195
          Left            =   120
-         TabIndex        =   47
+         TabIndex        =   50
          Top             =   360
          Width           =   255
       End
@@ -288,14 +292,14 @@ Begin VB.Form frmMain
       Caption         =   "Window Controls"
       Height          =   1575
       Left            =   120
-      TabIndex        =   39
-      Top             =   4920
+      TabIndex        =   42
+      Top             =   5160
       Width           =   5895
       Begin VB.TextBox KeyTxt 
          Height          =   285
          Index           =   14
          Left            =   1200
-         TabIndex        =   27
+         TabIndex        =   30
          Text            =   "Text1"
          Top             =   1080
          Width           =   1455
@@ -304,7 +308,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   13
          Left            =   4200
-         TabIndex        =   26
+         TabIndex        =   29
          Text            =   "Text1"
          Top             =   720
          Width           =   1455
@@ -313,7 +317,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   12
          Left            =   1200
-         TabIndex        =   25
+         TabIndex        =   28
          Text            =   "Text1"
          Top             =   720
          Width           =   1455
@@ -322,7 +326,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   11
          Left            =   4200
-         TabIndex        =   24
+         TabIndex        =   27
          Text            =   "Text1"
          Top             =   360
          Width           =   1455
@@ -331,7 +335,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   10
          Left            =   1200
-         TabIndex        =   23
+         TabIndex        =   26
          Text            =   "Text1"
          Top             =   360
          Width           =   1455
@@ -342,7 +346,7 @@ Begin VB.Form frmMain
          Caption         =   "Stats:"
          Height          =   195
          Left            =   120
-         TabIndex        =   44
+         TabIndex        =   47
          Top             =   1080
          Width           =   975
       End
@@ -352,7 +356,7 @@ Begin VB.Form frmMain
          Caption         =   "Quick bar:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   43
+         TabIndex        =   46
          Top             =   720
          Width           =   1215
       End
@@ -362,7 +366,7 @@ Begin VB.Form frmMain
          Caption         =   "Menu:"
          Height          =   195
          Left            =   120
-         TabIndex        =   42
+         TabIndex        =   45
          Top             =   720
          Width           =   975
       End
@@ -372,7 +376,7 @@ Begin VB.Form frmMain
          Caption         =   "Inventory:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   41
+         TabIndex        =   44
          Top             =   360
          Width           =   1215
       End
@@ -382,7 +386,7 @@ Begin VB.Form frmMain
          Caption         =   "Chat:"
          Height          =   195
          Left            =   120
-         TabIndex        =   40
+         TabIndex        =   43
          Top             =   360
          Width           =   975
       End
@@ -390,16 +394,34 @@ Begin VB.Form frmMain
    Begin VB.Frame Frame1 
       BackColor       =   &H80000005&
       Caption         =   "General Controls"
-      Height          =   2655
+      Height          =   2895
       Left            =   120
-      TabIndex        =   28
+      TabIndex        =   31
       Top             =   120
       Width           =   5895
       Begin VB.TextBox KeyTxt 
          Height          =   285
+         Index           =   30
+         Left            =   4200
+         TabIndex        =   13
+         Text            =   "Text1"
+         Top             =   2520
+         Width           =   1455
+      End
+      Begin VB.TextBox KeyTxt 
+         Height          =   285
+         Index           =   29
+         Left            =   1200
+         TabIndex        =   12
+         Text            =   "Text1"
+         Top             =   2520
+         Width           =   1455
+      End
+      Begin VB.TextBox KeyTxt 
+         Height          =   285
          Index           =   28
          Left            =   4200
-         TabIndex        =   63
+         TabIndex        =   11
          Text            =   "Text1"
          Top             =   2160
          Width           =   1455
@@ -504,13 +526,33 @@ Begin VB.Form frmMain
          Top             =   360
          Width           =   1455
       End
+      Begin VB.Label Label31 
+         Alignment       =   1  'Right Justify
+         BackColor       =   &H80000005&
+         Caption         =   "Quick reply:"
+         Height          =   195
+         Left            =   2880
+         TabIndex        =   68
+         Top             =   2520
+         Width           =   1230
+      End
+      Begin VB.Label Label30 
+         Alignment       =   1  'Right Justify
+         BackColor       =   &H80000005&
+         Caption         =   "Quick target:"
+         Height          =   195
+         Left            =   120
+         TabIndex        =   67
+         Top             =   2520
+         Width           =   1005
+      End
       Begin VB.Label Label29 
          Alignment       =   1  'Right Justify
          BackColor       =   &H80000005&
          Caption         =   "Reset GUI:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   64
+         TabIndex        =   66
          Top             =   2160
          Width           =   1230
       End
@@ -520,7 +562,7 @@ Begin VB.Form frmMain
          Caption         =   "Mini-map:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   45
+         TabIndex        =   48
          Top             =   360
          Width           =   1230
       End
@@ -530,7 +572,7 @@ Begin VB.Form frmMain
          Caption         =   "Zoom out:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   38
+         TabIndex        =   41
          Top             =   1800
          Width           =   1230
       End
@@ -540,7 +582,7 @@ Begin VB.Form frmMain
          Caption         =   "Zoom in:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   37
+         TabIndex        =   40
          Top             =   1440
          Width           =   1230
       End
@@ -550,7 +592,7 @@ Begin VB.Form frmMain
          Caption         =   "Scroll chat down:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   36
+         TabIndex        =   39
          Top             =   1080
          Width           =   1230
       End
@@ -560,7 +602,7 @@ Begin VB.Form frmMain
          Caption         =   "Scroll chat up:"
          Height          =   195
          Left            =   2880
-         TabIndex        =   35
+         TabIndex        =   38
          Top             =   720
          Width           =   1230
       End
@@ -570,7 +612,7 @@ Begin VB.Form frmMain
          Caption         =   "Move right:"
          Height          =   195
          Left            =   120
-         TabIndex        =   34
+         TabIndex        =   37
          Top             =   2160
          Width           =   1005
       End
@@ -580,7 +622,7 @@ Begin VB.Form frmMain
          Caption         =   "Move left:"
          Height          =   195
          Left            =   120
-         TabIndex        =   33
+         TabIndex        =   36
          Top             =   1800
          Width           =   1005
       End
@@ -590,7 +632,7 @@ Begin VB.Form frmMain
          Caption         =   "Move down:"
          Height          =   195
          Left            =   120
-         TabIndex        =   32
+         TabIndex        =   35
          Top             =   1440
          Width           =   1005
       End
@@ -600,7 +642,7 @@ Begin VB.Form frmMain
          Caption         =   "Move up:"
          Height          =   195
          Left            =   120
-         TabIndex        =   31
+         TabIndex        =   34
          Top             =   1080
          Width           =   1005
       End
@@ -610,7 +652,7 @@ Begin VB.Form frmMain
          Caption         =   "Pick up:"
          Height          =   195
          Left            =   120
-         TabIndex        =   30
+         TabIndex        =   33
          Top             =   720
          Width           =   1005
       End
@@ -620,7 +662,7 @@ Begin VB.Form frmMain
          Caption         =   "Attack:"
          Height          =   195
          Left            =   120
-         TabIndex        =   29
+         TabIndex        =   32
          Top             =   360
          Width           =   1005
       End
@@ -631,6 +673,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+Option Explicit
+
 Private Const KeyPress_Shift As Integer = 2 ^ 12
 Private Const KeyPress_Control As Integer = 2 ^ 13
 Private Const KeyPress_Alt As Integer = 2 ^ 14
@@ -654,6 +698,8 @@ Private Type KeyDefinitions
     MoveSouth As Integer
     MoveWest As Integer
     ResetGUI As Integer
+    QuickTarget As Integer
+    QuickReply As Integer
 End Type
 Private KeyDefinitions As KeyDefinitions
 
@@ -835,6 +881,8 @@ Dim i As Long
     KeyDefinitions.ZoomIn = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomIn"))
     KeyDefinitions.ZoomOut = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomOut"))
     KeyDefinitions.ResetGUI = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ResetGUI"))
+    KeyDefinitions.QuickTarget = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickTarget"))
+    KeyDefinitions.QuickReply = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickReply"))
     For i = 1 To 12
         KeyDefinitions.QuickBar(i) = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickBar" & i))
     Next i
@@ -868,6 +916,8 @@ Dim i As Long
     Var_Write DataPath & "Game.ini", "INPUT", "ZoomIn", KeyDefinitions.ZoomIn
     Var_Write DataPath & "Game.ini", "INPUT", "ZoomOut", KeyDefinitions.ZoomOut
     Var_Write DataPath & "Game.ini", "INPUT", "ResetGUI", KeyDefinitions.ResetGUI
+    Var_Write DataPath & "Game.ini", "INPUT", "QuickTarget", KeyDefinitions.QuickTarget
+    Var_Write DataPath & "Game.ini", "INPUT", "QuickReply", KeyDefinitions.QuickReply
     For i = 1 To 12
         Var_Write DataPath & "Game.ini", "INPUT", "QuickBar" & i, KeyDefinitions.QuickBar(i)
     Next i
@@ -914,6 +964,13 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     
 End Sub
 
+Private Sub Form_Resize()
+
+    Me.Width = 6240
+    Me.Height = 7740
+
+End Sub
+
 Private Sub KeyTxt_GotFocus(Index As Integer)
 
     'Set the high-light
@@ -946,6 +1003,8 @@ Dim i As Long
             KeyTxt(15 + i).Text = KeyName(.QuickBar(i))
         Next i
         KeyTxt(28).Text = KeyName(.ResetGUI)
+        KeyTxt(29).Text = KeyName(.QuickTarget)
+        KeyTxt(30).Text = KeyName(.QuickReply)
     End With
 
 End Sub
@@ -968,7 +1027,7 @@ Dim i As Long
         .ZoomIn = 104
         .ZoomOut = 98
         .ChatWindow = KeyPress_Control Or 67
-        .InventoryWindow = KeyPress_Control Or 69
+        .InventoryWindow = KeyPress_Control Or 87
         .MenuWindow = 27
         .QuickBarWindow = KeyPress_Control Or 81
         .StatWindow = KeyPress_Control Or 83
@@ -977,6 +1036,8 @@ Dim i As Long
             .QuickBar(i) = 111 + i
         Next i
         .ResetGUI = KeyPress_Shift Or 123
+        .QuickTarget = 69
+        .QuickReply = 82
     End With
     
     'Display the changes
@@ -1015,6 +1076,8 @@ Dim i As Long
             Case 15: .MiniMap = i
             Case 16 To 27: .QuickBar(Index - 15) = i
             Case 28: .ResetGUI = i
+            Case 29: .QuickTarget = i
+            Case 30: .QuickReply = i
         End Select
     End With
     

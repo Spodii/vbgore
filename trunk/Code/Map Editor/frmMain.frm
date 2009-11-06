@@ -206,40 +206,6 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub BlocksPic_DblClick()
-    BlocksPic_Click
-End Sub
-
-Private Sub BlocksPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the map 'blocked tiles' and 'no-attack tiles' editing form."
-
-End Sub
-
-Private Sub BrightPic_DblClick()
-    BrightPic_Click
-End Sub
-
-Private Sub BrightPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Turn on / off bright mode (turns all tiles to brightest lighting)."
-
-End Sub
-
-Private Sub CharsPic_DblClick()
-    CharsPic_Click
-End Sub
-
-Private Sub CharsPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Show / hide characters on the map."
-
-End Sub
-
-Private Sub Command1_Click()
-
-End Sub
-
 Private Sub ARGBLongCmd_Click()
 
     ShowFrmARGB
@@ -258,46 +224,8 @@ Static i As Long
     
 End Sub
 
-Private Sub ExitsPic_DblClick()
-    ExitsPic_Click
-End Sub
-
-Private Sub ExitsPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the exits (also known as warps) form."
-
-End Sub
-
-Private Sub FloodsPic_DblClick()
-    FloodsPic_Click
-End Sub
-
-Private Sub FloodsPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the 'floods' form (simulates screen click events over large areas)."
-
-End Sub
-
 Private Sub FPSLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
     SetInfo FPSLbl.ToolTipText
-End Sub
-
-Private Sub GridPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Hide / show the tile (32x32) grid."
-
-End Sub
-
-Private Sub InfoPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Hide / show tile information and attributes."
-
-End Sub
-
-Private Sub LoadPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Load an existing map."
-
 End Sub
 
 Private Sub MapNameLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
@@ -459,14 +387,6 @@ Private Sub MDIForm_Resize()
 
 End Sub
 
-Private Sub GridPic_DblClick()
-    GridPic_Click
-End Sub
-
-Private Sub InfoPic_DblClick()
-    InfoPic_Click
-End Sub
-
 Private Sub MouseLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
     SetInfo MouseLbl.ToolTipText
 End Sub
@@ -495,7 +415,7 @@ Dim i As Long
     'Erase map-bound particle effects
     For i = 1 To NumEffects
         If Effect(i).Used Then
-            If Effect(i).BoundToMap Then Effect_Kill i
+            If Effect(i).BoundToMap = 1 Then Effect_Kill i
         End If
     Next i
     Effect_Kill 0, True
@@ -552,28 +472,6 @@ Dim i As Long
 
 End Sub
 
-Private Sub NewPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Create a new map."
-
-End Sub
-
-Private Sub OptimizePic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Run the map optimizer to clean up unused information."
-
-End Sub
-
-Private Sub PartPic_DblClick()
-    PartPic_Click
-End Sub
-
-Private Sub PartPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the particle effect placement form."
-
-End Sub
-
 Private Sub picInfo_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo vbNullString
@@ -609,12 +507,6 @@ Dim NewMapVal As Integer
 
 End Sub
 
-Private Sub SaveAsPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Save the current map as a new number."
-
-End Sub
-
 Private Sub SavePic_Click()
 
     'Confirm
@@ -624,7 +516,6 @@ Private Sub SavePic_Click()
     Game_SaveMapData CurMap
     
 End Sub
-
 
 Private Sub BlocksPic_Click()
 
@@ -725,7 +616,7 @@ Dim FileName As String
     With frmMain.CD
         .Filter = "Maps|*.map"
         .DialogTitle = "Load"
-        .FileName = ""
+        .FileName = vbNullString
         .InitDir = MapPath
         .Flags = cdlOFNFileMustExist
         .ShowOpen
@@ -751,18 +642,13 @@ Private Sub PartPic_Click()
 
 End Sub
 
-Private Sub SavePic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Save the current map."
-
-End Sub
-
 Private Sub SearchBtn_Click()
 Dim WordList() As String
 Dim s As String
 Dim i As Long
 Dim j As Long
-    'On Error GoTo ErrOut
+    
+    On Error GoTo ErrOut
 
     Select Case SearchCmb.ListIndex
         
@@ -873,30 +759,10 @@ Private Sub SetSfxPic_Click()
 
 End Sub
 
-Private Sub SetSfxPic_DblClick()
-    SetSfxPic_Click
-End Sub
-
-Private Sub SetSfxPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the map-bound sound effect placement form."
-
-End Sub
-
 Private Sub SetTilesPic_Click()
 
     'Show/hide frmSetTile
     frmSetTile.Visible = (Not frmSetTile.Visible)
-
-End Sub
-
-Private Sub SetTilesPic_DblClick()
-    SetTilesPic_Click
-End Sub
-
-Private Sub SetTilesPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the map tile editing form."
 
 End Sub
 
@@ -913,32 +779,10 @@ Private Sub ShowMapInfoPic_Click()
 
 End Sub
 
-Private Sub ShowMapInfoPic_DblClick()
-    ShowMapInfoPic_Click
-End Sub
-
-Private Sub ShowMapInfoPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the general map attributes and information form."
-
-End Sub
-
 Private Sub ShowNPCsPic_Click()
 
     'Show/hide frmNPCs
     frmNPCs.Visible = (Not frmNPCs.Visible)
-
-End Sub
-
-Private Sub ShowNPCsPic_DblClick()
-
-    ShowNPCsPic_Click
-    
-End Sub
-
-Private Sub ShowNPCsPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the NPC placement form."
 
 End Sub
 
@@ -1035,16 +879,6 @@ Private Sub ViewTilesPic_Click()
 
 End Sub
 
-Private Sub ViewTilesPic_DblClick()
-    ViewTilesPic_Click
-End Sub
-
-Private Sub ViewTilesPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Display the tile information form (right-click the game screen to set the tile to view)."
-
-End Sub
-
 Private Sub WeatherPic_Click()
 
     If WeatherChkValue = 1 Then
@@ -1053,15 +887,5 @@ Private Sub WeatherPic_Click()
     Else
         WeatherChkValue = 1
     End If
-
-End Sub
-
-Private Sub WeatherPic_DblClick()
-    WeatherPic_Click
-End Sub
-
-Private Sub WeatherPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Hide / show map weather."
 
 End Sub

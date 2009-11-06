@@ -1,7 +1,5 @@
 Attribute VB_Name = "TCP"
 Option Explicit
-Public PacketOutPos As Byte
-Public PacketInPos As Byte
 
 Sub InitSocket()
 
@@ -11,7 +9,7 @@ Sub InitSocket()
 
     'Save the game ini
     Call Var_Write(DataPath & "Game.ini", "INIT", "Name", UserName)
-    If frmConnect.SavePassChk.Value = 0 Then   'If the password wont be saved, clear it out
+    If Not SavePass Then   'If the password wont be saved, clear it out
         Call Var_Write(DataPath & "Game.ini", "INIT", "Password", "")
     Else
         Call Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
@@ -709,9 +707,16 @@ Dim TempByte As Byte
         'We need a char index
         CharIndex = rBuf.Get_Integer
         
-        'Split up the string for our chat bubble and assign it to the character
-        Engine_MakeChatBubble CharIndex, Engine_WordWrap(TempStr, BubbleMaxWidth)
-
+    End If
+    
+    'Now that we have all the values, check if it is a valid string
+    If Not Game_ValidString(TempStr) Then Exit Sub
+    
+    'Split up the string for our chat bubble and assign it to the character
+    If CharIndex > 0 Then
+        If CharIndex <= LastChar Then
+            Engine_MakeChatBubble CharIndex, Engine_WordWrap(TempStr, BubbleMaxWidth)
+        End If
     End If
     
     'Get the color
@@ -744,7 +749,6 @@ Sub Data_Map_LoadMap(ByRef rBuf As DataBuffer)
 Dim FileNum As Byte
 Dim MapNumInt As Integer
 Dim SSV As Integer
-Dim Weather As Byte
 Dim TempInt As Integer
 
     'Clear the target character
@@ -860,7 +864,7 @@ Dim CharHead As Integer
 Dim CharWeapon As Integer
 Dim CharHair As Integer
 Dim CharWings As Integer
-Dim DontSetData As Byte
+Dim DontSetData As Boolean
     
     'Get the character index we are changing
     CharIndex = rBuf.Get_Integer
@@ -869,28 +873,28 @@ Dim DontSetData As Byte
     flags = rBuf.Get_Byte
     
     'If the char doesn't exist, request to create it
-    If Not Engine_ValidChar(CharIndex) Then Exit Sub
+    If Not Engine_ValidChar(CharIndex) Then DontSetData = True
     
     'Get the data needed
     If flags And 1 Then
         CharBody = rBuf.Get_Integer
-        If DontSetData = 0 Then CharList(CharIndex).Body = BodyData(CharBody)
+        If Not DontSetData Then CharList(CharIndex).Body = BodyData(CharBody)
     End If
     If flags And 2 Then
         CharHead = rBuf.Get_Integer
-        If DontSetData = 0 Then CharList(CharIndex).Head = HeadData(CharHead)
+        If Not DontSetData Then CharList(CharIndex).Head = HeadData(CharHead)
     End If
     If flags And 4 Then
         CharWeapon = rBuf.Get_Integer
-        If DontSetData = 0 Then CharList(CharIndex).Weapon = WeaponData(CharWeapon)
+        If Not DontSetData Then CharList(CharIndex).Weapon = WeaponData(CharWeapon)
     End If
     If flags And 8 Then
         CharHair = rBuf.Get_Integer
-        If DontSetData = 0 Then CharList(CharIndex).Hair = HairData(CharHair)
+        If Not DontSetData Then CharList(CharIndex).Hair = HairData(CharHair)
     End If
     If flags And 16 Then
         CharWings = rBuf.Get_Integer
-        If DontSetData = 0 Then CharList(CharIndex).Wings = WingData(CharWings)
+        If Not DontSetData Then CharList(CharIndex).Wings = WingData(CharWings)
     End If
     
 End Sub
@@ -1442,7 +1446,11 @@ Dim Y As Byte
 
         'If there is a targeted char, check if the path is valid
         If TargetCharIndex > 0 Then
-            ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
+            If TargetCharIndex <= LastChar Then
+                On Error Resume Next    'Sometimes something strange will cause this to fail when a target dies - just ignore it
+                    ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
+                On Error GoTo 0
+            End If
         End If
         
     End If
@@ -1774,113 +1782,113 @@ Dim Y As Long
             Engine_Effect_Create X, Y + 1, 59
             Engine_Effect_Create X + 1, Y + 1, 59
 
-            Engine_Effect_Create X - 2, Y, 59
-            Engine_Effect_Create X - 1, Y, 59
-            Engine_Effect_Create X, Y, 59
-            Engine_Effect_Create X + 1, Y, 59
-            Engine_Effect_Create X + 2, Y, 59
+            Engine_Effect_Create X - 2, Y, 59, , , , 0.5
+            Engine_Effect_Create X - 1, Y, 59, , , , 0.5
+            Engine_Effect_Create X, Y, 59, , , , 0.5
+            Engine_Effect_Create X + 1, Y, 59, , , , 0.5
+            Engine_Effect_Create X + 2, Y, 59, , , , 0.5
 
-            Engine_Effect_Create X - 2, Y - 1, 59
-            Engine_Effect_Create X - 1, Y - 1, 59
-            Engine_Effect_Create X, Y - 1, 59
-            Engine_Effect_Create X + 1, Y - 1, 59
-            Engine_Effect_Create X + 2, Y - 1, 59
+            Engine_Effect_Create X - 2, Y - 1, 59, , , , 1
+            Engine_Effect_Create X - 1, Y - 1, 59, , , , 1
+            Engine_Effect_Create X, Y - 1, 59, , , , 1
+            Engine_Effect_Create X + 1, Y - 1, 59, , , , 1
+            Engine_Effect_Create X + 2, Y - 1, 59, , , , 1
 
-            Engine_Effect_Create X - 2, Y - 2, 59
-            Engine_Effect_Create X - 1, Y - 2, 59
-            Engine_Effect_Create X, Y - 2, 59
-            Engine_Effect_Create X + 1, Y - 2, 59
-            Engine_Effect_Create X + 2, Y - 2, 59
+            Engine_Effect_Create X - 2, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X - 1, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X + 1, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y - 2, 59, , , , 1.5
 
-            Engine_Effect_Create X - 1, Y - 3, 59
-            Engine_Effect_Create X, Y - 3, 59
-            Engine_Effect_Create X + 1, Y - 3, 59
+            Engine_Effect_Create X - 1, Y - 3, 59, , , , 2
+            Engine_Effect_Create X, Y - 3, 59, , , , 2
+            Engine_Effect_Create X + 1, Y - 3, 59, , , , 2
 
-            Engine_Effect_Create X, Y - 4, 59
+            Engine_Effect_Create X, Y - 4, 59, , , , 2.5
         ElseIf CharList(CasterIndex).HeadHeading = EAST Or CharList(CasterIndex).HeadHeading = SOUTHEAST Then
             Engine_Effect_Create X - 1, Y - 1, 59
             Engine_Effect_Create X - 1, Y, 59
             Engine_Effect_Create X - 1, Y + 1, 59
 
-            Engine_Effect_Create X, Y - 2, 59
-            Engine_Effect_Create X, Y - 1, 59
-            Engine_Effect_Create X, Y, 59
-            Engine_Effect_Create X, Y + 1, 59
-            Engine_Effect_Create X, Y + 2, 59
+            Engine_Effect_Create X, Y - 2, 59, , , , 0.5
+            Engine_Effect_Create X, Y - 1, 59, , , , 0.5
+            Engine_Effect_Create X, Y, 59, , , , 0.5
+            Engine_Effect_Create X, Y + 1, 59, , , , 0.5
+            Engine_Effect_Create X, Y + 2, 59, , , , 0.5
 
-            Engine_Effect_Create X + 1, Y - 2, 59
-            Engine_Effect_Create X + 1, Y - 1, 59
-            Engine_Effect_Create X + 1, Y, 59
-            Engine_Effect_Create X + 1, Y + 1, 59
-            Engine_Effect_Create X + 1, Y + 2, 59
+            Engine_Effect_Create X + 1, Y - 2, 59, , , , 1
+            Engine_Effect_Create X + 1, Y - 1, 59, , , , 1
+            Engine_Effect_Create X + 1, Y, 59, , , , 1
+            Engine_Effect_Create X + 1, Y + 1, 59, , , , 1
+            Engine_Effect_Create X + 1, Y + 2, 59, , , , 1
 
-            Engine_Effect_Create X + 2, Y - 2, 59
-            Engine_Effect_Create X + 2, Y - 1, 59
-            Engine_Effect_Create X + 2, Y, 59
-            Engine_Effect_Create X + 2, Y + 1, 59
-            Engine_Effect_Create X + 2, Y + 2, 59
+            Engine_Effect_Create X + 2, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y - 1, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y + 1, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y + 2, 59, , , , 1.5
 
-            Engine_Effect_Create X + 3, Y - 1, 59
-            Engine_Effect_Create X + 3, Y, 59
-            Engine_Effect_Create X + 3, Y + 1, 59
+            Engine_Effect_Create X + 3, Y - 1, 59, , , , 2
+            Engine_Effect_Create X + 3, Y, 59, , , , 2
+            Engine_Effect_Create X + 3, Y + 1, 59, , , , 2
 
-            Engine_Effect_Create X + 4, Y, 59
+            Engine_Effect_Create X + 4, Y, 59, , , , 2.5
         ElseIf CharList(CasterIndex).HeadHeading = SOUTH Or CharList(CasterIndex).HeadHeading = SOUTHWEST Then
             Engine_Effect_Create X - 1, Y - 1, 59
             Engine_Effect_Create X, Y - 1, 59
             Engine_Effect_Create X + 1, Y - 1, 59
 
-            Engine_Effect_Create X - 2, Y, 59
-            Engine_Effect_Create X - 1, Y, 59
-            Engine_Effect_Create X, Y, 59
-            Engine_Effect_Create X + 1, Y, 59
-            Engine_Effect_Create X + 2, Y, 59
+            Engine_Effect_Create X - 2, Y, 59, , , , 0.5
+            Engine_Effect_Create X - 1, Y, 59, , , , 0.5
+            Engine_Effect_Create X, Y, 59, , , , 0.5
+            Engine_Effect_Create X + 1, Y, 59, , , , 0.5
+            Engine_Effect_Create X + 2, Y, 59, , , , 0.5
 
-            Engine_Effect_Create X - 2, Y + 1, 59
-            Engine_Effect_Create X - 1, Y + 1, 59
-            Engine_Effect_Create X, Y + 1, 59
-            Engine_Effect_Create X + 1, Y + 1, 59
-            Engine_Effect_Create X + 2, Y + 1, 59
+            Engine_Effect_Create X - 2, Y + 1, 59, , , , 1
+            Engine_Effect_Create X - 1, Y + 1, 59, , , , 1
+            Engine_Effect_Create X, Y + 1, 59, , , , 1
+            Engine_Effect_Create X + 1, Y + 1, 59, , , , 1
+            Engine_Effect_Create X + 2, Y + 1, 59, , , , 1
 
-            Engine_Effect_Create X - 2, Y + 2, 59
-            Engine_Effect_Create X - 1, Y + 2, 59
-            Engine_Effect_Create X, Y + 2, 59
-            Engine_Effect_Create X + 1, Y + 2, 59
-            Engine_Effect_Create X + 2, Y + 2, 59
+            Engine_Effect_Create X - 2, Y + 2, 59, , , , 1.5
+            Engine_Effect_Create X - 1, Y + 2, 59, , , , 1.5
+            Engine_Effect_Create X, Y + 2, 59, , , , 1.5
+            Engine_Effect_Create X + 1, Y + 2, 59, , , , 1.5
+            Engine_Effect_Create X + 2, Y + 2, 59, , , , 1.5
 
-            Engine_Effect_Create X - 1, Y + 3, 59
-            Engine_Effect_Create X, Y + 3, 59
-            Engine_Effect_Create X + 1, Y + 3, 59
+            Engine_Effect_Create X - 1, Y + 3, 59, , , , 2
+            Engine_Effect_Create X, Y + 3, 59, , , , 2
+            Engine_Effect_Create X + 1, Y + 3, 59, , , , 2
 
-            Engine_Effect_Create X, Y + 4, 59
+            Engine_Effect_Create X, Y + 4, 59, , , , 2.5
         ElseIf CharList(CasterIndex).HeadHeading = WEST Or CharList(CasterIndex).HeadHeading = NORTHWEST Then
             Engine_Effect_Create X + 1, Y - 1, 59
             Engine_Effect_Create X + 1, Y, 59
             Engine_Effect_Create X + 1, Y + 1, 59
 
-            Engine_Effect_Create X, Y - 2, 59
-            Engine_Effect_Create X, Y - 1, 59
-            Engine_Effect_Create X, Y, 59
-            Engine_Effect_Create X, Y + 1, 59
-            Engine_Effect_Create X, Y + 2, 59
+            Engine_Effect_Create X, Y - 2, 59, , , , 0.5
+            Engine_Effect_Create X, Y - 1, 59, , , , 0.5
+            Engine_Effect_Create X, Y, 59, , , , 0.5
+            Engine_Effect_Create X, Y + 1, 59, , , , 0.5
+            Engine_Effect_Create X, Y + 2, 59, , , , 0.5
 
-            Engine_Effect_Create X - 1, Y - 2, 59
-            Engine_Effect_Create X - 1, Y - 1, 59
-            Engine_Effect_Create X - 1, Y, 59
-            Engine_Effect_Create X - 1, Y + 1, 59
-            Engine_Effect_Create X - 1, Y + 2, 59
+            Engine_Effect_Create X - 1, Y - 2, 59, , , , 1
+            Engine_Effect_Create X - 1, Y - 1, 59, , , , 1
+            Engine_Effect_Create X - 1, Y, 59, , , , 1
+            Engine_Effect_Create X - 1, Y + 1, 59, , , , 1
+            Engine_Effect_Create X - 1, Y + 2, 59, , , , 1
 
-            Engine_Effect_Create X - 2, Y - 2, 59
-            Engine_Effect_Create X - 2, Y - 1, 59
-            Engine_Effect_Create X - 2, Y, 59
-            Engine_Effect_Create X - 2, Y + 1, 59
-            Engine_Effect_Create X - 2, Y + 2, 59
+            Engine_Effect_Create X - 2, Y - 2, 59, , , , 1.5
+            Engine_Effect_Create X - 2, Y - 1, 59, , , , 1.5
+            Engine_Effect_Create X - 2, Y, 59, , , , 1.5
+            Engine_Effect_Create X - 2, Y + 1, 59, , , , 1.5
+            Engine_Effect_Create X - 2, Y + 2, 59, , , , 1.5
 
-            Engine_Effect_Create X - 3, Y - 1, 59
-            Engine_Effect_Create X - 3, Y, 59
-            Engine_Effect_Create X - 3, Y + 1, 59
+            Engine_Effect_Create X - 3, Y - 1, 59, , , , 2
+            Engine_Effect_Create X - 3, Y, 59, , , , 2
+            Engine_Effect_Create X - 3, Y + 1, 59, , , , 2
 
-            Engine_Effect_Create X - 4, Y, 59
+            Engine_Effect_Create X - 4, Y, 59, , , , 2.5
         End If
 
     End Select
@@ -2266,7 +2274,7 @@ Dim Changed As Byte
     'Get the variables
     QuestID = rBuf.Get_Byte
     Name = rBuf.Get_String
-    If LenB(Name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
+    If LenB(Name) <> 0 Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
 
     'Resize the questinfo array if needed
     If QuestID > QuestInfoUBound Then

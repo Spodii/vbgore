@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.5            ************
+'************            Official Release: Version 0.5.6            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -110,10 +110,6 @@ Option Explicit
 'These are your key constants - reccomended you turn off ALL debug constants before
 ' compiling your code for public usage just speed reasons
 
-'These two are mostly used for checking to make sure the encryption works
-Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Shows command IDs that arn't used being processed and such
-Public Const DEBUG_PrintPacket_In As Boolean = False        'Shows packets coming in in chat box
-
 'Set this to true to force updater check
 Public Const ForceUpdateCheck As Boolean = False
 
@@ -165,7 +161,6 @@ End Type
 Public NPCChat() As NPCChat
 
 'Conditions (this are used as bit-flags, so only use powers of 2!)
-Public Const NPCCHAT_COND_NUMCONDITIONS As Byte = 7
 Public Const NPCCHAT_COND_LEVELLESSTHAN As Long = 2 ^ 0
 Public Const NPCCHAT_COND_LEVELMORETHAN As Long = 2 ^ 1
 Public Const NPCCHAT_COND_HPLESSTHAN As Long = 2 ^ 2
@@ -188,22 +183,6 @@ Public Const ClientCharType_PC As Byte = 1
 Public Const ClientCharType_NPC As Byte = 2
 Public Const ClientCharType_Grouped As Byte = 3
 Public Const ClientCharType_Slave As Byte = 4
-
-'********** Object info ************
-Public Type ObjData
-    Name As String              'Name
-    ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Long            'Graphic index
-    MinHP As Integer            'Bonus HP regenerated
-    MaxHP As Integer            'Bonus Max HP raised
-    MinHIT As Integer           'Bonus minimum hit
-    MaxHIT As Integer           'Bonus maximum hit
-    DEF As Integer              'Bonus defence
-    ArmorIndex As Byte          'Index of the body sprite
-    WeaponIndex As Byte         'Index of the weapon sprite
-    WeaponType As Byte          'What type of weapon, if it is a weapon
-    Value As Long               'Value of the object
-End Type
 
 '********** Trade table ************
 Public Type TradeObj
@@ -234,9 +213,6 @@ Public Const AttackDelay As Long = 200  'These constants are client-side only
 Public Const LootDelay As Long = 500    ' - changing these lower wont make it faster server-side!
 Public LastAttackTime As Long
 Public LastLootTime As Long
-
-'If the map is loading (used to be used for the downloading status of maps)
-Public DownloadingMap As Boolean
 
 'Item description variables
 Public ItemDescWidth As Long
@@ -351,15 +327,20 @@ Public EmoticonDelay As Long
 'How long char remains aggressive-faced after being attacked
 Public Const AGGRESSIVEFACETIME = 4000
 
+'Save password check
+Public SavePass As Boolean
+
 'Maximum variable sizes
 Public Const MAXLONG As Long = (2 ^ 31) - 1
 Public Const MAXINT As Integer = (2 ^ 15) - 1
 Public Const MAXBYTE As Byte = (2 ^ 8) - 1
 
-'********** OUTSIDE FUNCTIONS ***********
-Public Declare Function GetKeyState Lib "User32" (ByVal nVirtKey As Long) As Integer
+'********** DLL CALLS ***********
+Public Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
-Public Declare Function GetActiveWindow Lib "User32" () As Long
+Public Declare Function GetActiveWindow Lib "user32" () As Long
+Public Declare Function timeGetTime Lib "winmm.dll" () As Long
+Public Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long

@@ -22,14 +22,10 @@ Public upBytes As Long
 Public upKBytes As Long
 Public upMBytes As Long
 
-'Counter to clear the data (clearing after every transfer makes a lot of flashing - very annoying)
-Public ClearDataCount As Byte
-
 'How many people are currently connected
 Public CurrConnections As Long
 
 'Totals
-Public FilesUploaded As Long   'Total amount of files uploaded
 Public ConnectionsEst As Long  'Total amount of connections established
 
 'File list information
@@ -45,9 +41,6 @@ Public CompressPath As String
 
 Public EOFTag() As Byte
 
-Public Declare Function GetTickCount Lib "kernel32.dll" () As Long
-Public Declare Sub ReleaseCapture Lib "User32" ()
-Public Declare Function SendMessage Lib "User32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
@@ -307,7 +300,7 @@ End Sub
 Public Function Engine_FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
     'Checks if a file exists
-    Engine_FileExist = (Dir$(File, FileType) <> "")
+    Engine_FileExist = (LenB(Dir$(File, FileType)) <> 0)
 
 End Function
 

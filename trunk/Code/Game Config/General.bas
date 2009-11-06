@@ -1,4 +1,5 @@
 Attribute VB_Name = "General"
+Option Explicit
 
 Sub Main()
 

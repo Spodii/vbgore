@@ -235,21 +235,9 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo vbNullString
-
-End Sub
-
-Private Sub GrhSelectLbl_Click(Index As Integer)
-    
-    ShowFrmTileSelect Index
-
-End Sub
-
-Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
-
-    SetInfo "Click to select from the large Grh selection sheet."
 
 End Sub
 
@@ -286,7 +274,7 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     
 End Sub
 
-Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Grh that will be placed on the layer."
 
@@ -310,25 +298,19 @@ Private Sub LayerPic_Click(Index As Integer)
 
 End Sub
 
-Private Sub LayerPic_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LayerPic_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Click to select placing graphics on layer " & Index & "."
 
 End Sub
 
-Private Sub LightChk_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LightChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Enables / disables tile light modifying."
 
 End Sub
 
-Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
-
-    SetInfo "Click to use the ARGB <-> Long tool."
-
-End Sub
-
-Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Preview of what the light will look like for the layer."
 
@@ -380,7 +362,7 @@ ErrOut:
     
 End Sub
 
-Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
 Dim s As String
 
     Select Case Index
@@ -394,7 +376,7 @@ Dim s As String
 
 End Sub
 
-Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Enables / disables tile graphic shadow value modifying."
 
@@ -425,7 +407,7 @@ Private Sub ShadowTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub ShadowTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub ShadowTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Sets the tile to cast a shadow (1 = enables shadow, 0 = disables shadow)."
 

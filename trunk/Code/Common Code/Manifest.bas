@@ -6,7 +6,7 @@ Private Type tagInitCommonControlsEx
    lngICC As Long
 End Type
 
-Private Const ICC_USEREX_CLASSES = &H200
+Private Const ICC_USEREX_CLASSES As Long = &H200
 
 Private Declare Function InitCommonControlsEx Lib "comctl32.dll" (iccex As tagInitCommonControlsEx) As Boolean
 

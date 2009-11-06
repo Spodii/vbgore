@@ -321,42 +321,6 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub CreateBtn_Click()
-Dim Gfx As Byte
-Dim Particles As Integer
-Dim EffectIndex As Byte
-Dim Dir As Single
-Dim X As Single
-Dim Y As Single
-
-On Error GoTo ErrOut
-
-    'Set the values to the variables first, just to be sure an invalid range is caught
-    Gfx = Val(GfxTxt.Text)
-    Particles = Val(ParticlesTxt.Text)
-    EffectIndex = Val(IndexTxt.Text)
-    Dir = Val(DirTxt.Text)
-    X = Val(XTxt.Text)
-    Y = Val(YTxt.Text)
-
-    'Create the particle effect
-    Effect_Begin EffectIndex, X - (ParticleOffsetX - 288), Y - (ParticleOffsetY - 288), Gfx, Particles, Dir
-
-    'Update list
-    UpdateEffectList
-
-Exit Sub
-
-ErrOut:
-
-    MsgBox "Error creating the particle effect! Aborting...", vbOKOnly
-
-End Sub
-
-Private Sub CreateLbl_Click()
-
-End Sub
-
 Private Sub CreateBtnl_Click()
 Dim Gfx As Byte
 Dim Particles As Integer
@@ -377,7 +341,7 @@ On Error GoTo ErrOut
     Y = Val(YTxt.Text)
 
     'Create the particle effect
-    Effect_Begin EffectIndex, X - (ParticleOffsetX - 288), Y - (ParticleOffsetY - 288), Gfx, Particles, Dir
+    Effect_Begin EffectIndex, X - (ParticleOffsetX - 288), Y - (ParticleOffsetY - 288), Gfx, Particles, Dir, True
 
     'Update list
     UpdateEffectList

@@ -10,7 +10,6 @@ End Type
 Private Declare Sub MD5Init Lib "md5.dll" (lpContext As MD5_CONTEXT)
 Private Declare Sub MD5Update Lib "md5.dll" (lpContext As MD5_CONTEXT, lpBuffer As Any, ByVal hInputLength As Long)
 Private Declare Sub MD5Final Lib "md5.dll" (lpDigest As Any, lpContext As MD5_CONTEXT)
-Private Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 
 Public Function MD5_File(FileName As String) As String
 Dim udtContext As MD5_CONTEXT

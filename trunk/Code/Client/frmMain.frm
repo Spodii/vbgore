@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{A7F49F54-BFA7-4512-8AB6-604DADC34515}#1.0#0"; "GOREsockClient.ocx"
+Object = "{34229061-3750-4425-BA0F-5A197E65841A}#1.0#0"; "GOREsockClient.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -113,21 +113,27 @@ Dim OldMousePos As POINTAPI
             
         'Mouse wheel is scrolled
         Case DIMOFS_Z
-            If ShowGameWindow(ChatWindow) And Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
-                If DevData(LoopC).lData > 0 Then
-                    ChatBufferChunk = ChatBufferChunk + 0.25
-                ElseIf DevData(LoopC).lData < 0 Then
-                    ChatBufferChunk = ChatBufferChunk - 0.25
+            
+            'Scroll the chat buffer if the cursor is over the chat buffer window
+            If ShowGameWindow(ChatWindow) Then
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
+                    If DevData(LoopC).lData > 0 Then
+                        ChatBufferChunk = ChatBufferChunk + 0.25
+                    ElseIf DevData(LoopC).lData < 0 Then
+                        ChatBufferChunk = ChatBufferChunk - 0.25
+                    End If
+                    Engine_UpdateChatArray
+                    GoTo NextLoopC
                 End If
-                Engine_UpdateChatArray
-            Else
-                If DevData(LoopC).lData > 0 Then
-                    ZoomLevel = ZoomLevel + (ElapsedTime * 0.001)
-                    If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
-                ElseIf DevData(LoopC).lData < 0 Then
-                    ZoomLevel = ZoomLevel - (ElapsedTime * 0.001)
-                    If ZoomLevel < 0 Then ZoomLevel = 0
-                End If
+            End If
+            
+            'Scroll the zoom if the buffer didn't scroll
+            If DevData(LoopC).lData > 0 Then
+                ZoomLevel = ZoomLevel + (ElapsedTime * 0.001)
+                If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
+            ElseIf DevData(LoopC).lData < 0 Then
+                ZoomLevel = ZoomLevel - (ElapsedTime * 0.001)
+                If ZoomLevel < 0 Then ZoomLevel = 0
             End If
 
         'Left button pressed
@@ -165,6 +171,8 @@ Dim OldMousePos As POINTAPI
             MousePosAdd.X = 0
             MousePosAdd.Y = 0
         End If
+        
+NextLoopC:
 
     Next LoopC
 
@@ -177,7 +185,7 @@ End Sub
 
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 
-    Input_Keys_Down KeyCode, Shift
+    Input_Keys_Down KeyCode
     KeyCode = 0
     Shift = 0
 
@@ -192,7 +200,6 @@ End Sub
 
 Private Sub Form_KeyUp(KeyCode As Integer, Shift As Integer)
     
-    Input_Keys_Up KeyCode, Shift
     KeyCode = 0
     Shift = 0
 
@@ -263,16 +270,9 @@ Private Sub GOREsock_OnDataArrival(inSox As Long, inData() As Byte)
 '*********************************************
 'Retrieve the CommandIDs and send to corresponding data handler
 '*********************************************
-
 Dim rBuf As DataBuffer
 Dim CommandID As Byte
 Dim BufUBound As Long
-Static X As Long
-
-    'Display packet
-    If DEBUG_PrintPacket_In Then
-        Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
-    End If
 
     'Set up the data buffer
     Set rBuf = New DataBuffer
@@ -301,11 +301,7 @@ Static X As Long
         With DataCode
             Select Case CommandID
 
-            Case 0
-                If DEBUG_PrintPacketReadErrors Then
-                    X = X + 1
-                    Debug.Print "Empty Command ID #" & X
-                End If
+            Case 0 'This often means there was an offset problem in the packet, adding too many empty values
 
             Case .Comm_Talk: Data_Comm_Talk rBuf
 
@@ -373,8 +369,7 @@ Static X As Long
             Case .Combo_SoundRotateDamage: Data_Combo_SoundRotateDamage rBuf
 
             Case Else
-                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
-                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
+                rBuf.Overflow  'Something went wrong or we hit the end, either way, RUN!!!!
 
             End Select
         End With
@@ -383,15 +378,14 @@ Static X As Long
         If rBuf.Get_ReadPos > BufUBound Then Exit Do
 
     Loop
+    
+    Set rBuf = Nothing
 
 End Sub
 
 Private Sub GOREsock_OnConnecting(inSox As Long)
 
     If SocketOpen = 0 Then
-
-        PacketInPos = 0
-        PacketOutPos = 0
         
         Sleep 50
         DoEvents
@@ -412,7 +406,7 @@ Private Sub GOREsock_OnConnecting(inSox As Long)
         End If
     
         'Save Game.ini
-        If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+        If Not SavePass Then UserPassword = vbNullString
         Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
         Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
         

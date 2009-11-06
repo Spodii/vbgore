@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.5            ************
+'************            Official Release: Version 1.0.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -238,7 +238,7 @@ Public Type udtObjData
     AddStat(FirstModStat To NumStats) As Long   'How much to add to the stat by the SID
     Pointer As Integer
 End Type
-Public ObjData As New ObjData
+Public ObjData As ObjData
 Public Type Obj 'Holds info about a object
     ObjIndex As Integer     'Index of the object
     Amount As Integer       'Amount of the object
@@ -571,10 +571,6 @@ Public Const SOUTHEAST As Byte = 6
 Public Const SOUTHWEST As Byte = 7
 Public Const NORTHWEST As Byte = 8
 
-'Window size in tiles
-Public Const XWindow As Byte = ScreenWidth \ 32     'Size of the window's width in tiles
-Public Const YWindow As Byte = ScreenHeight \ 32    'Size of the window's height in tiles
-
 '********** Public VARS ***********
 
 Public ResPos As WorldPos
@@ -650,8 +646,6 @@ Public cMessage() As CachedMessage
 
 Public DebugPacketsOut() As Long
 Public DebugPacketsIn() As Long
-
-Public LastTimeGetTime As Long
 
 '********** EXTERNAL FUNCTIONS ***********
 Public Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long

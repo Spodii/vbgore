@@ -1,18 +1,22 @@
 VERSION 5.00
 Begin VB.Form frmMain 
    BackColor       =   &H80000005&
+   BorderStyle     =   3  'Fixed Dialog
    Caption         =   "Free Number Finder"
    ClientHeight    =   2610
-   ClientLeft      =   60
-   ClientTop       =   450
+   ClientLeft      =   45
+   ClientTop       =   435
    ClientWidth     =   4455
    FillColor       =   &H00FFFFFF&
    ForeColor       =   &H00FFFFFF&
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
+   MaxButton       =   0   'False
+   MinButton       =   0   'False
    ScaleHeight     =   174
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   297
+   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
    Begin VB.CommandButton cButton 
       Caption         =   "Recalculate"
@@ -113,7 +117,6 @@ Private Const CheckNum As Long = 15
 Private GrhValues(1 To CheckNum) As Long
 Private GrhFiles(1 To CheckNum) As Long
 Private Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
-Private Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 
 Private Sub cButton_Click()
 Dim Ret As String
@@ -125,7 +128,7 @@ Dim c As Long
     i = 0
     Do While c <= CheckNum
         i = i + 1
-        If Var_Get(Data2Path & "GrhRaw.txt", "A", "Grh" & i) = "" Then
+        If LenB(Var_Get(Data2Path & "GrhRaw.txt", "A", "Grh" & i)) <> 0 Then
             GrhValues(c) = i
             c = c + 1
         End If
@@ -136,21 +139,21 @@ Dim c As Long
     i = 0
     Do While c <= CheckNum
         i = i + 1
-        If Server_FileExist(GrhPath & i & ".PNG", vbNormal) = False Then
+        If Not Server_FileExist(GrhPath & i & ".PNG", vbNormal) Then
             GrhFiles(c) = i
             c = c + 1
         End If
     Loop
     
     'Display
-    Ret = ""
+    Ret = vbNullString
     For i = 1 To CheckNum
         Ret = Ret & GrhFiles(i)
         If i <> CheckNum Then Ret = Ret & ", "
     Next i
     GrhFilesLbl.Caption = Ret
     
-    Ret = ""
+    Ret = vbNullString
     For i = 1 To CheckNum
         Ret = Ret & GrhValues(i)
         If i <> CheckNum Then Ret = Ret & ", "
@@ -166,19 +169,6 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-Dim c As Control
-    
-    For Each c In Me
-        If TypeName(c) = "cButton" Then
-            c.Refresh
-            c.DrawState = 0
-        End If
-    Next c
-    Set c = Nothing
-    
-End Sub
-
 Private Function Server_FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
 '*****************************************************************
@@ -186,7 +176,7 @@ Private Function Server_FileExist(File As String, FileType As VbFileAttribute) A
 '*****************************************************************
 On Error GoTo ErrOut
 
-    If Dir$(File, FileType) <> "" Then Server_FileExist = True
+    If LenB(Dir$(File, FileType)) <> 0 Then Server_FileExist = True
 
 Exit Function
 
@@ -203,27 +193,9 @@ Private Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var A
 'Gets a variable from a text file
 '*****************************************************************
 
-Dim sSpaces As String ' This will hold the input that the program will retrieve
-Dim szReturn As String ' This will be the defaul value if the string is not found
-
-    szReturn = vbNullString
-
-    sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
-
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
-
-    Var_Get = RTrim$(sSpaces)
-    Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
+    Var_Get = Space$(1000)
+    getprivateprofilestring Main, Var, vbNullString, Var_Get, 1000, File
+    Var_Get = RTrim$(Var_Get)
+    If LenB(Var_Get) <> 0 Then Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
 
 End Function
-
-Private Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As String, ByVal Value As String)
-
-'*****************************************************************
-'Writes a var to a text file
-'*****************************************************************
-
-    writeprivateprofilestring Main, Var, Value, File
-
-End Sub
-

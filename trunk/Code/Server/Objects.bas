@@ -77,7 +77,7 @@ Dim j As Long
 
 End Sub
 
-Public Function Obj_ValidObjForClass(ByVal Class As Byte, ByVal ObjIndex As Integer) As Byte
+Public Function Obj_ValidObjForClass(ByVal Class As Byte, ByVal ObjIndex As Integer) As Boolean
 
 '*****************************************************************
 'Checks if an object, by the object index, is useable by the passed class
@@ -87,16 +87,12 @@ Public Function Obj_ValidObjForClass(ByVal Class As Byte, ByVal ObjIndex As Inte
     If ObjData.ClassReq(ObjIndex) > 0 Then
         
         'If Class AND ClassReq is true, then we meet the requirements
-        If Class And ObjData.ClassReq(ObjIndex) Then
-            Obj_ValidObjForClass = 1
-        Else
-            Obj_ValidObjForClass = 0
-        End If
+        Obj_ValidObjForClass = (Class And ObjData.ClassReq(ObjIndex))
         
     Else
         
         'No requirements
-        Obj_ValidObjForClass = 1
+        Obj_ValidObjForClass = True
     
     End If
 

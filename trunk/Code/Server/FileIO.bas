@@ -801,8 +801,6 @@ Public Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As 
 Dim ObjNums As NPCBytes
 Dim NPCIndex As Integer
 Dim FileNum As Byte
-Dim i As Long
-Dim b As Byte
 
     Log "Call Load_NPC(" & NPCNumber & "," & Thralled & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1023,7 +1021,6 @@ Dim ts() As String
 Dim i As Byte
 Dim s As String
 Dim j As Long
-Dim k As Byte
 
     Log "Call Load_ServerIni", CodeTracker '//\\LOGLINE//\\
 
@@ -1368,7 +1365,7 @@ Dim i As Long
         'Build the inventory string
         For i = 1 To MAX_INVENTORY_SLOTS
             If .Object(i).ObjIndex > 0 Then
-                If InvStr <> "" Then InvStr = InvStr & vbNewLine   'Add the line break, but dont add it to first entry
+                If LenB(InvStr) Then InvStr = InvStr & vbNewLine   'Add the line break, but dont add it to first entry
                 InvStr = InvStr & i & " " & .Object(i).ObjIndex & " " & .Object(i).Amount & " " & .Object(i).Equipped
             End If
         Next i
@@ -1593,19 +1590,12 @@ Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As
 'Gets a variable from a text file
 '*****************************************************************
 
-Dim sSpaces As String ' This will hold the input that the program will retrieve
-Dim szReturn As String ' This will be the defaul value if the string is not found
-
     If DontLog = 0 Then Log "Call Var_Get(" & File & "," & Main & "," & Var & ")", CodeTracker '//\\LOGLINE//\\
 
-    szReturn = vbNullString
-
-    sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
-
-    GetPrivateProfileString Main, Var, szReturn, sSpaces, Len(sSpaces), File
-
-    Var_Get = RTrim$(sSpaces)
-    Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
+    Var_Get = Space$(1000)
+    GetPrivateProfileString Main, Var, vbNullString, Var_Get, 1000, File
+    Var_Get = RTrim$(Var_Get)
+    If LenB(Var_Get) <> 0 Then Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
     
     If DontLog = 0 Then Log "Rtrn Var_Get = " & Var_Get, CodeTracker '//\\LOGLINE//\\
 

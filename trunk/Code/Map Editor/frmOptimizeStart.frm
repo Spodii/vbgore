@@ -117,10 +117,6 @@ Dim Index As Long
 
 End Sub
 
-Private Sub BlockedObjChk_Click()
-
-End Sub
-
 Private Sub BlockedNPCChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Check for NPCs placed on tiles that are blocked."

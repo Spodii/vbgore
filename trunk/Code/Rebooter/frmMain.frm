@@ -119,9 +119,6 @@ Private Proc As PROCESS_INFORMATION
 
 Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
 Private Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationName As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
-Private Declare Function CloseHandle Lib "kernel32" (ByVal hObject As Long) As Long
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
-Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
 Private Sub BrowseLbl_Click()
     
@@ -221,12 +218,12 @@ Private Sub RunCmd_Click()
     
 End Sub
 
-Private Function Engine_FileExist(ByVal File As String, FileType As VbFileAttribute) As Boolean
+Private Function Engine_FileExist(ByVal File As String, ByVal FileType As VbFileAttribute) As Boolean
 
 '*****************************************************************
 'Checks to see if a file exists
 '*****************************************************************
 
-    Engine_FileExist = (Dir$(File, FileType) <> "")
+    Engine_FileExist = (Dir$(File, FileType) <> vbNullString)
 
 End Function

@@ -508,7 +508,6 @@ Dim ServerIndex As Byte
 Dim tName As String
 Dim tIndex As Integer
 Dim tMessage As String
-Dim TempStr() As String
 
     Log "Call Data_Comm_Whisper([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1538,7 +1537,6 @@ Sub Data_Server_Help(ByVal UserIndex As Integer)
 'User wants to retrieve help buffer from server
 '<>
 '*****************************************************************
-Dim LoopC As Byte
 
     Log "Call Data_Server_Help(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1753,7 +1751,6 @@ Sub Data_Server_MailItemTake(ByRef rBuf As DataBuffer, ByVal UserIndex As Intege
 '*****************************************************************
 Dim AmountTaken As Integer
 Dim ObjIndex As Byte
-Dim LoopC As Byte
 Dim MsgData As MailData
 Dim X As Long
 Dim Y As Long
@@ -2040,7 +2037,6 @@ Dim TargetIndex As Integer
 Dim TargetType As Byte
 Dim Heading As Byte
 Dim SkillID As Byte
-Dim i As Integer
 
     Log "Call Data_User_CastSkill([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -2060,7 +2056,7 @@ Dim i As Integer
     If CharList(TargetCharIndex).Index <= 0 Then TargetCharIndex = 0
     
     'Check if the skill can be used by the user's class
-    If Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) = 0 Then Exit Sub
+    If Not Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) Then Exit Sub
     
     'Clear the pending quest NPC
     UserList(UserIndex).flags.QuestNPC = 0
@@ -3478,7 +3474,6 @@ Sub User_Connect(ByVal UserIndex As Integer, ByVal strName As String, ByVal Pass
 Dim TempPass As String
 Dim CharIndex As Integer
 Dim TempPos As WorldPos
-Dim TempConnID As Long
 Dim LoopC As Byte
 Dim Count As Byte
 Dim IPs() As String
@@ -3772,7 +3767,6 @@ Sub User_ConnectNew(ByVal UserIndex As Integer, ByVal Name As String, ByVal Pass
 '*****************************************************************
 'Opens a new user. Loads default vars, saves then calls connectuser
 '*****************************************************************
-Dim TempConnID As Long
 Dim TempObjs(1 To 5) As Obj
 Dim i As Byte
 
@@ -3848,7 +3842,6 @@ Dim i As Byte
     UserList(UserIndex).Char.Hair = 1
     UserList(UserIndex).Char.Body = Body
     UserList(UserIndex).Counters.IdleCount = timeGetTime
-    UserList(UserIndex).Stats.UserIndex = UserIndex
     UserList(UserIndex).Pos.Map = StartPos.Map
     UserList(UserIndex).Pos.X = StartPos.X
     UserList(UserIndex).Pos.Y = StartPos.Y

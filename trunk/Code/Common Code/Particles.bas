@@ -19,7 +19,7 @@ Private Type Effect
     ParticlesLeft As Integer    'Number of particles left - only for non-repetitive effects
     BindToChar As Integer       'Setting this value will bind the effect to move towards the character
     BindSpeed As Single         'How fast the effect moves towards the character
-    BoundToMap As Byte          'If the effect is bound to the map - these kinds of effects should always loop
+    BoundToMap As Byte          'If the effect is bound to the map or not (used only by the map editor)
 End Type
 Public NumEffects As Byte   'Maximum number of effects at once
 Public Effect() As Effect   'List of all the active effects
@@ -86,7 +86,7 @@ Dim Y As Single
 Dim R As Single
     
     Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.1
-    R = (Index / 20) * EXP(Index / Effect(EffectIndex).Progression Mod 3)
+    R = (Index / 20) * Exp(Index / Effect(EffectIndex).Progression Mod 3)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     
@@ -100,13 +100,8 @@ Private Sub Effect_EquationTemplate_Update(ByVal EffectIndex As Integer)
 
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
-'Calculate The Time Difference
-
+    'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01
     Effect(EffectIndex).PreviousFrame = timeGetTime
 
@@ -446,15 +441,13 @@ Dim LoopC As Long
 
 End Sub
 
-Function Effect_FToDW(F As Single) As Long
+Private Function Effect_FToDW(F As Single) As Long
 Dim Buf As D3DXBuffer
-Dim TempVal As Long
 
     'Converts a single into a long (Float to DWORD)
     Set Buf = D3DX.CreateBuffer(4)
     D3DX.BufferSetData Buf, 0, 4, 1, F
-    D3DX.BufferGetData Buf, 0, 4, 1, TempVal
-    Effect_FToDW = TempVal
+    D3DX.BufferGetData Buf, 0, 4, 1, Effect_FToDW
 
 End Function
 
@@ -824,7 +817,6 @@ Public Sub Effect_Render(ByVal EffectIndex As Integer)
 
     'Set the texture
     D3DDevice.SetTexture 0, ParticleTexture(Effect(EffectIndex).Gfx)
-    LastTexture = -1
 
     'Draw all the particles at once
     D3DDevice.DrawPrimitiveUP D3DPT_POINTLIST, Effect(EffectIndex).ParticleCount, Effect(EffectIndex).PartVertex(0), Len(Effect(EffectIndex).PartVertex(0))
@@ -1248,7 +1240,7 @@ Dim LoopC As Long
 
 End Sub
 
-Public Sub Effect_Begin(ByVal EffectIndex As Integer, ByVal X As Single, ByVal Y As Single, ByVal GfxIndex As Byte, ByVal Particles As Byte, Optional ByVal Direction As Single = 180)
+Public Sub Effect_Begin(ByVal EffectIndex As Integer, ByVal X As Single, ByVal Y As Single, ByVal GfxIndex As Byte, ByVal Particles As Byte, Optional ByVal Direction As Single = 180, Optional ByVal BindToMap As Boolean = False)
 
 '*****************************************************************
 'A very simplistic form of initialization for particle effects, should only be used for starting map-based effects
@@ -1258,11 +1250,12 @@ Dim RetNum As Byte
     Select Case EffectIndex
         Case EffectNum_Fire
             RetNum = Effect_Fire_Begin(X, Y, GfxIndex, Particles, Direction, 1)
-            Effect(RetNum).BoundToMap = 1
         Case EffectNum_Waterfall
             RetNum = Effect_Waterfall_Begin(X, Y, GfxIndex, Particles)
-            Effect(RetNum).BoundToMap = 1
     End Select
+    
+    'Bind the effect to the map if needed
+    If BindToMap Then Effect(RetNum).BoundToMap = 1
     
 End Sub
 
@@ -1311,7 +1304,6 @@ Dim LoopC As Long
 End Function
 
 Private Sub Effect_Waterfall_Reset(ByVal EffectIndex As Integer, ByVal Index As Long)
-Dim i As Byte
 
     If Int(Rnd * 10) = 1 Then
         Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X + (Rnd * 60), Effect(EffectIndex).Y + (Rnd * 130), 0, 8 + (Rnd * 6), 0, 0
@@ -1323,13 +1315,8 @@ Dim i As Byte
 End Sub
 
 Private Sub Effect_Waterfall_Update(ByVal EffectIndex As Integer)
-
 Dim ElapsedTime As Single
 Dim LoopC As Long
-Dim TargetX As Integer  'Bound character's position
-Dim TargetY As Integer
-Dim TargetI As Integer  'Bound character's index
-Dim TargetA As Single   'Angle which the effect will be heading towards the bound character
 
     'Calculate The Time Difference
     ElapsedTime = (timeGetTime - Effect(EffectIndex).PreviousFrame) * 0.01

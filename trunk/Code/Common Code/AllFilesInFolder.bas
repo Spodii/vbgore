@@ -65,26 +65,28 @@ Dim i As Integer, j As Integer
     On Error Resume Next
     
         sTemp = Dir$(sDirIn & "*.*")
-        Do While sTemp <> ""
+        Do While LenB(sTemp) <> 0
             AddItem2Array1D sFilelist(), sDirIn & sTemp
             sTemp = Dir
         Loop
         If bWithSubFolders Then
 
             sTemp = Dir$(sDirIn & "*.*", vbDirectory)
-            Do While sTemp <> ""
+            Do While LenB(sTemp) <> 0
 
-                If sTemp <> "." And sTemp <> ".." Then
-
-                    If (GetAttr(sDirIn & sTemp) And vbDirectory) = vbDirectory Then AddItem2Array1D sToProcessFolderList, sDirIn & sTemp
+                If sTemp <> "." Then
+                    If sTemp <> ".." Then
+                        If (GetAttr(sDirIn & sTemp) And vbDirectory) = vbDirectory Then AddItem2Array1D sToProcessFolderList, sDirIn & sTemp
+                    End If
                 End If
                 sTemp = Dir
+                
             Loop
 
-            If UBound(sToProcessFolderList) > 0 Or UBound(sToProcessFolderList) = 0 And sToProcessFolderList(0) <> "" Then
+            If UBound(sToProcessFolderList) > 0 Or UBound(sToProcessFolderList) = 0 And LenB(sToProcessFolderList(0)) <> 0 Then
                 For i = 0 To UBound(sToProcessFolderList)
                     sSubFolderList = AllFilesInFolders(sToProcessFolderList(i), bWithSubFolders)
-                    If UBound(sSubFolderList) > 0 Or UBound(sSubFolderList) = 0 And sSubFolderList(0) <> "" Then
+                    If UBound(sSubFolderList) > 0 Or UBound(sSubFolderList) = 0 And LenB(sSubFolderList(0)) <> 0 Then
                         For j = 0 To UBound(sSubFolderList)
                             AddItem2Array1D sFilelist(), sSubFolderList(j)
                         Next

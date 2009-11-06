@@ -23,25 +23,14 @@ Public Type Char
 End Type
 Public CharList() As Char
 
-'Point API
-Public Type POINTAPI
-    X As Long
-    Y As Long
-End Type
-
 'FPS
 Public End_Time As Long
 Public ElapsedTime As Single
-Public Timer_Ticks_Per_Frame As Single
 Public FPS As Long
 Public FramesPerSecCounter As Long
 Public FPS_Last_Check As Long
 
 '********** Direct X ***********
-Public Const SurfaceTimerMax As Single = 60000  'How long a texture stays in memory unused (miliseconds)
-Public SurfaceDB() As Direct3DTexture8          'The list of all the textures
-Public SurfaceTimer() As Integer                'How long until the surface unloads
-Public LastTexture As Long                      'The last texture used
 Public D3DWindow As D3DPRESENT_PARAMETERS       'Describes the viewport and used to restore when in fullscreen
 Public UsedCreateFlags As CONST_D3DCREATEFLAGS  'The flags we used to create the device when it first succeeded
 
@@ -56,12 +45,6 @@ Public D3DX As D3DX8
 Public DIDevice As DirectInputDevice8
 Public D3DDevice As Direct3DDevice8
 Private MainFont As D3DXFont
-Private MainFontDesc As IFont
-Public MousePos As POINTAPI
-Public MousePosAdd As POINTAPI
-Public MouseEvent As Long
-Public MouseLeftDown As Byte
-Public MouseRightDown As Byte
 
 'Describes a transformable lit vertex
 Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE Or D3DFVF_SPECULAR
@@ -77,22 +60,7 @@ Public Type TLVERTEX
     Tv As Single
 End Type
 
-Private VertexArray(0 To 3) As TLVERTEX
-
-'Describes the return from a texture init
-Private Type D3DXIMAGE_INFO_A
-    Width As Long
-    Height As Long
-    Depth As Long
-    MipLevels As Long
-    Format As CONST_D3DFORMAT
-    ResourceType As CONST_D3DRESOURCETYPE
-    ImageFileFormat As Long
-End Type
-
 '********** OUTSIDE FUNCTIONS ***********
-'Very percise counter 64bit system counter
-Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
 
@@ -205,12 +173,9 @@ Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS)
 'Initialize the Direct3D Device - start off trying with the
 'best settings and move to the worst until one works
 '************************************************************
-
 Dim DispMode As D3DDISPLAYMODE          'Describes the display mode
-Dim i As Byte
 
-'When there is an error, destroy the D3D device and get ready to make a new one
-
+    'When there is an error, destroy the D3D device and get ready to make a new one
     On Error GoTo ErrOut
 
     'Retrieve current display mode
@@ -229,11 +194,6 @@ Dim i As Byte
 
     'Everything was successful
     Engine_Init_D3DDevice = 1
-
-    'The Rhw will always be 1, so set it now instead of every call
-    For i = 0 To 3
-        VertexArray(i).Rhw = 1
-    Next i
 
 Exit Function
 
@@ -262,7 +222,7 @@ Dim i As Byte
     ReDim Effect(1 To NumEffects)
 
     For i = 1 To UBound(ParticleTexture())
-        Set ParticleTexture(i) = D3DX.CreateTextureFromFileEx(D3DDevice, App.Path & "\Grh\p" & i & ".png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
+        Set ParticleTexture(i) = D3DX.CreateTextureFromFileEx(D3DDevice, GrhPath & "p" & i & ".png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
     Next i
 
 End Sub
@@ -295,7 +255,7 @@ Private Sub Engine_Init_RenderStates()
 
 End Sub
 
-Function Engine_Init_TileEngine(ByRef setDisplayFormhWnd As Long, ByVal setTilePixelHeight As Integer, ByVal setTilePixelWidth As Integer, ByVal setWindowTileHeight As Integer, ByVal setWindowTileWidth As Integer, ByVal setTileBufferSize As Integer, ByVal Engine_Speed As Single) As Boolean
+Function Engine_Init_TileEngine() As Boolean
 
 '*****************************************************************
 'Init Tile Engine

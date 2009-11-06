@@ -1,6 +1,7 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Private Powersof2(1 To 14) As Long
 Private Declare Function WritePrivateProfileString Lib "Kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 
 Private Function FileExist(File As String, FileType As VbFileAttribute) As Boolean
@@ -9,20 +10,27 @@ Private Function FileExist(File As String, FileType As VbFileAttribute) As Boole
 'Checks to see if a file exists
 '*****************************************************************
 
-    FileExist = (Dir$(File, FileType) <> "")
+    FileExist = (LenB(Dir$(File, FileType)) <> 0)
 
 End Function
 
+Private Sub MakePowersof2()
+Dim i As Long
+
+    For i = 1 To 14
+        Powersof2(i) = 2 ^ i
+    Next i
+
+End Sub
+
 Private Function IsPowerof2(ByVal Number As Long) As Boolean
 Dim i As Long
-Dim j As Long
 
-    For i = 1 To 12
-        j = (2 ^ i)
-        If Number = j Then
+    For i = 1 To 14
+        If Number = Powersof2(i) Then
             IsPowerof2 = True
         Else
-            If j > Number Then Exit Function
+            If Powersof2(i) > Number Then Exit Function
         End If
     Next i
 
@@ -54,23 +62,28 @@ Dim NumRawFile As Long
 Dim LastFile As Long
 Dim Lines As Long
 
+    MakePowersof2
     InitFilePaths
     
-    'Check for valid file sizes
+    '*** Check for valid file sizes ***
     Set ImageSize = New CImageInfo
     FileList() = AllFilesInFolders(GrhPath, False)
     For FileNum = 0 To UBound(FileList)
-        If Right$(FileList(FileNum), 4) = ".png" Then
-            ImageSize.ReadImageInfo FileList(FileNum)
-            If IsPowerof2(ImageSize.Width) = False Or IsPowerof2(ImageSize.Height) = False Then
-                TempSplit = Split(FileList(FileNum))
-                TempLine = TempLine & TempSplit(UBound(TempSplit))
+        If LCase$(Right$(FileList(FileNum), 4)) = ".png" Then
+            TempSplit = Split(FileList(FileNum), "\")
+            If IsNumeric(Left$(TempSplit(UBound(TempSplit)), Len(TempSplit(UBound(TempSplit))) - 4)) Then
+                ImageSize.ReadImageInfo FileList(FileNum)
+                If IsPowerof2(ImageSize.Width) = False Or IsPowerof2(ImageSize.Height) = False Then
+                    TempLine = TempLine & TempSplit(UBound(TempSplit))
+                End If
             End If
         End If
     Next FileNum
-    If TempLine <> vbNullString Then
+    If LenB(TempLine) Then
         MsgBox "The following image files were found to not have sizes by powers of 2!" & vbNewLine & _
             "Leaving images not in powers of 2 will cause lots of graphical errors!" & vbNewLine & vbNewLine & TempLine & _
+            vbNewLine & vbNewLine & "Not to be confused with divisible by two, powers of two goes by 2^X, and contains the values:" & vbNewLine & _
+            "2,4,8,16,32,64,128,256,512,1024,2048..." & _
             vbNewLine & vbNewLine & "Grh.dat will still be made, but graphics may not appear correctly in-game.", vbOKOnly Or vbCritical
     End If
     Set ImageSize = Nothing
@@ -88,7 +101,7 @@ Dim Lines As Long
 
     Open Data2Path & "GrhRaw.txt" For Input As #2
 
-    'Do a loop to check for repeat numbers
+    '*** Do a loop to check for repeat numbers ***
     While Not EOF(2)
         DoEvents
         Line Input #2, TempLine
@@ -119,6 +132,8 @@ Dim Lines As Long
     Next sX
 
     Close #2
+    
+    '*** Build Grh.dat ***
 
     Open Data2Path & "GrhRaw.txt" For Input As #2
 

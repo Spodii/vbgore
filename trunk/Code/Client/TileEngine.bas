@@ -64,7 +64,6 @@ Public Const FontColor_Quest As Long = -256
 Public Const FontColor_Group As Long = -16711681
 Private Const ChatTextBufferSize As Integer = 200
 Public Const DamageDisplayTime As Integer = 2000
-Public Const BufferSize As Long = 40
 Public Const MouseSpeed As Single = 1.5
 
 '********** MUSIC ***********
@@ -118,7 +117,6 @@ Public Font_Default As CustomFont   'Describes our custom font "default"
 Type ChatTextBuffer
     Text As String
     Color As Long
-    Width As Long
 End Type
 
 Private ChatTextBuffer(1 To ChatTextBufferSize) As ChatTextBuffer
@@ -144,8 +142,8 @@ End Type
 'Holds data about where a png can be found,
 'How big it is and animation info
 Public Type GrhData
-    sX As Integer
-    sY As Integer
+    SX As Integer
+    SY As Integer
     FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
@@ -154,7 +152,6 @@ Public Type GrhData
     NumFrames As Byte
     Frames() As Long
     Speed As Single
-    TextureSet As Byte
 End Type
 
 'Points to a grhData and keeps animation info
@@ -162,7 +159,6 @@ Public Type Grh
     GrhIndex As Long
     LastCount As Long
     FrameCounter As Single
-    SpeedCounter As Byte
     Started As Byte
 End Type
 
@@ -247,7 +243,6 @@ Public Type Char
     NPCChatIndex As Byte
     NPCChatLine As Byte
     NPCChatDelay As Long
-    NameVB As Direct3DVertexBuffer8
 End Type
 
 'Holds info about each tile position
@@ -258,7 +253,6 @@ Public Type MapBlock
     Shadow(1 To 6) As Byte
     Sign As Integer
     Blocked As Byte
-    Mailbox As Byte
     Warp As Byte
     Sfx As DirectSoundSecondaryBuffer8
 End Type
@@ -266,8 +260,6 @@ End Type
 'Hold info about each map
 Public Type MapInfo
     Name As String
-    StartPos As WorldPos
-    MapVersion As Integer
     Weather As Byte
     Music As Byte
     Width As Byte
@@ -346,7 +338,6 @@ Private NumWeapons As Integer   'Number of weapons
 Private NumGrhs As Long         'Number of grhs
 Private NumWings As Integer     'Number of wings
 Public NumSfx As Integer        'Number of sound effects
-Public NumMaps As Integer       'Number of maps
 Public NumGrhFiles As Integer   'Number of pngs
 Public LastChar As Integer      'Last character
 Public LastObj As Integer       'Last object
@@ -398,7 +389,6 @@ Public ShowGameWindow(1 To NumGameWindows) As Byte  'What game windows are visib
 Public MailboxListBuffer As String      'Holds the list of text for the mailbox
 Public AmountWindowValue As String      'How much of the item will be dropped from the amount window
 Public AmountWindowItemIndex As Byte    'Index of the item to be dropped/sold/sent when the amount window pops up
-Public AmountWindowItemIndex2 As Byte
 Public AmountWindowUsage As Byte        'The usage combination for the amount window (as defined with below constants)
 Public DrawSkillList As Byte            'If the skills list is to be drawn
 Public QuickBarSetSlot As Byte          'What slot on the quickbar was clicked to be set
@@ -407,7 +397,6 @@ Public DragItemSlot As Byte             'Holds what slot an item is being dragge
 
 'AmountWindowUsage constants
 Public Const AW_Drop As Byte = 0
-Public Const AW_InvToInv As Byte = 1
 Public Const AW_InvToShop As Byte = 2
 Public Const AW_InvToBank As Byte = 3
 Public Const AW_InvToMail As Byte = 4
@@ -434,9 +423,7 @@ Public SkillListSize As Byte
 Private Type RMailData          'The mail data for the message being read
     Subject As String
     WriterName As String
-    RecieveDate As Date
     Message As String
-    New As Byte
     Obj(1 To MaxMailObjs) As Integer
     ObjName(1 To MaxMailObjs) As String
     ObjAmount(1 To MaxMailObjs) As Integer
@@ -514,7 +501,6 @@ Private Type ChatWindow         'Chat buffer/input window
 End Type
 
 Private Type WindowMenu
-    Text As Rectangle
     Screen As Rectangle
     QuitLbl As Rectangle
     SkinGrh As Grh
@@ -538,7 +524,6 @@ End Type
 
 Private Type WindowNPCChat
     Screen As Rectangle
-    Question As Rectangle
     NumAnswers As Byte
     Answer() As Rectangle
     SkinGrh As Grh
@@ -663,8 +648,6 @@ Public WeatherDoFog As Byte         'Are we using fog? >1 = Yes, 0 = No
 Public WeatherFogCount As Byte      'How many fog effects there are
 Public LightningTimer As Single     'How long until our next lightning bolt strikes
 Public FlashTimer As Single         'How long until the flash goes away (being > 0 states flash is happening)
-Public LightningX As Integer        'Position of the lightning (top-left corner)
-Public LightningY As Integer
 Public WeatherSfx1 As DirectSoundSecondaryBuffer8   'Weather buffers - dont add more unless you need more for
 Public WeatherSfx2 As DirectSoundSecondaryBuffer8   ' one weather effect (ie rain, wind, lightning)
 
@@ -689,7 +672,6 @@ Public DamageList() As DamageTxt        'Holds info on the damage displays
 Public EndTime As Long
 Public ElapsedTime As Single
 Public TickPerFrame As Single
-Public TimerMultiplier As Single
 Public EngineBaseSpeed As Single
 Public OffsetCounterX As Single
 Public OffsetCounterY As Single
@@ -697,7 +679,6 @@ Public OffsetCounterY As Single
 Private NotFirstRender As Byte
 
 Public ShownText As String
-Public LineBreakChr As String * 1
 
 'Weather information
 Public LastWeather As Byte
@@ -708,7 +689,6 @@ Public Type MiniMapTile
     X As Single         'X and Y index of the tile (using the tile position, not pixel position)
     Y As Single
     Color As Long       'The color of the tile
-    RoundCorner As Byte 'What corner to round (0 = none, 1 = top-left, 2 = top-right, 3 = bottom-left, 4 = bottom-right)
 End Type
 Public MiniMapVBSize As Long    'Size of the vertex buffer (number of verticies, or Tiles x 8)
 Public MiniMapVB As Direct3DVertexBuffer8   'Holds the information needed to render the mini-map (not including characters)
@@ -716,7 +696,7 @@ Public ShowMiniMap As Byte
 
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
-Private Declare Function IntersectRect Lib "User32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
+Private Declare Function IntersectRect Lib "user32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
 
 Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
 
@@ -731,50 +711,6 @@ Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
     
 End Sub
 
-Private Sub Engine_AddItem2Array1D(ByRef VarArray As Variant, ByVal VarValue As Variant)
-
-'************************************************************
-'Adds a variant to one-dimensional array
-'************************************************************
-
-Dim i  As Long
-Dim iVarType As Integer
-
-    iVarType = VarType(VarArray) - 8192
-
-    i = UBound(VarArray)
-    Select Case iVarType
-    Case vbInteger, vbLong, vbSingle, vbDouble, vbCurrency, vbDecimal, vbByte
-        If VarArray(0) = 0 Then
-            i = 0
-        Else
-            i = i + 1
-        End If
-    Case vbDate
-        If VarArray(0) = "00:00:00" Then
-            i = 0
-        Else
-            i = i + 1
-        End If
-    Case vbString
-        If VarArray(0) = vbNullString Then
-            i = 0
-        Else
-            i = i + 1
-        End If
-    Case vbBoolean
-        If VarArray(0) = False Then
-            i = 0
-        Else
-            i = i + 1
-        End If
-    Case Else
-    End Select
-    ReDim Preserve VarArray(i)
-    VarArray(i) = VarValue
-
-End Sub
-
 Public Sub Engine_AddToChatTextBuffer(ByVal Text As String, ByVal Color As Long)
 
 '************************************************************
@@ -787,7 +723,6 @@ Dim LastSpace As Long
 Dim Size As Long
 Dim i As Long
 Dim b As Long
-Dim j As Long
 
     'Check if there are any line breaks - if so, we will support them
     TempSplit = Split(Text, vbCrLf)
@@ -868,7 +803,6 @@ Dim LoopC As Long
     Next LoopC
     
     'Set the values
-    ChatTextBuffer(1).Width = Engine_GetTextWidth(Text)
     ChatTextBuffer(1).Text = Text
     ChatTextBuffer(1).Color = Color
 
@@ -892,7 +826,6 @@ Dim Y As Single
 Dim Y2 As Single
 Dim i As Long
 Dim j As Long
-Dim s As String
 Dim Size As Integer
 Dim KeyPhrase As Byte
 Dim ResetColor As Byte
@@ -938,7 +871,7 @@ Dim TempColor As Long
         
         'Loop through each line if there are line breaks (vbCrLf)
         Count = 0   'Counts the offset value we are on
-        If ChatTextBuffer(LoopC).Text <> "" Then 'Dont bother with empty strings
+        If LenB(ChatTextBuffer(LoopC).Text) <> 0 Then  'Dont bother with empty strings
             
             'Loop through the characters
             For j = 1 To Len(ChatTextBuffer(LoopC).Text)
@@ -1041,70 +974,6 @@ Dim TempColor As Long
     
 End Sub
 
-Private Function Engine_AllFilesInFolders(ByVal sFolderPath As String, Optional bWithSubFolders As Boolean = False) As String()
-
-'************************************************************
-'Returns a list of all the files in a folder
-'************************************************************
-
-Dim sTemp As String
-Dim sDirIn As String
-Dim i As Integer
-Dim j As Integer
-
-'Clear the arrays
-
-    ReDim sFilelist(0) As String
-    ReDim sSubFolderList(0) As String
-    ReDim sToProcessFolderList(0) As String
-
-    'Set the initial directory
-    sDirIn = sFolderPath
-
-    'Make sure we have a slash
-    If Not (Right$(sDirIn, 1) = "\") Then sDirIn = sDirIn & "\"
-
-    'Resume on errors - we can handle them ourselves
-    On Error Resume Next
-
-        'Loop through the files in the targeted folder
-        sTemp = Dir$(sDirIn & "*.*")
-        Do While sTemp <> ""
-            Engine_AddItem2Array1D sFilelist(), sDirIn & sTemp
-            sTemp = Dir
-        Loop
-
-        'Loop through the files in the sub folders to the targeted folder
-        If bWithSubFolders Then
-
-            'Loop through the subdirectories
-            sTemp = Dir$(sDirIn & "*.*", vbDirectory)
-            Do While sTemp <> ""
-                If sTemp <> "." And sTemp <> ".." Then
-                    If (GetAttr(sDirIn & sTemp) And vbDirectory) = vbDirectory Then Engine_AddItem2Array1D sToProcessFolderList, sDirIn & sTemp
-                End If
-                sTemp = Dir
-            Loop
-            If UBound(sToProcessFolderList) > 0 Or UBound(sToProcessFolderList) = 0 And sToProcessFolderList(0) <> "" Then
-                For i = 0 To UBound(sToProcessFolderList)
-                    sSubFolderList = Engine_AllFilesInFolders(sToProcessFolderList(i), bWithSubFolders)
-                    If UBound(sSubFolderList) > 0 Or UBound(sSubFolderList) = 0 And sSubFolderList(0) <> "" Then
-                        For j = 0 To UBound(sSubFolderList)
-                            Engine_AddItem2Array1D sFilelist(), sSubFolderList(j)
-                        Next
-                    End If
-                Next
-            End If
-
-        End If
-
-        'Return the values
-        Engine_AllFilesInFolders = sFilelist
-        
-    On Error GoTo 0
-
-End Function
-
 Public Sub Engine_Blood_Create(ByVal X As Integer, ByVal Y As Integer)
 
 '*****************************************************************
@@ -1140,23 +1009,21 @@ Public Sub Engine_Blood_Erase(ByVal BloodIndex As Integer)
 'Erase a blood splatter
 '*****************************************************************
 
-Dim j As Integer
-
-'Clear the selected index
-
+    'Clear the selected index
     BloodList(BloodIndex).Grh.FrameCounter = 0
     BloodList(BloodIndex).Grh.GrhIndex = 0
     BloodList(BloodIndex).Pos.X = 0
     BloodList(BloodIndex).Pos.Y = 0
 
     'Update LastBlood
-    If j = LastBlood Then
+    If BloodIndex = LastBlood Then
         Do Until BloodList(LastBlood).Grh.GrhIndex > 1
 
             'Move down one splatter
             LastBlood = LastBlood - 1
 
             If LastBlood = 0 Then
+                Erase BloodList
                 Exit Sub
             Else
                 'We still have blood, resize the array to end at the last used slot
@@ -1434,22 +1301,20 @@ Public Sub Engine_Damage_Erase(ByVal DamageIndex As Integer)
 'Erase damage text
 '*****************************************************************
 
-Dim j As Integer
-
-'Clear the selected index
-
+    'Clear the selected index
     DamageList(DamageIndex).Counter = 0
     DamageList(DamageIndex).Value = vbNullString
     DamageList(DamageIndex).Width = 0
 
     'Update LastDamage
-    If j = LastDamage Then
+    If DamageIndex = LastDamage Then
         Do Until DamageList(LastDamage).Counter > 0
 
             'Move down one splatter
             LastDamage = LastDamage - 1
 
             If LastDamage = 0 Then
+                Erase DamageList
                 Exit Sub
             Else
                 'We still have damage text, resize the array to end at the last used slot
@@ -1500,7 +1365,7 @@ Dim ProjectileIndex As Integer
     
 End Sub
 
-Public Sub Engine_Effect_Create(ByVal X As Integer, ByVal Y As Integer, ByVal GrhIndex As Long, Optional ByVal Angle As Single = 0, Optional ByVal Time As Long = 0, Optional ByVal Animated As Byte = 1)
+Public Sub Engine_Effect_Create(ByVal X As Integer, ByVal Y As Integer, ByVal GrhIndex As Long, Optional ByVal Angle As Single = 0, Optional ByVal Time As Long = 0, Optional ByVal Animated As Byte = 1, Optional ByVal DelayFrames As Single = 0)
 
 '*****************************************************************
 'Creates an effect layer for spells and such
@@ -1529,7 +1394,8 @@ Dim EffectIndex As Integer
     EffectList(EffectIndex).Pos.X = X
     EffectList(EffectIndex).Pos.Y = Y
     Engine_Init_Grh EffectList(EffectIndex).Grh, GrhIndex
-
+    EffectList(EffectIndex).Grh.FrameCounter = 1 - DelayFrames
+    
 End Sub
 
 Public Sub Engine_Projectile_Erase(ByVal ProjectileIndex As Integer)
@@ -1537,8 +1403,6 @@ Public Sub Engine_Projectile_Erase(ByVal ProjectileIndex As Integer)
 '*****************************************************************
 'Erase a projectile by the projectile index
 '*****************************************************************
-
-Dim j As Integer
 
     'Clear the selected index
     ProjectileList(ProjectileIndex).Grh.FrameCounter = 0
@@ -1551,13 +1415,14 @@ Dim j As Integer
     ProjectileList(ProjectileIndex).RotateSpeed = 0
     
     'Update LastProjectile
-    If j = LastProjectile Then
+    If ProjectileIndex = LastProjectile Then
         Do Until ProjectileList(ProjectileIndex).Grh.GrhIndex > 1
             
             'Move down one index
             LastProjectile = LastProjectile - 1
             
             If LastProjectile = 0 Then
+                Erase ProjectileList
                 Exit Sub
             Else
                 'We still have projectiles left, resize the array to end at the last used slot
@@ -1575,13 +1440,11 @@ Public Sub Engine_Effect_Erase(ByVal EffectIndex As Integer)
 'Erase an effect by the effect index
 '*****************************************************************
 
-Dim j As Integer
-
     'Clear the selected index
     ZeroMemory EffectList(EffectIndex), Len(EffectList(EffectIndex))
 
     'Update LastEffect
-    If j = LastEffect Then
+    If EffectIndex = LastEffect Then
         Do Until EffectList(LastEffect).Grh.GrhIndex > 1
 
             'Move down one effect
@@ -1625,7 +1488,7 @@ Function Engine_FileExist(File As String, FileType As VbFileAttribute) As Boolea
 '*****************************************************************
 On Error GoTo ErrOut
 
-    If LenB(Dir$(File, FileType)) Then Engine_FileExist = True
+    If LenB(Dir$(File, FileType)) <> 0 Then Engine_FileExist = True
 
 Exit Function
 
@@ -1745,13 +1608,13 @@ Dim s As String
     
     'Grab the English text first
     For LoopC = 1 To NumSigns
-        Signs(LoopC) = Trim$(Var_Get(SignsPath & "english.ini", "SIGNS", CStr(LoopC)))
+        Signs(LoopC) = Trim$(Var_Get(SignsPath & "english.ini", "SIGNS", LoopC))
     Next LoopC
     
     'If we're not using English, grab the foreign language, this way any missing is still presented as English
     If LCase$(Language) <> "english" Then
         For LoopC = 1 To NumSigns
-            s = Trim$(Var_Get(SignsPath & LCase$(Language) & ".ini", "SIGNS", CStr(LoopC)))
+            s = Trim$(Var_Get(SignsPath & LCase$(Language) & ".ini", "SIGNS", LoopC))
             If s <> vbNullString Then Signs(LoopC) = s
         Next LoopC
     End If
@@ -1772,7 +1635,7 @@ Dim s As String
     'Check for a redirection flag (will return nothing if the flag doesn't exist)
     Do  'This "Do" will allow us to do redirections to redirections, even though we shouldn't even do that
         s = Var_Get(MessagePath & Language & ".ini", "REDIRECT", "TO")
-        If s <> "" Then
+        If LenB(s) <> 0 Then
             If Engine_FileExist(MessagePath & LCase$(s) & ".ini", vbNormal) = False Then
                 MsgBox "Invalid language redirection! Could not load system messages!" & vbCrLf & _
                         "Language '" & Language & "' redirected to '" & LCase$(s) & "', which could not be found!", vbOKOnly
@@ -1837,11 +1700,11 @@ Dim j As Long
     'Fill list
     For LoopC = 1 To NumBodies
         For j = 1 To 8
-            Engine_Init_Grh BodyData(LoopC).Walk(j), CLng(Var_Get(DataPath & "Body.dat", Str(LoopC), Str(j))), 0
-            Engine_Init_Grh BodyData(LoopC).Attack(j), CLng(Var_Get(DataPath & "Body.dat", Str(LoopC), "a" & j)), 1
+            Engine_Init_Grh BodyData(LoopC).Walk(j), CLng(Var_Get(DataPath & "Body.dat", LoopC, j)), 0
+            Engine_Init_Grh BodyData(LoopC).Attack(j), CLng(Var_Get(DataPath & "Body.dat", LoopC, "a" & j)), 1
         Next j
-        BodyData(LoopC).HeadOffset.X = CLng(Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.Y = CLng(Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetY"))
+        BodyData(LoopC).HeadOffset.X = CLng(Var_Get(DataPath & "Body.dat", LoopC, "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Var_Get(DataPath & "Body.dat", LoopC, "HeadOffsetY"))
     Next LoopC
 
 End Sub
@@ -1863,20 +1726,19 @@ Dim j As Long
     'Fill list
     For LoopC = 1 To NumWings
         For j = 1 To 8
-            Engine_Init_Grh WingData(LoopC).Walk(j), CLng(Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
-            Engine_Init_Grh WingData(LoopC).Attack(j), CLng(Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
+            Engine_Init_Grh WingData(LoopC).Walk(j), CLng(Var_Get(DataPath & "Wing.dat", LoopC, j)), 0
+            Engine_Init_Grh WingData(LoopC).Attack(j), CLng(Var_Get(DataPath & "Wing.dat", LoopC, "a" & j)), 1
         Next j
     Next LoopC
 
 End Sub
 
-Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS)
+Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS) As Boolean
 
 '************************************************************
 'Initialize the Direct3D Device - start off trying with the
 'best settings and move to the worst until one works
 '************************************************************
-Dim i As Byte
 
     'When there is an error, destroy the D3D device and get ready to make a new one
     On Error GoTo ErrOut
@@ -1894,12 +1756,11 @@ Dim i As Byte
         If UseVSync = 1 Then D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC Else D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         DispMode.Width = ScreenWidth
         DispMode.Height = ScreenHeight
-        D3DWindow.SwapEffect = D3DWindow.SwapEffect
         D3DWindow.BackBufferCount = 1
         D3DWindow.BackBufferFormat = DispMode.Format
         D3DWindow.BackBufferWidth = ScreenWidth
         D3DWindow.BackBufferHeight = ScreenHeight
-        D3DWindow.hDeviceWindow = frmMain.hWnd
+        D3DWindow.hDeviceWindow = frmMain.hwnd
     End If
 
     If UseMotionBlur Then
@@ -1909,13 +1770,13 @@ Dim i As Byte
     
     'Set the D3DDevices
     If Not D3DDevice Is Nothing Then Set D3DDevice = Nothing
-    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hWnd, D3DCREATEFLAGS, D3DWindow)
+    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hwnd, D3DCREATEFLAGS, D3DWindow)
     
     'Store the create flags
     UsedCreateFlags = D3DCREATEFLAGS
 
     'Everything was successful
-    Engine_Init_D3DDevice = 1
+    Engine_Init_D3DDevice = True
     
     'Force the main form to refresh - vital for widescreen! Remove and find out why if you dare... >:D
     frmMain.Show
@@ -1929,8 +1790,8 @@ ErrOut:
     'Destroy the D3DDevice so it can be remade
     Set D3DDevice = Nothing
 
-    'Return a failure - 0
-    Engine_Init_D3DDevice = 0
+    'Return a failure
+    Engine_Init_D3DDevice = False
 
 End Function
 
@@ -1957,7 +1818,6 @@ Sub Engine_Init_Grh(ByRef Grh As Grh, ByVal GrhIndex As Long, Optional ByVal Sta
     End If
     Grh.LastCount = timeGetTime
     Grh.FrameCounter = 1
-    Grh.SpeedCounter = GrhData(Grh.GrhIndex).Speed
 
 End Sub
 
@@ -1966,6 +1826,7 @@ Sub Engine_Init_GrhData()
 '*****************************************************************
 'Loads Grh.dat
 '*****************************************************************
+Dim FileNum As Byte
 Dim Grh As Long
 Dim Frame As Long
 
@@ -1976,16 +1837,17 @@ Dim Frame As Long
     ReDim GrhData(1 To NumGrhs) As GrhData
     
     'Open files
-    Open DataPath & "Grh.dat" For Binary As #1
-    Seek #1, 1
+    FileNum = FreeFile
+    Open DataPath & "Grh.dat" For Binary As #FileNum
+    Seek #FileNum, 1
     
     'Fill Grh List
-    Get #1, , Grh
+    Get #FileNum, , Grh
     
     Do Until Grh <= 0
     
         'Get number of frames
-        Get #1, , GrhData(Grh).NumFrames
+        Get #FileNum, , GrhData(Grh).NumFrames
         If GrhData(Grh).NumFrames <= 0 Then GoTo ErrorHandler
         
         If GrhData(Grh).NumFrames > 1 Then
@@ -1993,13 +1855,13 @@ Dim Frame As Long
             'Read a animation GRH set
             ReDim GrhData(Grh).Frames(1 To GrhData(Grh).NumFrames)
             For Frame = 1 To GrhData(Grh).NumFrames
-                Get #1, , GrhData(Grh).Frames(Frame)
+                Get #FileNum, , GrhData(Grh).Frames(Frame)
                 If GrhData(Grh).Frames(Frame) <= 0 Then
                     GoTo ErrorHandler
                 End If
             Next Frame
             
-            Get #1, , GrhData(Grh).Speed
+            Get #FileNum, , GrhData(Grh).Speed
             GrhData(Grh).Speed = GrhData(Grh).Speed * 0.075 * EngineBaseSpeed
             If GrhData(Grh).Speed <= 0 Then GoTo ErrorHandler
             
@@ -2017,15 +1879,15 @@ Dim Frame As Long
         
             'Read in normal GRH data
             ReDim GrhData(Grh).Frames(1 To 1)
-            Get #1, , GrhData(Grh).FileNum
+            Get #FileNum, , GrhData(Grh).FileNum
             If GrhData(Grh).FileNum <= 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).sX
-            If GrhData(Grh).sX < 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).sY
-            If GrhData(Grh).sY < 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).pixelWidth
+            Get #FileNum, , GrhData(Grh).SX
+            If GrhData(Grh).SX < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).SY
+            If GrhData(Grh).SY < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).pixelWidth
             If GrhData(Grh).pixelWidth <= 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).pixelHeight
+            Get #FileNum, , GrhData(Grh).pixelHeight
             If GrhData(Grh).pixelHeight <= 0 Then GoTo ErrorHandler
             
             'Compute width and height
@@ -2036,16 +1898,16 @@ Dim Frame As Long
         End If
 
         'Get Next Grh Number
-        Get #1, , Grh
+        Get #FileNum, , Grh
         
     Loop
     '************************************************
-    Close #1
+    Close #FileNum
 
 Exit Sub
 
 ErrorHandler:
-    Close #1
+    Close #FileNum
     MsgBox "Error while loading the Grh.dat! Stopped at GRH number: " & Grh
     IsUnloading = 1
 
@@ -2462,10 +2324,10 @@ Dim i As Integer
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CLng(Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
-            Engine_Init_Grh HeadData(LoopC).Blink(i), CLng(Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CLng(Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CLng(Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CLng(Var_Get(DataPath & "Head.dat", LoopC, i)), 0
+            Engine_Init_Grh HeadData(LoopC).Blink(i), CLng(Var_Get(DataPath & "Head.dat", LoopC, "b" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CLng(Var_Get(DataPath & "Head.dat", LoopC, "a" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CLng(Var_Get(DataPath & "Head.dat", LoopC, "ab" & i)), 0
         Next i
     Next LoopC
 
@@ -2477,12 +2339,10 @@ Public Sub Engine_Init_NPCChat(ByVal Language As String)
 'Loads the NPC messages according to the language
 '*****************************************************************
 Dim Conditions() As NPCChatLineCondition
-Dim Distance As Long
 Dim NumConditions As Byte   'The number of conditions
 Dim ConditionFlags As Long  'States what conditions are currently used (so we don't have to loop through the Conditions() array)
 Dim ChatLine As Byte    'The chat line for the current index
 Dim ErrTxt As String    'If there is an error, this extra text is added
-Dim ChatIndex As Byte   'Index of the chat line
 Dim HighIndex As Long   'Highest index retrieved
 Dim Index As Long       'Current index
 Dim FileNum As Byte
@@ -2826,17 +2686,6 @@ ErrOut:
     
 End Sub
 
-Sub Engine_Init_MapData()
-
-'*****************************************************************
-'Load Map.dat
-'*****************************************************************
-    
-    'Get Number of Maps
-    NumMaps = CInt(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
-
-End Sub
-
 Sub Engine_Init_ParticleEngine(Optional ByVal SkipToTextures As Boolean = False)
 
 '*****************************************************************
@@ -2895,18 +2744,6 @@ Private Sub Engine_Init_RenderStates()
     End With
 
 End Sub
-
-Function Engine_FtoDW(F As Single) As Long
-Dim Buf As D3DXBuffer
-Dim TempVal As Long
-
-    'Converts a single into a long (Float to DWORD)
-    Set Buf = D3DX.CreateBuffer(4)
-    D3DX.BufferSetData Buf, 0, 4, 1, F
-    D3DX.BufferGetData Buf, 0, 4, 1, TempVal
-    Engine_FtoDW = TempVal
-
-End Function
 
 Sub Engine_Init_Texture(ByVal TextureNum As Integer)
 
@@ -3062,7 +2899,7 @@ Dim V As Single
 
 End Sub
 
-Function Engine_Init_TileEngine() As Boolean
+Public Sub Engine_Init_TileEngine()
 
 '*****************************************************************
 'Init Tile Engine
@@ -3114,10 +2951,10 @@ Dim t As Long
     Sound_Init
 
     'Create the D3D Device
-    If Engine_Init_D3DDevice(D3DCREATE_PUREDEVICE) = 0 Then
-        If Engine_Init_D3DDevice(D3DCREATE_HARDWARE_VERTEXPROCESSING) = 0 Then
-            If Engine_Init_D3DDevice(D3DCREATE_MIXED_VERTEXPROCESSING) = 0 Then
-                If Engine_Init_D3DDevice(D3DCREATE_SOFTWARE_VERTEXPROCESSING) = 0 Then
+    If Not Engine_Init_D3DDevice(D3DCREATE_PUREDEVICE) Then
+        If Not Engine_Init_D3DDevice(D3DCREATE_HARDWARE_VERTEXPROCESSING) Then
+            If Not Engine_Init_D3DDevice(D3DCREATE_MIXED_VERTEXPROCESSING) Then
+                If Not Engine_Init_D3DDevice(D3DCREATE_SOFTWARE_VERTEXPROCESSING) Then
                     MsgBox "Could not init D3DDevice. Exiting..."
                     Engine_Init_UnloadTileEngine
                     Engine_UnloadAllForms
@@ -3183,10 +3020,9 @@ Dim t As Long
     End If
     
     'Start the engine
-    Engine_Init_TileEngine = True
     EngineRun = True
 
-End Function
+End Sub
 
 Public Sub Engine_Init_UnloadTileEngine()
 
@@ -3418,9 +3254,7 @@ Dim i As Long
             LightningTimer = 15000 + (Rnd * 15000)  'Reset timer (flash every 15 to 30 seconds)
             FlashTimer = 250    'How long the flash is (miliseconds)
             
-            'Randomly place the lightning
-            LightningX = 50 + Rnd * 700
-            LightningY = Rnd * -200
+            'Sound effect
             Sound_Play WeatherSfx2, DSBPLAY_DEFAULT  'BAM!
             
             'Change the light of all the tiles to white
@@ -3539,7 +3373,7 @@ Dim Offset As Long
     ActiveAsk.AskIndex = AskIndex
     ActiveAsk.ChatIndex = ChatIndex
     ActiveAsk.AskName = NPCName
-    ActiveAsk.QuestionTxt = NPCName & ": " & vbNewLine & Engine_WordWrap(NPCChat(ChatIndex).Ask.Ask(AskIndex).Question, GameWindow.NPCChat.Screen.Width - 10, vbNewLine)
+    ActiveAsk.QuestionTxt = NPCName & ": " & vbNewLine & Engine_WordWrap(NPCChat(ChatIndex).Ask.Ask(AskIndex).Question, GameWindow.NPCChat.Screen.Width - 10)
 
     'Set the window information
     With GameWindow.NPCChat
@@ -3676,7 +3510,6 @@ Sub Engine_MoveUser(ByVal Direction As Byte)
 '*****************************************************************
 'Move user in appropriate direction
 '*****************************************************************
-Dim Running As Byte
 Dim ax As Integer
 Dim ay As Integer
 Dim aX2 As Integer
@@ -3685,7 +3518,6 @@ Dim aX3 As Integer
 Dim aY3 As Integer
 Dim Direction2 As Byte
 Dim Direction3 As Byte
-Dim b As Byte
 
     'Check for a valid UserCharIndex
     If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
@@ -3761,7 +3593,7 @@ Dim b As Byte
         LastClickedWindow = AmountWindow Or LastClickedWindow = BankWindow Then LastClickedWindow = 0
     AmountWindowUsage = 0
     AmountWindowItemIndex = 0
-    AmountWindowValue = ""
+    AmountWindowValue = vbNullString
 
     'Try the first movement
     If Engine_LegalPos(UserPos.X + ax, UserPos.Y + ay, Direction) Then
@@ -3866,31 +3698,26 @@ Sub Engine_OBJ_Erase(ByVal ObjIndex As Integer)
 'Erase an object from the map and update the LastOBJ value
 '*****************************************************************
 
-Dim j As Integer
-
-'Check for a valid object
-
+    'Check for a valid object
     If ObjIndex > LastObj Then Exit Sub
     If ObjIndex <= 0 Then Exit Sub
 
     'Erase the object
-    OBJList(ObjIndex).Grh.GrhIndex = 0
-    OBJList(ObjIndex).Pos.X = 0
-    OBJList(ObjIndex).Pos.Y = 0
+    ZeroMemory OBJList(ObjIndex), Len(OBJList(ObjIndex))
 
     'Update LastOBJ
-    If j = LastObj Then
+    If ObjIndex = LastObj Then
         Do Until OBJList(LastObj).Grh.GrhIndex > 1
             'Move down one object
             LastObj = LastObj - 1
             If LastObj = 0 Then Exit Do
         Loop
-        If j <> LastObj Then
+        If ObjIndex <> LastObj Then
             'We still have objects, resize the array to end at the last used slot
-            If j <> 0 Then
+            If ObjIndex <> 0 Then
                 ReDim Preserve OBJList(1 To LastObj)
             Else
-                ReDim OBJList(1 To 1)
+                Erase OBJList
             End If
         End If
     End If
@@ -3914,40 +3741,6 @@ Function Engine_PixelPosY(ByVal Y As Integer) As Integer
 '*****************************************************************
 
     Engine_PixelPosY = (Y - 1) * TilePixelHeight
-
-End Function
-
-Private Function Engine_ReadField(Pos As Integer, Text As String, SepASCII As Integer) As String
-
-'*****************************************************************
-'Gets a field from a string
-'*****************************************************************
-
-Dim i As Integer
-Dim LastPos As Integer
-Dim CurChar As String * 1
-Dim FieldNum As Integer
-Dim Seperator As String
-
-    Seperator = Chr$(SepASCII)
-
-    LastPos = 0
-    FieldNum = 0
-    For i = 1 To Len(Text)
-        CurChar = Mid$(Text, i, 1)
-        If CurChar = Seperator Then
-            FieldNum = FieldNum + 1
-            If FieldNum = Pos Then
-                Engine_ReadField = Mid$(Text, LastPos + 1, (InStr(LastPos + 1, Text, Seperator, vbTextCompare) - 1) - (LastPos))
-                Exit Function
-            End If
-            LastPos = i
-        End If
-    Next i
-    FieldNum = FieldNum + 1
-    If FieldNum = Pos Then
-        Engine_ReadField = Mid$(Text, LastPos + 1)
-    End If
 
 End Function
 
@@ -4020,39 +3813,39 @@ Dim IX As Single
     
 End Function
 
-Public Function Engine_Collision_LineRect(ByVal sX As Long, ByVal sY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+Public Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
 
 '*****************************************************************
 'Check if a line intersects with a rectangle (returns 1 if true)
 '*****************************************************************
 
     'Top line
-    If Engine_Collision_Line(sX, sY, sX + SW, sY, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
     
     'Right line
-    If Engine_Collision_Line(sX + SW, sY, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Bottom line
-    If Engine_Collision_Line(sX, sY + SH, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Left line
-    If Engine_Collision_Line(sX, sY, sX, sY + SW, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
 End Function
 
-Function Engine_Collision_Rect(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal Width1 As Integer, ByVal Height1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer, ByVal Width2 As Integer, ByVal Height2 As Integer)
+Function Engine_Collision_Rect(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal Width1 As Integer, ByVal Height1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer, ByVal Width2 As Integer, ByVal Height2 As Integer) As Boolean
 
 '*****************************************************************
 'Check for collision between two rectangles
@@ -4073,7 +3866,7 @@ Dim Rect2 As RECT
     Rect2.bottom = Y2 + Height2
 
     'Call collision API
-    Engine_Collision_Rect = IntersectRect(RetRect, Rect1, Rect2)
+    If IntersectRect(RetRect, Rect1, Rect2) Then Engine_Collision_Rect = True Else Engine_Collision_Rect = False
 
 End Function
 
@@ -4089,8 +3882,6 @@ Dim TempGrh As Grh
 Dim Moved As Boolean
 Dim IconCount As Byte
 Dim IconOffset As Integer
-Dim LoopC As Byte
-Dim Green As Byte
 Dim RenderColor(1 To 4) As Long
 Dim TempBlock As MapBlock
 Dim TempBlock2 As MapBlock
@@ -4099,7 +3890,6 @@ Dim BodyGrh As Grh
 Dim WeaponGrh As Grh
 Dim HairGrh As Grh
 Dim WingsGrh As Grh
-Dim UpdateNameVB As Byte
 
     '***** Set the variables *****
     
@@ -4211,8 +4001,6 @@ Dim UpdateNameVB As Byte
     PixelOffsetX = PixelOffsetX + CharList(CharIndex).MoveOffset.X
     PixelOffsetY = PixelOffsetY + CharList(CharIndex).MoveOffset.Y
     
-    If CharList(CharIndex).RealPos.X <> PixelOffsetX Or CharList(CharIndex).RealPos.Y <> PixelOffsetY Then UpdateNameVB = 1
-
     'Save the values in the realpos variable
     CharList(CharIndex).RealPos.X = PixelOffsetX
     CharList(CharIndex).RealPos.Y = PixelOffsetY
@@ -4346,8 +4134,8 @@ Dim UpdateNameVB As Byte
     End With
     
     'Health/Mana bars
-    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 34, (CharList(CharIndex).HealthPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, HealthColor, HealthColor, HealthColor, HealthColor, 0, , False
-    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 38, (CharList(CharIndex).ManaPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, ManaColor, ManaColor, ManaColor, ManaColor, 0, , False
+    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 34, (CharList(CharIndex).HealthPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, HealthColor, HealthColor, HealthColor, HealthColor, 0, False
+    Engine_Render_Rectangle PixelOffsetX - 4, PixelOffsetY + 38, (CharList(CharIndex).ManaPercent / 100) * 40, 4, 1, 1, 1, 1, 1, 1, 0, 0, ManaColor, ManaColor, ManaColor, ManaColor, 0, False
 
     'Draw the icons
     If IconCount > 0 Then
@@ -4541,7 +4329,11 @@ Dim FileNum As Integer
     'Check to make sure it is legal
     If Grh.GrhIndex < 1 Then Exit Sub
     If GrhData(Grh.GrhIndex).NumFrames < 1 Then Exit Sub
-    If Grh.FrameCounter < 1 Then Grh.FrameCounter = 1
+    If Grh.FrameCounter < 1 Then
+        'Grh has a delay, so just update the frame and then leave
+        Engine_UpdateGrh Grh, LoopAnim
+        Exit Sub
+    End If
     If Int(Grh.FrameCounter) > GrhData(Grh.GrhIndex).NumFrames Then Grh.FrameCounter = 1
     
     'Figure out what frame to draw (always 1 if not animated)
@@ -4575,13 +4367,13 @@ Dim FileNum As Integer
                     If AlternateRender = 0 Then
                     
                         'Render the texture with 2 triangles on a triangle strip
-                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
-                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, CurrGrhIndex, False
+                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, _
+                            GrhData(CurrGrhIndex).SY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, False
                         
                     Else
                         
                         'Render the texture as a D3DXSprite
-                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, GrhData(CurrGrhIndex).sY, Light1, FileNum, Angle
+                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, GrhData(CurrGrhIndex).SY, Light1, FileNum, Angle
                         
                     End If
                     
@@ -4879,12 +4671,11 @@ Dim j As Long
             'Draw entered text
             If EnterText = True Then
                 If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-                If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
+                If LenB(ShownText) <> 0 Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
                 If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
                     TempGrh.GrhIndex = 39
                     TempGrh.FrameCounter = 1
                     TempGrh.Started = 1
-                    TempGrh.SpeedCounter = 0
                     Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
                 End If
             End If
@@ -4934,7 +4725,7 @@ Dim j As Long
                 Engine_Render_Text "Read", .Screen.X + .ReadLbl.X, .Screen.Y + .ReadLbl.Y, -1
                 Engine_Render_Text "Write", .Screen.X + .WriteLbl.X, .Screen.Y + .WriteLbl.Y, -1
                 Engine_Render_Text "Delete", .Screen.X + .DeleteLbl.X, .Screen.Y + .DeleteLbl.Y, -1
-                If SelMessage > 0 Then Engine_Render_Rectangle .Screen.X + .List.X, .Screen.Y + .List.Y + ((SelMessage - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight, 1, 1, 1, 1, 1, 1, 0, 0, 2097217280, 2097217280, 2097217280, 2097217280, , , False  'ARGB: 125/0/255/0
+                If SelMessage > 0 Then Engine_Render_Rectangle .Screen.X + .List.X, .Screen.Y + .List.Y + ((SelMessage - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight, 1, 1, 1, 1, 1, 1, 0, 0, 2097217280, 2097217280, 2097217280, 2097217280, , False   'ARGB: 125/0/255/0
             End With
     
         Case ViewMessageWindow
@@ -4956,7 +4747,7 @@ Dim j As Long
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
                 
                 '"To" text box
-                If LenB(WriteMailData.RecieverName) Then Engine_Render_Text WriteMailData.RecieverName, .Screen.X + .From.X, .Screen.Y + .From.Y, -1
+                If LenB(WriteMailData.RecieverName) <> 0 Then Engine_Render_Text WriteMailData.RecieverName, .Screen.X + .From.X, .Screen.Y + .From.Y, -1
                 If WMSelCon = wmFrom Then
                     If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
                         TempGrh.GrhIndex = 39
@@ -4964,7 +4755,7 @@ Dim j As Long
                     End If
                 End If
                 'Subject text box
-                If LenB(WriteMailData.Subject) Then Engine_Render_Text WriteMailData.Subject, .Screen.X + .Subject.X, .Screen.Y + .Subject.Y, -1
+                If LenB(WriteMailData.Subject) <> 0 Then Engine_Render_Text WriteMailData.Subject, .Screen.X + .Subject.X, .Screen.Y + .Subject.Y, -1
                 If WMSelCon = wmSubject Then
                     If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
                         TempGrh.GrhIndex = 39
@@ -4973,7 +4764,7 @@ Dim j As Long
                 End If
                 'Message body text box
                 t = Engine_WordWrap(WriteMailData.Message, GameWindow.WriteMessage.Message.Width)
-                If LenB(WriteMailData.Message) Then Engine_Render_Text t, .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
+                If LenB(WriteMailData.Message) <> 0 Then Engine_Render_Text t, .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
                 If WMSelCon = wmMessage Then
                     If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
                         If InStr(1, t, vbNewLine) Then
@@ -5001,7 +4792,7 @@ Dim j As Long
         Case AmountWindow
             With GameWindow.Amount
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
-                If AmountWindowValue <> "" Then Engine_Render_Text AmountWindowValue, .Screen.X + .Value.X, .Screen.Y + .Value.Y, -1
+                If LenB(AmountWindowValue) <> 0 Then Engine_Render_Text AmountWindowValue, .Screen.X + .Value.X, .Screen.Y + .Value.Y, -1
             End With
 
     End Select
@@ -5097,7 +4888,7 @@ Dim i As Byte
     If Y + (ItemDescLines * Font_Default.CharHeight) > ScreenHeight Then Y = ScreenHeight - (ItemDescLines * Font_Default.CharHeight)
 
     'Draw backdrop
-    Engine_Render_Rectangle X - 5, Y - 5, ItemDescWidth + 10, (Font_Default.CharHeight * ItemDescLines) + 10, 1, 1, 1, 1, 1, 1, 0, 0, -1761607681, -1761607681, -1761607681, -1761607681, , , False
+    Engine_Render_Rectangle X - 5, Y - 5, ItemDescWidth + 10, (Font_Default.CharHeight * ItemDescLines) + 10, 1, 1, 1, 1, 1, 1, 0, 0, -1761607681, -1761607681, -1761607681, -1761607681, , False
 
     'Draw text
     For i = 1 To ItemDescLines
@@ -5141,7 +4932,7 @@ Private Sub Engine_ReadyTexture(ByVal TextureNum As Long)
 
 End Sub
 
-Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal GrhIndex As Long = 0, Optional ByVal InBoundsCheck As Boolean = True)
+Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal InBoundsCheck As Boolean = True)
 
 '************************************************************
 'Render a square/rectangle based on the specified values then rotate it if needed
@@ -5156,6 +4947,7 @@ Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
 Dim ShadowAdd As Single
+Dim l As Single
 
     'Perform in-bounds check if needed
     If InBoundsCheck Then
@@ -5184,9 +4976,8 @@ Dim ShadowAdd As Single
     VertexArray(2).Color = Color2
     VertexArray(3).Color = Color3
 
-    'We have to calculate shadows a bit differently, so use either one method or the other, not both on top of eachother
     If Shadow Then
-    
+
         'To make things easy, we just do a completely separate calculation the top two points
         ' with an uncropped tU / tV algorithm
         VertexArray(0).X = X + (Width * 0.5)
@@ -5196,67 +4987,75 @@ Dim ShadowAdd As Single
         
         VertexArray(1).X = VertexArray(0).X + Width
         VertexArray(1).tU = ((SrcX + Width) / SrcBitmapWidth)
-        
-        If X < 0 Then
-            VertexArray(2).tU = ((SrcX - X) / SrcBitmapWidth)
-        Else
-            VertexArray(2).X = X
-            VertexArray(2).tU = (SrcX / SrcBitmapWidth)
-        End If
-        If X + Width > ScreenWidth Then
-            VertexArray(3).X = ScreenWidth
-            VertexArray(3).tU = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
-        Else
-            VertexArray(3).X = X + Width
-            VertexArray(3).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
-        End If
+
+        VertexArray(2).X = X
+        VertexArray(2).tU = (SrcX / SrcBitmapWidth)
+
+        VertexArray(3).X = X + Width
+        VertexArray(3).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
 
     Else
-    
-        'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it... :p)
+        
+        'If the image is partially outside of the screen, it is trimmed so only that which is in the screen is drawn
+        'This provides for quite a decent FPS boost if you have lots of tiles that stretch outside of the view area
+        '------------------------------------------------------------------------------------------------------
+        'Important: Something about this doesn't seem to be functioning correctly. If you remove the + 32 from the
+        'ScreenWidth and ScreenHeight, you will get a very slightly distorted image for some tiles (usually 32x32 ones)
+        'To help hide this up, only those images more than 32 pixels outside of the viewing area will be trimmed
+        'If you want to help and try to fix this, change the TrimOffset to 0. On most graphic cards, you should notice
+        'some "cuts" in tiles being trimmed. If you can find out how to get rid of this "cut", contact me (Spodi)
+        'with what you did to fix it and I'll get it updated. :D It is easiest to see the cuts on the main map, on the
+        'bottom of the screen, in the water.
+        '------------------------------------------------------------------------------------------------------
+        Const TrimOffset As Single = 32
+        If X < -TrimOffset Then
+            SrcX = SrcX - X - TrimOffset
+            SrcWidth = SrcWidth + X + TrimOffset
+            Width = Width + X + TrimOffset
+            X = -TrimOffset
+        End If
+        If Y < -TrimOffset Then
+            SrcY = SrcY - Y - TrimOffset
+            SrcHeight = SrcHeight + Y + TrimOffset
+            Height = Height + Y + TrimOffset
+            Y = -TrimOffset
+        End If
+        If X + Width > ScreenWidth + TrimOffset Then
+            l = (X + Width) - (ScreenWidth + TrimOffset)
+            Width = Width - l
+            SrcWidth = SrcWidth - l
+        End If
+        If Y + Height > ScreenHeight + TrimOffset Then
+            l = (Y + Height) - (ScreenHeight + TrimOffset)
+            Height = Height - l
+            SrcHeight = SrcHeight - l
+        End If
+        
+        'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it)
         ShadowAdd = 1
 
         'Find the left side of the rectangle
-        If X < 0 Then
-            'VertexArray(0).X = 0 - No need to set - defaults at 0
-            VertexArray(0).tU = ((SrcX - X) / SrcBitmapWidth)
-        Else
-            VertexArray(0).X = X
-            VertexArray(0).tU = (SrcX / SrcBitmapWidth)
-        End If
-    
+        VertexArray(0).X = X
+        VertexArray(0).tU = (SrcX / SrcBitmapWidth)
+
         'Find the top side of the rectangle
-        If Y < 0 Then
-            'VertexArray(0).Y = 0 - No need to set - defaults at 0
-            VertexArray(0).tV = ((SrcY - Y) / SrcBitmapHeight)
-        Else
-            VertexArray(0).Y = Y
-            VertexArray(0).tV = (SrcY / SrcBitmapHeight)
-        End If
-        
+        VertexArray(0).Y = Y
+        VertexArray(0).tV = (SrcY / SrcBitmapHeight)
+    
         'Find the right side of the rectangle
-        If X + Width > ScreenWidth Then
-            VertexArray(1).X = ScreenWidth
-            VertexArray(1).tU = ((SrcX + SrcWidth + ShadowAdd) - ((X + Width) - ScreenWidth)) / SrcBitmapWidth
-        Else
-            VertexArray(1).X = X + Width
-            VertexArray(1).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
-        End If
-        
+        VertexArray(1).X = X + Width
+        VertexArray(1).tU = (SrcX + SrcWidth + ShadowAdd) / SrcBitmapWidth
+
+        'These values will only equal each other when not a shadow
         VertexArray(2).X = VertexArray(0).X
         VertexArray(3).X = VertexArray(1).X
 
     End If
     
     'Find the bottom of the rectangle
-    If Y + Height > ScreenHeight Then
-        VertexArray(2).Y = ScreenHeight
-        VertexArray(2).tV = ((SrcY + SrcHeight + ShadowAdd) - ((Y + Height) - ScreenHeight)) / SrcBitmapHeight
-    Else
-        VertexArray(2).Y = Y + Height
-        VertexArray(2).tV = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
-    End If
-    
+    VertexArray(2).Y = Y + Height
+    VertexArray(2).tV = (SrcY + SrcHeight + ShadowAdd) / SrcBitmapHeight
+
     'Because this is a perfect rectangle, all of the values below will equal one of the values we already got
     VertexArray(1).Y = VertexArray(0).Y
     VertexArray(1).tV = VertexArray(0).tV
@@ -5394,24 +5193,13 @@ Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal P
 '***********************************************
 'Draw current visible to scratch area based on TileX and TileY
 '***********************************************
-Dim TempGrh As Grh
-Dim TempRect As RECT    'Used to calculate/display our zoom level
-Dim ScreenX As Integer  'Keeps track of where to place tile on screen
-Dim ScreenY As Integer
 Dim ChrID() As Integer
 Dim ChrY() As Integer
-Dim Grh As Grh          'Temp Grh for show tile and blocked
-Dim x2 As Long
-Dim Y2 As Long
 Dim Y As Long           'Keeps track of where on map we are
 Dim X As Long
 Dim j As Long
 Dim Angle As Single
 Dim Layer As Byte
-Dim tX As Single
-Dim tY As Single
-Dim bX As Single
-Dim bY As Single
 
     'Check for valid positions
     If UserPos.X = 0 Then Exit Sub
@@ -5590,8 +5378,6 @@ Dim bY As Single
                 If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
                         If X <= (ScreenWidth + 32) Then
-                            x2 = (OBJList(j).Pos.X - minX)
-                            Y2 = (OBJList(j).Pos.Y - minY)
                             Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
                             Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(1), _
                                 MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(2), MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(3), _
@@ -5616,14 +5402,15 @@ Dim bY As Single
 
     'Sort the char list
     Engine_SortIntArray ChrY, ChrID, 1, LastChar
-
+ 
     'Loop through the sorted characters
     For j = 1 To LastChar
         If CharList(ChrID(j)).Active Then
             X = Engine_PixelPosX(CharList(ChrID(j)).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
             Y = Engine_PixelPosY(CharList(ChrID(j)).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+            
             If Y >= -32 And Y <= (ScreenHeight + 32) And X >= -32 And X <= (ScreenWidth + 32) Then
-                        
+                
                 'Update the NPC chat
                 Engine_NPCChat_Update ChrID(j)
             
@@ -5793,7 +5580,7 @@ Dim bY As Single
     'Loop through the chars
     For j = 1 To LastChar
         If CharList(j).Active Then
-            If LenB(CharList(j).BubbleStr) Then
+            If LenB(CharList(j).BubbleStr) <> 0 Then
                 If CharList(j).RealPos.X > -25 Then
                     If CharList(j).RealPos.X < ScreenWidth + 25 Then
                         If CharList(j).RealPos.Y > -25 Then
@@ -5802,7 +5589,7 @@ Dim bY As Single
                                 CharList(j).BubbleTime = CharList(j).BubbleTime - ElapsedTime
                                 If CharList(j).BubbleTime <= 0 Then
                                     CharList(j).BubbleTime = 0
-                                    CharList(j).BubbleStr = ""
+                                    CharList(j).BubbleStr = vbNullString
                                 End If
                             End If
                         End If
@@ -5906,7 +5693,7 @@ Dim bY As Single
                             
                             'Part of the user's group
                             j = D3DColorARGB(200, 100, 220, 100)
-                            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , , False
+                            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
                         
                         End If
                     Else
@@ -5931,7 +5718,7 @@ Dim bY As Single
                                         End If
                                         
                                         'Any character but one part of the user's group
-                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , , False
+                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
                                     
                                     End If
                                 End If
@@ -6206,7 +5993,7 @@ Dim j As Long
 
 End Sub
 
-Private Function Engine_NPCChat_MeetsConditions(ByVal NPCIndex As Integer, ByVal LineIndex As Byte, Optional ByVal SayLine As String = "") As Byte
+Private Function Engine_NPCChat_MeetsConditions(ByVal NPCIndex As Integer, ByVal LineIndex As Byte, Optional ByVal SayLine As String = vbNullString) As Byte
 
 '***************************************************
 'Checks if the conditions have been satisfied for a chat line
@@ -6225,7 +6012,7 @@ Dim i As Byte
     With NPCChat(CharList(NPCIndex).NPCChatIndex).ChatLine(LineIndex)
         
         'If the SayLine is used, it must be the user just talked - so we ONLY want a trigger line!
-        If LenB(SayLine) Then   'If the string is not empty
+        If LenB(SayLine) <> 0 Then   'If the string is not empty
             SayLine = " " & UCase$(SayLine) & " "   'We compair it in UCase$(), since case doesn't matter
             If .NumConditions = 0 Then Exit Function        'If there are no conditions, then theres definintely no SAY condition
             For i = 1 To .NumConditions
@@ -6243,7 +6030,7 @@ Dim i As Byte
                 
                 'If there is a SAY requirement, things get tricky...
                 Case NPCCHAT_COND_SAY
-                    If SayLine = "" Then Exit Function  'No chance it can be right if theres no text!
+                    If LenB(SayLine) = 0 Then Exit Function     'No chance it can be right if theres no text!
                     s() = Split(.Conditions(i).ValueStr, ",")   'Split up our commas (which allow us to have multiple valid words)
                     For j = 0 To UBound(s)  'Loop through each word so we can check if it is in the SayLine
                         If InStr(1, SayLine, s(j)) Then 'Check if the trigger word is in the SayLine
@@ -6384,7 +6171,7 @@ Private Sub Engine_NPCChat_AddText(ByVal CharIndex As Integer)
     With CharList(CharIndex)
 
         'Check for text before adding it
-        If LenB(NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text) Then
+        If LenB(NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text) <> 0 Then
     
             'Find out the style used, and add the chat according to the style
             Select Case NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Style
@@ -6406,7 +6193,7 @@ Private Sub Engine_NPCChat_AddText(ByVal CharIndex As Integer)
 
 End Sub
 
-Private Function Engine_NPCChat_NextLine(ByVal CharIndex As Integer, Optional ByVal ChatTxt As String = "")
+Private Function Engine_NPCChat_NextLine(ByVal CharIndex As Integer, Optional ByVal ChatTxt As String) As Byte
 
 '***************************************************
 'Gets the next free line to use for the NPC chat (0 if none found)
@@ -6755,8 +6542,6 @@ Public Sub Engine_Render_Skills()
 '***************************************************
 'Render the spells list
 '***************************************************
-
-Const ListWidth As Byte = 10
 Dim TempGrh As Grh
 Dim i As Byte
 
@@ -6776,7 +6561,7 @@ Dim i As Byte
 
 End Sub
 
-Public Function Engine_Render_Text(ByVal Text As String, ByVal X As Long, ByVal Y As Long, ByVal Color As Long) As Direct3DVertexBuffer8
+Public Sub Engine_Render_Text(ByVal Text As String, ByVal X As Long, ByVal Y As Long, ByVal Color As Long)
 
 '************************************************************
 'Draw text on D3DDevice
@@ -6799,10 +6584,10 @@ Dim v3 As D3DVECTOR2
 Dim YOffset As Single
     
     'Check if we have the device
-    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Function
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
     'Check for valid text to render
-    If LenB(Text) = 0 Then Exit Function
+    If LenB(Text) = 0 Then Exit Sub
     
     'Assign the alternate rendering value
     AlternateRender = AlternateRenderText
@@ -6927,7 +6712,7 @@ Dim YOffset As Single
     'Retreive the default alternate render value
     AlternateRender = AlternateRenderDefault
 
-End Function
+End Sub
 
 Public Sub Engine_SetItemDesc(ByVal Name As String, Optional ByVal Amount As Integer = 0, Optional ByVal Value As Long = 0)
 
@@ -7001,7 +6786,6 @@ Sub Engine_ShowNextFrame()
         ElapsedTime = Engine_ElapsedTime()
         If ElapsedTime > 200 Then ElapsedTime = 200
         TickPerFrame = (ElapsedTime * EngineBaseSpeed)
-        TimerMultiplier = TickPerFrame * 0.075
         If FPSLastCheck + 1000 < timeGetTime Then
             FPS = FramesPerSecCounter
             FramesPerSecCounter = 1
@@ -7063,19 +6847,15 @@ Public Sub Engine_SortIntArray(TheArray() As Integer, TheIndex() As Integer, ByV
 '*****************************************************************
 'Sort an array of integers
 '*****************************************************************
-
-Dim s(1 To 64) As Integer   'Stack space for pending Subarrays
 Dim indxt As Long   'Stored index
 Dim swp As Integer  'Swap variable
 Dim F As Integer    'Subarray Minimum
 Dim G As Integer    'Subarray Maximum
-Dim h As Integer    'Subarray Middle
 Dim i As Integer    'Subarray Low  Scan Index
 Dim j As Integer    'Subarray High Scan Index
 Dim t As Integer    'Stack pointer
 
-'Set the array boundries to f and g
-
+    'Set the array boundries to f and g
     F = LowerBound
     G = UpperBound
 
@@ -7096,8 +6876,8 @@ Dim t As Integer    'Stack pointer
         If t = 0 Then Exit Do
 
         'Pop stack and begin new partitioning round
-        G = s(t)
-        F = s(t - 1)
+        G = 0
+        F = 0
         t = t - 2
 
     Loop

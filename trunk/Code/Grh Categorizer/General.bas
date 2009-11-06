@@ -1,8 +1,6 @@
 Attribute VB_Name = "General"
 Option Explicit
 
-Public Const NumFlags As Long = 50
-
 Public CurrGrhNum As Long
 Public CurrGrh As Grh
 
@@ -51,10 +49,8 @@ Private GrhData() As GrhData
 
 'Surfaces
 Private Const SurfaceTimerMax As Single = 30000      'How long a texture stays in memory unused (miliseconds)
-Private Const SoundBufferTimerMax As Single = 30000  'How long a sound stays in memory unused (miliseconds)
 Private SurfaceDB() As Direct3DTexture8          'The list of all the textures
 Private SurfaceTimer() As Integer                'How long until the surface unloads
-Private SoundBufferTimer() As Integer            'How long until the sound buffer unloads
 Private LastTexture As Long                      'The last texture used
 Private SurfaceSize() As Point
 

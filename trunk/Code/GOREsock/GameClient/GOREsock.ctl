@@ -93,8 +93,6 @@ End Type
 
 'Class module Defined
 Private Type typSocket
-    PacketInPos As Byte     'Used the find the key to encrypt/decrypt with
-    PacketOutPos As Byte
     Socket As Long ' The actual WinSock API socket number
     SocketAddr As typSocketAddr ' Info about the connection
     State As enmSoxState

@@ -38,42 +38,41 @@ Private Const SumBandit_Cost As Single = 1       'Magic * SummonBandit_Cost
 Private Const SumBandit_Exhaust As Long = 3000
 Private Const SumBandit_Length As Long = 300000  'Summoned NPC automatically dispells (dies) after this time goes by
 
-Public Function Skill_SummonBandit_PC(ByVal CasterIndex As Integer) As Byte
+Public Sub Skill_SummonBandit_PC(ByVal CasterIndex As Integer)
 
 '*****************************************************************
 'Summon a bandit to fight with you
 '*****************************************************************
 Dim CharIndex As Integer
 Dim tIndex As Integer
-Dim i As Byte
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.SummonBandit) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * SumBandit_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Make sure the user doesn't have too many summons already
     If UserList(CasterIndex).NumSlaves >= MaxSummons Then
         Data_Send ToIndex, CasterIndex, cMessage(127).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Summon the NPC
     tIndex = Load_NPC(2, 1, SumBandit_Length)
     
     'Check for an invalid index (load failed)
-    If tIndex < 1 Then Exit Function
+    If tIndex < 1 Then Exit Sub
     
     'Find a legal position
     Server_ClosestLegalPos UserList(CasterIndex).Pos, NPCList(tIndex).Pos
@@ -81,7 +80,7 @@ Dim i As Byte
     'Check if the position is legal
     If Not Server_LegalPos(NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y, 0) Then
         NPC_Close tIndex
-        Exit Function
+        Exit Sub
     End If
     
     'Set up the NPC's information
@@ -128,9 +127,9 @@ Dim i As Byte
     'Reduce the user's mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
     
-End Function
+End Sub
 
-Public Function Skill_ValidSkillForClass(ByVal Class As Integer, ByVal SkillID As Byte) As Byte
+Public Function Skill_ValidSkillForClass(ByVal Class As Integer, ByVal SkillID As Byte) As Boolean
 
 '*****************************************************************
 'Check if the SkillID can be used by the class
@@ -148,42 +147,41 @@ Dim ClassReq As Integer
     If ClassReq <> 0 Then
     
         'Check the ClassReq VS the passed class
-        If Class And ClassReq Then
-        Else
-        Exit Function
-        End If
-        
-    End If
+        Skill_ValidSkillForClass = (Class And ClassReq)
 
-    'If we haven't aborted then it is valid
-    Skill_ValidSkillForClass = 1
+    Else
+
+        'No requirements
+        Skill_ValidSkillForClass = True
+
+    End If
 
 End Function
 
-Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises all the character's stats
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
@@ -199,7 +197,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
             ConBuf.Put_String "bless"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -260,22 +258,21 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     
     'Successfully casted
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Bless_PCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises all the character's stats
 '*****************************************************************
     
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Function
-    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Sub
+    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Sub
     
     'Check for enough mana to cast
-    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost) Then Exit Function
+    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost) Then Exit Sub
 
     'Reduce the mana
     NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost)
@@ -284,7 +281,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     If NPCList(TargetIndex).Counters.ProtectCounter > 0 Then
         If NPCList(TargetIndex).Skills.Protect > NPCList(CasterIndex).ModStat(SID.Mag) Then
             'Power of what we are casting is weaker then what is already applied
-            Exit Function
+            Exit Sub
         End If
     End If
     
@@ -339,22 +336,21 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     
     'Successfully casted
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Protection_NPCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises all the character's stats
 '*****************************************************************
     
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Function
-    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Sub
+    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Sub
     
     'Check for enough mana to cast
-    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost) Then Exit Function
+    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost) Then Exit Sub
 
     'Reduce the mana
     NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost)
@@ -363,7 +359,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     If NPCList(TargetIndex).Counters.StrengthenCounter > 0 Then
         If NPCList(TargetIndex).Skills.Strengthen > NPCList(CasterIndex).ModStat(SID.Mag) Then
             'Power of what we are casting is weaker then what is already applied
-            Exit Function
+            Exit Sub
         End If
     End If
     
@@ -418,22 +414,21 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     
     'Successfully casted
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Strengthen_NPCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises all the character's stats
 '*****************************************************************
     
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Function
-    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > timeGetTime Then Exit Sub
+    If NPCList(CasterIndex).Counters.ActionDelay > timeGetTime Then Exit Sub
     
     'Check for enough mana to cast
-    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost) Then Exit Function
+    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost) Then Exit Sub
 
     'Reduce the mana
     NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost)
@@ -442,7 +437,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     If NPCList(TargetIndex).Counters.BlessCounter > 0 Then
         If NPCList(TargetIndex).Skills.Bless > NPCList(CasterIndex).ModStat(SID.Mag) Then
             'Power of what we are casting is weaker then what is already applied
-            Exit Function
+            Exit Sub
         End If
     End If
     
@@ -495,36 +490,35 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     End If
     
-    'Successfully casted
+    'Upate the NPC's stats that was casted on
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Bless_NPCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises the character's damage
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Strengthen) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost)
@@ -540,7 +534,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
             ConBuf.Put_String "strengthen"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -601,34 +595,33 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     
     'Successfully casted
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Strengthen_PCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises the character's defence
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Protection) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost)
@@ -644,7 +637,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
             ConBuf.Put_String "protection"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -705,35 +698,34 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     
     'Successfully casted
     NPCList(TargetIndex).flags.UpdateStats = 1
-    Skill_Protection_PCtoNPC = 1
     
-End Function
+End Sub
 
-Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises all the character's stats
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
@@ -749,7 +741,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
             ConBuf.Put_String "bless"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -819,36 +811,33 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
     Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
-    'Successfully casted
-    Skill_Bless_PCtoPC = 1
-    
-End Function
+End Sub
 
-Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises the character's damage
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Strengthen) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost)
@@ -864,7 +853,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
             ConBuf.Put_String "strengthen"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -934,36 +923,33 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
     Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
-    'Successfully casted
-    Skill_Strengthen_PCtoPC = 1
-    
-End Function
+End Sub
 
-Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Raises the character's defence
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Protection) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     
     'Check for a valid target distance
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
     
     'Reduce the mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost)
@@ -979,7 +965,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
             ConBuf.Put_String "protection"
             ConBuf.Put_String UserList(CasterIndex).Name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
-            Exit Function
+            Exit Sub
             
         End If
     End If
@@ -1049,37 +1035,34 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
     Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
-    'Successfully casted
-    Skill_Protection_PCtoPC = 1
-    
-End Function
+End Sub
 
-Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Heal the target at the cost of mana
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * Heal_Cost Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Cost)
 
     'Check for a valid range
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Heal_Exhaust
@@ -1126,13 +1109,10 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     ConBuf.Put_String UserList(CasterIndex).Name
     ConBuf.Put_Integer UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
-    
-    'Successfully casted
-    Skill_Heal_PCtoPC = 1
 
-End Function
+End Sub
 
-Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Boolean
 
 '*****************************************************************
 'Heal the target at the cost of mana
@@ -1176,36 +1156,35 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     End If
     
-    'Successfully casted
-    Skill_Heal_NPCtoNPC = 1
-
+    Skill_Heal_NPCtoNPC = True
+    
 End Function
 
-Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+Public Sub Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer)
 
 '*****************************************************************
 'Heal the target at the cost of mana
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * Heal_Cost Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Cost)
 
     'Check for a valid range
-    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
+    If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Sub
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Heal_Exhaust
@@ -1241,29 +1220,26 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
-    
-    'Successfully casted
-    Skill_Heal_PCtoNPC = 1
 
-End Function
+End Sub
 
-Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
+Public Sub Skill_IronSkin_PC(ByVal UserIndex As Integer)
 
 '*****************************************************************
 'Decreases user attack by 50% to increase defence by 200%
 '*****************************************************************
 
     'Check for invalid values
-    If UserIndex = 0 Then Exit Function
+    If UserIndex = 0 Then Exit Sub
   
     'Check for the skill in the user posession
     If UserList(UserIndex).KnownSkills(SkID.IronSkin) = 0 Then
         Data_Send ToIndex, UserIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Check if still exhausted
-    If UserList(UserIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(UserIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     UserList(UserIndex).Counters.SpellExhaustion = timeGetTime + 2000
     ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
@@ -1296,13 +1272,10 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
     End If
     
     UserList(UserIndex).Stats.Update = 1
-    
-    'Successfully casted
-    Skill_IronSkin_PC = 1
 
-End Function
+End Sub
 
-Public Function Skill_SpikeField(ByVal CasterIndex As Integer) As Byte
+Public Sub Skill_SpikeField(ByVal CasterIndex As Integer)
 
 '*****************************************************************
 'Forms a field of spikes around the user
@@ -1318,6 +1291,9 @@ Public Function Skill_SpikeField(ByVal CasterIndex As Integer) As Byte
 '-------------------------------------------------------------------------------------------
 '--- WARNING! THIS SKILL IS CODED POORLY AND I DO NOT RECOMMEND YOU USE IT IN YOUR GAME! ---
 '-------------------------------------------------------------------------------------------
+'--- Theres problems that will arise if you cast it on the side of the map, along with   ---
+'--- it just isn't a good structure as it is                                             ---
+'-------------------------------------------------------------------------------------------
 '-------------------------------------------------------------------------------------------
 
 Dim aMap As Integer
@@ -1326,18 +1302,18 @@ Dim aY As Integer
 Dim Damage As Long
 
     'Check for spell exhaustion
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.SpikeField) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 2) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
-        Exit Function
+        Exit Sub
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 2)
 
@@ -1482,12 +1458,9 @@ Dim Damage As Long
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
-    'Successfully casted
-    Skill_SpikeField = 1
+End Sub
 
-End Function
-
-Public Function Skill_Warcry_PC(ByVal CasterIndex As Integer) As Byte
+Public Sub Skill_Warcry_PC(ByVal CasterIndex As Integer)
 
 '*****************************************************************
 'Lower the stats of all attackable hostiles in range
@@ -1496,18 +1469,18 @@ Dim LoopC As Integer
 Dim WarCursePower As Integer
 
     'Check if still exhausted
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Warcry) = 0 Then
         Data_Send ToIndex, CasterIndex, cMessage(37).Data
-        Exit Function
+        Exit Sub
     End If
 
     'Check for enough endurance
     If UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) < Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * Warcry_Cost) Then
         Data_Send ToIndex, CasterIndex, cMessage(48).Data
-        Exit Function
+        Exit Sub
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) = UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) - Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * Warcry_Cost)
 
@@ -1561,7 +1534,4 @@ Dim WarCursePower As Integer
         End If
     Next LoopC
     
-    'Successfully casted
-    Skill_Warcry_PC = 1
-
-End Function
+End Sub

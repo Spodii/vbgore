@@ -30,7 +30,6 @@ Private m_XORKeyValue As String
 Private m_KeyS As String
 
 Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
-Private Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
 
 Sub GenerateEncryptionKeys(ByRef PacketKeys() As String)
 
@@ -45,7 +44,6 @@ Dim B2() As Byte
 Dim b() As Byte
 Dim i As Long
 Dim j As Long
-Dim k As Long
 
     'Set the start values
     Seed = PacketEncSeed
@@ -174,11 +172,9 @@ Dim j As Long
 Dim Temp As Byte
 Dim Offset As Long
 Dim OrigLen As Long
-Dim CipherLen As Long
 Dim sBox(0 To 255) As Integer
 
-'Set the new key (optional)
-
+    'Set the new key (optional)
     If (Len(Key) > 0) Then Encryption_RC4_SetKey Key
 
     'Create a local copy of the sboxes, this
@@ -188,7 +184,6 @@ Dim sBox(0 To 255) As Integer
 
     'Get the size of the source array
     OrigLen = UBound(ByteArray) + 1
-    CipherLen = OrigLen
 
     'Encrypt the data
     For Offset = 0 To (OrigLen - 1)
@@ -335,13 +330,9 @@ Dim ByteArray() As Byte
 End Sub
 
 Public Function Encryption_XOR_DecryptString(Text As String, Optional Key As String) As String
-
-Dim a As Long
-Dim ByteLen As Long
 Dim ByteArray() As Byte
 
-'Convert the source string into a byte array
-
+    'Convert the source string into a byte array
     ByteArray() = StrConv(Text, vbFromUnicode)
 
     'Encrypt the byte array
@@ -353,18 +344,14 @@ Dim ByteArray() As Byte
 End Function
 
 Public Sub Encryption_XOR_EncryptByte(ByteArray() As Byte, Optional Key As String)
-
 Dim Offset As Long
 Dim ByteLen As Long
-Dim ResultLen As Long
 
-'Set the new key if one was provided
-
+    'Set the new key if one was provided
     If (Len(Key) > 0) Then Encryption_XOR_SetKey Key
 
     'Get the size of the source array
     ByteLen = UBound(ByteArray) + 1
-    ResultLen = ByteLen
 
     'Loop thru the data encrypting it with simply XOR´ing with the key
     For Offset = 0 To (ByteLen - 1)
@@ -410,13 +397,9 @@ Dim ByteArray() As Byte
 End Sub
 
 Public Function Encryption_XOR_EncryptString(Text As String, Optional Key As String) As String
-
-Dim a As Long
-Dim ByteLen As Long
 Dim ByteArray() As Byte
 
-'Convert the source string into a byte array
-
+    'Convert the source string into a byte array
     ByteArray() = StrConv(Text, vbFromUnicode)
 
     'Encrypt the byte array

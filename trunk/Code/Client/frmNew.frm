@@ -1,57 +1,86 @@
 VERSION 5.00
 Begin VB.Form frmNew 
+   AutoRedraw      =   -1  'True
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
    Caption         =   "vbGORE Login"
-   ClientHeight    =   3270
+   ClientHeight    =   3360
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   2940
+   ClientWidth     =   5280
    LinkTopic       =   "Form1"
-   ScaleHeight     =   218
+   Picture         =   "frmNew.frx":0000
+   ScaleHeight     =   224
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   196
+   ScaleWidth      =   352
    StartUpPosition =   2  'CenterScreen
    Begin VB.ComboBox HeadCmb 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   315
-      Left            =   1080
+      Height          =   330
+      Left            =   960
       Style           =   2  'Dropdown List
-      TabIndex        =   11
-      Top             =   1560
-      Width           =   1695
+      TabIndex        =   4
+      Top             =   2355
+      Width           =   2055
    End
    Begin VB.ComboBox ClassCmb 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   315
-      Left            =   1080
+      Height          =   330
+      Left            =   960
       Style           =   2  'Dropdown List
-      TabIndex        =   9
-      Top             =   1920
-      Width           =   1695
+      TabIndex        =   2
+      Top             =   1530
+      Width           =   2055
    End
    Begin VB.ComboBox BodyCmb 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   315
-      Left            =   1080
+      Height          =   330
+      Left            =   960
       Style           =   2  'Dropdown List
-      TabIndex        =   7
-      Top             =   1200
-      Width           =   1695
+      TabIndex        =   3
+      Top             =   1935
+      Width           =   2055
    End
    Begin VB.TextBox PasswordTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       BorderStyle     =   0  'None
       BeginProperty Font 
-         Name            =   "Times New Roman"
-         Size            =   12
+         Name            =   "Arial"
+         Size            =   9.75
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
@@ -60,18 +89,20 @@ Begin VB.Form frmNew
       EndProperty
       ForeColor       =   &H00FFFFFF&
       Height          =   345
-      Left            =   1440
-      TabIndex        =   3
-      Top             =   660
-      Width           =   1275
+      Left            =   840
+      MultiLine       =   -1  'True
+      TabIndex        =   1
+      Text            =   "frmNew.frx":39C42
+      Top             =   1125
+      Width           =   1875
    End
    Begin VB.TextBox NameTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       BorderStyle     =   0  'None
       BeginProperty Font 
-         Name            =   "Times New Roman"
-         Size            =   12
+         Name            =   "Arial"
+         Size            =   9.75
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
@@ -80,150 +111,12 @@ Begin VB.Form frmNew
       EndProperty
       ForeColor       =   &H00FFFFFF&
       Height          =   345
-      Left            =   1080
-      TabIndex        =   1
-      Top             =   210
-      Width           =   1635
-   End
-   Begin VB.Label Label7 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Head:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
-      TabIndex        =   10
-      Top             =   1560
-      Width           =   645
-   End
-   Begin VB.Label Label6 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Class:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
-      TabIndex        =   8
-      Top             =   1920
-      Width           =   660
-   End
-   Begin VB.Label Label5 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Body:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
-      TabIndex        =   6
-      Top             =   1200
-      Width           =   615
-   End
-   Begin VB.Label CreateLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Create"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   2040
-      TabIndex        =   5
-      Top             =   2880
-      Width           =   705
-   End
-   Begin VB.Label CancelLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Cancel"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
-      TabIndex        =   4
-      Top             =   2880
-      Width           =   735
-   End
-   Begin VB.Label Label2 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Password:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
-      TabIndex        =   2
-      Top             =   690
-      Width           =   1095
-   End
-   Begin VB.Label Label1 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Name:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   9.75
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   240
-      Left            =   240
+      Left            =   840
+      MultiLine       =   -1  'True
       TabIndex        =   0
-      Top             =   240
-      Width           =   690
+      Text            =   "frmNew.frx":39C46
+      Top             =   780
+      Width           =   1875
    End
 End
 Attribute VB_Name = "frmNew"
@@ -233,7 +126,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub CancelLbl_Click()
+Private Sub ClickCancel()
 
     'Show the connect screen
     frmConnect.Visible = True
@@ -243,7 +136,7 @@ Private Sub CancelLbl_Click()
 
 End Sub
 
-Private Sub CreateLbl_Click()
+Private Sub ClickCreate()
 
     'Set the variables
     UserName = NameTxt.Text
@@ -280,7 +173,42 @@ Private Sub CreateLbl_Click()
 
 End Sub
 
+Private Sub Form_Unload(Cancel As Integer)
+
+    FreePictureTextboxes Me.hwnd
+
+End Sub
+
+Private Sub NameTxt_KeyPress(KeyAscii As Integer)
+
+    'Because we have to use multiline to have the image set on the background, cancel new lines
+    If KeyAscii = Asc(vbNewLine) Then
+        KeyAscii = 0
+        ClickCreate
+    End If
+
+End Sub
+
+Private Sub PasswordTxt_KeyPress(KeyAscii As Integer)
+
+    'Because we have to use multiline to have the image set on the background, cancel new lines
+    If KeyAscii = Asc(vbNewLine) Then
+        KeyAscii = 0
+        ClickCreate
+    End If
+
+End Sub
+
+Private Sub Form_KeyPress(KeyAscii As Integer)
+
+    If KeyAscii = Asc(vbNewLine) Then ClickCreate
+
+End Sub
+
 Private Sub Form_Load()
+
+    'Set the text boxes to transparent
+    SetPictureTextboxes Me.hwnd
 
     'Load up the head, body and class values you can select
     'For the head and body, to add more, you have to edit it accordingly in the server
@@ -316,4 +244,14 @@ Private Sub Form_Load()
         .ListIndex = 0
     End With
     
+End Sub
+
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    'Click on "Create"
+    If Engine_Collision_Rect(X, Y, 1, 1, 5, 189, 66, 15) Then ClickCreate
+    
+    'Click on "Cancel"
+    If Engine_Collision_Rect(X, Y, 1, 1, 118, 190, 66, 15) Then ClickCancel
+
 End Sub

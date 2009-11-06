@@ -32,6 +32,8 @@ Private Type KeyDefinitions
     MoveSouth As Integer
     MoveWest As Integer
     ResetGUI As Integer
+    QuickTarget As Integer
+    QuickReply As Integer
 End Type
 Private KeyDefinitions As KeyDefinitions
 
@@ -40,6 +42,9 @@ Private Function Input_Keys_IsPressed(ByVal DefinitionValue As Integer, ByVal Ke
 '*****************************************************************
 'Checks if the definition requirements are met
 '*****************************************************************
+Dim CheckForInput As Boolean
+
+    CheckForInput = True
 
     'Check for shift, alt and control requirements
     If DefinitionValue And KeyPress_Shift Then
@@ -47,13 +52,46 @@ Private Function Input_Keys_IsPressed(ByVal DefinitionValue As Integer, ByVal Ke
     End If
     If DefinitionValue And KeyPress_Control Then
         If GetAsyncKeyState(17) = 0 Then Exit Function
+        CheckForInput = False   'No need to check for input if control is pressed
     End If
     If DefinitionValue And KeyPress_Alt Then
         If GetAsyncKeyState(18) = 0 Then Exit Function
+        CheckForInput = False   'No need to check for input if alt is pressed
+    End If
+    
+    'Remove the shift, alt and control bits, then check for the keycode requirements
+    If (DefinitionValue And 2047) <> KeyCode Then Exit Function
+    
+    'Check for input boxes being active so we don't run commands when typing
+    If CheckForInput Then
+    
+        'Typing in the chat buffer
+        If EnterText Then Exit Function
+    
+        'Writing a message in the mail window
+        If LastClickedWindow = WriteMessageWindow Then
+            If ShowGameWindow(WriteMessageWindow) <> 0 Then Exit Function
+        End If
+        
+        'Numeric only
+        If Input_Keys_IsNumeric(KeyCode) Then
+            
+            'Entering a value in the amount window
+            If LastClickedWindow = AmountWindow Then
+                If ShowGameWindow(AmountWindow) <> 0 Then Exit Function
+            End If
+            
+            'Entering a number on the NPC chat window
+            If LastClickedWindow = NPCChatWindow Then
+                If ShowGameWindow(NPCChatWindow) <> 0 Then Exit Function
+            End If
+            
+        End If
+
     End If
 
-    'Remove the shift, alt and control bits, then check for the keycode requirements
-    If (DefinitionValue And 2047) = KeyCode Then Input_Keys_IsPressed = True
+    'Every test has been passed
+    Input_Keys_IsPressed = True
 
 End Function
 
@@ -81,10 +119,12 @@ Dim i As Long
     KeyDefinitions.ZoomIn = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomIn"))
     KeyDefinitions.ZoomOut = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomOut"))
     KeyDefinitions.ResetGUI = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ResetGUI"))
+    KeyDefinitions.QuickTarget = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickTarget"))
+    KeyDefinitions.QuickReply = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickReply"))
     For i = 1 To 12
         KeyDefinitions.QuickBar(i) = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickBar" & i))
     Next i
-    
+
 End Sub
 
 Public Sub Input_Keys_ClearQueue()
@@ -95,7 +135,7 @@ Public Sub Input_Keys_ClearQueue()
 '*****************************************************************
 Dim i As Long
 
-    For i = 0 To 255
+    For i = 1 To 145
         GetAsyncKeyState i
     Next i
 
@@ -145,9 +185,9 @@ Dim diProp As DIPROPLONG
     
     'If in windowed mode, free the mouse from the screen
     If Windowed Then
-        Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_BACKGROUND Or DISCL_NONEXCLUSIVE)
+        Call DIDevice.SetCooperativeLevel(frmMain.hwnd, DISCL_BACKGROUND Or DISCL_NONEXCLUSIVE)
     Else
-        Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
+        Call DIDevice.SetCooperativeLevel(frmMain.hwnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
     End If
     
     diProp.lHow = DIPH_DEVICE
@@ -159,14 +199,6 @@ Dim diProp As DIPROPLONG
 
 End Sub
 
-Sub Input_Keys_Up(ByVal KeyCode As Integer, ByVal Shift As Integer)
-
-'*****************************************************************
-'Checks keys and respond
-'*****************************************************************
-
-End Sub
-
 Sub Input_Keys_Press(ByVal KeyAscii As Integer)
 
 '*****************************************************************
@@ -174,7 +206,6 @@ Sub Input_Keys_Press(ByVal KeyAscii As Integer)
 '*****************************************************************
 Dim StartGold As Long
 Dim b As Boolean
-Dim i As Long
 
     '*************************
     '***** Amount window *****
@@ -231,36 +262,36 @@ Dim i As Long
     ElseIf LastClickedWindow = WriteMessageWindow Then
         If WMSelCon Then
             Select Case WMSelCon
-            Case wmFrom
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.RecieverName) > 0 Then
-                        WriteMailData.RecieverName = Left$(WriteMailData.RecieverName, Len(WriteMailData.RecieverName) - 1)
+                Case wmFrom
+                    If KeyAscii = 8 Then
+                        If Len(WriteMailData.RecieverName) > 0 Then
+                            WriteMailData.RecieverName = Left$(WriteMailData.RecieverName, Len(WriteMailData.RecieverName) - 1)
+                        End If
+                    Else
+                        If Len(WriteMailData.RecieverName) < 10 Then
+                            If Game_ValidCharacter(KeyAscii) Then WriteMailData.RecieverName = WriteMailData.RecieverName & Chr$(KeyAscii)
+                        End If
                     End If
-                Else
-                    If Len(WriteMailData.RecieverName) < 10 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.RecieverName = WriteMailData.RecieverName & Chr$(KeyAscii)
+                Case wmSubject
+                    If KeyAscii = 8 Then
+                        If Len(WriteMailData.Subject) > 0 Then
+                            WriteMailData.Subject = Left$(WriteMailData.Subject, Len(WriteMailData.Subject) - 1)
+                        End If
+                    Else
+                        If Len(WriteMailData.Subject) < 30 Then
+                            If Game_ValidCharacter(KeyAscii) Then WriteMailData.Subject = WriteMailData.Subject & Chr$(KeyAscii)
+                        End If
                     End If
-                End If
-            Case wmSubject
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.Subject) > 0 Then
-                        WriteMailData.Subject = Left$(WriteMailData.Subject, Len(WriteMailData.Subject) - 1)
+                Case wmMessage
+                    If KeyAscii = 8 Then
+                        If Len(WriteMailData.Message) > 0 Then
+                            WriteMailData.Message = Left$(WriteMailData.Message, Len(WriteMailData.Message) - 1)
+                        End If
+                    Else
+                        If Len(WriteMailData.Message) < 500 Then
+                            If Game_ValidCharacter(KeyAscii) Then WriteMailData.Message = WriteMailData.Message & Chr$(KeyAscii)
+                        End If
                     End If
-                Else
-                    If Len(WriteMailData.Subject) < 30 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.Subject = WriteMailData.Subject & Chr$(KeyAscii)
-                    End If
-                End If
-            Case wmMessage
-                If KeyAscii = 8 Then
-                    If Len(WriteMailData.Message) > 0 Then
-                        WriteMailData.Message = Left$(WriteMailData.Message, Len(WriteMailData.Message) - 1)
-                    End If
-                Else
-                    If Len(WriteMailData.Message) < 500 Then
-                        If Game_ValidCharacter(KeyAscii) Then WriteMailData.Message = WriteMailData.Message & Chr$(KeyAscii)
-                    End If
-                End If
             End Select
         End If
 
@@ -288,25 +319,6 @@ Dim i As Long
                 EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
                 UpdateShownTextBuffer
                 LastClickedWindow = 0
-            End If
-        Else
-            'Auto-write a reply to the last person to whisper to us
-            If KeyAscii = 114 Then  'Key R
-                If LenB(LastWhisperName) Then
-                    EnterText = True
-                    EnterTextBuffer = "/tell " & LastWhisperName & " "
-                    EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
-                    LastClickedWindow = 0
-                End If
-            End If
-            'Target the closest character
-            If KeyAscii = 116 Then   'Key T
-                i = Game_ClosestTargetNPC
-                If i > 0 Then
-                    sndBuf.Allocate 3
-                    sndBuf.Put_Byte DataCode.User_Target
-                    sndBuf.Put_Integer i
-                End If
             End If
         End If
         
@@ -444,18 +456,22 @@ Dim i As Long
     '***********************
     '***** Chat screen *****
     '***********************
-    If LastClickedWindow <> WriteMessageWindow And LastClickedWindow <> ViewMessageWindow And LastClickedWindow <> AmountWindow Then
-        If EnterText = True Then
-            If EnterTextBuffer <> vbNullString Then Input_HandleCommands
-            EnterText = False
-        Else
-            EnterText = True
+    If LastClickedWindow <> WriteMessageWindow Then
+        If LastClickedWindow <> ViewMessageWindow Then
+            If LastClickedWindow <> AmountWindow Then
+                If EnterText = True Then
+                    If EnterTextBuffer <> vbNullString Then Input_HandleCommands
+                    EnterText = False
+                Else
+                    EnterText = True
+                End If
+            End If
         End If
     End If
 
 End Sub
 
-Private Function Input_Keys_IsNumeric(ByVal KeyCode As Integer)
+Private Function Input_Keys_IsNumeric(ByVal KeyCode As Integer) As Boolean
 
 '*****************************************************************
 'Check if a numeric key (0 to 9) was pressed
@@ -471,7 +487,7 @@ Private Function Input_Keys_IsNumeric(ByVal KeyCode As Integer)
 
 End Function
 
-Private Function Input_Keys_IsAlpha(ByVal KeyCode As Integer)
+Private Function Input_Keys_IsAlpha(ByVal KeyCode As Integer) As Boolean
 
 '*****************************************************************
 'Check if an alphabit key (A to Z) was pressed
@@ -487,7 +503,7 @@ Private Function Input_Keys_IsAlpha(ByVal KeyCode As Integer)
     
 End Function
 
-Private Function Input_Keys_IsAlphaNumeric(ByVal KeyCode As Integer)
+Private Function Input_Keys_IsAlphaNumeric(ByVal KeyCode As Integer) As Boolean
 
 '*****************************************************************
 'Check if an alphanumeric key (A to Z, 0 to 9) was pressed
@@ -497,16 +513,12 @@ Private Function Input_Keys_IsAlphaNumeric(ByVal KeyCode As Integer)
 
 End Function
 
-Sub Input_Keys_Down(ByVal KeyCode As Integer, ByVal Shift As Integer)
+Sub Input_Keys_Down(ByVal KeyCode As Integer)
 
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
-Dim TempS() As String
 Dim i As Long
-Dim s As String
-Dim s2 As String
-Dim j As Long
 
     'Return was pressed
     If KeyCode = vbKeyReturn Then
@@ -539,8 +551,8 @@ Dim j As Long
     
     'Get object off ground (alt)
     If Input_Keys_IsPressed(KeyDefinitions.PickUpObj, KeyCode) Then
-        If LastLootTime + LootDelay < timeGetTime Then
-            LastLootTime = timeGetTime
+        If LastLootTime < timeGetTime Then
+            LastLootTime = timeGetTime + LootDelay
             sndBuf.Put_Byte DataCode.User_Get
         End If
     End If
@@ -554,7 +566,8 @@ Dim j As Long
     
     'Attack key
     If Input_Keys_IsPressed(KeyDefinitions.Attack, KeyCode) Then
-        If LastAttackTime + AttackDelay < timeGetTime Then
+        If LastAttackTime < timeGetTime Then
+            LastAttackTime = timeGetTime + AttackDelay
             
             'Check for a valid attacking distance
             If UserAttackRange > 1 Then
@@ -571,7 +584,6 @@ Dim j As Long
                     End If
                 End If
             Else
-                LastAttackTime = timeGetTime
                 sndBuf.Allocate 2
                 sndBuf.Put_Byte DataCode.User_Attack
                 sndBuf.Put_Byte CharList(UserCharIndex).Heading
@@ -661,6 +673,27 @@ Dim j As Long
             End If
         End If
     End If
+    
+    'Auto-write a reply to the last person to whisper to us
+    If Input_Keys_IsPressed(KeyDefinitions.QuickReply, KeyCode) Then
+        If LenB(LastWhisperName) <> 0 Then
+            EnterText = True
+            EnterTextBuffer = "/tell " & LastWhisperName & " "
+            EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
+            UpdateShownTextBuffer
+            LastClickedWindow = 0
+        End If
+    End If
+    
+    'Target the closest character
+    If Input_Keys_IsPressed(KeyDefinitions.QuickTarget, KeyCode) Then
+        i = Game_ClosestTargetNPC
+        If i > 0 Then
+            sndBuf.Allocate 3
+            sndBuf.Put_Byte DataCode.User_Target
+            sndBuf.Put_Integer i
+        End If
+    End If
 
     'Send an emoticon - but make sure we're not typing or entering in a mail message
     If EnterText = False Then
@@ -676,52 +709,42 @@ Dim j As Long
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Dots
-                                    Exit Sub
                                 Case vbKey2
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Exclimation
-                                    Exit Sub
                                 Case vbKey3
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Question
-                                    Exit Sub
                                 Case vbKey4
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Surprised
-                                    Exit Sub
                                 Case vbKey5
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Heart
-                                    Exit Sub
                                 Case vbKey6
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Hearts
-                                    Exit Sub
                                 Case vbKey7
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.HeartBroken
-                                    Exit Sub
                                 Case vbKey8
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Utensils
-                                    Exit Sub
                                 Case vbKey9
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.Meat
-                                    Exit Sub
                                 Case vbKey0
                                     sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Emote
                                     sndBuf.Put_Byte EmoID.ExcliQuestion
-                                    Exit Sub
                             End Select
                             
                         End If
@@ -806,9 +829,12 @@ Dim j As Long
         If j <= 0 Then GoTo CleanUp
         sndBuf.Put_Byte DataCode.User_Bank_Withdraw
         sndBuf.Put_Long j
-    ElseIf Input_GetCommand("/TRADE ") Then
+    ElseIf Input_GetCommand("/TRADE") Then
         s = Input_GetBufferArgs
-        If s = vbNullString Then GoTo CleanUp
+        If s = vbNullString Then
+            Engine_AddToChatTextBuffer Message(136), FontColor_Info
+            GoTo CleanUp
+        End If
         If UCase$(s) = UCase$(CharList(UserCharIndex).Name) Then
             Engine_AddToChatTextBuffer Message(133), FontColor_Info
             GoTo CleanUp
@@ -1078,10 +1104,10 @@ Sub Input_Keys_General()
     'Zoom in / out
     If LastClickedWindow <> TradeWindow Then
         If LastClickedWindow <> ChatWindow Then
-            If GetAsyncKeyState(vbKeyNumpad8) Then       'In
+            If GetAsyncKeyState(KeyDefinitions.ZoomIn) Then       'In
                 ZoomLevel = ZoomLevel + (ElapsedTime * 0.0003)
                 If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
-            ElseIf GetAsyncKeyState(vbKeyNumpad2) Then  'Out
+            ElseIf GetAsyncKeyState(KeyDefinitions.ZoomOut) Then  'Out
                 ZoomLevel = ZoomLevel - (ElapsedTime * 0.0003)
                 If ZoomLevel < 0 Then ZoomLevel = 0
             End If
@@ -1132,35 +1158,35 @@ Sub Input_Keys_General()
                 Exit Sub
             End If
             If EnterText = False Then
-                If GetKeyState(vbKeyW) < 0 And GetKeyState(vbKeyD) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveNorth) < 0 And GetKeyState(KeyDefinitions.MoveEast) < 0 Then
                     Engine_ChangeHeading NORTHEAST
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyW) < 0 And GetKeyState(vbKeyA) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveNorth) < 0 And GetKeyState(KeyDefinitions.MoveWest) < 0 Then
                     Engine_ChangeHeading NORTHWEST
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyS) < 0 And GetKeyState(vbKeyD) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveSouth) < 0 And GetKeyState(KeyDefinitions.MoveEast) < 0 Then
                     Engine_ChangeHeading SOUTHEAST
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyS) < 0 And GetKeyState(vbKeyA) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveSouth) < 0 And GetKeyState(KeyDefinitions.MoveWest) < 0 Then
                     Engine_ChangeHeading SOUTHWEST
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyW) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveNorth) < 0 Then
                     Engine_ChangeHeading NORTH
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyD) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveEast) < 0 Then
                     Engine_ChangeHeading EAST
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyS) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveSouth) < 0 Then
                     Engine_ChangeHeading SOUTH
                     Exit Sub
                 End If
-                If GetKeyState(vbKeyA) < 0 Then
+                If GetKeyState(KeyDefinitions.MoveWest) < 0 Then
                     Engine_ChangeHeading WEST
                     Exit Sub
                 End If
@@ -1252,8 +1278,6 @@ Sub Input_Mouse_LeftClick()
 '******************************************
 Dim tX As Integer
 Dim tY As Integer
-Dim X As Long
-Dim Y As Long
 Dim i As Long
 
     'Make sure engine is running
@@ -1772,11 +1796,7 @@ Sub Input_Mouse_Move()
 'Move mouse
 '******************************************
 
-Dim tX As Integer
-Dim tY As Integer
-
-'Make sure engine is running
-
+    'Make sure engine is running
     If Not EngineRun Then Exit Sub
 
     'Clear item info display
@@ -2267,7 +2287,6 @@ Dim i As Byte
                                     ShowGameWindow(AmountWindow) = 1
                                     LastClickedWindow = AmountWindow
                                     AmountWindowItemIndex = DragItemSlot
-                                    AmountWindowItemIndex2 = i
                                     AmountWindowValue = vbNullString
                                     AmountWindowUsage = AW_InvToTrade
                                 End If
@@ -2477,6 +2496,28 @@ Dim i As Byte
                     End If
                 End With
             End If
+        End If
+        
+        'Inventory -> Ground
+        If DragSourceWindow = InventoryWindow Then
+            'Single item
+            If UserInventory(DragItemSlot).Amount = 1 Then
+                sndBuf.Allocate 4
+                sndBuf.Put_Byte DataCode.User_Drop
+                sndBuf.Put_Byte DragItemSlot
+                sndBuf.Put_Integer 1
+            'Multiple items
+            Else
+                ShowGameWindow(AmountWindow) = 1
+                LastClickedWindow = AmountWindow
+                AmountWindowValue = vbNullString
+                AmountWindowItemIndex = DragItemSlot
+                AmountWindowUsage = AW_Drop
+            End If
+            'Clear and leave
+            DragSourceWindow = 0
+            DragItemSlot = 0
+            Exit Sub
         End If
 
         'Didn't release over a valid area

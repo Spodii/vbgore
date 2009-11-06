@@ -1,6 +1,6 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCN.OCX"
-Object = "{57B1A102-EC84-4617-AC39-415819BFEC5F}#1.0#0"; "GOREsockServer.ocx"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -122,6 +122,9 @@ Dim TempSplit() As String
         SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
         SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
     End If
+    
+    'Create the object class
+    Set ObjData = New ObjData
     
     'Set the file paths
     InitFilePaths
@@ -445,7 +448,7 @@ End Sub
 
 Private Sub ServerSocket_DataArrival(Index As Integer, ByVal bytesTotal As Long)
 Dim Data() As Byte
-Dim rBuf As New DataBuffer
+Dim rBuf As DataBuffer
 Dim CommandID As Byte
 Dim BufUBound As Long
 
@@ -453,6 +456,7 @@ Dim BufUBound As Long
     ServerSocket(Index).GetData Data, vbByte, bytesTotal
     
     'Put the data into the buffer
+    Set rBuf = New DataBuffer
     rBuf.Set_Buffer Data()
     
     'Hold the buffer ubound
@@ -475,6 +479,8 @@ Dim BufUBound As Long
         If rBuf.Get_ReadPos > BufUBound Then Exit Sub
         
     Loop
+    
+    Set rBuf = Nothing
 
 End Sub
 
@@ -534,8 +540,6 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Dim CommandID2 As Byte
-Dim i As Byte
 
     Log "Call frmMain.GOREsock.DataArrival(" & inSox & "," & ByteArrayToStr(inData) & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -684,7 +688,7 @@ Dim i As Byte
             
             Case Else
                 Log "OnDataArrival: Command ID " & CommandID & " caused a premature packet handling abortion!", CriticalError '//\\LOGLINE//\\
-                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
+                rBuf.Overflow 'Something went wrong or we hit the end, either way, RUN!!!!
                 
             End Select
 
@@ -694,5 +698,7 @@ Dim i As Byte
         If rBuf.Get_ReadPos > BufUBound Then Exit Do
 
     Loop
+    
+    Set rBuf = Nothing
 
 End Sub

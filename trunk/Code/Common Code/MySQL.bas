@@ -11,7 +11,7 @@ Public DB_Port As Integer   'Port of the database (default "3306")
 'Change these values to update the database when the value changes during gameplay
 'Most of these values will automatically be set during loading/saving a character (except _Online)
 '0 is for false, 1 is for true
-Public Const MySQLUpdate_UserMap As Byte = 1
+Public Const MySQLUpdate_UserMap As Boolean = True
 
 'Connection objects
 Public DB_Conn As ADODB.Connection
@@ -47,8 +47,14 @@ ErrOut:
     'Could not connect to the database
     MsgBox "Error connecting to the MySQL database. Please make sure you have MySQL 5.0 running, and that you have ODBC v3.51!" & vbNewLine & _
        "Also make sure your connection variables are correct (found in \ServerData\Server.ini)." & vbNewLine & _
-       "If you have your database installed and running, make sure you have executed the database dump on the 'vbgore' table." & vbNewLine & _
-       "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database." & vbNewLine, vbOKOnly
+       "If you have your database installed and running, make sure you have executed the database dump on the 'vbgore' database." & vbNewLine & _
+       "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database." & vbNewLine & vbNewLine & _
+       "If you feel you have done all of these steps, confirm the following has been done:" & vbNewLine & _
+       " - You have followed ALL of the steps on the MySQL Setup page on the site" & vbNewLine & _
+       " - MySQL is running and you can connect to it through a GUI such as SQLyog" & vbNewLine & _
+       " - You have imported the vbgore.sql file into the database and can see the information through the GUI" & vbNewLine & _
+       " - You have version 5.0 of MySQL and 3.51 of ODBC being used" & vbNewLine & vbNewLine & _
+       "If you are positive you have done all of the above, freel free to ask for help on the vbGORE forums.", vbOKOnly
     Server_Unload
 
 End Sub

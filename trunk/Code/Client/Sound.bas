@@ -284,18 +284,17 @@ Private Sub Sound_Volume(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, ByVal
 
 End Sub
 
-
-Public Function Music_Load(ByVal FilePath As String, ByVal BufferNumber As Long) As Boolean
+Public Sub Music_Load(ByVal FilePath As String, ByVal BufferNumber As Long)
 
 '************************************************************
 'Loads a mp3 by the specified path
 '************************************************************
 
-    If UseMusic = 0 Then Exit Function
+    If UseMusic = 0 Then Exit Sub
 
     On Error GoTo Error_Handler
                 
-    If Right(FilePath, 4) = ".mp3" Then
+    If Right$(FilePath, 4) = ".mp3" Then
     
         Set DirectShow_Control(BufferNumber) = New FilgraphManager
         DirectShow_Control(BufferNumber).RenderFile FilePath
@@ -311,22 +310,12 @@ Public Function Music_Load(ByVal FilePath As String, ByVal BufferNumber As Long)
         DirectShow_Position(BufferNumber).Rate = 1
         
         DirectShow_Position(BufferNumber).CurrentPosition = 0
-                        
-    Else
-    
-        GoTo Error_Handler
     
     End If
 
-    Music_Load = True
-    
-    Exit Function
-    
 Error_Handler:
 
-    Music_Load = False
-
-End Function
+End Sub
 
 Public Sub Music_Play(ByVal BufferNumber As Long)
 

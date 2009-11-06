@@ -2,7 +2,6 @@ Attribute VB_Name = "Declares"
 Option Explicit
 
 Public Const NumStats As Byte = 18
-Public Const NumSkills As Byte = 8
 
 Public Const DegreeToRadian As Single = 0.0174532925
 
@@ -71,22 +70,6 @@ Public Type MapOpt
     Layer2 As Byte
 End Type
 Public MapOpt() As MapOpt
-
-'********** Object types **********
-Public Type ObjData
-    Name As String              'Name
-    ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Long            'Graphic index
-    MinHP As Integer            'Bonus HP regenerated
-    MaxHP As Integer            'Bonus Max HP raised
-    MinHIT As Integer           'Bonus minimum hit
-    MaxHIT As Integer           'Bonus maximum hit
-    DEF As Integer              'Bonus defence
-    ArmorIndex As Byte          'Index of the body sprite
-    WeaponIndex As Byte         'Index of the weapon sprite
-    WeaponType As Byte          'What type of weapon, if it is a weapon
-    Price As Long               'Price of the object
-End Type
 
 '********** NPC Types **********
 'User skills casted
@@ -168,5 +151,3 @@ Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivate
 Public Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 Public Declare Function GetActiveWindow Lib "user32" () As Long
-Public Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (ByRef Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
-

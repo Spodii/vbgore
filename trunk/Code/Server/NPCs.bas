@@ -61,7 +61,6 @@ Private Function NPC_AI_Attack(ByVal NPCIndex As Integer) As Byte
 'Calls the NPC attack AI - only call by the NPC_AI routine!
 '*****************************************************************
 Dim HeadingLoop As Long
-Dim NewHeading As Byte
 Dim nPos As WorldPos
 Dim Damage As Long
 Dim X As Long
@@ -148,7 +147,6 @@ Private Function NPC_AI_AttackNPC(ByVal NPCIndex As Integer, Optional ByVal NotS
 '*****************************************************************
 Dim Damage As Long
 Dim HeadingLoop As Long
-Dim NewHeading As Byte
 Dim nPos As WorldPos
 Dim X As Long
 
@@ -555,7 +553,7 @@ Dim tPos As WorldPos
                                                             If NPCList(i).OwnerIndex = 0 Then   'Don't heal summoned NPCs
                                                                 If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
                                                                     If Skill_Heal_NPCtoNPC(NPCIndex, i) Then
-                                                                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Heal_Exhaust
+                                                                        'Skill was casted, abort
                                                                         Exit Sub
                                                                     End If
                                                                 End If
@@ -604,9 +602,11 @@ Dim tPos As WorldPos
 
             'Move towards the owner if no nearby NPCs to move to to attack were found
             If tHeading = 0 Then
-                If Abs(CInt(NPCList(NPCIndex).Pos.X) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.X)) < 2 And Abs(CInt(NPCList(NPCIndex).Pos.Y) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.Y)) < 2 Then
-                    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 500
-                    Exit Sub
+                If Abs(CInt(NPCList(NPCIndex).Pos.X) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.X)) < 2 Then
+                    If Abs(CInt(NPCList(NPCIndex).Pos.Y) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.Y)) < 2 Then
+                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 500
+                        Exit Sub
+                    End If
                 End If
                 tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(NPCList(NPCIndex).OwnerIndex).Pos)
             End If
@@ -1130,7 +1130,7 @@ Dim HPB As Byte
 
 End Sub
 
-Public Function NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0) As Integer
+Public Sub NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0)
 
 '*****************************************************************
 'Do damage to a NPC - ONLY USE THIS SUB TO HURT NPCS
@@ -1147,22 +1147,22 @@ Dim i As Integer
     'Check if the NPC can be attacked
     If NPCList(NPCIndex).Attackable = 0 Then
         Log "NPC_Damage: Attackable = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Function
+        Exit Sub
     End If
 
     'If NPC has no health, they can not be attacked
     If NPCList(NPCIndex).ModStat(SID.MaxHP) = 0 Then
         Log "NPC_Damage: ModStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Function
+        Exit Sub
     End If
     If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then
         Log "NPC_Damage: BaseStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Function
+        Exit Sub
     End If
 
     'Make sure the NPC isn't the user's slave (don't damage your slaves)
     If UserIndex > 0 Then
-        If NPCList(NPCIndex).OwnerIndex = UserIndex Then Exit Function
+        If NPCList(NPCIndex).OwnerIndex = UserIndex Then Exit Sub
     End If
     
     'Get the pre-damage percentage
@@ -1170,10 +1170,7 @@ Dim i As Integer
 
     'Lower the NPC's life
     NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).BaseStat(SID.MinHP) - Damage
-    
-    'Return the damage to the function
-    NPC_Damage = Damage
-
+ 
     'Check to update health percentage client-side
     If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
         HPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
@@ -1298,15 +1295,13 @@ Dim i As Integer
 
     End If
 
-End Function
+End Sub
 
 Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 
 '*****************************************************************
 'Erase a character
 '*****************************************************************
-Dim i As Integer
-Dim t As Long
 
     Log "Call NPC_EraseChar(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 

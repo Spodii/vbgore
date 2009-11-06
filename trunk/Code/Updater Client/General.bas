@@ -31,7 +31,6 @@ Public UpdateTime As Long
 Public Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 Public Declare Sub ReleaseCapture Lib "User32" ()
 Public Declare Function SendMessage Lib "User32" Alias "SendMessageA" (ByVal hWnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lParam As Any) As Long
-Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 
@@ -59,7 +58,6 @@ Dim b() As Byte
 Dim TempS() As String
 Dim TempS2() As String
 Dim i As Long
-Dim j As Long
 Dim FileNum As Byte
 
     If StartTime = 0 Then StartTime = timeGetTime
@@ -143,7 +141,7 @@ Public Sub FinishUpdate()
     GOREsock_ShutDown
     
     frmMain.StatusLbl.Caption = "Download Successful!"
-    frmMain.FileLbl.Caption = ""
+    frmMain.FileLbl.Caption = vbNullString
     frmMain.PercentLbl.Caption = "100%"
     
     'Load the client

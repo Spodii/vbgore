@@ -1307,9 +1307,7 @@ Public Sub Server_Unload()
 '*****************************************************************
 'Unload the server and all the variables
 '*****************************************************************
-Dim FileNum As Byte
 Dim LoopC As Long
-Dim s As String
 
     On Error Resume Next
 

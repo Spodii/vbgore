@@ -30,7 +30,8 @@ Private Sub Form_Load()
     
     'Init particle engine
     Me.Show
-    Engine_Init_TileEngine Me.hWnd, 32, 32, 1, 1, 1, 0.011
+    InitFilePaths
+    Engine_Init_TileEngine
 
     'Set initial reset position (center screen)
     ResetX = frmMain.ScaleWidth * 0.5
@@ -70,6 +71,10 @@ Private Sub Form_Load()
         DoEvents
 
     Loop
+    
+    'Clear arrays
+    Erase CharList()
+    Erase Effect()
 
     'Unload engine
     Engine_Init_UnloadTileEngine
@@ -79,8 +84,7 @@ End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-'Stop the engine
-
+    'Stop the engine
     EngineRun = False
 
 End Sub

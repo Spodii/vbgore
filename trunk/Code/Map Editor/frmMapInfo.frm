@@ -225,7 +225,7 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo vbNullString
 
@@ -249,7 +249,7 @@ Private Sub MapNameTxt_Change()
 
 End Sub
 
-Private Sub MapNameTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub MapNameTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "The name of the map."
 
@@ -257,7 +257,7 @@ End Sub
 
 Private Sub MusicTxt_Change()
 
-    If MusicTxt.Text = "" Then MusicTxt.Text = "0"
+    If LenB(MusicTxt.Text) = 0 Then MusicTxt.Text = "0"
     If IsNumeric(MusicTxt.Text) = False Then MusicTxt.Text = "0"
     If Val(MusicTxt.Text) > 255 Then MusicTxt.Text = "255"
     If Val(MusicTxt.Text) < 0 Then MusicTxt.Text = "0"
@@ -274,7 +274,7 @@ Private Sub MusicTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub MusicTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub MusicTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "ID of the music file to be played in the map. 0 for nothing."
 
@@ -285,8 +285,8 @@ Dim OldSaveLight() As LightType
 Dim OldMap() As MapBlock
 Dim OldWidth As Long
 Dim OldHeight As Long
-Dim x As Long
-Dim y As Long
+Dim X As Long
+Dim Y As Long
 Dim hX As Long
 Dim hY As Long
 Dim l As Long
@@ -315,15 +315,15 @@ Dim l As Long
     MapInfo.Height = Val(HeightTxt.Text)
     
     If OldWidth > MapInfo.Width Or OldHeight > MapInfo.Height Then
-        For x = 1 To MapInfo.Width
-            For y = 1 To MapInfo.Height
-                If x > MapInfo.Width Or y > MapInfo.Height Then
-                    If MapData(x, y).NPCIndex > 0 Then
-                        Engine_Char_Erase MapData(x, y).NPCIndex
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
+                If X > MapInfo.Width Or Y > MapInfo.Height Then
+                    If MapData(X, Y).NPCIndex > 0 Then
+                        Engine_Char_Erase MapData(X, Y).NPCIndex
                     End If
                 End If
-            Next y
-        Next x
+            Next Y
+        Next X
     End If
     
     ReDim OldMap(1 To OldWidth, 1 To OldHeight)
@@ -338,25 +338,25 @@ Dim l As Long
     If OldWidth < MapInfo.Width Then hX = OldWidth Else hX = MapInfo.Width
     If OldHeight < MapInfo.Height Then hY = OldHeight Else hY = MapInfo.Height
     
-    For x = 1 To MapInfo.Width
-        For y = 1 To MapInfo.Height
-            If x <= hX And y <= hY Then
-                MapData(x, y) = OldMap(x, y)
-                CopyMemory SaveLightBuffer(x, y), OldSaveLight(x, y), Len(OldSaveLight(x, y))
+    For X = 1 To MapInfo.Width
+        For Y = 1 To MapInfo.Height
+            If X <= hX And Y <= hY Then
+                MapData(X, Y) = OldMap(X, Y)
+                CopyMemory SaveLightBuffer(X, Y), OldSaveLight(X, Y), Len(OldSaveLight(X, Y))
             Else
             
                 'Default data (so they know the tiles are there)
-                Engine_Init_Grh MapData(x, y).Graphic(1), 2
+                Engine_Init_Grh MapData(X, Y).Graphic(1), 2
                 
                 'Bad to keep lights as 0's
                 For l = 1 To 24
-                    MapData(x, y).Light(l) = -1
-                    SaveLightBuffer(x, y).Light(l) = -1
+                    MapData(X, Y).Light(l) = -1
+                    SaveLightBuffer(X, Y).Light(l) = -1
                 Next l
                 
             End If
-        Next y
-    Next x
+        Next Y
+    Next X
     
     MinXBorder = 1 + (WindowTileWidth \ 2)
     MaxXBorder = MapInfo.Width - (WindowTileWidth \ 2)
@@ -368,7 +368,7 @@ Dim l As Long
 
 End Sub
 
-Private Sub SizeCmd_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub SizeCmd_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Applies the map dimensions change."
     
@@ -383,7 +383,7 @@ Private Sub VersionTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub VersionTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub VersionTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Version of the map. Used to determine if the client has the most up-to-date map."
 
@@ -391,7 +391,7 @@ End Sub
 
 Private Sub WeatherTxt_Change()
 
-    If WeatherTxt.Text = "" Then WeatherTxt.Text = "0"
+    If LenB(WeatherTxt.Text) = 0 Then WeatherTxt.Text = "0"
     If Val(WeatherTxt.Text) < 0 Then WeatherTxt.Text = "0"
     If Val(WeatherTxt.Text) > 255 Then WeatherTxt.Text = "255"
     MapInfo.Weather = WeatherTxt.Text
@@ -400,7 +400,7 @@ End Sub
 
 Private Sub VersionTxt_Change()
 
-    If VersionTxt.Text = "" Then VersionTxt.Text = "0"
+    If LenB(VersionTxt.Text) = 0 Then VersionTxt.Text = "0"
     If IsNumeric(VersionTxt.Text) = False Then VersionTxt.Text = "0"
     If Val(VersionTxt.Text) > 32767 Then VersionTxt.Text = "32767"
     If Val(VersionTxt.Text) < 0 Then VersionTxt.Text = "0"
@@ -417,7 +417,7 @@ Private Sub WeatherTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub WeatherTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub WeatherTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "What kind of weather the map uses (0 for none)."
 
@@ -429,7 +429,7 @@ Private Sub WidthTxt_KeyPress(KeyAscii As Integer)
 
 End Sub
 
-Private Sub WidthTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
+Private Sub WidthTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "New width of the map (in tiles)."
 

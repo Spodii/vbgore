@@ -28,9 +28,7 @@ Public Sub User_AddObjToInv(ByVal UserIndex As Integer, ByRef Object As Obj)
 '*****************************************************************
 'Adds an object to the user's inventory
 '*****************************************************************
-
 Dim LoopC As Long
-Dim Map As Integer
 Dim NewX As Byte
 Dim NewY As Byte
 Dim NewSlot As Byte
@@ -761,7 +759,6 @@ Public Sub User_GetObj(ByVal UserIndex As Integer)
 '*****************************************************************
 Dim AmountTaken As Integer
 Dim ObjSlot As Byte
-Dim Slot As Byte
 Dim Map As Integer
 Dim X As Byte
 Dim Y As Byte
@@ -1483,9 +1480,7 @@ Public Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte, ByV
 '*****************************************************************
 'Moves a User from one tile to another
 '*****************************************************************
-Dim TempIndex As Integer
 Dim nPos As WorldPos
-Dim i As Long
 
     Log "Call User_MoveChar(" & UserIndex & "," & nHeading & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -2129,7 +2124,7 @@ Dim ObjIndex As Integer
     ObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
     
     'Check if the user can use the item due to class restrictions
-    If Obj_ValidObjForClass(UserList(UserIndex).Class, ObjIndex) = 0 Then
+    If Not Obj_ValidObjForClass(UserList(UserIndex).Class, ObjIndex) Then
         Data_Send ToIndex, UserIndex, cMessage(125).Data()
         Exit Sub
     End If

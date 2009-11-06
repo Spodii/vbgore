@@ -873,21 +873,6 @@ Public Sub SetTileInfo(ByVal tX As Byte, ByVal tY As Byte)
     
 End Sub
 
-Private Sub AmountTxt_KeyPress(KeyAscii As Integer)
-    If GetAsyncKeyState(vbKeyControl) = 0 Then
-        If IsNumeric(Chr$(KeyAscii)) = False Then
-            If KeyAscii <> 8 Then
-                If KeyAscii <> vbKeyDelete Then
-                    If KeyAscii <> vbKeyBack Then
-                        KeyAscii = 0
-                        Exit Sub
-                    End If
-                End If
-            End If
-        End If
-    End If
-End Sub
-
 Private Sub BlockedTxt_Change()
 Dim i As Byte
 On Error GoTo ErrOut
@@ -935,24 +920,6 @@ End Sub
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo vbNullString
-
-End Sub
-
-Private Sub GrhSelectLbl_Click(Index As Integer)
-
-    ShowFrmTileSelect 0
-
-End Sub
-
-Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Click to view the grh selection sheet."
-
-End Sub
-
-Private Sub GrhPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Preview of the graphic for the selected layer."
 
 End Sub
 
@@ -1020,7 +987,7 @@ Dim i As Byte
     'Set colors
     For i = 1 To 6
         If i <> Index Then
-            LayerLbl(i).ForeColor = &H8000000F
+            LayerLbl(i).ForeColor = &H80000008
         Else
             LayerLbl(i).ForeColor = 255
         End If
@@ -1040,12 +1007,6 @@ End Sub
 Private Sub LayerLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     SetInfo "Click to view information for layer " & Index & "."
-
-End Sub
-
-Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    SetInfo "Click to view the ARGB<->LONG conversion tool."
 
 End Sub
 
@@ -1157,19 +1118,6 @@ Private Sub NPCTxt_KeyPress(KeyAscii As Integer)
                         KeyAscii = 0
                         Exit Sub
                     End If
-                End If
-            End If
-        End If
-    End If
-End Sub
-
-Private Sub ObjTxt_KeyPress(KeyAscii As Integer)
-    If GetAsyncKeyState(vbKeyControl) = 0 Then
-        If IsNumeric(Chr$(KeyAscii)) = False Then
-            If KeyAscii <> vbKeyDelete Then
-                If KeyAscii <> vbKeyBack Then
-                    KeyAscii = 0
-                    Exit Sub
                 End If
             End If
         End If
@@ -1383,3 +1331,4 @@ Private Sub WYTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y 
     SetInfo "The Y co-ordinate the user will warp to when stepping on the tile."
 
 End Sub
+

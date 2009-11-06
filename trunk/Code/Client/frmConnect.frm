@@ -1,21 +1,22 @@
 VERSION 5.00
 Begin VB.Form frmConnect 
-   BackColor       =   &H00000000&
+   AutoRedraw      =   -1  'True
+   BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "vbGORE Login"
-   ClientHeight    =   3270
+   ClientHeight    =   3360
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   2940
+   ClientWidth     =   5280
    ClipControls    =   0   'False
    ControlBox      =   0   'False
    FillColor       =   &H00000040&
    Icon            =   "frmConnect.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   218
+   ScaleHeight     =   224
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   196
+   ScaleWidth      =   352
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin VB.TextBox PasswordTxt 
@@ -23,8 +24,8 @@ Begin VB.Form frmConnect
       BackColor       =   &H00000000&
       BorderStyle     =   0  'None
       BeginProperty Font 
-         Name            =   "Times New Roman"
-         Size            =   12
+         Name            =   "Arial"
+         Size            =   9.75
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
@@ -32,22 +33,23 @@ Begin VB.Form frmConnect
          Strikethrough   =   0   'False
       EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   255
+      Height          =   195
       IMEMode         =   3  'DISABLE
-      Left            =   1320
+      Left            =   3045
+      MultiLine       =   -1  'True
       PasswordChar    =   "*"
-      TabIndex        =   2
-      Text            =   "ggg"
-      Top             =   720
-      Width           =   1275
+      TabIndex        =   1
+      Text            =   "frmConnect.frx":17D2A
+      Top             =   1320
+      Width           =   1860
    End
    Begin VB.TextBox NameTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       BorderStyle     =   0  'None
       BeginProperty Font 
-         Name            =   "Times New Roman"
-         Size            =   12
+         Name            =   "Baskerville Old Face"
+         Size            =   9.75
          Charset         =   0
          Weight          =   400
          Underline       =   0   'False
@@ -55,43 +57,19 @@ Begin VB.Form frmConnect
          Strikethrough   =   0   'False
       EndProperty
       ForeColor       =   &H00FFFFFF&
-      Height          =   345
-      Left            =   1320
-      TabIndex        =   1
-      Text            =   "ggg"
-      Top             =   420
-      Width           =   1275
-   End
-   Begin VB.CheckBox SavePassChk 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00000000&
       Height          =   225
-      Left            =   1080
+      Left            =   3045
+      MultiLine       =   -1  'True
       TabIndex        =   0
-      Top             =   960
-      Value           =   1  'Checked
-      Width           =   195
+      Text            =   "frmConnect.frx":17D2E
+      Top             =   840
+      Width           =   1860
    End
-   Begin VB.Label Label3 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "Save Password"
-      BeginProperty Font 
-         Name            =   "Times New Roman"
-         Size            =   12
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   285
-      Left            =   1320
-      TabIndex        =   3
-      Top             =   915
-      Width           =   1500
+   Begin VB.Image SavePassImg 
+      Height          =   180
+      Left            =   3165
+      Top             =   1605
+      Width           =   180
    End
 End
 Attribute VB_Name = "frmConnect"
@@ -101,15 +79,66 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub Form_KeyPress(KeyAscii As Integer)
+
+    If KeyAscii = Asc(vbNewLine) Then ClickConnect
+
+End Sub
+
 Private Sub Form_Load()
 
+    'Set the text boxes to transparent
+    SetPictureTextboxes Me.hwnd
+    
     'Get the username/password
     NameTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Name")
     PasswordTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Password")
+    SavePass = CBool(Var_Get(DataPath & "Game.ini", "INIT", "SavePass"))
+    
+    'Set the SavePass image
+    SavePass = Not SavePass 'Since the routine reverses, we reverse to reverse the reverse... trust me, it just works ;)
+    SavePassImg_Click
     
     'Get the background
     Me.Picture = LoadPicture(App.Path & "\Grh\Connect.bmp")
 
+End Sub
+
+Private Sub ClickNew()
+
+    'New character
+    frmNew.Visible = True
+    frmNew.Show
+    Me.Visible = False
+    
+End Sub
+
+Private Sub ClickConnect()
+
+    'Connect
+    UserName = NameTxt.Text
+    UserPassword = PasswordTxt.Text
+    If Game_CheckUserData Then
+        SendNewChar = False
+        InitSocket
+    End If
+
+End Sub
+
+Private Sub ClickExit()
+
+    'Save the game ini
+    Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
+    Var_Write DataPath & "Game.ini", "INIT", "SavePass", CBool(SavePass)
+    If Not SavePass Then
+        Var_Write DataPath & "Game.ini", "INIT", "Password", ""
+    Else
+        Var_Write DataPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
+    End If
+
+    'End program
+    IsUnloading = 1
+    
 End Sub
 
 Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
@@ -119,38 +148,21 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
 '*****************************************************************
     
     'New
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 85, 141, 36) Then
-        frmNew.Visible = True
-        frmNew.Show
-        Me.Visible = False
-    End If
+    If Engine_Collision_Rect(X, Y, 1, 1, 217, 149, 96, 18) Then ClickNew
     
     'Connect
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 129, 141, 36) Then
-        UserName = NameTxt.Text
-        UserPassword = PasswordTxt.Text
-        If Game_CheckUserData Then
-            SendNewChar = False
-            InitSocket
-        End If
-    End If
-    
+    If Engine_Collision_Rect(X, Y, 1, 1, 217, 127, 96, 18) Then ClickConnect
+
     'Exit
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 174, 141, 36) Then
+    If Engine_Collision_Rect(X, Y, 1, 1, 217, 171, 96, 18) Then ClickExit
     
-        'Save the game ini
-        Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
-        If SavePassChk.Value = 0 Then
-            Var_Write DataPath & "Game.ini", "INIT", "Password", ""
-        Else
-            Var_Write DataPath & "Game.ini", "INIT", "Password", PasswordTxt.Text
-        End If
-    
-        'End program
-        IsUnloading = 1
-        
-    End If
-    
+End Sub
+
+Private Sub Form_Unload(Cancel As Integer)
+
+    'Free the form
+    FreePictureTextboxes Me.hwnd
+
 End Sub
 
 Private Sub NameTxt_Change()
@@ -165,6 +177,16 @@ Private Sub NameTxt_Change()
 
 End Sub
 
+Private Sub NameTxt_KeyPress(KeyAscii As Integer)
+
+    'Because we have to use multiline to have the image set on the background, cancel new lines
+    If KeyAscii = Asc(vbNewLine) Then
+        KeyAscii = 0
+        ClickConnect
+    End If
+
+End Sub
+
 Private Sub PasswordTxt_Change()
 
     'Make sure the string is legal
@@ -173,6 +195,30 @@ Private Sub PasswordTxt_Change()
             PasswordTxt.Text = Left$(PasswordTxt.Text, Len(PasswordTxt.Text) - 1)
             PasswordTxt.SelStart = Len(PasswordTxt.Text)
         End If
+    End If
+
+End Sub
+
+Private Sub PasswordTxt_KeyPress(KeyAscii As Integer)
+
+    'Because we have to use multiline to have the image set on the background, cancel new lines
+    If KeyAscii = Asc(vbNewLine) Then
+        KeyAscii = 0
+        ClickConnect
+    End If
+
+End Sub
+
+Private Sub SavePassImg_Click()
+
+    'Change the value
+    SavePass = Not SavePass
+    
+    'Display the image or remove it
+    If SavePass Then
+        SavePassImg.Picture = LoadPicture(GrhPath & "Check.gif")
+    Else
+        Set SavePassImg.Picture = Nothing
     End If
 
 End Sub
