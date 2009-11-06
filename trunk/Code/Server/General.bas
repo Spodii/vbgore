@@ -19,6 +19,7 @@ Private Const UpdateRate_Maps As Long = 30000           'Updating map ground obj
 Private Const UpdateRate_Bandwidth As Long = 1000       'Updating bandwidth in/out information
 Private Const UpdateRate_UnloadObjs As Long = 120000    'Unloading objects from memory
 Private Const UpdateRate_KeepAlive As Long = 600000     'Sends a misc query to the database to keep the connection alive since connection dies after a while
+Private Const UpdateRate_KeepAliveClient As Long = 3000 'sends a "keep alive" packet to the client to let them know the connection is still made with the server
 
 Private LastUpdate_UserStats As Long
 Private LastUpdate_UserRecover As Long
@@ -358,6 +359,7 @@ Dim UserIndex As Integer
             If UserList(UserIndex).Flags.Disconnecting = 0 Then
 
                 '*** Disconnection timers ***
+                
                 'Check if it has been idle for too long
                 If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
                     Data_Send ToIndex, UserIndex, cMessage(85).Data
@@ -442,9 +444,19 @@ Dim UserIndex As Integer
                 End If
                 
             End If
-                
+
             '*** Send queued packet buffer ***
             If SendUserBuffer Then
+            
+                'Check if a keep-alive packet needs to be sent
+                If UserList(UserIndex).HasBuffer = 0 Then   'Don't add the keep-alive to a user already with a buffer
+                    If timeGetTime - UserList(UserIndex).LastPacketSent > UpdateRate_KeepAliveClient Then   'Check if enough time has elapsed
+                        
+                        'Add the keep-alive packet to the user's buffer
+                        Data_Send ToIndex, UserIndex, KeepAlivePacket()
+                        
+                    End If
+                End If
 
                 'Check if the packet wait time has passed
                 If UserList(UserIndex).HasBuffer Then   'Check that we have a buffer
@@ -1786,15 +1798,17 @@ Dim tmpBlocked As Byte
             Exit Function
         End If
         If .NPCIndex > 0 Then
-            'Check if we count whether our slave NPCs count as blocked or not
-            If IgnoreSlaves Then
-                If NPCList(.NPCIndex).OwnerIndex = 0 Then
+            If .NPCIndex < LastNPC Then
+                'Check if we count whether our slave NPCs count as blocked or not
+                If IgnoreSlaves Then
+                    If NPCList(.NPCIndex).OwnerIndex = 0 Then
+                        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                        Exit Function
+                    End If
+                Else
                     Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
                     Exit Function
                 End If
-            Else
-                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                Exit Function
             End If
         End If
         
@@ -2252,4 +2266,3 @@ Dim CurrentTime As Currency
     timeGetTime = CurrentTime - GetSystemTimeOffset
 
 End Function
-

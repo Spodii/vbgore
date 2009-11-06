@@ -463,6 +463,7 @@ Type User   'Holds data for a user
     SendBuffer() As Byte    'Buffer for sending data
     BufferSize As Long      'Size of the buffer
     HasBuffer As Byte       'If there is anything in the buffer
+    LastPacketSent As Long  'Time the last packet was sent
     PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
     PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
     Object(1 To MAX_INVENTORY_SLOTS) As UserOBJ 'The user's inventory
@@ -659,7 +660,7 @@ Public CallUserCleanArray As Byte
 'Maximum number of NPCs allowed at once per server
 'This value should not be raised without raising the datatype of NPC indexes from integer to long (not recommended)
 'If this value is too low, try decreasing the map unloading time so NPCs are unloaded quicker
-Public Const MaxNPCs As Integer = 32765 'Note this is a little less then 2 ^ 16, just in case
+Public Const MaxNPCs As Integer = 32765 'Note this is a little less then the max of an integer, just in case
 
 'Packet messages that are cached so they don't have to built real-time
 Public Type CachedMessage
@@ -669,6 +670,9 @@ Public cMessage() As CachedMessage
 
 Public DebugPacketsOut() As Long
 Public DebugPacketsIn() As Long
+
+'Keep alive packet
+Public KeepAlivePacket() As Byte
 
 '********** EXTERNAL FUNCTIONS ***********
 Public Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long

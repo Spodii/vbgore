@@ -104,14 +104,6 @@ Private Type typBuffer ' The advantage of using this is if we sent exactly 8K on
     Buffer() As Byte
 End Type
 
-Private Type typHOSTENT
-    hName As Long
-    hAliases As Long
-    hAddrType As Integer
-    hLength As Integer
-    hAddrList As Long
-End Type
-
 Private Type typWSAData
     wversion As Integer
     wHighVersion As Integer
@@ -189,6 +181,7 @@ Private PacketKeys() As String
 Private Const PacketEncTypeNone As Byte = 0  'Use no encryption
 Private Const PacketEncTypeRC4 As Byte = 1   'Use RC4 encryption
 Private Const PacketEncTypeXOR As Byte = 2   'Use XOR encryption
+
 
 Private Function Accept(inSocket As Long) As Long 'Returns: New Sox Number -- inSocket is the listening WinSocket, not Sox number ...
 Dim tmpSocket As Long
@@ -298,7 +291,7 @@ Private Sub Closed(inSox As Long) ' This Socket has successfully closed ... free
 
 End Sub
 
-Public Function Connect(RemoteHost As String, RemotePort As Integer) As Long  'Returns the new Sox Number / ERROR On Error
+Public Function Connect(RemoteHost As String, RemotePort As Integer) As Long 'Returns the new Sox Number / ERROR On Error
 Dim tmpSocket As Long
 Dim tmpSocketAddr As typSocketAddr
 

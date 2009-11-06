@@ -4782,7 +4782,7 @@ Dim j As Long
             'Draw entered text
             If EnterText = True Then
                 If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-                If LenB(ShownText) <> 0 Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
+                If LenB(ShownText) <> 0 Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, FontColor_Talk
                 If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
                     TempGrh.GrhIndex = 39
                     TempGrh.FrameCounter = 1

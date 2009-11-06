@@ -92,6 +92,7 @@ Public Type DataCode
     Server_MakeEffect As Byte
     Server_SendQuestInfo As Byte
     Server_ChangeCharType As Byte
+    Server_KeepAlive As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_SendName As Byte
@@ -393,6 +394,7 @@ Public Sub InitDataCommands()
         .GM_WarpToMap = 118
         .GM_IPInfo = 119
         .GM_BanList = 120
+        .Server_KeepAlive = 121
         
         'This values can be used over again since they aren't used in their own packet header
         .Comm_FontType_Fight = 1

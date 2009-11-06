@@ -85,13 +85,13 @@ Private Function frmNewProc(ByVal hwnd As Long, ByVal uMsg As Long, ByVal wParam
                 End With
                 
             Case frmNew.BodyCmb.hwnd
-                With frmNew.ClassCmb
+                With frmNew.BodyCmb
                     SetBkMode wParam, 1
                     BitBlt wParam, 0, 0, .Width, .Height, frmNew.hDC, .Left, .Top, vbSrcCopy
                 End With
                 
             Case frmNew.HeadCmb.hwnd
-                With frmNew.ClassCmb
+                With frmNew.HeadCmb
                     SetBkMode wParam, 1
                     BitBlt wParam, 0, 0, .Width, .Height, frmNew.hDC, .Left, .Top, vbSrcCopy
                 End With

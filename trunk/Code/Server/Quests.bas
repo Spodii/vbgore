@@ -223,7 +223,7 @@ Dim i As Integer
     Data_Send ToIndex, UserIndex, cMessage(8).Data
 
     'Set the pending quest to the selected quest
-    UserList(UserIndex).flags.QuestNPC = NPCIndex
+    UserList(UserIndex).Flags.QuestNPC = NPCIndex
     
 ErrOut:
 
@@ -328,7 +328,7 @@ Dim TempNPCName As String
         If QuestData(QuestID).FinishReqObj Then
             MessageID = 11                      'Needs object
         Else
-            'No object or NPC requirement found! Stupid quests dont deserve to be talked about
+            'No object or NPC requirement found! Stupid quests don't deserve to be talked about
             Log "Quest_SendReqString: Error in Quest by ID " & QuestID & " - quest has no requirements!", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If

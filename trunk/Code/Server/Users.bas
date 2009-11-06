@@ -2452,17 +2452,21 @@ Dim LoopC As Long
             
             'Move the user's slaves
             For LoopC = 1 To UserList(UserIndex).NumSlaves
-            
+        
                 With NPCList(UserList(UserIndex).SlaveNPCIndex(LoopC))
-
-                    'Erase the NPC from the old map
-                    MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
                 
-                    'Send erase command to clients
-                    ConBuf.PreAllocate 3
-                    ConBuf.Put_Byte DataCode.Server_EraseChar
-                    ConBuf.Put_Integer .Char.CharIndex
-                    Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                    If MapInfo(.Pos.Map).DataLoaded Then
+    
+                        'Erase the NPC from the old map
+                        MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
+    
+                        'Send erase command to clients
+                        ConBuf.PreAllocate 3
+                        ConBuf.Put_Byte DataCode.Server_EraseChar
+                        ConBuf.Put_Integer .Char.CharIndex
+                        Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                        
+                    End If
                     
                     'Set the new position
                     Server_ClosestLegalPos UserList(UserIndex).Pos, .Pos
@@ -2515,15 +2519,19 @@ Dim LoopC As Long
         For LoopC = 1 To UserList(UserIndex).NumSlaves
         
             With NPCList(UserList(UserIndex).SlaveNPCIndex(LoopC))
-
-                'Erase the NPC from the old map
-                MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
             
-                'Send erase command to clients
-                ConBuf.PreAllocate 3
-                ConBuf.Put_Byte DataCode.Server_EraseChar
-                ConBuf.Put_Integer .Char.CharIndex
-                Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                If MapInfo(.Pos.Map).DataLoaded Then
+
+                    'Erase the NPC from the old map
+                    MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
+                
+                    'Send erase command to clients
+                    ConBuf.PreAllocate 3
+                    ConBuf.Put_Byte DataCode.Server_EraseChar
+                    ConBuf.Put_Integer .Char.CharIndex
+                    Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                    
+                End If
                 
                 'Set the new position
                 Server_ClosestLegalPos UserList(UserIndex).Pos, .Pos

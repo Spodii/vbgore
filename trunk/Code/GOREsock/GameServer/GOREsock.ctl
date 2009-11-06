@@ -11,8 +11,10 @@ Begin VB.UserControl GOREsockServer
    ClipControls    =   0   'False
    FillStyle       =   0  'Solid
    FontTransparent =   0   'False
+   HasDC           =   0   'False
    HitBehavior     =   0  'None
    InvisibleAtRuntime=   -1  'True
+   PaletteMode     =   4  'None
    Picture         =   "GOREsock.ctx":0000
    ScaleHeight     =   32
    ScaleMode       =   3  'Pixel
@@ -883,7 +885,7 @@ Dim i As Long
             If Sockets(i).State <> soxDisconnected Then
                 If Sockets(i).State <> soxERROR Then
                     If Sockets(i).State <> soxClosing Then
-                        If Sockets(i).SocketAddr.sin_addr = Sockets(i).SocketAddr.sin_addr Then
+                        If Sockets(inSox).SocketAddr.sin_addr = Sockets(i).SocketAddr.sin_addr Then
                             Count = Count + 1
                             If Count > MaxConnectionsPerIP Then
                                 Shut inSox

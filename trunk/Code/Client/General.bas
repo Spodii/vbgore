@@ -914,7 +914,7 @@ Dim i As Integer
     'Set intial user position
     UserPos.X = 1
     UserPos.Y = 1
-
+    
     'Set scroll pixels per frame
     ShowGameWindow(QuickBarWindow) = 1
     ShowGameWindow(ChatWindow) = 1
@@ -985,8 +985,21 @@ Dim i As Integer
             End If
         End If
         
-        'Send the data buffer
-        If SocketOpen Then Data_Send
+        'Perform the following only if the connection to the server is open
+        If SocketOpen Then
+            
+            'Send the data buffer
+            Data_Send
+            
+            'Check the time since the last packet arrived
+            If timeGetTime - LastServerPacketTime > 6000 Then
+            
+                'No response from the server in 5 seconds, must be disconnected :(
+                IsUnloading = 1
+                
+            End If
+            
+        End If
 
         'Check to unload stuff from memory (only check every 5 seconds)
         If LastUnloadTime < timeGetTime Then
@@ -1037,9 +1050,13 @@ Dim i As Integer
         DoEvents
         
         'Do sleep event - force FPS at the FPS cap
-        If FPSCap > 0 Then
-            If (timeGetTime - StartTime) < FPSCap Then  'If Elapsed Time < Time required for requested highest fps
-                Sleep FPSCap - (timeGetTime - StartTime)
+        If Not frmMain.Visible Then
+            Sleep 100   'Don't hog resources at connect screen
+        Else
+            If FPSCap > 0 Then
+                If (timeGetTime - StartTime) < FPSCap Then  'If Elapsed Time < Time required for requested highest fps
+                    Sleep FPSCap - (timeGetTime - StartTime)
+                End If
             End If
         End If
 

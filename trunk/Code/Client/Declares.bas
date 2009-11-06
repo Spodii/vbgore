@@ -290,6 +290,9 @@ Public UserAttackRange As Byte
 Public UserInventory(1 To MAX_INVENTORY_SLOTS) As Inventory
 Public UserBank(1 To MAX_INVENTORY_SLOTS) As Inventory
 
+'The time the last packet from the server arrived
+Public LastServerPacketTime As Long
+
 'If there is a clear path to the target (if any)
 Public ClearPathToTarget As Byte
 

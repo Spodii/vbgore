@@ -1487,7 +1487,7 @@ Dim PacketSize As Long
 
     'Set alive flag
     NPCList(NPCIndex).Flags.NPCAlive = 1
-
+    
     'Set the hp/mp to send
     If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
     If NPCList(NPCIndex).ModStat(SID.MaxMAN) > 0 Then SndMP = CByte((NPCList(NPCIndex).BaseStat(SID.MinMAN) / NPCList(NPCIndex).ModStat(SID.MaxMAN)) * 100)

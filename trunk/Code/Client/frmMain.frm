@@ -266,6 +266,9 @@ Dim BufUBound As Long
     rBuf.Set_Buffer inData
     BufUBound = UBound(inData)
     
+    'Packet arrived!
+    LastServerPacketTime = timeGetTime
+    
     'Uncomment this to see packets going into the client
     'Dim i As Long
     'Dim s As String
@@ -310,6 +313,7 @@ Dim BufUBound As Long
             Case .Server_IconStrengthened: Data_Server_IconStrengthened rBuf
             Case .Server_IconWarCursed: Data_Server_IconWarCursed rBuf
             Case .Server_IconSpellExhaustion: Data_Server_IconSpellExhaustion rBuf
+            'Case .Server_KeepAlive: Data_Server_KeepAlive - Not needed since it only confirms the connection is alive
             Case .Server_MailBox: Data_Server_Mailbox rBuf
             Case .Server_MailItemRemove: Data_Server_MailItemRemove rBuf
             Case .Server_MailMessage: Data_Server_MailMessage rBuf

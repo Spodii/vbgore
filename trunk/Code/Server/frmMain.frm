@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
-Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
+Object = "{00C99381-8913-471F-9EED-4A517B2EB0F9}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -334,6 +334,12 @@ Dim i As Long
         ConBuf.Put_Byte DataCode.Comm_FontType_Info
     Next LoopC
     MOTDBuffer = ConBuf.Get_Buffer
+    
+    '*** Build client keep-alive packet ***
+    
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.Server_KeepAlive
+    KeepAlivePacket = ConBuf.Get_Buffer
     
     '*** Build cached messages ***
     frmMain.Caption = "Caching constant packets..."

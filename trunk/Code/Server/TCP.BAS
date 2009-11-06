@@ -237,6 +237,8 @@ Sub Data_User_RequestMakeChar(ByRef rBuf As DataBuffer, ByVal UserIndex As Integ
 Dim CharIndex As Integer
 Dim Index As Integer
 
+    Log "Call Data_User_RequestMakeChar", CodeTracker
+
     CharIndex = rBuf.Get_Integer
     If CharIndex <= LastChar Then
         If CharIndex > 0 Then
@@ -1975,6 +1977,9 @@ Sub Data_Send_Buffer(ByVal UserIndex As Integer)
             UserList(UserIndex).BufferSize = -1
             UserList(UserIndex).PPCount = 0
             UserList(UserIndex).PacketWait = 0
+            
+            'Store the time at which the packet was sent
+            UserList(UserIndex).LastPacketSent = timeGetTime
 
         End If
     End If
@@ -2381,15 +2386,17 @@ Dim i As Long
             If LoopC + ((i - 1) * 10) > intNumUsers Then Exit For
             tStr = tStr & UserNames(LoopC + ((i - 1) * 10)) & ", "
         Next LoopC
-        tStr = Left$(tStr, Len(tStr) - 2)   'Crop off the last comma
-        ConBuf.Allocate 3 + Len(tStr)
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String tStr
-        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        If Len(tStr) > 2 Then
+            tStr = Left$(tStr, Len(tStr) - 2)   'Crop off the last comma
+            ConBuf.Allocate 3 + Len(tStr)
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String tStr
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        End If
     Next i
 
     'Send all the lines as a whole
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    If ConBuf.HasBuffer Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
 End Sub
 
@@ -2597,7 +2604,6 @@ Sub Data_User_ChangeInvSlot(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer
 'User changes an item in their inventory from one slot to another
 '<SourceSlot(B)><DestinationSlot(B)>
 '*****************************************************************
-
 Dim DestObj As UserOBJ
 Dim SrcObj As UserOBJ
 Dim DestSlot As Byte

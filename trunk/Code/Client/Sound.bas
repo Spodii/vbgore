@@ -131,7 +131,7 @@ Dim L As Long
 
 End Sub
 
-Public Sub Sound_Play(ByVal SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
+Public Sub Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
 '************************************************************
 'Used for non area-specific sound effects, such as weather
 '************************************************************

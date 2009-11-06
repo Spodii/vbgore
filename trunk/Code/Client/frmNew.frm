@@ -91,7 +91,6 @@ Begin VB.Form frmNew
       Left            =   840
       MultiLine       =   -1  'True
       TabIndex        =   1
-      Text            =   "frmNew.frx":0000
       Top             =   1125
       Width           =   1875
    End
@@ -113,7 +112,6 @@ Begin VB.Form frmNew
       Left            =   840
       MultiLine       =   -1  'True
       TabIndex        =   0
-      Text            =   "frmNew.frx":0004
       Top             =   780
       Width           =   1875
    End
