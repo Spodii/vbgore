@@ -124,28 +124,48 @@ Function Game_GetEXPCost(BaseSkill As Long) As Long
 
 End Function
 
-Function Game_LegalCharacter(KeyAscii As Byte) As Boolean
+Function Game_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
 
 '*****************************************************************
-'Only allow certain specified characters
+'Only allow certain specified characters (this is used for chat/etc)
+'Make sure you update the server's Server_ValidCharacter, too!
+'*****************************************************************
+
+    Log "Call Game_ValidCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
+
+    If KeyAscii > 32 Then Game_ValidCharacter = True
+
+End Function
+
+Function Game_LegalCharacter(ByVal KeyAscii As Byte) As Boolean
+
+'*****************************************************************
+'Only allow certain specified characters (this is for username/pass)
+'Make sure you update the server's Server_ValidCharacter, too!
 '*****************************************************************
 
     On Error GoTo ErrOut
 
     'Allow numbers between 0 and 9
-    If KeyAscii >= 48 Or KeyAscii <= 57 Then
+    If KeyAscii >= 48 And KeyAscii <= 57 Then
         Game_LegalCharacter = True
         Exit Function
     End If
     
-    'Allow letters A to Z
-    If KeyAscii >= 65 Or KeyAscii <= 90 Then
+    'Allow characters A to Z
+    If KeyAscii >= 65 And KeyAscii <= 90 Then
         Game_LegalCharacter = True
         Exit Function
     End If
     
-    'Allow letters a to z
-    If KeyAscii >= 97 Or KeyAscii <= 122 Then
+    'Allow characters a to z
+    If KeyAscii >= 97 And KeyAscii <= 122 Then
+        Game_LegalCharacter = True
+        Exit Function
+    End If
+    
+    'Allow foreign characters
+    If KeyAscii >= 128 And KeyAscii <= 168 Then
         Game_LegalCharacter = True
         Exit Function
     End If
@@ -157,6 +177,39 @@ ErrOut:
     'Something bad happened, so the character must be invalid
     Game_LegalCharacter = False
     
+End Function
+
+Function Game_ValidString(ByVal CheckString As String) As Boolean
+
+'*****************************************************************
+'Check for illegal characters in the string (wrapper for Game_ValidCharacter)
+'*****************************************************************
+Dim i As Long
+
+    On Error GoTo ErrOut
+
+    'Check for invalid string
+    If CheckString = vbNullChar Then Exit Function
+    If LenB(CheckString) < 1 Then Exit Function
+
+    'Loop through the string
+    For i = 1 To Len(CheckString)
+        
+        'Check the values
+        If Game_ValidCharacter(AscB(Mid$(CheckString, i, 1))) = False Then Exit Function
+        
+    Next i
+    
+    'If we have made it this far, then all is good
+    Game_ValidString = True
+
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the string must be invalid
+    Game_ValidString = False
+
 End Function
 
 Function Game_LegalString(ByVal CheckString As String) As Boolean

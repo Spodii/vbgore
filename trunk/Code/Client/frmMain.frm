@@ -431,12 +431,9 @@ Dim b As Boolean
                     If Len(WriteMailData.RecieverName) > 0 Then
                         WriteMailData.RecieverName = Left$(WriteMailData.RecieverName, Len(WriteMailData.RecieverName) - 1)
                     End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(WriteMailData.RecieverName) < 10 Then
-                            WriteMailData.RecieverName = WriteMailData.RecieverName & Chr$(KeyAscii)
-                        End If
+                Else
+                    If Len(WriteMailData.RecieverName) < 10 Then
+                        WriteMailData.RecieverName = WriteMailData.RecieverName & Chr$(KeyAscii)
                     End If
                 End If
             Case wmSubject
@@ -444,12 +441,9 @@ Dim b As Boolean
                     If Len(WriteMailData.Subject) > 0 Then
                         WriteMailData.Subject = Left$(WriteMailData.Subject, Len(WriteMailData.Subject) - 1)
                     End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(WriteMailData.Subject) < 30 Then
-                            WriteMailData.Subject = WriteMailData.Subject & Chr$(KeyAscii)
-                        End If
+                Else
+                    If Len(WriteMailData.Subject) < 30 Then
+                        WriteMailData.Subject = WriteMailData.Subject & Chr$(KeyAscii)
                     End If
                 End If
             Case wmMessage
@@ -457,12 +451,9 @@ Dim b As Boolean
                     If Len(WriteMailData.Message) > 0 Then
                         WriteMailData.Message = Left$(WriteMailData.Message, Len(WriteMailData.Message) - 1)
                     End If
-                End If
-                If KeyAscii >= 32 Then
-                    If KeyAscii <= 126 Then
-                        If Len(WriteMailData.Message) < 500 Then
-                            WriteMailData.Message = WriteMailData.Message & Chr$(KeyAscii)
-                        End If
+                Else
+                    If Len(WriteMailData.Message) < 500 Then
+                        WriteMailData.Message = WriteMailData.Message & Chr$(KeyAscii)
                     End If
                 End If
             End Select
@@ -476,12 +467,10 @@ Dim b As Boolean
                 b = True
             End If
             'Add to text buffer
-            If KeyAscii >= 32 Then
-                If KeyAscii <= 126 Then
-                    If Len(EnterTextBuffer) < 85 Then
-                        EnterTextBuffer = EnterTextBuffer & Chr$(KeyAscii)
-                        b = True
-                    End If
+            If Game_ValidCharacter(KeyAscii) Then
+                If Len(EnterTextBuffer) < 85 Then
+                    EnterTextBuffer = EnterTextBuffer & Chr$(KeyAscii)
+                    b = True
                 End If
             End If
             'Update size
@@ -529,40 +518,44 @@ Dim i As Integer
         End If
     End If
 
-    'Send an emoticon
+    'Send an emoticon - but make sure we're not typing or entering in a mail message
     If EnterText = False Then
-        Select Case KeyCode
-        Case vbKey1
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Dots
-        Case vbKey2
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Exclimation
-        Case vbKey3
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Question
-        Case vbKey4
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Surprised
-        Case vbKey5
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Heart
-        Case vbKey6
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Hearts
-        Case vbKey7
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.HeartBroken
-        Case vbKey8
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Utensils
-        Case vbKey9
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.Meat
-        Case vbKey0
-            sndBuf.Put_Byte DataCode.User_Emote
-            sndBuf.Put_Byte EmoID.ExcliQuestion
-        End Select
+        If Not LastClickedWindow = WriteMessageWindow Then
+            If Not ShowGameWindow(WriteMessageWindow) Then
+                Select Case KeyCode
+                Case vbKey1
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Dots
+                Case vbKey2
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Exclimation
+                Case vbKey3
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Question
+                Case vbKey4
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Surprised
+                Case vbKey5
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Heart
+                Case vbKey6
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Hearts
+                Case vbKey7
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.HeartBroken
+                Case vbKey8
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Utensils
+                Case vbKey9
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.Meat
+                Case vbKey0
+                    sndBuf.Put_Byte DataCode.User_Emote
+                    sndBuf.Put_Byte EmoID.ExcliQuestion
+                End Select
+            End If
+        End If
     End If
     
     'Clear the key

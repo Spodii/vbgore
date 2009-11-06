@@ -45,10 +45,10 @@ Function Server_WalkTimePerTile(ByVal Speed As Long) As Long
     '4 = The client works off a base value of 4 for speed, so the speed is calculated as 4 + Speed in the client
     '11 = BaseWalkSpeed - how fast we move in pixels/sec
     '32 = The size of a tile
-    '70 = We have to give some slack for network lag and client lag - raise this value if people skip too much
+    '150 = We have to give some slack for network lag and client lag - raise this value if people skip too much
     '     and lower it if people are speedhacking and getting too much extra speed
     '1000 = Miliseconds in a second
-    Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - 70
+    Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - 150
     
     Log "Rtrn Server_WalkTimePerSecond = " & Server_WalkTimePerTile, CodeTracker '//\\LOGLINE//\\
 
@@ -77,8 +77,9 @@ End Function
 Function Server_LegalString(ByVal CheckString As String) As Boolean
 
 '*****************************************************************
-'Check for illegal characters in the string (wrapper for Server_LegalCharacter)
+'Check for illegal characters in the string (string wrapper for Server_LegalCharacter)
 '*****************************************************************
+Dim b() As Byte
 Dim i As Long
 
     Log "Call Server_LegalString(" & CheckString & ")", CodeTracker '//\\LOGLINE//\\
@@ -94,12 +95,15 @@ Dim i As Long
         Log "Rtrn Server_LegalString = " & Server_LegalString, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
+    
+    'Copy the string to a byte array
+    b() = StrConv(CheckString, vbFromUnicode)
 
     'Loop through the string
-    For i = 1 To Len(CheckString)
+    For i = 0 To UBound(b)
         
         'Check the values
-        If Server_LegalCharacter(AscB(Mid$(CheckString, i, 1))) = False Then
+        If Server_LegalCharacter(b(i)) = False Then
             Log "Rtrn Server_LegalString = " & Server_LegalString, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
@@ -122,10 +126,77 @@ ErrOut:
 
 End Function
 
-Function Server_LegalCharacter(KeyAscii As Byte) As Boolean
+Function Server_ValidString(ByVal CheckString As String) As Boolean
 
 '*****************************************************************
-'Only allow certain specified characters
+'Check for valid characters in the string (string wrapper for Server_ValidCharacter)
+'Make sure to update on the client, too!
+'*****************************************************************
+Dim b() As Byte
+Dim i As Long
+
+    Log "Call Server_ValidString(" & CheckString & ")", CodeTracker '//\\LOGLINE//\\
+
+    On Error GoTo ErrOut
+
+    'Check for invalid string
+    If CheckString = vbNullChar Then
+        Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If LenB(CheckString) < 1 Then
+        Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    'Copy the string to a byte array
+    b() = StrConv(CheckString, vbFromUnicode)
+
+    'Loop through the string
+    For i = 0 To UBound(b)
+        
+        'Check the values
+        If Server_ValidCharacter(b(i)) = False Then
+            Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+        End If
+        
+    Next i
+    
+    'If we have made it this far, then all is good
+    Server_ValidString = True
+    
+    Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
+
+Exit Function
+
+ErrOut:
+
+    'Something bad happened, so the string must be invalid
+    Server_ValidString = False
+    
+    Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Function Server_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
+
+'*****************************************************************
+'Only allow certain specified characters (this is used for chat/etc)
+'Make sure you update the client's Game_ValidCharacter, too!
+'*****************************************************************
+
+    Log "Call Server_ValidCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
+
+    If KeyAscii > 32 Then Server_ValidCharacter = True
+
+End Function
+
+Function Server_LegalCharacter(ByVal KeyAscii As Byte) As Boolean
+
+'*****************************************************************
+'Only allow certain specified characters (this is for username/pass)
+'Make sure you update the client's Game_LegalCharacter, too!
 '*****************************************************************
 
     Log "Call Server_LegalCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
@@ -133,21 +204,28 @@ Function Server_LegalCharacter(KeyAscii As Byte) As Boolean
     On Error GoTo ErrOut
 
     'Allow numbers between 0 and 9
-    If KeyAscii >= 48 Or KeyAscii <= 57 Then
+    If KeyAscii >= 48 And KeyAscii <= 57 Then
         Server_LegalCharacter = True
         Log "Rtrn Server_LegalCharacter = " & Server_LegalCharacter, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
     
     'Allow letters A to Z
-    If KeyAscii >= 65 Or KeyAscii <= 90 Then
+    If KeyAscii >= 65 And KeyAscii <= 90 Then
         Server_LegalCharacter = True
         Log "Rtrn Server_LegalCharacter = " & Server_LegalCharacter, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
     
     'Allow letters a to z
-    If KeyAscii >= 97 Or KeyAscii <= 122 Then
+    If KeyAscii >= 97 And KeyAscii <= 122 Then
+        Server_LegalCharacter = True
+        Log "Rtrn Server_LegalCharacter = " & Server_LegalCharacter, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    'Allow foreign characters
+    If KeyAscii >= 128 And KeyAscii <= 168 Then
         Server_LegalCharacter = True
         Log "Rtrn Server_LegalCharacter = " & Server_LegalCharacter, CodeTracker '//\\LOGLINE//\\
         Exit Function
@@ -165,30 +243,30 @@ ErrOut:
     
 End Function
 
-Function Server_Distance(ByVal X1 As Integer, ByVal Y1 As Integer, ByVal X2 As Integer, ByVal Y2 As Integer) As Single
+Function Server_Distance(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal x2 As Integer, ByVal Y2 As Integer) As Single
 
 '*****************************************************************
 'Finds the distance between two points
 '*****************************************************************
 
-    Log "Call Server_Distance(" & X1 & "," & Y1 & "," & X2 & "," & Y2 & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call Server_Distance(" & x1 & "," & Y1 & "," & x2 & "," & Y2 & ")", CodeTracker '//\\LOGLINE//\\
 
-    Server_Distance = Sqr(((Y1 - Y2) ^ 2 + (X1 - X2) ^ 2))
+    Server_Distance = Sqr(((Y1 - Y2) ^ 2 + (x1 - x2) ^ 2))
     
     Log "Rtrn Server_Distance = " & Server_Distance, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
-Function Server_RectDistance(ByVal X1 As Long, ByVal Y1 As Long, ByVal X2 As Long, ByVal Y2 As Long, ByVal MaxXDist As Long, ByVal MaxYDist As Long) As Byte
+Function Server_RectDistance(ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long, ByVal MaxXDist As Long, ByVal MaxYDist As Long) As Byte
 
 '*****************************************************************
 'Check if two tile points are in the same screen
 '*****************************************************************
 
-    Log "Call Server_RectDistance(" & X1 & "," & Y1 & "," & X2 & "," & Y2 & "," & MaxXDist & "," & MaxYDist & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call Server_RectDistance(" & x1 & "," & Y1 & "," & x2 & "," & Y2 & "," & MaxXDist & "," & MaxYDist & ")", CodeTracker '//\\LOGLINE//\\
 
-    If Abs(X1 - X2) < MaxXDist Then
-        If Abs(Y1 - Y2) < MaxYDist Then
+    If Abs(x1 - x2) < MaxXDist + 1 Then
+        If Abs(Y1 - Y2) < MaxYDist + 1 Then
             Server_RectDistance = True
         End If
     End If

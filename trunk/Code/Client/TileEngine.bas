@@ -1540,6 +1540,9 @@ Private Sub Engine_Init_Sound()
 'Initialize the 3D sound device
 '************************************************************
 
+    'Make sure we try not to load a file while the engine is unloading
+    If IsUnloading Then Exit Sub
+
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
     DS.SetCooperativeLevel frmMain.hwnd, DSSCL_PRIORITY
@@ -1547,6 +1550,13 @@ Private Sub Engine_Init_Sound()
     'Set up the buffer description for later use
     'We are only using panning and volume - combined, we will use this to create a custom 3D effect
     DSBDesc.lFlags = DSBCAPS_CTRLPAN Or DSBCAPS_CTRLVOLUME
+
+    'Check if the texture exists
+    If Engine_FileExist(DataPath & "Sfx.ini", vbNormal) = False Then
+        MsgBox "Error! Could not find the following data file:" & vbCrLf & DataPath & "Sfx.ini", vbOKOnly
+        IsUnloading = 1
+        Exit Sub
+    End If
 
     'Get the number of sound effects
     NumSfx = Val(Engine_Var_Get(DataPath & "Sfx.ini", "INIT", "NumSfx"))
@@ -2355,8 +2365,18 @@ Sub Engine_Init_Texture(ByVal TextureNum As Integer)
 Dim TexInfo As D3DXIMAGE_INFO_A
 Dim FilePath As String
 
+    'Make sure we try not to load a file while the engine is unloading
+    If IsUnloading Then Exit Sub
+
     'Get the path
     FilePath = GrhPath & TextureNum & ".png"
+    
+    'Check if the texture exists
+    If Engine_FileExist(FilePath, vbNormal) = False Then
+        MsgBox "Error! Could not find the following texture file:" & vbCrLf & FilePath, vbOKOnly
+        IsUnloading = 1
+        Exit Sub
+    End If
 
     'Set the texture
     Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, TexInfo, ByVal 0)
@@ -2889,8 +2909,8 @@ Dim tY As Integer
     WMSelCon = 0
 
     'Start with the last clicked window, then move in order of importance
-    If Engine_Input_Mouse_LeftClick_Window(ChatWindow) = 0 Then
-        If Engine_Input_Mouse_LeftClick_Window(LastClickedWindow) = 0 Then
+    If Engine_Input_Mouse_LeftClick_Window(LastClickedWindow) = 0 Then
+        If Engine_Input_Mouse_LeftClick_Window(ChatWindow) = 0 Then
             If Engine_Input_Mouse_LeftClick_Window(QuickBarWindow) = 0 Then
                 If Engine_Input_Mouse_LeftClick_Window(InventoryWindow) = 0 Then
                     If Engine_Input_Mouse_LeftClick_Window(ShopWindow) = 0 Then
@@ -4623,6 +4643,9 @@ Dim i As Byte
             Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue
         End With
         
+        'Render the chat text
+        Engine_Render_ChatTextBuffer GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + 125
+        
     Case MenuWindow
         With GameWindow.Menu
             Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
@@ -5294,9 +5317,6 @@ Dim j As Long
 
     'Render the GUI
     Engine_Render_GUI
-    
-    'Render the chat text
-    Engine_Render_ChatTextBuffer GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + 125
     
     'Draw entered text
     If EnterText = True Then

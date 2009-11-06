@@ -526,9 +526,9 @@ Sub Data_Server_ChangeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Change a character by the character index
-'<CharIndex(I)><Body(I)><Head(I)><Heading(B)><Weapon(I)><Hair(I)><Wings(I)>
+'<CharIndex(I)><Flags(B)>(<Body(I)><Head(I)><Heading(B)><Weapon(I)><Hair(I)><Wings(I)>)
 '*********************************************
-
+Dim Flags As Byte
 Dim CharIndex As Integer
 Dim CharBody As Integer
 Dim CharHead As Integer
@@ -537,22 +537,38 @@ Dim CharWeapon As Integer
 Dim CharHair As Integer
 Dim CharWings As Integer
     
-    'Gather the information - must be done before checking for invalid parameters
+    'Get the character index we are changing
     CharIndex = rBuf.Get_Integer
-    CharBody = rBuf.Get_Integer
-    CharHead = rBuf.Get_Integer
-    CharHeading = rBuf.Get_Byte
-    CharWeapon = rBuf.Get_Integer
-    CharHair = rBuf.Get_Integer
-    CharWings = rBuf.Get_Integer
-
-    CharList(CharIndex).Body = BodyData(CharBody)
-    CharList(CharIndex).Head = HeadData(CharHead)
-    CharList(CharIndex).Heading = CharHeading
-    CharList(CharIndex).HeadHeading = CharHeading
-    CharList(CharIndex).Weapon = WeaponData(CharWeapon)
-    CharList(CharIndex).Hair = HairData(CharHair)
-    CharList(CharIndex).Wings = WingData(CharWings)
+    
+    'Get the flags on what data we need to get
+    Flags = rBuf.Get_Byte
+    
+    'Get the data needed
+    If Flags And 1 Then
+        CharBody = rBuf.Get_Integer
+        CharList(CharIndex).Body = BodyData(CharBody)
+    End If
+    If Flags And 2 Then
+        CharHead = rBuf.Get_Integer
+        CharList(CharIndex).Head = HeadData(CharHead)
+    End If
+    If Flags And 4 Then
+        CharHeading = rBuf.Get_Byte
+        CharList(CharIndex).Heading = CharHeading
+        CharList(CharIndex).HeadHeading = CharHeading
+    End If
+    If Flags And 8 Then
+        CharWeapon = rBuf.Get_Integer
+        CharList(CharIndex).Weapon = WeaponData(CharWeapon)
+    End If
+    If Flags And 16 Then
+        CharHair = rBuf.Get_Integer
+        CharList(CharIndex).Hair = HairData(CharHair)
+    End If
+    If Flags And 32 Then
+        CharWings = rBuf.Get_Integer
+        CharList(CharIndex).Wings = WingData(CharWings)
+    End If
     
 End Sub
 

@@ -107,6 +107,9 @@ Dim txt As String
         UserList(UserIndex).Counters.DelayTimeTalk = timeGetTime + DelayTimeTalk
     End If
     
+    'Check if the string is valid
+    If Server_ValidString(txt) = False Then Exit Sub
+    
     'Write the message
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Comm_Talk
@@ -142,6 +145,9 @@ Dim txt As String
     Else
         UserList(UserIndex).Counters.DelayTimeTalk = timeGetTime + DelayTimeTalk
     End If
+    
+    'Check if the string is valid
+    If Server_ValidString(txt) = False Then Exit Sub
     
     'Write the message
     ConBuf.Clear
@@ -179,6 +185,9 @@ Dim txt As String
     Else
         UserList(UserIndex).Counters.DelayTimeTalk = timeGetTime + DelayTimeTalk
     End If
+    
+    'Check if the string is valid
+    If Server_ValidString(txt) = False Then Exit Sub
     
     'Write the message
     ConBuf.Clear
@@ -248,6 +257,9 @@ Dim TempStr() As String
     Else
         tMessage = " "
     End If
+    
+    'Check if the string is valid
+    If Server_ValidString(txt) = False Then Exit Sub
 
     'Tell the target what they got whispered
     ConBuf.Clear
@@ -946,6 +958,11 @@ Dim ObjAmountStr As String
 
     'Check for invalid values (most is handled in Server_WriteMail sub)
     If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
+    If Server_ValidString(RecieverName) = False Then Exit Sub
+    If Server_ValidString(Subject) = False Then Exit Sub
+    If Server_ValidString(Message) = False Then Exit Sub
+    If Server_ValidString(ObjIndexStr) = False Then Exit Sub
+    If Server_ValidString(ObjAmountStr) = False Then Exit Sub
 
     'Write the mail to the RecieverName
     Server_WriteMail UserIndex, RecieverName, Subject, Message, ObjIndexStr, ObjAmountStr
@@ -2068,6 +2085,9 @@ Sub Server_CloseSocket(ByVal UserIndex As Integer)
             'If the user hasn't been closed, close it
             If UserList(UserIndex).Flags.UserLogged = 1 Then User_Close UserIndex
 
+            'If User_Close was called, the array may have been resized, so make sure we are still in bounds
+            If UserIndex > LastUser Then Exit Sub
+
             'Clear the record of an old inSox, in case it ever did get transfered to another char
             UserList(UserIndex).ConnID = -1
             UserList(UserIndex).Flags.UserLogged = 0    'Set to 0 again, just in case
@@ -2340,7 +2360,7 @@ Dim Count As Byte
     'Send welcome message
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String "Welcome to vbGORE Version 0.2.4!"
+    ConBuf.Put_String "Welcome to vbGORE Version 0.2.5!"
     ConBuf.Put_Byte DataCode.Comm_FontType_Info
 
     ConBuf.Put_Byte DataCode.Comm_Talk

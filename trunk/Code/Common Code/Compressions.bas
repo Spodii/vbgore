@@ -613,6 +613,3 @@ Private Function Compression_ReadFromArray_Char(FromArray() As Byte, FromPos As 
     FromPos = FromPos + 1
 
 End Function
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:49)  Decl: 36  Code: 579  Total: 615 Lines
-':) CommentOnly: 3 (0.5%)  Commented: 1 (0.2%)  Empty: 76 (12.4%)  Max Logic Depth: 6

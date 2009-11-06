@@ -313,29 +313,67 @@ Dim Hit As Integer
 
 End Sub
 
-Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer)
+Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Heading As Byte = 0, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
 
 '*****************************************************************
 'Changes a NPC char's head,body and heading
 '*****************************************************************
+Dim ChangeFlags As Byte
 
     Log "Call NPC_ChangeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
 
-    NPCList(NPCIndex).Char.Body = Body
-    NPCList(NPCIndex).Char.Head = Head
-    NPCList(NPCIndex).Char.Wings = Wings
-    NPCList(NPCIndex).Char.Heading = Heading
-    NPCList(NPCIndex).Char.HeadHeading = Heading
-
+    'Check for a valid NPC
+    If NPCIndex <= 0 Then
+        Log "NPC_ChangeChar: NPCIndex <= 0 - aborting", CriticalError
+        Exit Sub
+    End If
+    If NPCIndex > LastNPC Then
+        Log "NPC_ChangeChar: NPCIndex > LastNPC - aborting", CriticalError
+        Exit Sub
+    End If
+    
+    'Check for changed values
+    With NPCList(NPCIndex).Char
+        If Body > -1 Then
+            If .Body <> Body Then .Body = Body
+            ChangeFlags = ChangeFlags Or 1
+        End If
+        If Head > -1 Then
+            If .Head <> Head Then .Head = Head
+            ChangeFlags = ChangeFlags Or 2
+        End If
+        If Heading > 0 Then
+            If .Heading <> Heading Then .Heading = Heading
+            ChangeFlags = ChangeFlags Or 4
+        End If
+        If Weapon > -1 Then
+            If .Weapon <> Weapon Then .Weapon = Weapon
+            ChangeFlags = ChangeFlags Or 8
+        End If
+        If Hair > -1 Then
+            If .Hair <> Hair Then .Hair = Hair
+            ChangeFlags = ChangeFlags Or 16
+        End If
+        If Wings > -1 Then
+            If .Wings <> Wings Then .Wings = Wings
+            ChangeFlags = ChangeFlags Or 32
+        End If
+    End With
+    
+    'Make sure there is a packet to send
+    If ChangeFlags = 0 Then Exit Sub
+    
+    'Create the packet
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_ChangeChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-    ConBuf.Put_Integer Body
-    ConBuf.Put_Integer Head
-    ConBuf.Put_Byte Heading
-    ConBuf.Put_Integer Weapon
-    ConBuf.Put_Integer Hair
-    ConBuf.Put_Integer Wings
+    ConBuf.Put_Byte ChangeFlags
+    If ChangeFlags And 1 Then ConBuf.Put_Integer Body
+    If ChangeFlags And 2 Then ConBuf.Put_Integer Head
+    If ChangeFlags And 4 Then ConBuf.Put_Byte Heading
+    If ChangeFlags And 8 Then ConBuf.Put_Integer Weapon
+    If ChangeFlags And 16 Then ConBuf.Put_Integer Hair
+    If ChangeFlags And 32 Then ConBuf.Put_Integer Wings
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_ChangeChar
 
 End Sub

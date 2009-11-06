@@ -1,5 +1,5 @@
 Type=Exe
-Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\Program Files\Common Files\system\ado\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
+Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\WINDOWS\system32\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
 Module=Compressions; Code\Common Code\Compressions.bas
 Class=DataBuffer; Code\Common Code\DataBuffer.cls
 Module=SystemTray; Code\Common Code\SystemTray.bas
@@ -29,7 +29,7 @@ HelpContextID="0"
 CompatibleMode="0"
 MajorVer=0
 MinorVer=2
-RevisionVer=4
+RevisionVer=5
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"
