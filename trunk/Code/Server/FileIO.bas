@@ -306,7 +306,7 @@ Dim i As Long
                 CharList(CharIndex).CharType = CharType_NPC
                 
                 'Set the NPC as used
-                .flags.NPCActive = 1
+                .Flags.NPCActive = 1
             
             End With
         Next i
@@ -525,7 +525,7 @@ Dim i As Long
                     If .Pos.Map = MapNum Then
                         CharList(.Char.CharIndex).Index = 0
                         CharList(.Char.CharIndex).CharType = 0
-                        .flags.NPCActive = 0
+                        .Flags.NPCActive = 0
                         NPC_Close i, 0
                     End If
                 End With
@@ -615,7 +615,7 @@ Dim j As Byte
     DB_RS.Open "SELECT * FROM npcs", DB_Conn, adOpenStatic, adLockOptimistic
     
     'Loop through them, and put the data into the NPCList(1)
-    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+    Do While Not DB_RS.EOF  'Loop until we reach the end of the recordset
         
         'Delete any existing temp file
         If Server_FileExist(ServerTempPath & "n" & DB_RS!id & ".temp", vbNormal) Then Kill ServerTempPath & "n" & DB_RS!id & ".temp"
@@ -665,7 +665,7 @@ Dim j As Byte
             .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
             .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
             .NPCNumber = DB_RS!id
-            .flags.NPCActive = 1
+            .Flags.NPCActive = 1
             ShopStr = Trim$(DB_RS!objs_shop)
             DropStr = Trim$(DB_RS!drops)
 
@@ -764,7 +764,7 @@ Dim i As Long
     DB_RS.Open "SELECT finish_req_killnpc FROM quests", DB_Conn, adOpenStatic, adLockOptimistic
     
     'Loop through all the IDs
-    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+    Do While Not DB_RS.EOF  'Loop until we reach the end of the recordset
         
         'If the ID is used, mark it with ".", so we can get the real name later
         If Val(DB_RS(0)) > 0 Then NPCName(Val(DB_RS(0))) = "."
@@ -861,7 +861,7 @@ Dim FileNum As Byte
             Get #FileNum, , NPCList(NPCIndex)
         
             'Set the NPC's thralled value
-            .flags.Thralled = Thralled
+            .Flags.Thralled = Thralled
             If ThralledTime <> -1 Then
                 .Counters.RespawnCounter = timeGetTime + ThralledTime
             Else
@@ -898,7 +898,7 @@ Dim FileNum As Byte
     DB_RS.Open "SELECT * FROM objects", DB_Conn, adOpenStatic, adLockOptimistic
 
     'Fill the object list
-    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+    Do While Not DB_RS.EOF   'Loop until we reach the end of the recordset
         With TempObjData
             Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
@@ -975,7 +975,7 @@ Public Sub Load_Quests()
     DB_RS.Open "SELECT * FROM quests", DB_Conn, adOpenStatic, adLockOptimistic
     
     'Fill in the information
-    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+    Do While Not DB_RS.EOF  'Loop until we reach the end of the recordset
         With QuestData(DB_RS!id)
             Log "Load_Quests: Filling QuestData for quest " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
@@ -1125,7 +1125,7 @@ Dim i As Long
     'Loop through every field - match up the names then set the data accordingly
     With DB_RS
         UserList(UserIndex).Desc = Trim$(!Descr)
-        UserList(UserIndex).flags.GMLevel = !gm
+        UserList(UserIndex).Flags.GMLevel = !gm
         InvStr = !inventory
         MailStr = !mail
         BankStr = !Bank
@@ -1348,7 +1348,7 @@ Dim i As Long
     Log "Call Save_User(N/A," & UserIndex & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
     'On special occasions, we want to the typical saving routine and save before the user is even disconnected
-    If UserChar.flags.DoNotSave = 1 Then Exit Sub
+    If UserChar.Flags.DoNotSave = 1 Then Exit Sub
 
     With UserChar
     
@@ -1451,7 +1451,7 @@ Dim i As Long
             DB_RS!IP = frmMain.GOREsock.Address(UserIndex)
         End If
         DB_RS!date_lastlogin = Date$
-        DB_RS!gm = .flags.GMLevel
+        DB_RS!gm = .Flags.GMLevel
         DB_RS!Class = .Class
         DB_RS!Descr = .Desc
         DB_RS!BankGold = .BankGold

@@ -751,6 +751,12 @@ Dim Byt1 As Byte
             Engine_AddToChatTextBuffer Replace$(Message(134), "<name>", Str1), FontColor_Quest
         Case 137
             Engine_AddToChatTextBuffer Message(137), FontColor_Info
+        Case 138
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(138), "<amount>", Lng1), FontColor_Info
+        Case 139
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(139), "<amount>", Lng1), FontColor_Info
     End Select
 
 End Sub
@@ -813,17 +819,17 @@ Sub Data_Comm_Talk(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Send data to chat buffer
-'<Text(S)><FontColorID(B)>(<CharIndex(B)>)
+'<Text(S)><FontColorID(B)>(<CharIndex(I)>)
 '*********************************************
 Dim CharIndex As Integer
 Dim TempStr As String
 Dim TempLng As Long
 Dim TempByte As Byte
-
+    
     'Get the text
     TempStr = rBuf.Get_String
     TempByte = rBuf.Get_Byte
-    
+
     'Filter the temp string
     TempStr = Game_FilterString(TempStr)
     
@@ -937,18 +943,14 @@ Sub Data_Send()
 '*********************************************
 'Send data buffer to the server
 '*********************************************
-Dim TempBuffer() As Byte
 
     'Check that we have data to send
     If SocketOpen = 0 Then DoEvents
     If sndBuf.HasBuffer Then
         If SocketOpen = 0 Then DoEvents
-    
-        'Assign to the temp buffer
-        TempBuffer() = sndBuf.Get_Buffer
-    
+
         'Send the data
-        frmMain.GOREsock.SendData SoxID, TempBuffer
+        frmMain.GOREsock.SendData SoxID, sndBuf.Get_Buffer
         
         'Clear the buffer, get it ready for next use
         sndBuf.Clear
@@ -1080,22 +1082,25 @@ Sub Data_Server_EraseObject(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Erase an object on the object layer
-'<X(B)><Y(B)>
+'<X(B)><Y(B)><Grh(L)>
 '*********************************************
-
 Dim j As Integer
 Dim X As Byte
 Dim Y As Byte
+Dim Grh As Long
 
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
+    Grh = rBuf.Get_Long
 
     'Loop through until we find the object on (X,Y) then kill it
     For j = 1 To LastObj
         If OBJList(j).Pos.X = X Then
             If OBJList(j).Pos.Y = Y Then
-                Engine_OBJ_Erase j
-                Exit Sub
+                If OBJList(j).Grh.GrhIndex = Grh Then
+                    Engine_OBJ_Erase j
+                    Exit Sub
+                End If
             End If
         End If
     Next j
@@ -1613,8 +1618,7 @@ Sub Data_Server_SetUserPosition(ByRef rBuf As DataBuffer)
 Dim X As Byte
 Dim Y As Byte
 
-'Get the position
-
+    'Get the position
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
@@ -1623,7 +1627,7 @@ Dim Y As Byte
     If X > MapInfo.Width Then Exit Sub
     If Y < 1 Then Exit Sub
     If Y > MapInfo.Height Then Exit Sub
-    
+
     'Check for a valid UserCharIndex
     If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
     

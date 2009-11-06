@@ -316,6 +316,34 @@ Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, X As Single,
 
 End Sub
 
+Private Sub LightTxt_Change(Index As Integer)
+Dim i As Long
+Dim b As Long
+
+    On Error GoTo ErrOut
+    
+    i = Val(LightTxt(Index).Text)
+    
+    Exit Sub
+
+ErrOut:
+    
+    'Set b as 1 by default (light value is positive)
+    b = 1
+    
+    'If the light value is negative, set b to -1
+    If Len(LightTxt(Index).Text) > 1 Then
+        If Left$(LightTxt(Index).Text, 1) = "-" Then
+            b = -1
+        End If
+    End If
+    
+    'Set the value to negative or positive accordingly, then move 1 value
+    ' closer to 0 (for negative, add, for positive, subtract) to keep in range
+    LightTxt(Index).Text = b * (2 ^ 31) - b
+
+End Sub
+
 Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then

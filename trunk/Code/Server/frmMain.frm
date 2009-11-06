@@ -633,10 +633,13 @@ Dim CommandID As Byte
             Case .GM_Approach: Data_GM_Approach rBuf, Index
             Case .GM_BanIP: Data_GM_BanIP rBuf, Index
             Case .GM_DeThrall: Data_GM_DeThrall rBuf, Index
+            Case .GM_FindItem: Data_GM_FindItem rBuf, Index
+            Case .GM_GiveSkill: Data_GM_GiveSkill rBuf, Index
             Case .GM_Kick: Data_GM_Kick rBuf, Index
             Case .GM_Raise: Data_GM_Raise rBuf, Index
             Case .GM_SetGMLevel: Data_GM_SetGMLevel rBuf, Index
             Case .GM_Summon: Data_GM_Summon rBuf, Index
+            Case .GM_SQL: Data_GM_SQL rBuf, Index
             Case .GM_Thrall: Data_GM_Thrall rBuf, Index
             Case .GM_UnBanIP: Data_GM_UnBanIP rBuf, Index
             Case .GM_Warp: Data_GM_Warp rBuf, Index

@@ -39,7 +39,9 @@ Public Const FVF_Size As Long = 28
 Public Const WindowsInScreen As Boolean = True
 
 'Screen resolution and information (resolution must be identical to the values on the server!)
-Public DisableChatBubbles As Byte  'If chat bubbles are drawn or not - chat bubbles can be a huge FPS drainer
+Public ReverseSound As Integer      'Reverse the left and right speakers
+Public TextureCompress As Long      'Compress textures, saving lots of RAM at an insignifcant CPU usage cost (may reduce graphic quality!)
+Public DisableChatBubbles As Byte   'If chat bubbles are drawn or not - chat bubbles can be a huge FPS drainer
 Public Bit32 As Byte        'If 32-bit format is used (0 = 16-bit)
 Public UseVSync As Byte     'If vertical synchronization copy is used
 Public Windowed As Boolean  'If the screen is windowed or fullscreen
@@ -695,7 +697,6 @@ Public ShowMiniMap As Byte
 
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
-Private Declare Function IntersectRect Lib "user32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
 
 Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
 
@@ -1273,15 +1274,15 @@ Dim nHeading As Byte
 
 End Sub
 
-Sub Engine_ConvertCPtoTP(ByVal StartPixelLeft As Integer, ByVal StartPixelTop As Integer, ByVal cx As Integer, ByVal cy As Integer, ByRef tX As Integer, ByRef tY As Integer)
+Sub Engine_ConvertCPtoTP(ByVal cx As Integer, ByVal cy As Integer, ByRef tX As Integer, ByRef tY As Integer)
 
 '******************************************
 'Converts where the user clicks in the main window
 'to a tile position
 '******************************************
 
-    tX = UserPos.X + (cx - StartPixelLeft) \ TilePixelWidth - WindowTileWidth \ 2
-    tY = UserPos.Y + (cy - StartPixelTop) \ TilePixelHeight - WindowTileHeight \ 2
+    tX = UserPos.X + cx \ TilePixelWidth - WindowTileWidth \ 2
+    tY = UserPos.Y + cy \ TilePixelHeight - WindowTileHeight \ 2
 
 End Sub
 
@@ -2803,14 +2804,14 @@ Dim FilePath As String
     If SurfaceSize(TextureNum).X = 0 Then   'We need to get the size
     
         'Set the texture (and get the dimensions)
-        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, 0, 0, D3DFMT_DXT5, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, 0, 0, TextureCompress, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
         SurfaceSize(TextureNum).X = TexInfo.Width
         SurfaceSize(TextureNum).Y = TexInfo.Height
         
     Else
         
         'Set the texture (without getting the dimensions)
-        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, SurfaceSize(TextureNum).X, SurfaceSize(TextureNum).Y, 0, 0, D3DFMT_DXT5, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, ByVal 0, ByVal 0)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, SurfaceSize(TextureNum).X, SurfaceSize(TextureNum).Y, 0, 0, TextureCompress, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, ByVal 0, ByVal 0)
     
     End If
 
@@ -2932,6 +2933,12 @@ Dim t As Long
 
     t = Val(Var_Get(DataPath & "Game.ini", "INIT", "Windowed"))
     If t = 0 Then Windowed = False Else Windowed = True
+    
+    ReverseSound = Val(Var_Get(DataPath & "Game.ini", "INIT", "ReverseSound"))
+    If ReverseSound <> 0 Then ReverseSound = -1 Else ReverseSound = 1   'Force to -1 or 1
+    
+    TextureCompress = Val(Var_Get(DataPath & "Game.ini", "INIT", "TextureCompression"))
+    If TextureCompress <> 0 Then TextureCompress = D3DFMT_DXT5  'Force to 0 or D3DFMT_DXT5
     
     Bit32 = Val(Var_Get(DataPath & "Game.ini", "INIT", "32bit"))
     If Bit32 <> 0 Then Bit32 = 1        'Force to 1 or 0
@@ -3868,22 +3875,15 @@ Function Engine_Collision_Rect(ByVal x1 As Integer, ByVal Y1 As Integer, ByVal W
 'Check for collision between two rectangles
 '*****************************************************************
 
-Dim RetRect As RECT
-Dim Rect1 As RECT
-Dim Rect2 As RECT
-
-    'Build the rectangles
-    Rect1.Left = x1
-    Rect1.Right = x1 + Width1
-    Rect1.Top = Y1
-    Rect1.bottom = Y1 + Height1
-    Rect2.Left = x2
-    Rect2.Right = x2 + Width2
-    Rect2.Top = Y2
-    Rect2.bottom = Y2 + Height2
-
-    'Call collision API
-    If IntersectRect(RetRect, Rect1, Rect2) Then Engine_Collision_Rect = True Else Engine_Collision_Rect = False
+    If x1 + Width1 >= x2 Then
+        If x1 <= x2 + Width2 Then
+            If Y1 + Height1 >= Y2 Then
+                If Y1 <= Y2 + Height2 Then
+                    Engine_Collision_Rect = True
+                End If
+            End If
+        End If
+    End If
 
 End Function
 
@@ -5067,7 +5067,7 @@ Dim L As Single
         'These values will only equal each other when not a shadow
         VertexArray(2).X = VertexArray(0).X
         VertexArray(3).X = VertexArray(1).X
-
+        
     End If
     
     'Find the bottom of the rectangle
@@ -5694,46 +5694,49 @@ Dim Layer As Byte
             'Draw the characters
             For X = 1 To LastChar
                 If CharList(X).Active Then
+                
+                    'The user's character
+                    If X = UserCharIndex Then
+                        j = D3DColorARGB(200, 0, 255, 0)    'User's character
+                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
+                        GoTo NextChar
+                    End If
                     
+                    'Part of the user's group or one of the user's slaves
                     If CharList(X).CharType = ClientCharType_Grouped Or (CharList(X).CharType = ClientCharType_Slave And UserCharIndex = CharList(X).OwnerChar) Then
                         If X <> UserCharIndex Then
-                            
-                            'Part of the user's group
-                            j = D3DColorARGB(200, 100, 220, 100)
+                            j = D3DColorARGB(200, 100, 220, 100)    'PC (grouped) or the user's slave
                             Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
-                        
+                            GoTo NextChar
                         End If
-                    Else
-                    
-                        'Check if the character is in screen, since the only characters drawn outside of the screen are grouped characters
-                        If CharList(X).Pos.X > ScreenMinX Then
-                            If CharList(X).Pos.X < ScreenMaxX Then
-                                If CharList(X).Pos.Y > ScreenMinY Then
-                                    If CharList(X).Pos.Y < ScreenMaxY Then
-                                        
-                                        If X = UserCharIndex Then
-                                            'Character is the user
-                                            j = D3DColorARGB(200, 0, 255, 0)
-                                        Else
-                                            'Character is a PC
-                                            If CharList(X).CharType = ClientCharType_PC Then
-                                                j = D3DColorARGB(200, 0, 255, 255)
-                                            'Character is a NPC
-                                            Else
-                                                j = D3DColorARGB(200, 0, 150, 150)
-                                            End If
-                                        End If
-                                        
-                                        'Any character but one part of the user's group
-                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
+                    End If
+                
+                    'Check if the character is in screen, since the only characters drawn outside of the screen are grouped characters
+                    If CharList(X).Pos.X > ScreenMinX Then
+                        If CharList(X).Pos.X < ScreenMaxX Then
+                            If CharList(X).Pos.Y > ScreenMinY Then
+                                If CharList(X).Pos.Y < ScreenMaxY Then
                                     
+                                    'Character is a PC
+                                    If CharList(X).CharType = ClientCharType_PC Then
+                                        j = D3DColorARGB(200, 0, 255, 255)  'PC (not grouped)
+                                    'Character is a NPC
+                                    Else
+                                        j = D3DColorARGB(200, 0, 150, 150)  'NPC
                                     End If
+                                    
+                                    'Any character but one part of the user's group
+                                    Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j, , False
+
                                 End If
                             End If
                         End If
-                        
                     End If
+                    
                 End If
+                
+NextChar:
+                
             Next X
             
         End If
@@ -5766,6 +5769,7 @@ Dim j As Long
     Const UseOption As Byte = 2
     
     'The size of the tiles
+    'If you change this value, you must also change the "tS" constant in Engine_Render_Screen to the same value!
     Const MiniMapSize As Single = 3
 
     'Create the colors (character colors are defined in Engine_RenderScreen when it is rendered)

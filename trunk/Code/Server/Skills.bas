@@ -289,7 +289,7 @@ Public Sub Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost) Then Exit Sub
 
     'Reduce the mana
-    NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost)
+    NPC_ChangeMP CasterIndex, -Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost)
     
     'Cast on the target
     If NPCList(TargetIndex).Counters.ProtectCounter > 0 Then
@@ -367,7 +367,7 @@ Public Sub Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost) Then Exit Sub
 
     'Reduce the mana
-    NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost)
+    NPC_ChangeMP CasterIndex, -Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost)
     
     'Cast on the target
     If NPCList(TargetIndex).Counters.StrengthenCounter > 0 Then
@@ -445,7 +445,7 @@ Public Sub Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex 
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost) Then Exit Sub
 
     'Reduce the mana
-    NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost)
+    NPC_ChangeMP CasterIndex, -Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost)
     
     'Cast on the target
     If NPCList(TargetIndex).Counters.BlessCounter > 0 Then
@@ -1138,8 +1138,8 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 
     'Check for enough mana
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < NPCList(CasterIndex).BaseStat(SID.Mag) * Heal_Cost Then Exit Function
-    NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Cost)
-
+    NPC_ChangeMP CasterIndex, -Int(NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Cost)
+    
     'Apply spell exhaustion
     NPCList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Heal_Exhaust
     ConBuf.PreAllocate 4

@@ -46,7 +46,7 @@ Dim TradeTableIndex As Byte
 Dim UserTableIndex As Byte
 
     'Make sure the user has a trade table
-    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    TradeTableIndex = UserList(UserIndex).Flags.TradeTable
     If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
     
     'Get the user's index in the table
@@ -102,6 +102,10 @@ Private Sub TradeTable_Finish(ByVal TradeTableIndex As Byte)
 'Ends a trade table with a successful trade
 '*****************************************************************
 Dim i As Long
+
+    'Send the "successful trade" message
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(132).Data()
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(132).Data()
 
     'Give user 1 their items and gold
     For i = 1 To 9
@@ -161,16 +165,39 @@ Dim i As Long
     UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User2).Stats.BaseStat(SID.Gold) + TradeTable(TradeTableIndex).Gold1
     UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) = UserList(TradeTable(TradeTableIndex).User1).Stats.BaseStat(SID.Gold) - TradeTable(TradeTableIndex).Gold1
     
+    'Send the "you got gold" and "you lost gold" messages
+    If TradeTable(TradeTableIndex).Gold1 > 0 Then
+        ConBuf.PreAllocate 6
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 139
+        ConBuf.Put_Long TradeTable(TradeTableIndex).Gold1
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
+        ConBuf.PreAllocate 6
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 138
+        ConBuf.Put_Long TradeTable(TradeTableIndex).Gold1
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+    End If
+    
+    If TradeTable(TradeTableIndex).Gold2 > 0 Then
+        ConBuf.PreAllocate 6
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 139
+        ConBuf.Put_Long TradeTable(TradeTableIndex).Gold2
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+        ConBuf.PreAllocate 6
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 138
+        ConBuf.Put_Long TradeTable(TradeTableIndex).Gold2
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
+    End If
+    
     'Force a full inventory update
     User_UpdateInv True, TradeTable(TradeTableIndex).User1, 0
     User_UpdateInv True, TradeTable(TradeTableIndex).User2, 0
     
     'Close the table
     TradeTable_Close TradeTableIndex
-    
-    'Send the "successful trade" message
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, cMessage(132).Data()
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, cMessage(132).Data()
 
 End Sub
 
@@ -184,7 +211,7 @@ Dim UserTableIndex As Byte
 Dim SendPacket As Boolean
 
     'Make sure the user has a trade table
-    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    TradeTableIndex = UserList(UserIndex).Flags.TradeTable
     If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
     
     'Get the user's index in the table
@@ -245,7 +272,7 @@ Dim TradeTableIndex As Byte
 Dim UserTableIndex As Byte
 
     'Make sure the user has a trade table
-    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    TradeTableIndex = UserList(UserIndex).Flags.TradeTable
     If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
     
     'Get the user's index in the table
@@ -280,7 +307,7 @@ Dim PutTableSlot As Byte
 Dim i As Long
     
     'Make sure the user has a trade table
-    TradeTableIndex = UserList(UserIndex).flags.TradeTable
+    TradeTableIndex = UserList(UserIndex).Flags.TradeTable
     If TradeTableIndex <= 0 Then Exit Sub 'Invalid table index
     
     'Get the user's index in the table
@@ -493,8 +520,8 @@ Dim PacketSize As Long
     TradeTable(TableIndex).User2 = UserIndex2
     TradeTable(TableIndex).User1State = TRADESTATE_TRADING
     TradeTable(TableIndex).User2State = TRADESTATE_TRADING
-    UserList(UserIndex1).flags.TradeTable = TableIndex
-    UserList(UserIndex2).flags.TradeTable = TableIndex
+    UserList(UserIndex1).Flags.TradeTable = TableIndex
+    UserList(UserIndex2).Flags.TradeTable = TableIndex
     
     'Get the size of the packet
     PacketSize = 4 + Len(UserList(UserIndex2).Name) + Len(UserList(UserIndex1).Name)

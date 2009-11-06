@@ -238,12 +238,14 @@ Dim AC As Byte
                             For i = 1 To 6
                                 If .Graphic(i).GrhIndex <> 0 Then
                                     .Graphic(i).GrhIndex = 0
+                                    .Shadow(i) = 0
                                     AC = 1
                                 End If
                             Next i
                         Else
                             If .Graphic(DrawLayer).GrhIndex <> 0 Then
                                 .Graphic(DrawLayer).GrhIndex = 0
+                                .Shadow(DrawLayer) = 0
                                 AC = 1
                             End If
                         End If
@@ -318,8 +320,8 @@ Dim AC As Byte
                 If Not Shift Then
                     If frmNPCs.SetOpt.Value Then
                         If MapData(tX, tY).NPCIndex = 0 Then
-                            DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
-                            Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                            DB_RS.Open "SELECT * FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
+                            Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!char_wings, DB_RS!id
                             DB_RS.Close
                             AB = 1
                         End If
@@ -582,6 +584,10 @@ Dim X As Byte
     LastOffsetX = 0
     LastOffsetY = 0
     
+    'Clear the weather
+    WeatherEffectIndex = 0
+    MapInfo.Weather = 0
+    
     '*** Misc ***
 
     'Erase characters
@@ -797,8 +803,8 @@ Dim X As Byte
                 Get #InfNum, , TempInt
 
                 'Set up pos and startup pos
-                DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & TempInt, DB_Conn, adOpenStatic, adLockOptimistic
-                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, X, Y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                DB_RS.Open "SELECT * FROM npcs WHERE id=" & TempInt, DB_Conn, adOpenStatic, adLockOptimistic
+                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, X, Y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!char_wings, DB_RS!id
                 DB_RS.Close
         
             End If
@@ -863,7 +869,7 @@ Dim X As Byte
 
 End Sub
 
-Sub Game_SaveMapData(MapNum As Integer)
+Sub Game_SaveMapData(MapNum As Integer, Optional ByVal IsBackup As Boolean = False)
 
 '*****************************************************************
 'Saves all info of a specific map (used for live-editing)
@@ -889,6 +895,7 @@ Dim i As Integer
         For Y = 1 To MapInfo.Height
             If MapData(X, Y).NPCIndex > 0 Then
                 If MapData(X, Y).Blocked > 0 Then
+                    If IsBackup Then Exit Sub
                     MsgBox "Warning! You have a NPC placed on a blocked tile, which can lead to problem!" & vbNewLine & "Please correct this error if possible!", vbOKOnly
                     GoTo SkipCheck  'Only show the error once
                 End If
@@ -899,20 +906,33 @@ Dim i As Integer
 SkipCheck:
 
     'Erase old files if the exist
-    If Engine_FileExist(MapPath & MapNum & ".map", vbNormal) Then Kill MapPath & MapNum & ".map"
-    If Engine_FileExist(MapEXPath & MapNum & ".inf", vbNormal) Then Kill MapEXPath & MapNum & ".inf"
-
+    If IsBackup Then
+        If Engine_FileExist(MapPath & MapNum & ".map.bak", vbNormal) Then Kill MapPath & MapNum & ".map.bak"
+        If Engine_FileExist(MapEXPath & MapNum & ".inf.bak", vbNormal) Then Kill MapEXPath & MapNum & ".inf.bak"
+    Else
+        If Engine_FileExist(MapPath & MapNum & ".map", vbNormal) Then Kill MapPath & MapNum & ".map"
+        If Engine_FileExist(MapEXPath & MapNum & ".inf", vbNormal) Then Kill MapEXPath & MapNum & ".inf"
+    End If
+    
     'Make sure effects list is updated
     UpdateEffectList
 
     'Open .map file
     FileNumMap = FreeFile
-    Open MapPath & MapNum & ".map" For Binary As #FileNumMap
+    If IsBackup Then
+        Open MapPath & MapNum & ".map.bak" For Binary As #FileNumMap
+    Else
+        Open MapPath & MapNum & ".map" For Binary As #FileNumMap
+    End If
     Seek #FileNumMap, 1
 
     'Open .inf file
     FileNumInf = FreeFile
-    Open MapEXPath & MapNum & ".inf" For Binary As #FileNumInf
+    If IsBackup Then
+        Open MapEXPath & MapNum & ".inf.bak" For Binary As #FileNumInf
+    Else
+        Open MapEXPath & MapNum & ".inf" For Binary As #FileNumInf
+    End If
     Seek #FileNumInf, 1
 
     'map Header
@@ -1125,16 +1145,27 @@ SkipCheck:
     End If
 
     'Write .dat file
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo.Name
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo.Weather)
-    Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo.Music)
+    If IsBackup Then
+        Var_Write MapEXPath & MapNum & ".dat.bak", "1", "Name", MapInfo.Name
+        Var_Write MapEXPath & MapNum & ".dat.bak", "1", "Weather", Str$(MapInfo.Weather)
+        Var_Write MapEXPath & MapNum & ".dat.bak", "1", "Music", Str$(MapInfo.Music)
+    Else
+        Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo.Name
+        Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo.Weather)
+        Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo.Music)
+    End If
     
     'Change caption
     frmMain.MapNameLbl.Caption = MapInfo.Name & " (" & MapNum & ")"
 
     'Map saved
-    MsgBox "Map #" & MapNum & " (" & MapInfo.Name & ") successfully saved!", vbOKOnly
-    
+    If IsBackup Then
+        LastBackupTime = timeGetTime
+        SetInfo "Map #" & MapNum & " (" & MapInfo.Name & ") backup successfully written!", 1
+    Else
+        MsgBox "Map #" & MapNum & " (" & MapInfo.Name & ") successfully saved!", vbOKOnly
+    End If
+        
     Engine_CreateTileLayers
 
 End Sub
@@ -1239,11 +1270,13 @@ Dim i As Integer
     Loop
 
     'Close Down
+    Var_Write Data2Path & "MapEditor.ini", "MAIN", "Loaded", "0"
     frmMain.Timer1.Enabled = False
     frmMain.Timer2.Enabled = False
     frmMain.CritTimer.Enabled = False
     Engine_Init_UnloadTileEngine
     Engine_UnloadAllForms
+    Var_Write Data2Path & "MapEditor.ini", "MAIN", "Loaded", "0"
     End
     
 End Sub
@@ -1298,7 +1331,7 @@ Dim HighIndex As Long
             If i = WeatherEffectIndex Then
                 frmParticles.ParticlesList.AddItem "Reserved for weather"
             Else
-                frmParticles.ParticlesList.AddItem "ID: " & Effect(i).EffectNum & " X: " & Effect(i).X + ParticleOffsetX & " Y: " & Effect(i).Y + ParticleOffsetY & " P: " & Effect(i).ParticleCount
+                frmParticles.ParticlesList.AddItem "ID: " & Effect(i).EffectNum & " X: " & Effect(i).X + ParticleOffsetX - 288 & " Y: " & Effect(i).Y + ParticleOffsetY - 288 & " P: " & Effect(i).ParticleCount
             End If
         End If
     Next i

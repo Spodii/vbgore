@@ -491,7 +491,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal NPCNumber As Integer)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal NPCNumber As Integer)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -514,6 +514,7 @@ Dim EmptyChar As Char
     CharList(CharIndex).Head = HeadData(Head)
     CharList(CharIndex).Hair = HairData(Hair)
     CharList(CharIndex).Weapon = WeaponData(Weapon)
+    CharList(CharIndex).Wings = WingData(Wings)
     CharList(CharIndex).Heading = Heading
     CharList(CharIndex).HeadHeading = Heading
     CharList(CharIndex).HealthPercent = 100
@@ -961,20 +962,29 @@ Dim i As Long
         Do While EOF(FileNum) = False
             Line Input #FileNum, j
             If LenB(j) <> 0 Then
-                If InStr(1, j, "(") Then
-                    If InStr(1, j, "=") Then
+                If UCase$(Left$(1, 3)) = "GRH" Then
+                    If InStr(1, j, "(") Then
+                        If InStr(1, j, "=") Then
                         
-                        'Get the category flags
-                        TempSplit = Split(j, "(")
-                        Frame = Val(Left$(TempSplit(1), Len(TempSplit(1)) - 1))
-                        
-                        'Get the Grh
-                        TempSplit = Split(j, "=")
-                        Grh = Val(Right$(TempSplit(0), Len(TempSplit(0)) - 3))
-                        
-                        'Store
-                        GrhCatFlags(Grh) = Frame
-
+                            'Get the Grh
+                            TempSplit = Split(j, "=")
+                            Grh = Val(Right$(TempSplit(0), Len(TempSplit(0)) - 3))
+                            
+                            'Check for a valid Grh
+                            If Grh > 0 Then
+                                If Grh <= NumGrhs Then
+                                    
+                                    'Get the category flags
+                                    TempSplit = Split(j, "(")
+                                    Frame = Val(Left$(TempSplit(1), Len(TempSplit(1)) - 1))
+        
+                                    'Store
+                                    GrhCatFlags(Grh) = Frame
+                                
+                                End If
+                            End If
+    
+                        End If
                     End If
                 End If
             End If
@@ -1200,6 +1210,13 @@ Dim FilePath As String
 
     'Get the path
     FilePath = GrhPath & TextureNum & ".png"
+    
+    'Check if the texture exists
+    If Engine_FileExist(FilePath, vbNormal) = False Then
+        MsgBox "Error! Could not find the following texture file:" & vbNewLine & FilePath, vbOKOnly
+        IsUnloading = 1
+        Exit Sub
+    End If
 
     'Make sure the texture exists
     If Engine_FileExist(FilePath, vbNormal) Then
@@ -2297,8 +2314,6 @@ Dim WingsGrh As Grh
     
     'The hair
     HairGrh = CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading)
-    
-    'Make the paperdoll layering based off the direction they are heading
         
     '*** NORTH / NORTHEAST *** (1.Weapon 2.Body 3.Head 4.Hair 5.Wings)
     If CharList(CharIndex).Heading = NORTH Or CharList(CharIndex).Heading = NORTHEAST Then

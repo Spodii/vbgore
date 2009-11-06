@@ -161,6 +161,7 @@ Function Game_ClosestTargetNPC() As Integer
 '*****************************************************************
 'Find the closest NPC to target
 '*****************************************************************
+Dim CharValue() As Long
 Dim LowestValue As Long
 Dim LowestValueChar As Long
 Dim UserAngleMod As Long
@@ -169,7 +170,7 @@ Dim TempValue As Long
 Dim j As Long
 
     'Check for characters
-    If LastChar = 1 Then Exit Function  'If theres only one character, its probably the user
+    If LastChar <= 1 Then Exit Function  'If theres only one character, its probably the user
     
     'Get the initial size of the chars array
     ReDim CharValue(1 To LastChar)
@@ -193,53 +194,55 @@ Dim j As Long
         If CharList(j).Active Then
             If j <> UserCharIndex Then
                 If j <> TargetCharIndex Then
-                    
-                    'Check that the character is in the screen
-                    If CharList(j).Pos.X > ScreenMinX Then
-                        If CharList(j).Pos.X < ScreenMaxX Then
-                            If CharList(j).Pos.Y > ScreenMinY Then
-                                If CharList(j).Pos.Y < ScreenMaxY Then
-                                    
-                                    'Get the angle between the user and the NPC
-                                    TempAngle = -UserAngleMod + Engine_GetAngle(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
-                                    
-                                    'Make sure the angle is between 0 and 360
-                                    Do While TempAngle >= 360
-                                        TempAngle = TempAngle - 360
-                                    Loop
-                                    Do While TempAngle < 0
-                                        TempAngle = TempAngle + 360
-                                    Loop
-                                    
-                                    'Check that the angle is less between -95 and 95 (not behind them)
-                                    If TempAngle < 95 Or TempAngle > 265 Then
+                    If CharList(j).CharType = ClientCharType_NPC Then
+                        
+                        'Check that the character is in the screen
+                        If CharList(j).Pos.X > ScreenMinX Then
+                            If CharList(j).Pos.X < ScreenMaxX Then
+                                If CharList(j).Pos.Y > ScreenMinY Then
+                                    If CharList(j).Pos.Y < ScreenMaxY Then
                                         
-                                        'Convert the angle to the distance from 0 degrees
-                                        If TempAngle > 180 Then TempAngle = Abs(360 - TempAngle)
-                                        If TempAngle = 360 Then TempAngle = 0
-
-                                        'Calculate the value of the character
-                                        'Value = Angle * 2 + Distance
-                                        TempValue = (TempAngle * 0.5) + Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
+                                        'Get the angle between the user and the NPC
+                                        TempAngle = -UserAngleMod + Engine_GetAngle(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
                                         
-                                        'Check if this value is lower then the first value
-                                        If LowestValue = 0 Then
-                                            LowestValue = TempValue
-                                            LowestValueChar = j
-                                        Else
-                                            If LowestValue > TempValue Then
+                                        'Make sure the angle is between 0 and 360
+                                        Do While TempAngle >= 360
+                                            TempAngle = TempAngle - 360
+                                        Loop
+                                        Do While TempAngle < 0
+                                            TempAngle = TempAngle + 360
+                                        Loop
+                                        
+                                        'Check that the angle is less between -95 and 95 (not behind them)
+                                        If TempAngle < 95 Or TempAngle > 265 Then
+                                            
+                                            'Convert the angle to the distance from 0 degrees
+                                            If TempAngle > 180 Then TempAngle = Abs(360 - TempAngle)
+                                            If TempAngle = 360 Then TempAngle = 0
+    
+                                            'Calculate the value of the character
+                                            'Value = Angle * 2 + Distance
+                                            TempValue = (TempAngle * 0.5) + Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
+                                            
+                                            'Check if this value is lower then the first value
+                                            If LowestValue = 0 Then
                                                 LowestValue = TempValue
                                                 LowestValueChar = j
+                                            Else
+                                                If LowestValue > TempValue Then
+                                                    LowestValue = TempValue
+                                                    LowestValueChar = j
+                                                End If
                                             End If
+                                            
                                         End If
-                                        
+                                    
                                     End If
-                                
                                 End If
                             End If
                         End If
+                    
                     End If
-                
                 End If
             End If
         End If
@@ -351,6 +354,7 @@ Function Game_ValidCharacter(ByVal KeyAscii As Byte) As Boolean
 
     Log "Call Game_ValidCharacter(" & KeyAscii & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Remove bad characters
     If KeyAscii >= 32 Then Game_ValidCharacter = True
 
 End Function

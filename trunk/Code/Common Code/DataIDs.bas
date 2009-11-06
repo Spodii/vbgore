@@ -155,6 +155,9 @@ Public Type DataCode
     GM_BanIP As Byte
     GM_UnBanIP As Byte
     GM_Warp As Byte
+    GM_FindItem As Byte
+    GM_SQL As Byte
+    GM_GiveSkill As Byte
     Combo_ProjectileSoundRotateDamage As Byte
     Combo_SoundRotateDamage As Byte
     Combo_SlashSoundRotateDamage As Byte
@@ -373,6 +376,9 @@ Public Sub InitDataCommands()
         .Combo_SoundRotateDamage = 108
         .Combo_SlashSoundRotateDamage = 109
         .Server_MakeCharCached = 110
+        .GM_FindItem = 111
+        .GM_SQL = 112
+        .GM_GiveSkill = 113
         
         'This values can be used over again since they aren't used in their own packet header
         .Comm_FontType_Fight = 1

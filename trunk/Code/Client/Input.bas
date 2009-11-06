@@ -490,7 +490,7 @@ End Function
 Private Function Input_Keys_IsAlpha(ByVal KeyCode As Integer) As Boolean
 
 '*****************************************************************
-'Check if an alphabit key (A to Z) was pressed
+'Check if an alphabet key (A to Z) was pressed
 '*****************************************************************
 
     'a = 65
@@ -566,29 +566,31 @@ Dim i As Long
     
     'Attack key
     If Input_Keys_IsPressed(KeyDefinitions.Attack, KeyCode) Then
-        If LastAttackTime < timeGetTime Then
-            LastAttackTime = timeGetTime + AttackDelay
-            
-            'Check for a valid attacking distance
-            If UserAttackRange > 1 Then
-                If TargetCharIndex > 0 Then
-                    If TargetCharIndex <> UserCharIndex Then
-                        If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
-                            LastAttackTime = timeGetTime
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Attack
-                            sndBuf.Put_Byte CharList(UserCharIndex).Heading
-                        Else
-                            Engine_AddToChatTextBuffer Message(91), FontColor_Fight
+        If UserCharIndex > 0 Then
+            If LastAttackTime < timeGetTime Then
+                LastAttackTime = timeGetTime + AttackDelay
+                
+                'Check for a valid attacking distance
+                If UserAttackRange > 1 Then
+                    If TargetCharIndex > 0 Then
+                        If TargetCharIndex <> UserCharIndex Then
+                            If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
+                                LastAttackTime = timeGetTime
+                                sndBuf.Allocate 2
+                                sndBuf.Put_Byte DataCode.User_Attack
+                                sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                            Else
+                                Engine_AddToChatTextBuffer Message(91), FontColor_Fight
+                            End If
                         End If
                     End If
+                Else
+                    sndBuf.Allocate 2
+                    sndBuf.Put_Byte DataCode.User_Attack
+                    sndBuf.Put_Byte CharList(UserCharIndex).Heading
                 End If
-            Else
-                sndBuf.Allocate 2
-                sndBuf.Put_Byte DataCode.User_Attack
-                sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                
             End If
-            
         End If
     End If
     
@@ -1053,6 +1055,28 @@ Dim j As Long
         sndBuf.Put_Byte DataCode.GM_Kick
         sndBuf.Put_String s
         
+    ElseIf Input_GetCommand("/SEARCHI") Or Input_GetCommand("/FINDI") Or Input_GetCommand("/FINDO") Or Input_GetCommand("/SEARCHO") Then
+        s = Input_GetBufferArgs
+        If s = vbNullString Then GoTo CleanUp
+        sndBuf.Put_Byte DataCode.GM_FindItem
+        sndBuf.Put_String s
+        
+    ElseIf Input_GetCommand("/GIVESK") Or Input_GetCommand("/GIVESP") Then
+        s = Input_GetBufferArgs
+        If s = vbNullString Then GoTo CleanUp
+        TempS = Split(s, " ")
+        If UBound(TempS) <> 1 Then GoTo CleanUp
+        If Val(TempS(1)) <= 0 Or Val(TempS(1)) > 255 Then Exit Sub
+        sndBuf.Put_Byte DataCode.GM_GiveSkill
+        sndBuf.Put_String TempS(0)
+        sndBuf.Put_Long Val(TempS(1))
+        
+    ElseIf Input_GetCommand("/SQL") Then
+        s = Input_GetBufferArgs
+        If s = vbNullString Then GoTo CleanUp
+        sndBuf.Put_Byte DataCode.GM_SQL
+        sndBuf.Put_String s
+        
     ElseIf Input_GetCommand("/RAISE") Then
         TempS() = Split(Input_GetBufferArgs, " ")
         If UBound(TempS) > 0 Then
@@ -1315,7 +1339,7 @@ Dim i As Long
 
     'No windows clicked, so a tile click will take place
     'Get the tile positions
-    Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
+    Engine_ConvertCPtoTP MousePos.X, MousePos.Y, tX, tY
 
     'Send left click
     sndBuf.Allocate 3
@@ -1969,13 +1993,14 @@ Dim i As Long
 
     '***Check for a window click***
     'Start with the last clicked window, then move in order of importance
+    If Input_Mouse_RightClick_Window(LastClickedWindow) = 1 Then Exit Sub
     For i = 1 To NumGameWindows
         If Input_Mouse_RightClick_Window(i) = 1 Then Exit Sub
     Next i
                                                                 
     'No windows clicked, so a tile click will take place
     'Get the tile positions
-    Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
+    Engine_ConvertCPtoTP MousePos.X, MousePos.Y, tX, tY
     
     'Check if a NPC was clicked that has ASK responses
     For i = 1 To LastChar

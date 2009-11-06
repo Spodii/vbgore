@@ -6,6 +6,7 @@ Public Sub Group_AddUser(ByVal UserIndex As Integer, ByVal GroupIndex As Byte)
 '*****************************************************************
 'Adds a user to an existing group
 '*****************************************************************
+Dim i As Byte
 
     'Check for valid group information
     If GroupIndex > NumGroups Then Exit Sub
@@ -19,27 +20,37 @@ Public Sub Group_AddUser(ByVal UserIndex As Integer, ByVal GroupIndex As Byte)
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
-    
+
     'Add the user to the group
     GroupData(GroupIndex).NumUsers = GroupData(GroupIndex).NumUsers + 1
     ReDim Preserve GroupData(GroupIndex).Users(1 To GroupData(GroupIndex).NumUsers)
     GroupData(GroupIndex).Users(GroupData(GroupIndex).NumUsers) = UserIndex
     UserList(UserIndex).GroupIndex = GroupIndex
     
-    'Join group message
-    ConBuf.PreAllocate 3 + Len(UserList(GroupData(GroupIndex).Users(1)).Name)
+    'Join group message and tell the user that just joined who else is in the group
+    ConBuf.PreAllocate 3 + Len(UserList(GroupData(GroupIndex).Users(1)).Name) + ((GroupData(GroupIndex).NumUsers - 1) * 4)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 107
     ConBuf.Put_String UserList(GroupData(GroupIndex).Users(1)).Name
+    If GroupData(GroupIndex).NumUsers > 1 Then
+        For i = 1 To GroupData(GroupIndex).NumUsers - 1
+            ConBuf.Put_Byte DataCode.Server_ChangeCharType
+            ConBuf.Put_Integer UserList(GroupData(GroupIndex).Users(i)).Char.CharIndex
+            ConBuf.Put_Byte ClientCharType_Grouped
+        Next i
+    End If
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     
-    'Tell the group members the user joined
-    ConBuf.PreAllocate 3 + Len(UserList(UserIndex).Name)
+    'Tell the group members the user joined and change the char type
+    ConBuf.PreAllocate 7 + Len(UserList(UserIndex).Name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 108
     ConBuf.Put_String UserList(UserIndex).Name
-    Data_Send ToGroupButIndex, UserIndex, ConBuf.Get_Buffer
-    
+    ConBuf.Put_Byte DataCode.Server_ChangeCharType
+    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+    ConBuf.Put_Byte ClientCharType_Grouped
+    Data_Send ToGroup, UserIndex, ConBuf.Get_Buffer
+
 End Sub
 
 Public Sub Group_EXPandGold(ByVal UserIndex As Integer, ByVal GroupIndex As Integer, ByVal EXP As Long, ByVal Gold As Long)
@@ -113,18 +124,29 @@ Dim j As Byte
     If GroupIndex < 1 Then Exit Sub
     If GroupData(GroupIndex).NumUsers = 0 Then Exit Sub 'Group deleted
 
-    'Tell the user they have left the group
-    Data_Send ToIndex, UserIndex, cMessage(109).Data()
+    'Tell the user they have left the group and change all current group members to not group members for the UserIndex
+    ConBuf.PreAllocate (4 * GroupData(GroupIndex).NumUsers) + 2
+    ConBuf.Put_Byte DataCode.Server_Message
+    ConBuf.Put_Byte 109
+    For i = 1 To GroupData(GroupIndex).NumUsers
+        ConBuf.Put_Byte DataCode.Server_ChangeCharType
+        ConBuf.Put_Integer UserList(GroupData(GroupIndex).Users(i)).Char.CharIndex
+        ConBuf.Put_Byte ClientCharType_PC
+    Next i
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     
     'Check how many people are left in the group
     If GroupData(GroupIndex).NumUsers > 1 Then
-    
+
         'Tell everyone else they have left
-        ConBuf.PreAllocate 3 + Len(UserList(UserIndex).Name)
+        ConBuf.PreAllocate 7 + Len(UserList(UserIndex).Name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 110
         ConBuf.Put_String UserList(UserIndex).Name
-        Data_Send ToGroupButIndex, UserIndex, ConBuf.Get_Buffer
+        ConBuf.Put_Byte DataCode.Server_ChangeCharType
+        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+        ConBuf.Put_Byte ClientCharType_PC
+        Data_Send ToGroup, UserIndex, ConBuf.Get_Buffer
         
         'Clear the user's group flag
         UserList(UserIndex).GroupIndex = 0
@@ -144,13 +166,6 @@ Dim j As Byte
         Exit Sub
         
     End If
-    
-    'Update everyone in the map that is part of the gorup that the user has changed out of the group
-    ConBuf.PreAllocate 4
-    ConBuf.Put_Byte DataCode.Server_ChangeCharType
-    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    ConBuf.Put_Byte ClientCharType_PC
-    Data_Send ToMapGroupButIndex, UserIndex, ConBuf.Get_Buffer
     
     'Find the slot the user has in the group
     For i = 1 To GroupData(GroupIndex).NumUsers

@@ -1003,7 +1003,7 @@ Dim i As Long
     For i = 0 To UBound(b)
         
         'Check the values
-        If Server_LegalCharacter(b(i)) = False Then
+        If Not Server_LegalCharacter(b(i)) Then
             Log "Rtrn Server_LegalString = " & Server_LegalString, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If

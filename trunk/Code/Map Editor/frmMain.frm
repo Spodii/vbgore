@@ -13,6 +13,11 @@ Begin VB.MDIForm frmMain
    LockControls    =   -1  'True
    ScrollBars      =   0   'False
    WindowState     =   2  'Maximized
+   Begin VB.Timer HotKeyTimer 
+      Interval        =   50
+      Left            =   2180
+      Top             =   0
+   End
    Begin MSComDlg.CommonDialog CD 
       Left            =   120
       Top             =   0
@@ -205,6 +210,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
+Private LastHotKeyTime As Long
 
 Private Sub ARGBLongCmd_Click()
 
@@ -226,6 +232,118 @@ End Sub
 
 Private Sub FPSLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
     SetInfo FPSLbl.ToolTipText
+End Sub
+
+Private Sub HotKeyTimer_Timer()
+Dim i As Byte
+
+    If LastHotKeyTime + 100 < timeGetTime Then
+        
+        'Clear the key cache
+        For i = 1 To 145
+            GetAsyncKeyState i
+        Next i
+        
+        'Shortcut keys
+        If GetAsyncKeyState(vbKeyControl) Then
+            If GetAsyncKeyState(vbKeyS) Then
+                SavePic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyA) Then
+                SaveAsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyL) Then
+                LoadPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyN) Then
+                NewPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyW) Then
+                WeatherPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyI) Then
+                InfoPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyO) Then
+                OptimizePic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyG) Then
+                GridPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyB) Then
+                BrightPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyC) Then
+                CharsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyM) Then
+                If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0: Engine_BuildMiniMap
+                LastHotKeyTime = timeGetTime
+                
+            ElseIf GetAsyncKeyState(vbKey1) Then
+                SetTilesPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey2) Then
+                BlocksPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey3) Then
+                FloodsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey4) Then
+                ViewTilesPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey5) Then
+                ExitsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey6) Then
+                ShowNPCsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey7) Then
+                PartPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey8) Then
+                SetSfxPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKey9) Then
+                ShowMapInfoPic_Click
+                LastHotKeyTime = timeGetTime
+            End If
+            
+        Else
+    
+            If GetAsyncKeyState(vbKeyF1) Then
+                SetTilesPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF2) Then
+                BlocksPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF3) Then
+                FloodsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF4) Then
+                ViewTilesPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF5) Then
+                ExitsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF6) Then
+                ShowNPCsPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF7) Then
+                PartPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF8) Then
+                SetSfxPic_Click
+                LastHotKeyTime = timeGetTime
+            ElseIf GetAsyncKeyState(vbKeyF9) Then
+                ShowMapInfoPic_Click
+                LastHotKeyTime = timeGetTime
+            End If
+        
+        End If
+        
+    End If
+    
 End Sub
 
 Private Sub MapNameLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
@@ -260,32 +378,32 @@ Dim F As Form
         .Initialize 16, True, False, True
         .AddBitmap LoadResPicture("TOOLBARICONS", vbResBitmap), vbMagenta
  
-        .AddButton , 7, "New"
-        .AddButton , 10, "Load"
-        .AddButton , 15, "Save"
-        .AddButton , 16, "Save As"
-        .AddButton , 11, "Optimize"
+        .AddButton , 7, "New (Ctrl + N)"
+        .AddButton , 10, "Load (Ctrl + L)"
+        .AddButton , 15, "Save (Ctrl + S)"
+        .AddButton , 16, "Save As (Ctrl + A)"
+        .AddButton , 11, "Optimize (Ctrl + O)"
         
         .AddButton , , , eSeparator
         
-        .AddButton , 12, "Set Tiles"
-        .AddButton , 0, "Blocks"
-        .AddButton , 13, "Floods"
-        .AddButton , 6, "Tile Info"
-        .AddButton , 1, "Exits"
-        .AddButton , 8, "NPCs"
-        .AddButton , 14, "Particles"
-        .AddButton , 18, "Sfx"
-        .AddButton , 4, "Map Info"
+        .AddButton , 12, "Set Tiles (Ctrl + 1 or F1)"
+        .AddButton , 0, "Blocks (Ctrl + 2 or F2)"
+        .AddButton , 13, "Floods (Ctrl + 3 or F3)"
+        .AddButton , 6, "Tile Info (Ctrl + 4 or F4)"
+        .AddButton , 1, "Exits (Ctrl + 5 or F5)"
+        .AddButton , 8, "NPCs (Ctrl + 6 or F6)"
+        .AddButton , 14, "Particles (Ctrl + 7 or F7)"
+        .AddButton , 18, "Sfx (Ctrl + 8 or F8)"
+        .AddButton , 4, "Map Info (Ctrl + 9 or F9)"
         
         .AddButton , , , eSeparator
         
-        .AddButton , 20, "Toggle Weather"
-        .AddButton , 9, "Toggle Characters"
-        .AddButton , 5, "Toggle Bright Mode"
-        .AddButton , 3, "Toggle Grid"
-        .AddButton , 4, "Toggle Tile Info"
-        .AddButton , 21, "Toggle Mini-map"
+        .AddButton , 20, "Toggle Weather (Ctrl + W)"
+        .AddButton , 9, "Toggle Characters (Ctrl + C)"
+        .AddButton , 5, "Toggle Bright Mode (Ctrl + B)"
+        .AddButton , 3, "Toggle Grid (Ctrl + G)"
+        .AddButton , 4, "Toggle Tile Info (Ctrl + I)"
+        .AddButton , 21, "Toggle Mini-Map (Ctrl + M)"
 
     End With
 
@@ -327,6 +445,16 @@ Dim F As Form
     frmPreview.Show
 
     MDIForm_Resize
+    
+    'Check if the map editor was not shut down properly last time
+    If Var_Get(Data2Path & "MapEditor.ini", "MAIN", "Loaded") = "1" Then
+        MsgBox "vbGORE Map Editor has detected an unsuccessful shutdown last time this program was run!" & vbNewLine & _
+        "If you lost any work from an application crash, a back-up copy of maps can be found in the same" & vbNewLine & _
+        "location as the map files, but with a .bak suffix appended onto them." & vbNewLine & vbNewLine & _
+        "To restore a back-up map, just delete .bak suffix from the 3 files for each map number you wish" & vbNewLine & _
+        "to restore. These files are found in \Maps\ and \MapsEX\.", vbOKOnly
+    End If
+    Var_Write Data2Path & "MapEditor.ini", "MAIN", "Loaded", "1"
 
 End Sub
 
@@ -797,7 +925,10 @@ Private Sub TileLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, 
 End Sub
 
 Private Sub Timer1_Timer()
-
+    
+    'Backup every 3 minutes
+    If LastBackupTime + 180000 < timeGetTime Then Game_SaveMapData CurMap, True
+    
     MDIForm_Resize
     
 End Sub
@@ -805,7 +936,7 @@ End Sub
 Private Sub Timer2_Timer()
 
     UpdatePreview = True
-
+    
 End Sub
 
 Private Sub Toolbar_ButtonClick(ByVal Button As Long)
@@ -841,32 +972,32 @@ End Sub
 Private Sub Toolbar_ButtonEnter(ByVal Button As Long)
 
     Select Case Button
-        Case 1: SetInfo "Create a new map."
-        Case 2: SetInfo "Load an existing map."
-        Case 3: SetInfo "Save the current map over the existing number."
-        Case 4: SetInfo "Save the current map as a new number."
-        Case 5: SetInfo "Run the map optimizer to clean up unused information."
+        Case 1: SetInfo "Create a new map (Ctrl + N)."
+        Case 2: SetInfo "Load an existing map (Ctrl + L)."
+        Case 3: SetInfo "Save the current map over the existing number (Ctrl + S)."
+        Case 4: SetInfo "Save the current map as a new number (Ctrl + A)."
+        Case 5: SetInfo "Run the map optimizer to clean up unused information (Ctrl + O)."
         
         'Case 6: Sep
         
-        Case 7: SetInfo "Display the map tile editing form."
-        Case 8: SetInfo "Display the map 'blocked tiles' and 'no-attack tiles' editing form."
-        Case 9: SetInfo "Display the 'floods' form (simulates screen click events over large areas)."
-        Case 10: SetInfo "Display the tile information form (right-click the game screen to set the tile to view)."
-        Case 11: SetInfo "Display the exits (also known as warps) form."
-        Case 12: SetInfo "Display the NPC placement form."
-        Case 13: SetInfo "Display the particle effect placement form."
-        Case 14: SetInfo "Display the map-bound sound effect placement form."
-        Case 15: SetInfo "Display the general map attributes and information form."
+        Case 7: SetInfo "Display the map tile editing form (Ctrl + 1 or F1)."
+        Case 8: SetInfo "Display the map 'blocked tiles' and 'no-attack tiles' editing form (Ctrl + 2 or F2)."
+        Case 9: SetInfo "Display the 'floods' form (simulates screen click events over large areas) (Ctrl + 3 or F3)."
+        Case 10: SetInfo "Display the tile information form (right-click the game screen to set the tile to view) (Ctrl + 4 or F4)."
+        Case 11: SetInfo "Display the exits (also known as warps) form (Ctrl + 5 or F5)."
+        Case 12: SetInfo "Display the NPC placement form (Ctrl + 6 or F6)."
+        Case 13: SetInfo "Display the particle effect placement form (Ctrl + 7 or F7)."
+        Case 14: SetInfo "Display the map-bound sound effect placement form (Ctrl + 8 or F8)."
+        Case 15: SetInfo "Display the general map attributes and information form (Ctrl + 9 or F9)."
         
         'Case 16: Sep
         
-        Case 17: SetInfo "Hide / show map weather."
-        Case 18: SetInfo "Show / hide characters on the map."
-        Case 19: SetInfo "Turn on / off bright mode (turns all tiles to brightest lighting)."
-        Case 20: SetInfo "Hide / show the tile (32x32) grid."
-        Case 21: SetInfo "Hide / show tile information and attributes."
-        Case 22: SetInfo "Hide / show the mini-map."
+        Case 17: SetInfo "Hide / show map weather (Ctrl + W)."
+        Case 18: SetInfo "Show / hide characters on the map (Ctrl + C)."
+        Case 19: SetInfo "Turn on / off bright mode (turns all tiles to brightest lighting) (Ctrl + B)."
+        Case 20: SetInfo "Hide / show the tile (32x32) grid (Ctrl + G)."
+        Case 21: SetInfo "Hide / show tile information and attributes (Ctrl + I)."
+        Case 22: SetInfo "Hide / show the mini-map (Ctrl + M)."
         
     End Select
 

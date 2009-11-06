@@ -7,6 +7,8 @@ Public Const DegreeToRadian As Single = 0.0174532925
 
 Public GrhCatFlags() As Long
 
+Public LastBackupTime As Long
+
 Public SearchTextureFileNum As Integer
 
 Public TextureDesc() As String

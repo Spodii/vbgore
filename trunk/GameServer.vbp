@@ -1,5 +1,5 @@
 Type=Exe
-Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\..\WINDOWS\system32\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
+Reference=*\G{2A75196C-D9EB-4129-B803-931327F72D5C}#2.8#0#..\..\..\..\WINDOWS\system32\msado15.dll#Microsoft ActiveX Data Objects 2.8 Library
 Object={248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0; MSWINSCK.OCX
 Object={8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0; GOREsockServer.ocx
 Class=DataBuffer; Code\Common Code\DataBuffer.cls
@@ -34,7 +34,7 @@ HelpContextID="0"
 CompatibleMode="0"
 MajorVer=1
 MinorVer=0
-RevisionVer=3
+RevisionVer=5
 AutoIncrementVer=0
 ServerSupportFiles=0
 VersionCompanyName="Spodi"

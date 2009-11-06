@@ -127,10 +127,11 @@ Public Sub Obj_Erase(ByVal Num As Integer, ByVal ObjSlot As Byte, ByVal Map As B
             .ObjInfo(ObjSlot).Amount = 0
             .ObjLife(ObjSlot) = 0
         End With
-        ConBuf.PreAllocate 3
+        ConBuf.PreAllocate 7
         ConBuf.Put_Byte DataCode.Server_EraseObject
         ConBuf.Put_Byte CByte(X)
         ConBuf.Put_Byte CByte(Y)
+        ConBuf.Put_Long ObjData.GrhIndex(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex)
         Data_Send ToMap, 0, ConBuf.Get_Buffer, Map, PP_GroundObjects
     End If
 

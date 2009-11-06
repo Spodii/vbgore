@@ -702,7 +702,7 @@ Dim i As Long
         Server_ClosestLegalPos UserList(UserIndex).Pos, NPCList(tIndex).Pos
         
         'If we ran out of room, remove the NPC and skip making the rest
-        If Server_LegalPos(NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y, NPCList(tIndex).Char.Heading) = False Then
+        If Not Server_LegalPos(NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y, NPCList(tIndex).Char.Heading) Then
             NPC_Close tIndex
             Exit Sub
         End If
@@ -713,6 +713,183 @@ Dim i As Long
         
     Next i
         
+End Sub
+
+Sub Data_GM_SQL(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'Runs a SQL query
+'<Query(S)>
+'*****************************************************************
+Dim Query As String
+Dim i As Long
+Dim s As String
+
+    On Error GoTo ExitSub
+
+    Log "Call Data_GM_SQL([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Get the query
+    Query = rBuf.Get_String
+    
+    'Check for invalid values
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Check for combined queries using ;
+    If InStr(1, Query, ";") Then GoTo InvalidSQL
+    
+    'Check for a valid query
+    If UCase$(Left$(Query, 6)) = "SELECT" Or UCase$(Left$(Query, 4)) = "SHOW" Or UCase$(Left$(Query, 8)) = "DESCRIBE" Or _
+        UCase$(Left$(Query, 8)) = "OPTIMIZE" Or UCase$(Left$(Query, 6)) = "REPAIR" Or UCase$(Left$(Query, 7)) = "ANALYZE" Or _
+        UCase$(Left$(Query, 6)) = "BACKUP" Or UCase$(Left$(Query, 5)) = "FLUSH" Then
+        
+        'Run the query
+        DB_RS.Open Query, DB_Conn, adOpenStatic, adLockOptimistic
+
+        'Return the results
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String "Results for query: |" & Query & "|"
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        Do While Not DB_RS.EOF
+            s = vbNullString
+            For i = 0 To DB_RS.Fields.Count - 1
+                If LenB(s) > 0 Then
+                    s = s & "," & DB_RS.Fields(i)
+                Else
+                    s = DB_RS.Fields(i)
+                End If
+            Next i
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String s
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            DB_RS.MoveNext
+        Loop
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
+        
+        'Close the record set
+        DB_RS.Close
+
+    Else
+    
+        'Invalid query
+        GoTo InvalidSQL
+        
+    End If
+    
+    On Error GoTo 0
+    
+    Exit Sub
+    
+'Invaild query return
+InvalidSQL:
+
+    'Return an invalid SQL message
+    ConBuf.PreAllocate 9
+    ConBuf.Put_Byte DataCode.Comm_Talk
+    ConBuf.Put_String "Invalid SQL query: " & Query
+    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    ConBuf.Put_Byte DataCode.Comm_Talk
+    ConBuf.Put_String "You may only use the following commands: SELECT, SHOW, DESCRIBE, OPTIMIZE, REPAIR, ANALYZE, BACKUP, FLUSH"
+    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    ConBuf.Put_Byte DataCode.Comm_Talk
+    ConBuf.Put_String "You may not use the ; character!"
+    ConBuf.Put_Byte DataCode.Comm_FontType_Info
+    
+ExitSub:
+
+    On Error Resume Next
+    If DB_RS.State > 0 Then DB_RS.Close
+    On Error GoTo 0
+
+End Sub
+
+Sub Data_GM_GiveSkill(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'Teaches the user a skill as long as it is a valid skill for their class
+'<Target(S)><SkillID(B)>
+'*****************************************************************
+Dim TargetIndex As Integer
+Dim Target As String
+Dim SkillID As Byte
+
+    Log "Call Data_GM_FindItem([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Get the values string
+    Target = rBuf.Get_String
+    SkillID = rBuf.Get_Byte
+    
+    'Check for invalid values
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Find the user's index
+    TargetIndex = User_NameToIndex(Target)
+    
+    'See if user online
+    If TargetIndex <= 0 Then
+        Data_Send ToIndex, UserIndex, cMessage(51).Data, , PP_GMMessages
+        Exit Sub
+    End If
+    
+    'Give the user the skill
+    User_GiveSkill TargetIndex, SkillID
+
+End Sub
+
+Sub Data_GM_FindItem(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'Searches for an item
+'<SearchStr(S)>
+'*****************************************************************
+Dim SearchStr As String
+
+    Log "Call Data_GM_FindItem([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Get the search string
+    SearchStr = rBuf.Get_String
+
+    'Check for invalid values
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Make the search query
+    DB_RS.Open "SELECT name,id FROM objects WHERE name LIKE '%" & SearchStr & "%'", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Check if we have results or not
+    If DB_RS.EOF Then
+    
+        'No results found
+        If ConBuf.HasBuffer = 0 Then
+            ConBuf.PreAllocate 25 + Len(SearchStr)
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String "No results found for |" & SearchStr & "|!"
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        End If
+    
+    Else
+        
+        'Result header
+        ConBuf.PreAllocate 18 + Len(SearchStr)
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String "Results for |" & SearchStr & "|:"
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        
+        'Return the results
+        Do While Not DB_RS.EOF
+            ConBuf.Allocate 5 + Len(DB_RS!id) + Len(DB_RS!Name)
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String DB_RS!id & ": " & DB_RS!Name
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+            DB_RS.MoveNext
+        Loop
+        DB_RS.Close
+        
+    End If
+    
+    'Send the results
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
 End Sub
 
 Sub Data_GM_DeThrall(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
@@ -886,11 +1063,13 @@ Dim nPos As WorldPos
     Log "Call Data_GM_Approach([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     TargetName = rBuf.Get_String
-    TargetIndex = User_NameToIndex(TargetName)
 
     'Check the user admin ID
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
-
+    
+    'Convert the name to index
+    TargetIndex = User_NameToIndex(TargetName)
+    
     'See if user online
     If TargetIndex <= 0 Then
         Data_Send ToIndex, UserIndex, cMessage(51).Data, , PP_GMMessages
@@ -2543,7 +2722,6 @@ Sub Data_User_Group_Info(ByVal UserIndex As Integer)
 'User requests the information of their group
 '<>
 '*****************************************************************
-Dim s As String
 Dim i As Byte
 
     'Check if the user is in a group
@@ -2553,22 +2731,16 @@ Dim i As Byte
     End If
     
     'Create the list to send to the user
+    ConBuf.Clear
     For i = 1 To GroupData(UserList(UserIndex).GroupIndex).NumUsers
-        If LenB(s) = 0 Then
-            s = s & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Name & "(" & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Stats.BaseStat(SID.ELV) & ")"
-        Else
-            s = s & vbNewLine & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Name & "(" & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Stats.BaseStat(SID.ELV) & ")"
-        End If
+        ConBuf.Allocate 9
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String "* " & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Name & "(" & UserList(GroupData(UserList(UserIndex).GroupIndex).Users(i)).Stats.BaseStat(SID.ELV) & ")"
+        ConBuf.Put_Byte DataCode.Comm_FontType_Group
     Next i
     
     'Create the group text packet
-    If LenB(s) Then
-        ConBuf.PreAllocate Len(s) + 3
-        ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String s
-        ConBuf.Put_Byte DataCode.Comm_FontType_Group
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-    End If
+    If ConBuf.HasBuffer Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     
 End Sub
 
@@ -3586,7 +3758,7 @@ Dim j As Long
 
     'Load character information from file
     Load_User UserIndex, strName
-    
+
     'Clear the idle and last packet counter
     UserList(UserIndex).Counters.IdleCount = timeGetTime
     UserList(UserIndex).Counters.LastPacket = timeGetTime
@@ -3742,11 +3914,11 @@ Dim i As Byte
         Log "User_ConnectNew: Password too short", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If Server_LegalString(Name) = False Then
+    If Not Server_LegalString(Name) Then
         Log "User_ConnectNew: Invalid name string", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If Server_LegalString(Password) = False Then
+    If Not Server_LegalString(Password) Then
         Log "User_ConnectNew: Invalid password string", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If

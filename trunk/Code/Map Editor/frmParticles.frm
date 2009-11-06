@@ -374,6 +374,10 @@ ErrOut:
 End Sub
 
 Private Sub DirTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then
@@ -434,6 +438,10 @@ ErrOut:
 End Sub
 
 Private Sub GfxTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then
@@ -453,20 +461,24 @@ Private Sub GfxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y
 End Sub
 
 Private Sub IndexTxt_Change()
-Dim Gfx As Byte
+Dim i As Byte
 
     If EditChk.Value = 0 Then Exit Sub
     On Error GoTo ErrOut
     
-    Gfx = Val(GfxTxt.Text)
-    If Gfx < 1 Then GoTo ErrOut
-    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).EffectNum = Gfx
+    i = Val(IndexTxt.Text)
+    If i < 1 Then GoTo ErrOut
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).EffectNum = i
     
 ErrOut:
 
 End Sub
 
 Private Sub IndexTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then
@@ -496,8 +508,8 @@ Private Sub ParticlesList_Click()
         IndexTxt.Text = .EffectNum
         ParticlesTxt.Text = .ParticleCount
         GfxTxt.Text = .Gfx
-        XTxt.Text = .X + ParticleOffsetX
-        YTxt.Text = .Y + ParticleOffsetY
+        XTxt.Text = .X + ParticleOffsetX - 288
+        YTxt.Text = .Y + ParticleOffsetY - 288
         DirTxt.Text = .Direction
     End With
     
@@ -557,6 +569,10 @@ ErrOut:
 End Sub
 
 Private Sub ParticlesTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then
@@ -602,14 +618,17 @@ Dim X As Single
     
     If EditChk.Value = 0 Then Exit Sub
     X = Val(XTxt.Text) - ParticleOffsetX
-    If X < 1 Then GoTo ErrOut
-    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).X = X
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).X = X + 288
     
 ErrOut:
 
 End Sub
 
 Private Sub XTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then
@@ -635,14 +654,17 @@ Dim Y As Single
     
     If EditChk.Value = 0 Then Exit Sub
     Y = Val(YTxt.Text) - ParticleOffsetY
-    If Y < 1 Then GoTo ErrOut
-    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).Y = Y
+    If Effect(ParticlesList.ListIndex + 1).Used Then Effect(ParticlesList.ListIndex + 1).Y = Y + 288
     
 ErrOut:
 
 End Sub
 
 Private Sub YTxt_KeyPress(KeyAscii As Integer)
+    If ParticlesList.ListIndex + 1 = WeatherEffectIndex Or EditChk.Value = False Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
             If KeyAscii <> vbKeyDelete Then

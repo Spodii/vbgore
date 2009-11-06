@@ -1130,7 +1130,46 @@ Dim t As Integer    'Holds the unaltered value of LastNPC
 
 End Sub
 
-Public Sub NPC_Heal(ByVal NPCIndex As Integer, ByVal Value As Integer)
+Public Sub NPC_ChangeMP(ByVal NPCIndex As Integer, ByVal RaiseBy As Long)
+
+'*****************************************************************
+'Chage a NPC's MP - ONLY USE THIS SUB TO CHANGE NPC MP
+'Make RaiseBy positive for adding MP, and negative to take MP
+'*****************************************************************
+Dim MPA As Byte
+Dim MPB As Byte
+
+    'Get the MP percentage before changing
+    MPA = CByte((NPCList(NPCIndex).BaseStat(SID.MinMAN) / NPCList(NPCIndex).ModStat(SID.MaxMAN)) * 100)
+
+    'Raise the MP
+    NPCList(NPCIndex).BaseStat(SID.MinMAN) = NPCList(NPCIndex).BaseStat(SID.MinMAN) + RaiseBy
+    
+    'Don't go over the limit
+    If NPCList(NPCIndex).BaseStat(SID.MinMAN) > NPCList(NPCIndex).ModStat(SID.MaxMAN) Then NPCList(NPCIndex).BaseStat(SID.MinMAN) = NPCList(NPCIndex).ModStat(SID.MaxMAN)
+    If NPCList(NPCIndex).BaseStat(SID.MinMAN) < 0 Then NPCList(NPCIndex).BaseStat(SID.MinMAN) = 0
+
+    'Check to update health percentage client-side
+    If NPCList(NPCIndex).BaseStat(SID.MinMAN) > 0 Then
+        MPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
+        If MPA <> MPB Then
+            ConBuf.PreAllocate 4
+            ConBuf.Put_Byte DataCode.Server_CharMP
+            ConBuf.Put_Byte MPB
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
+        End If
+    Else
+        ConBuf.PreAllocate 4
+        ConBuf.Put_Byte DataCode.Server_CharMP
+        ConBuf.Put_Byte 0
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+        Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
+    End If
+
+End Sub
+
+Public Sub NPC_Heal(ByVal NPCIndex As Integer, ByVal Value As Long)
 
 '*****************************************************************
 'Raise a NPC's HP - ONLY USE THIS SUB TO RAISE NPC HP
@@ -1155,10 +1194,16 @@ Dim HPB As Byte
             ConBuf.Put_Byte DataCode.Server_CharHP
             ConBuf.Put_Byte HPB
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
         End If
+    Else
+        ConBuf.PreAllocate 4
+        ConBuf.Put_Byte DataCode.Server_CharHP
+        ConBuf.Put_Byte 0
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+        Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
     End If
-
+    
 End Sub
 
 Public Sub NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0)
@@ -1210,8 +1255,14 @@ Dim i As Integer
             ConBuf.Put_Byte DataCode.Server_CharHP
             ConBuf.Put_Byte HPB
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
         End If
+    Else
+        ConBuf.PreAllocate 4
+        ConBuf.Put_Byte DataCode.Server_CharHP
+        ConBuf.Put_Byte 0
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+        Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatPercent
     End If
 
     'Display the damage on the client screen
@@ -1352,6 +1403,7 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
     NPCList(NPCIndex).Flags.NPCAlive = 0
+    NPCList(NPCIndex).Flags.NPCActive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map
@@ -1425,6 +1477,11 @@ Dim Flags As Integer
 Dim PacketSize As Long
 
     Log "Call NPC_MakeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for a valid send index
+    If sndRoute = ToIndex Then
+        If UserList(sndIndex).Pos.Map <> Map Then Exit Sub
+    End If
 
     'Place character on map
     MapInfo(Map).Data(X, Y).NPCIndex = NPCIndex

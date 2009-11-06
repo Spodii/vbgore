@@ -6,6 +6,7 @@ Public EngineRun As Boolean
 Public Const DegreeToRadian As Single = 0.0174532925
 
 'Ignore these values, they are just because the particle engine requires a few variables we dont have
+Public LastTexture As Long
 Public LastChar As Long
 Public Const ScreenWidth As Long = 800
 Public Const ScreenHeight As Long = 600

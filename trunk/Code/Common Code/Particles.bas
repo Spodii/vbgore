@@ -775,6 +775,9 @@ Public Sub Effect_Render(ByVal EffectIndex As Integer)
     
     'Set the render state to point blitting
     D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
+    
+    'Set the last texture to a random number to force the engine to reload the texture
+    LastTexture = -65489
 
     'Set the texture
     D3DDevice.SetTexture 0, ParticleTexture(Effect(EffectIndex).Gfx)

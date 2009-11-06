@@ -22,7 +22,7 @@ Public Sub Sound_Init()
     
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
-    DS.SetCooperativeLevel frmMain.hWnd, DSSCL_PRIORITY
+    DS.SetCooperativeLevel frmMain.hwnd, DSSCL_PRIORITY
     
     'Set up the buffer description for later use
     'We are only using panning and volume - combined, we will use this to create a custom 3D effect
@@ -89,8 +89,8 @@ Public Sub Sound_UpdateMap()
 '************************************************************
 'Update the panning and volume on the map's sfx
 '************************************************************
-Dim sX As Integer
-Dim sY As Integer
+Dim SX As Integer
+Dim SY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
@@ -98,8 +98,8 @@ Dim L As Long
     If UseSfx = 0 Then Exit Sub
 
     'Set the user's position to sX/sY
-    sX = CharList(UserCharIndex).Pos.X
-    sY = CharList(UserCharIndex).Pos.Y
+    SX = CharList(UserCharIndex).Pos.X
+    SY = CharList(UserCharIndex).Pos.Y
     
     'Loop through all the map tiles
     For X = 1 To MapInfo.Width
@@ -109,7 +109,7 @@ Dim L As Long
             If Not MapData(X, Y).Sfx Is Nothing Then
                 
                 'Calculate the volume and check for valid range
-                L = Sound_CalcVolume(sX, sY, X, Y)
+                L = Sound_CalcVolume(SX, SY, X, Y)
                 If L < -5000 Then
                     MapData(X, Y).Sfx.Stop
                 Else
@@ -119,7 +119,7 @@ Dim L As Long
                 End If
                 
                 'Calculate the panning and check for a valid range
-                L = Sound_CalcPan(sX, X)
+                L = Sound_CalcPan(SX, X)
                 If L > 10000 Then L = 10000
                 If L < -10000 Then L = -10000
                 MapData(X, Y).Sfx.SetPan L
@@ -185,8 +185,8 @@ Public Sub Sound_Play3D(ByVal SoundID As Integer, ByVal TileX As Integer, ByVal 
 '************************************************************
 'Play a pseudo-3D sound by the sound buffer ID
 '************************************************************
-Dim sX As Integer
-Dim sY As Integer
+Dim SX As Integer
+Dim SY As Integer
 
     If UseSfx = 0 Then Exit Sub
 
@@ -208,14 +208,14 @@ Dim sY As Integer
     DSBuffer(SoundID).SetCurrentPosition 0
     
     'Set the user's position to sX/sY
-    sX = CharList(UserCharIndex).Pos.X
-    sY = CharList(UserCharIndex).Pos.Y
+    SX = CharList(UserCharIndex).Pos.X
+    SY = CharList(UserCharIndex).Pos.Y
     
     'Calculate the panning
-    Sound_Pan DSBuffer(SoundID), Sound_CalcPan(sX, TileX)
+    Sound_Pan DSBuffer(SoundID), Sound_CalcPan(SX, TileX)
     
     'Calculate the volume
-    Sound_Volume DSBuffer(SoundID), Sound_CalcVolume(sX, sY, TileX, TileY)
+    Sound_Volume DSBuffer(SoundID), Sound_CalcVolume(SX, SY, TileX, TileY)
     
     'Play the sound
     DSBuffer(SoundID).Play DSBPLAY_DEFAULT
@@ -230,7 +230,7 @@ Public Function Sound_CalcPan(ByVal x1 As Integer, ByVal x2 As Integer) As Long
 
     If UseSfx = 0 Then Exit Function
 
-    Sound_CalcPan = (x1 - x2) * 75
+    Sound_CalcPan = (x1 - x2) * 75 * ReverseSound
     
 End Function
 
@@ -279,7 +279,7 @@ Private Sub Sound_Volume(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, ByVal
 
     If SoundBuffer Is Nothing Then Exit Sub
     If Value > 0 Then Value = 0
-    If Value < -9000 Then Exit Sub  'Too quiet to care about
+    If Value < -10000 Then Value = -10000
     SoundBuffer.SetVolume Value
 
 End Sub

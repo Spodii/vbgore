@@ -2,7 +2,7 @@
 NumBodies=2
 
 [1]
-'These are the values from Grh1.raw
+'These are the values from GrhRaw.txt
 'The numbers represent the direction the head is facing:
 '1 = North, 2 = East, 3 = South, 4 = West, 5 = NorthEast, 6 = SouthEast, 7 = SouthWest, 8 = NorthWest
 'No letter = walking, a = attacking

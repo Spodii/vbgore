@@ -1143,7 +1143,7 @@ Dim TempPos As WorldPos
 
     'Find a place to put user
     Server_ClosestLegalPos ResPos, TempPos
-    If Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) = False Then
+    If Not Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) Then
         Data_Send ToIndex, UserIndex, cMessage(83).Data
         User_Close UserIndex
         Exit Sub
@@ -1455,6 +1455,11 @@ Public Sub User_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVa
 Dim CharIndex As Integer
 
     Log "Call User_MakeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for a valid send index
+    If sndRoute = ToIndex Then
+        If UserList(sndIndex).Pos.Map <> Map Then Exit Sub
+    End If
 
     'Place character on map
     MapInfo(Map).Data(X, Y).UserIndex = UserIndex
