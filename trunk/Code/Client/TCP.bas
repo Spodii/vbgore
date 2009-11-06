@@ -103,6 +103,8 @@ Dim i As Integer
     
     'Clean up the socket
     WSACleanup
+    
+    On Error GoTo 0
 
 End Function
 

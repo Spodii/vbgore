@@ -12,6 +12,16 @@ know how to use them.
 Any questions on the tools can be directed to the vbGORE Questions section of the forum:
 http://www.vbgore.com/forums/viewforum.php?f=6
 
+=====================
+== Bitmap Splitter ==
+=====================
+Created by:
+Spodi
+
+Description:
+Bitmap Splitter will take a single large bitmap and split it into multiple smaller bitmaps
+with the specified width and height.
+
 =============================================
 == Codehead's Bitmap Font Generator (CBFG) ==
 =============================================

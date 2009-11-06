@@ -6860,10 +6860,8 @@ Sub Engine_ShowNextFrame()
 '***********************************************
 'Updates and draws next frame to screen
 '***********************************************
-'***** Check if engine is allowed to run ******
 
-    On Error Resume Next
-
+    '***** Check if engine is allowed to run ******
     If EngineRun Then
         If UserMoving Then
         
