@@ -5,6 +5,20 @@ Option Explicit
 'recieved then buffer size, then becomes slower (recommended to leave as is)
 Public Const TCPBufferSize As Long = 512
 
+Sub Data_Server_SetCharSpeed(ByRef rBuf As DataBuffer)
+'*********************************************
+'Update a char's speed so we can move them the right speed
+'<CharIndex(I)><Speed(B)>
+'*********************************************
+Dim CharIndex As Integer
+Dim Speed As Byte
+
+    CharIndex = rBuf.Get_Integer
+    Speed = rBuf.Get_Byte
+    CharList(CharIndex).Speed = Speed
+
+End Sub
+
 Sub Data_Server_Message(ByRef rBuf As DataBuffer)
 '*********************************************
 'Server sending a common message to client (reccomended you send
@@ -183,7 +197,8 @@ Dim Byt1 As Byte
         Case 49
             Engine_AddToChatTextBuffer Message(49), FontColor_Info
         Case 50
-            Engine_AddToChatTextBuffer Message(50), FontColor_Info
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(50), "<name>", Str1), FontColor_Info
         Case 51
             Engine_AddToChatTextBuffer Message(51), FontColor_Info
         Case 52
@@ -308,6 +323,11 @@ Dim Byt1 As Byte
             MsgBox Message(84)
         Case 85
             MsgBox Message(85)
+        Case 86
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(86), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<amount>", Int1), FontColor_Info
     End Select
 
 End Sub
@@ -474,14 +494,26 @@ Sub Data_Send()
 '*********************************************
 'Send data buffer to the server
 '*********************************************
+Dim TempBuffer() As Byte
 
     'Check that we have data to send
     If SocketOpen = 0 Then DoEvents
     If UBound(sndBuf.Get_Buffer) > 0 Then
         If SocketOpen = 0 Then DoEvents
     
+        'Assign to the temp buffer
+        TempBuffer() = sndBuf.Get_Buffer
+        
+        'Encrypt the packet
+        Select Case PacketEncType
+            Case PacketEncTypeXOR
+                Encryption_XOR_EncryptByte TempBuffer(), PacketEncKey
+            Case PacketEncTypeRC4
+                Encryption_RC4_EncryptByte TempBuffer(), PacketEncKey
+        End Select
+    
         'Send the data
-        frmMain.Socket.SendData SoxID, sndBuf.Get_Buffer
+        frmMain.Socket.SendData SoxID, TempBuffer
         
         'Clear the buffer, get it ready for next use
         sndBuf.Clear
@@ -752,7 +784,7 @@ Dim SDate As String
 Dim Subj As String
 
     ShowGameWindow(MailboxWindow) = 1
-
+    
     SelMessage = 0
     LastClickedWindow = MailboxWindow
     MailboxListBuffer = vbNullString
@@ -826,7 +858,7 @@ Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Create a character and set their information
-'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)><HP%(B)><MP%(B)>
+'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)><HP%(B)><MP%(B)>
 '*********************************************
 
 Dim Body As Integer
@@ -835,6 +867,7 @@ Dim Heading As Byte
 Dim CharIndex As Integer
 Dim X As Byte
 Dim Y As Byte
+Dim Speed As Byte
 Dim Name As String
 Dim Weapon As Integer
 Dim Hair As Integer
@@ -850,6 +883,7 @@ Dim MP As Byte
     CharIndex = rBuf.Get_Integer
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
+    Speed = rBuf.Get_Byte
     Name = rBuf.Get_String
     Weapon = rBuf.Get_Integer
     Hair = rBuf.Get_Integer
@@ -858,7 +892,7 @@ Dim MP As Byte
     MP = rBuf.Get_Byte
 
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Name, Weapon, Hair, Wings, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, Name, Weapon, Hair, Wings, HP, MP
 
 End Sub
 
@@ -873,8 +907,7 @@ Dim GrhIndex As Long
 Dim X As Byte
 Dim Y As Byte
 
-'Get the values
-
+    'Get the values
     GrhIndex = rBuf.Get_Long
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
@@ -1325,24 +1358,32 @@ Sub Data_User_KnownSkills(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Retrieve known skills list
-'<KnowSkillList(L)>
+'<KnowSkillList()(B)>
 '*********************************************
 
-Dim KnowSkillList As Long
+Dim KnowSkillList() As Long 'Note that each byte holds 8 skills
+Dim Index As Long   'Which KnowSkillList array index to use
 Dim X As Byte
 Dim Y As Byte
 Dim i As Byte
 
-'Retrieve the skill list
-
-    KnowSkillList = rBuf.Get_Long
-
+    'Retrieve the skill list
+    ReDim KnowSkillList(1 To NumBytesForSkills)
+    For i = 1 To NumBytesForSkills
+        KnowSkillList(i) = rBuf.Get_Byte
+    Next i
+    
     'Clear the skill list size
     SkillListSize = 0
 
     'Set the values
     For i = 1 To NumSkills
-        If KnowSkillList And (1 * (2 ^ (i - 1))) Then
+        
+        'Find the index to use
+        Index = Int((i - 1) / 8) + 1
+    
+        'Check if the skill is known
+        If KnowSkillList(Index) And (2 ^ (i - ((Index - 1) * 8) - 1)) Then
 
             'Update the SkillList position and size
             SkillListSize = SkillListSize + 1
@@ -1364,7 +1405,10 @@ Dim i As Byte
             SkillList(SkillListSize).Y = SkillListY - (Y * 32)
 
         Else
+        
+            'User does not know the skill
             UserKnowSkill(i) = 0
+            
         End If
     Next i
 
@@ -1398,6 +1442,12 @@ Dim StatID As Byte
 
     StatID = rBuf.Get_Byte
     ModStats(StatID) = rBuf.Get_Long
+    
+    'If we get a new speed value, adjust the scroll speed accordingly
+    If StatID = SID.Speed Then
+        ScrollPixelsPerFrameX = 4
+        ScrollPixelsPerFrameY = 4
+    End If
 
 End Sub
 
@@ -1421,18 +1471,31 @@ Sub Data_User_SetInventorySlot(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Set an inventory slot's information
-'<Slot(B)><OBJIndex(L)><OBJName(S)><OBJAmount(L)><Equipted(B)><GrhIndex(I)>
+'The information in the () is only sent if the ObjIndex <> 0
+'<Slot(B)><OBJIndex(L)>(<OBJName(S)><OBJAmount(L)><Equipted(B)><GrhIndex(L)>)
 '*********************************************
 
 Dim Slot As Byte
 
+    'Get the slot
     Slot = rBuf.Get_Byte
 
+    'Start gathering the data
     UserInventory(Slot).ObjIndex = rBuf.Get_Long
-    UserInventory(Slot).Name = rBuf.Get_String
-    UserInventory(Slot).Amount = rBuf.Get_Long
-    UserInventory(Slot).Equipped = rBuf.Get_Byte
-    UserInventory(Slot).GrhIndex = rBuf.Get_Integer
+    
+    'If the object index = 0, then we are deleting a slot, so the rest is null
+    If UserInventory(Slot).ObjIndex = 0 Then
+        UserInventory(Slot).Name = "(None)"
+        UserInventory(Slot).Amount = 0
+        UserInventory(Slot).Equipped = 0
+        UserInventory(Slot).GrhIndex = 0
+    Else
+        'Index <> 0, so we have to get the information
+        UserInventory(Slot).Name = rBuf.Get_String
+        UserInventory(Slot).Amount = rBuf.Get_Long
+        UserInventory(Slot).Equipped = rBuf.Get_Byte
+        UserInventory(Slot).GrhIndex = rBuf.Get_Long
+    End If
 
 End Sub
 
@@ -1451,7 +1514,7 @@ Sub Data_User_Trade_StartNPCTrade(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Start trading with a NPC
-'<NPCName(S)><NumVendItems(I)> Loop: <GrhIndex(I)><Name(S)><Price(L)>
+'<NPCName(S)><NumVendItems(I)> Loop: <GrhIndex(L)><Name(S)><Price(L)>
 '*********************************************
 
 Dim NPCName As String
@@ -1464,7 +1527,7 @@ Dim Item As Integer
     ReDim NPCTradeItems(1 To NumItems)
     NPCTradeItemArraySize = NumItems
     For Item = 1 To NumItems
-        NPCTradeItems(Item).GrhIndex = rBuf.Get_Integer
+        NPCTradeItems(Item).GrhIndex = rBuf.Get_Long
         NPCTradeItems(Item).Name = rBuf.Get_String
         NPCTradeItems(Item).Price = rBuf.Get_Long
     Next Item

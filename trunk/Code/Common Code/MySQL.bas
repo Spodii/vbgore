@@ -7,7 +7,6 @@ Public Const DB_Pass As String = "test"         'Password to your database for t
 Public Const DB_Name As String = "vbgore"       'Name of the table in the database (default "vbgore")
 Public Const DB_Host As String = "127.0.0.1"    'IP of the database server - use localhost if hosted locally! Only host remotely for multiple servers!
 Public Const DB_Port As String = "3306"         'Port of the database (default "3306")
-Public Const DB_PasswordKey As String = "asd23409AFkj123098DSfj"    'Key for encrypting passwords in database (enter no values for no encryption)
 
 'Change these values to update the database when the value changes during gameplay
 'Most of these values will automatically be set during loading/saving a character (except _Online)

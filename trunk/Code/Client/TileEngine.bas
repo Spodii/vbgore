@@ -198,6 +198,7 @@ Public Type Char
     Hair As HairData
     Wings As WingData
     Moving As Byte
+    Speed As Byte
     Aggressive As Byte
     MoveOffset As FloatPos
     BlinkTimer As Single        'The length of the actual blinking
@@ -249,6 +250,7 @@ End Type
 'Describes a layer bound to tile position but not in the map array (to save memory)
 Private Type FloatSurface
     Pos As WorldPos
+    Offset As Position
     Grh As Grh
 End Type
 
@@ -688,6 +690,9 @@ Dim Y2 As Single
 Dim i As Long
 Dim j As Long
 Dim Size As Integer
+Dim KeyPhrase As Byte
+Dim ResetColor As Byte
+Dim TempColor As Long
 
     'Set the position
     If ChatBufferChunk = 0 Then ChatBufferChunk = 1
@@ -710,6 +715,9 @@ Dim Size As Integer
         If LoopC > ChatTextBufferSize Then Exit For
         If ChatBufferChunk * Chunk > ChatTextBufferSize Then ChatBufferChunk = ChatBufferChunk - 1
         
+        'Set the temp color
+        TempColor = ChatTextBuffer(LoopC).Color
+        
         'Set the Y position to be used
         Y2 = Y - (LoopC * 10) + (Chunk * ChatBufferChunk * 10)
     
@@ -723,50 +731,64 @@ Dim Size As Integer
                 'Convert the character to the ascii value
                 Ascii = Asc(Mid$(ChatTextBuffer(LoopC).Text, j, 1))
                 
-                'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
-                Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
-                u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                V = Row * Font_Default.RowFactor
-            
-                'Set up the verticies
-                With ChatArray(0 + (4 * Pos))
-                    .Color = ChatTextBuffer(LoopC).Color
-                    .X = X + Count
-                    .Y = Y2 + (Font_Default.CharHeight * i)
-                    .tu = u
-                    .tv = V
-                    .Rhw = 1
-                End With
-                With ChatArray(1 + (4 * Pos))
-                    .Color = ChatTextBuffer(LoopC).Color
-                    .X = X + Count + Font_Default.HeaderInfo.CellWidth
-                    .Y = Y2 + (Font_Default.CharHeight * i)
-                    .tu = u + Font_Default.ColFactor
-                    .tv = V
-                    .Rhw = 1
-                End With
-                With ChatArray(2 + (4 * Pos))
-                    .Color = ChatTextBuffer(LoopC).Color
-                    .X = X + Count
-                    .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                    .tu = u
-                    .tv = V + Font_Default.RowFactor
-                    .Rhw = 1
-                End With
-                With ChatArray(3 + (4 * Pos))
-                    .Color = ChatTextBuffer(LoopC).Color
-                    .X = X + Count + Font_Default.HeaderInfo.CellWidth
-                    .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                    .tu = u + Font_Default.ColFactor
-                    .tv = V + Font_Default.RowFactor
-                    .Rhw = 1
-                End With
-
-                'Shift over the the position to render the next character
-                Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
+                'Check for a key phrase
+                If Ascii = 124 Then
+                    KeyPhrase = (Not KeyPhrase)
+                    If KeyPhrase Then TempColor = D3DColorARGB(255, 255, 0, 0) Else ResetColor = 1
+                Else
+                    
+                    'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
+                    Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
+                    u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
+                    V = Row * Font_Default.RowFactor
                 
-                'Update the character we are on
-                Pos = Pos + 1
+                    'Set up the verticies
+                    With ChatArray(0 + (4 * Pos))
+                        .Color = TempColor
+                        .X = X + Count
+                        .Y = Y2 + (Font_Default.CharHeight * i)
+                        .tu = u
+                        .tv = V
+                        .Rhw = 1
+                    End With
+                    With ChatArray(1 + (4 * Pos))
+                        .Color = TempColor
+                        .X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        .Y = Y2 + (Font_Default.CharHeight * i)
+                        .tu = u + Font_Default.ColFactor
+                        .tv = V
+                        .Rhw = 1
+                    End With
+                    With ChatArray(2 + (4 * Pos))
+                        .Color = TempColor
+                        .X = X + Count
+                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        .tu = u
+                        .tv = V + Font_Default.RowFactor
+                        .Rhw = 1
+                    End With
+                    With ChatArray(3 + (4 * Pos))
+                        .Color = TempColor
+                        .X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        .Y = Y2 + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        .tu = u + Font_Default.ColFactor
+                        .tv = V + Font_Default.RowFactor
+                        .Rhw = 1
+                    End With
+    
+                    'Shift over the the position to render the next character
+                    Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
+                    
+                    'Update the character we are on
+                    Pos = Pos + 1
+                    
+                End If
+                
+                'Check to reset the color
+                If ResetColor Then
+                    ResetColor = 0
+                    TempColor = ChatTextBuffer(LoopC).Color
+                End If
                 
             Next j
             
@@ -946,7 +968,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -974,6 +996,7 @@ Dim EmptyChar As Char
     CharList(CharIndex).HeadHeading = Heading
     CharList(CharIndex).HealthPercent = HP
     CharList(CharIndex).ManaPercent = HP
+    CharList(CharIndex).Speed = Speed
 
     'Reset moving stats
     CharList(CharIndex).Moving = 0
@@ -2655,9 +2678,10 @@ Sub Engine_Input_CheckKeys()
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
-
-'Dont move when Control is pressed
-
+    
+    If DisableInput = 1 Then Exit Sub
+    
+    'Dont move when Control is pressed
     If GetAsyncKeyState(vbKeyControl) Then Exit Sub
 
     'Check if certain screens are open that require ASDW keys
@@ -3722,7 +3746,6 @@ Sub Engine_OBJ_Create(ByVal GrhIndex As Long, ByVal X As Byte, ByVal Y As Byte)
 '*****************************************************************
 'Create an object on the map and update LastOBJ value
 '*****************************************************************
-
 Dim ObjIndex As Integer
 
 'Get the next open obj slot
@@ -3742,6 +3765,10 @@ Dim ObjIndex As Integer
     'Set the object position
     OBJList(ObjIndex).Pos.X = X
     OBJList(ObjIndex).Pos.Y = Y
+    
+    'Set a random offset
+    OBJList(ObjIndex).Offset.X = -16 + Int(Rnd * 32)
+    OBJList(ObjIndex).Offset.Y = -16 + Int(Rnd * 32)
 
     'Create the object
     Engine_Init_Grh OBJList(ObjIndex).Grh, GrhIndex
@@ -3921,7 +3948,7 @@ Dim WingsGrh As Grh
 
         'If needed, move left and right
         If CharList(CharIndex).ScrollDirectionX <> 0 Then
-            CharList(CharIndex).MoveOffset.X = CharList(CharIndex).MoveOffset.X + ScrollPixelsPerFrameX * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
+            CharList(CharIndex).MoveOffset.X = CharList(CharIndex).MoveOffset.X + (ScrollPixelsPerFrameX + CharList(CharIndex).Speed) * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -3939,7 +3966,7 @@ Dim WingsGrh As Grh
 
         'If needed, move up and down
         If CharList(CharIndex).ScrollDirectionY <> 0 Then
-            CharList(CharIndex).MoveOffset.Y = CharList(CharIndex).MoveOffset.Y + ScrollPixelsPerFrameY * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
+            CharList(CharIndex).MoveOffset.Y = CharList(CharIndex).MoveOffset.Y + (ScrollPixelsPerFrameY + CharList(CharIndex).Speed) * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -4767,8 +4794,7 @@ Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
 
-'Load the surface into memory if it is not in memory and reset the timer
-
+    'Load the surface into memory if it is not in memory and reset the timer
     If TextureNum > 0 Then
         If SurfaceTimer(TextureNum) = 0 Then Engine_Init_Texture TextureNum
         SurfaceTimer(TextureNum) = SurfaceTimerMax
@@ -4791,8 +4817,6 @@ Dim CosRad As Single
     'Set shadowed settings - shadows only change on the top 2 points
     If Shadow Then
 
-        SrcWidth = SrcWidth - 1
-
         'Set the top-left corner
         VertexArray(0).X = X + (Width * 0.5)
         VertexArray(0).Y = Y - (Height * 0.5)
@@ -4802,10 +4826,7 @@ Dim CosRad As Single
         VertexArray(1).Y = Y - (Height * 0.5)
 
     Else
-
-        SrcWidth = SrcWidth + 1
-        SrcHeight = SrcHeight + 1
-
+    
         'Set the top-left corner
         VertexArray(0).X = X
         VertexArray(0).Y = Y
@@ -4815,6 +4836,10 @@ Dim CosRad As Single
         VertexArray(1).Y = Y
 
     End If
+    
+    'Subtract one from the width/height to get it to display correctly
+    SrcWidth = SrcWidth - 1
+    SrcHeight = SrcHeight - 1
 
     'Set the top-left corner
     VertexArray(0).Color = Color0
@@ -5063,8 +5088,8 @@ Dim j As Long
     '************** Objects **************
     For j = 1 To LastObj
         If OBJList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(minXOffset + (OBJList(j).Pos.X - minX)) + PixelOffsetX
-            Y = Engine_PixelPosY(minYOffset + (OBJList(j).Pos.Y - minY)) + PixelOffsetY
+            X = Engine_PixelPosX(minXOffset + (OBJList(j).Pos.X - minX)) + PixelOffsetX + OBJList(j).Offset.X
+            Y = Engine_PixelPosY(minYOffset + (OBJList(j).Pos.Y - minY)) + PixelOffsetY + OBJList(j).Offset.Y
             If Y >= -32 Then
                 If Y <= 632 Then
                     If X >= -32 Then
@@ -5072,7 +5097,9 @@ Dim j As Long
                             x2 = minXOffset + (OBJList(j).Pos.X - minX)
                             Y2 = minYOffset + (OBJList(j).Pos.Y - minY)
                             Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                            Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, MapData(x2, Y2).Light(1), MapData(x2, Y2).Light(2), MapData(x2, Y2).Light(3), MapData(x2, Y2).Light(4)
+                            Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(1), _
+                                MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(2), MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(3), _
+                                MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(4)
                         End If
                     End If
                 End If
@@ -5274,8 +5301,8 @@ Dim j As Long
     'Draw entered text
     If EnterText = True Then
         If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-        If Len(EnterTextBuffer) > 38 Then
-            ShownText = Mid(EnterTextBuffer, Len(EnterTextBuffer) - 38, 38)
+        If Len(EnterTextBuffer) > 40 Then
+            ShownText = Mid(EnterTextBuffer, Len(EnterTextBuffer) - 40, 40)
         Else
             ShownText = EnterTextBuffer
         End If
@@ -5330,6 +5357,9 @@ Dim u As Single
 Dim V As Single
 Dim i As Long
 Dim j As Long
+Dim KeyPhrase As Byte
+Dim TempColor As Long
+Dim ResetColor As Byte  'Required to get the last character in there
 
     'Check for valid text to render
     If LenB(Text) = 0 Then Exit Sub
@@ -5342,6 +5372,9 @@ Dim j As Long
     
     'Set the texture
     D3DDevice.SetTexture 0, Font_Default.Texture
+    
+    'Set the temp color (or else the first character has no color)
+    TempColor = Color
 
     'Loop through each line if there are line breaks (vbCrLf)
     For i = 0 To UBound(TempStr)
@@ -5354,41 +5387,55 @@ Dim j As Long
                 'Convert the character to the ascii value
                 Ascii = Asc(Mid$(TempStr(i), j, 1))
                 
-                'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
-                Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
-                u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                V = Row * Font_Default.RowFactor
-            
-                'Set up the verticies
-                VertexArray(0).Color = Color
-                VertexArray(0).X = X + Count
-                VertexArray(0).Y = Y + (Font_Default.CharHeight * i)
-                VertexArray(0).tu = u
-                VertexArray(0).tv = V
+                'Check for a key phrase
+                If Ascii = 124 Then
+                    KeyPhrase = (Not KeyPhrase)
+                    If KeyPhrase Then TempColor = D3DColorARGB(255, 255, 0, 0) Else ResetColor = 1
+                Else
+                    
+                    'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
+                    Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
+                    u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
+                    V = Row * Font_Default.RowFactor
                 
-                VertexArray(1).Color = Color
-                VertexArray(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
-                VertexArray(1).Y = Y + (Font_Default.CharHeight * i)
-                VertexArray(1).tu = u + Font_Default.ColFactor
-                VertexArray(1).tv = V
+                    'Set up the verticies
+                    VertexArray(0).Color = TempColor
+                    VertexArray(0).X = X + Count
+                    VertexArray(0).Y = Y + (Font_Default.CharHeight * i)
+                    VertexArray(0).tu = u
+                    VertexArray(0).tv = V
+                    
+                    VertexArray(1).Color = TempColor
+                    VertexArray(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
+                    VertexArray(1).Y = Y + (Font_Default.CharHeight * i)
+                    VertexArray(1).tu = u + Font_Default.ColFactor
+                    VertexArray(1).tv = V
+                    
+                    VertexArray(2).Color = TempColor
+                    VertexArray(2).X = X + Count
+                    VertexArray(2).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                    VertexArray(2).tu = u
+                    VertexArray(2).tv = V + Font_Default.RowFactor
                 
-                VertexArray(2).Color = Color
-                VertexArray(2).X = X + Count
-                VertexArray(2).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                VertexArray(2).tu = u
-                VertexArray(2).tv = V + Font_Default.RowFactor
-            
-                VertexArray(3).Color = Color
-                VertexArray(3).X = X + Count + Font_Default.HeaderInfo.CellWidth
-                VertexArray(3).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                VertexArray(3).tu = u + Font_Default.ColFactor
-                VertexArray(3).tv = V + Font_Default.RowFactor
-            
-                'Render
-                D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+                    VertexArray(3).Color = TempColor
+                    VertexArray(3).X = X + Count + Font_Default.HeaderInfo.CellWidth
+                    VertexArray(3).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                    VertexArray(3).tu = u + Font_Default.ColFactor
+                    VertexArray(3).tv = V + Font_Default.RowFactor
                 
-                'Shift over the the position to render the next character
-                Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
+                    'Render
+                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), Len(VertexArray(0))
+                    
+                    'Shift over the the position to render the next character
+                    Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
+                
+                End If
+                
+                'Check to reset the color
+                If ResetColor Then
+                    ResetColor = 0
+                    TempColor = Color
+                End If
                 
             Next j
             
@@ -5442,7 +5489,7 @@ Sub Engine_ShowNextFrame()
         
             '****** Move screen Left and Right if needed ******
             If AddtoUserPos.X <> 0 Then
-                OffsetCounterX = OffsetCounterX - ScrollPixelsPerFrameX * AddtoUserPos.X * TickPerFrame
+                OffsetCounterX = OffsetCounterX - (ScrollPixelsPerFrameX + CharList(UserCharIndex).Speed) * AddtoUserPos.X * TickPerFrame
                 If Abs(OffsetCounterX) >= Abs(TilePixelWidth * AddtoUserPos.X) Then
                     OffsetCounterX = 0
                     AddtoUserPos.X = 0
@@ -5452,7 +5499,7 @@ Sub Engine_ShowNextFrame()
             
             '****** Move screen Up and Down if needed ******
             If AddtoUserPos.Y <> 0 Then
-                OffsetCounterY = OffsetCounterY - ScrollPixelsPerFrameY * AddtoUserPos.Y * TickPerFrame
+                OffsetCounterY = OffsetCounterY - (ScrollPixelsPerFrameY + CharList(UserCharIndex).Speed) * AddtoUserPos.Y * TickPerFrame
                 If Abs(OffsetCounterY) >= Abs(TilePixelHeight * AddtoUserPos.Y) Then
                     OffsetCounterY = 0
                     AddtoUserPos.Y = 0
@@ -5500,7 +5547,6 @@ Public Function Engine_SkillIDtoGRHID(ByVal SkillID As Byte) As Integer
         Case SkID.Strengthen: Engine_SkillIDtoGRHID = 48
         Case SkID.Warcry: Engine_SkillIDtoGRHID = 49
         Case SkID.Protection: Engine_SkillIDtoGRHID = 50
-        Case SkID.Curse: Engine_SkillIDtoGRHID = 51
         Case SkID.SpikeField: Engine_SkillIDtoGRHID = 62
         Case SkID.Heal: Engine_SkillIDtoGRHID = 63
     End Select
@@ -5519,7 +5565,6 @@ Public Function Engine_SkillIDtoSkillName(ByVal SkillID As Byte) As String
         Case SkID.Strengthen: Engine_SkillIDtoSkillName = "Strengthen"
         Case SkID.Warcry: Engine_SkillIDtoSkillName = "War Cry"
         Case SkID.Protection: Engine_SkillIDtoSkillName = "Protection"
-        Case SkID.Curse: Engine_SkillIDtoSkillName = "Curse"
         Case SkID.SpikeField: Engine_SkillIDtoSkillName = "Spike Field"
         Case SkID.Heal: Engine_SkillIDtoSkillName = "Heal"
         Case Else: Engine_SkillIDtoSkillName = "Unknown Skill"
@@ -5628,8 +5673,12 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
     sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
     getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
     Engine_Var_Get = RTrim$(sSpaces)
-    Engine_Var_Get = Left$(Engine_Var_Get, Len(Engine_Var_Get) - 1)
-
+    If Len(Engine_Var_Get) > 0 Then
+        Engine_Var_Get = Left$(Engine_Var_Get, Len(Engine_Var_Get) - 1)
+    Else
+        Engine_Var_Get = ""
+    End If
+    
 End Function
 
 Sub Engine_Var_Write(File As String, Main As String, Var As String, Value As String)

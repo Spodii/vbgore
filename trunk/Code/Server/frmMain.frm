@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{41E14DE4-8B3E-4E31-89BB-654FD3A78163}#1.0#0"; "goresockmicro.ocx"
+Object = "{C7B4A030-D912-4416-A588-3658960C7145}#1.0#0"; "vbgoresocketstring.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -26,14 +26,14 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   287
    StartUpPosition =   2  'CenterScreen
-   Begin GORESOCKmicro.Socket Socket 
-      Height          =   660
-      Left            =   2520
-      Top             =   1800
+   Begin SoxOCX.Sox Socket 
+      Height          =   420
+      Left            =   3480
+      Top             =   1320
       Visible         =   0   'False
-      Width           =   660
-      _ExtentX        =   1164
-      _ExtentY        =   1164
+      Width           =   420
+      _ExtentX        =   741
+      _ExtentY        =   741
    End
    Begin VB.Timer DataCalcTmr 
       Interval        =   1000
@@ -56,7 +56,7 @@ Begin VB.Form frmMain
       Left            =   2520
       Locked          =   -1  'True
       TabIndex        =   5
-      ToolTipText     =   "Overall average KBytes/sec uploaded to the clients (41 byte TCP/IP packet headers included)"
+      ToolTipText     =   "Overall average KBytes/sec uploaded to the clients (40 byte TCP/IPv4 packet headers included)"
       Top             =   360
       Width           =   1695
    End
@@ -170,8 +170,17 @@ Attribute VB_Exposed = False
 
 Option Explicit
 Public RecoverTimer As Long
+Private Declare Function SetThreadPriority Lib "kernel32" (ByVal hThread As Long, ByVal nPriority As Long) As Long
+Private Declare Function SetPriorityClass Lib "kernel32" (ByVal hProcess As Long, ByVal dwPriorityClass As Long) As Long
+Private Declare Function GetCurrentThread Lib "kernel32" () As Long
+Private Declare Function GetCurrentProcess Lib "kernel32" () As Long
+
+Private UpdateStats As Long
+Private GroundObjectTimer As Long
 
 Private Sub DataCalcTmr_Timer()
+
+    Log "Call Data_Send_Buffer", CodeTracker '//\\LOGLINE//\\
 
     'Turn bytes into kilobytes
     If DataIn > 1024 Then
@@ -211,6 +220,10 @@ Private Sub Form_Load()
 
     'Set timeGetTime to a high resolution
     timeBeginPeriod 1
+    
+    'Set the server priority
+    SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
+    SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
 
     'Start the server
     StartServer
@@ -255,6 +268,8 @@ Dim FileNum As Byte
 Dim LoopC As Long
 Dim S As String
 
+    Log "Call Form_Unload(" & Cancel & ")", CodeTracker '//\\LOGLINE//\\
+
     If Socket.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
         If MsgBox("ShutDown procedure has not completed!" & vbCrLf & "(Hint - Select No and Try again!)" & vbCrLf & "Execute Forced ShutDown?", vbApplicationModal + vbCritical + vbYesNo, "UNABLE TO COMPLY!") = vbNo Then
             Let Cancel = True
@@ -280,6 +295,14 @@ Dim S As String
             Write #FileNum, S
         Close #FileNum
     End If
+    
+    'Close the log files                                                                                            '//\\LOGLINE//\\
+    If LogFileNumGeneral Then Close #LogFileNumGeneral                                                              '//\\LOGLINE//\\
+    If LogFileNumCodeTracker Then Close #LogFileNumCodeTracker                                                      '//\\LOGLINE//\\
+    If LogFileNumPacketIn Then Close #LogFileNumPacketIn                                                            '//\\LOGLINE//\\
+    If LogFileNumPacketOut Then Close #LogFileNumPacketOut                                                          '//\\LOGLINE//\\
+    If LogFileNumCriticalError Then Close #LogFileNumCriticalError                                                  '//\\LOGLINE//\\
+    If LogFileNumInvalidPacketData Then Close #LogFileNumInvalidPacketData                                          '//\\LOGLINE//\\
 
     'Deallocate all arrays to avoid memory leaks
     Erase UserList
@@ -291,9 +314,9 @@ Dim S As String
 
     'Same with connection Groups
     For LoopC = 1 To NumMaps
-        Erase ConnectionGroups(LoopC).UserIndex
+        Erase MapUsers(LoopC).Index
     Next LoopC
-    Erase ConnectionGroups
+    Erase MapUsers
 
     End
 
@@ -304,24 +327,64 @@ Private Sub GameTimer_Timer()
 '*****************************************************************
 'Update world
 '*****************************************************************
-
-Static UpdateStats As Long
 Dim UserIndex As Integer
 Dim NPCIndex As Integer
 Dim Recover As Boolean
 Dim Update As Boolean
+Dim MapIndex As Integer
+Dim CheckGroundObjs As Byte
+Dim X As Byte
+Dim Y As Byte
+Dim ObjIndex As Byte
 
-'Update current time
+    Log "Call GameTimer_Timer", CodeTracker '//\\LOGLINE//\\
 
+    'Update current time
     Elapsed = timeGetTime - LastTime
     LastTime = timeGetTime
 
     'Check if it is time to recover stats
-    If RecoverTimer <= timeGetTime - STAT_RECOVERRATE Then
+    If RecoverTimer < timeGetTime - STAT_RECOVERRATE Then
         Recover = True
         RecoverTimer = timeGetTime
     End If
-
+    
+    'Check if it is time to update the ground objects (to see if they need to be removed)
+    If GroundObjectTimer < timeGetTime - 60000 Then 'Check only every 60 seconds since it really isn't too vital
+        CheckGroundObjs = 1
+        GroundObjectTimer = timeGetTime
+    End If
+    
+    'Update ground objects, check if it is time to remove them
+    If CheckGroundObjs Then
+        
+        'Loop through all the maps
+        For MapIndex = 1 To NumMaps
+            
+            'Make sure the map is in use before checking
+            If MapInfo(MapIndex).NumUsers > 0 Then
+            
+                'Loop through the tiles
+                For X = MinXBorder To MaxXBorder
+                    For Y = MinYBorder To MaxYBorder
+                        
+                        'Check if an object exists on the tile - loop through all on there
+                        If MapData(MapIndex, X, Y).NumObjs > 0 Then
+                            For ObjIndex = 1 To MapData(MapIndex, X, Y).NumObjs
+                                
+                                'Check if it is time to remove the object
+                                If MapData(MapIndex, X, Y).ObjLife(ObjIndex) < timeGetTime - GroundObjLife Then
+                                    Obj_Erase MapData(MapIndex, X, Y).ObjInfo(ObjIndex).Amount, ObjIndex, MapIndex, X, Y
+                                End If
+                                
+                            Next ObjIndex
+                        End If
+                    Next Y
+                Next X
+            End If
+        Next MapIndex
+    End If
+                
     'Update Users
     For UserIndex = 1 To LastUser
 
@@ -489,7 +552,7 @@ Dim Update As Boolean
                 If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
 
                     'Check to update mod stats
-                    If Update = True Then NPC_UpdateModStats NPCIndex
+                    If Update Then NPC_UpdateModStats NPCIndex
 
                     'Call the NPC AI
                     NPC_AI NPCIndex
@@ -519,7 +582,7 @@ Dim Update As Boolean
     Next NPCIndex
 
     'Check if it's time to do a World Save
-    If timeGetTime - LastWorldSave >= WORLDSAVE_RATE Then
+    If timeGetTime - LastWorldSave >= WORLDSAVERATE Then
 
         'Save all user's data
         For UserIndex = 1 To LastUser
@@ -541,11 +604,16 @@ Private Sub Socket_OnClose(inSox As Long)
 
 Dim UserIndex As Integer
 
+    Log "Call Socket_OnClose(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
+
     UserIndex = User_IndexFromSox(inSox)
+    
+    'Make sure the user is in a valid range
     If UserIndex < 0 Then Exit Sub
+    If UserIndex > LastUser Then Exit Sub
+    
+    'If the user is logged in still, close them down so they can be removed properly
     If UserList(UserIndex).Flags.UserLogged = 1 Then User_Close UserIndex
-    UserList(UserIndex).ConnID = -1
-    UserList(UserIndex).Flags.Disconnecting = 0
 
 End Sub
 
@@ -556,6 +624,8 @@ Private Sub Socket_OnConnection(inSox As Long)
 '*********************************************
 
 Dim Index As Integer
+
+    Log "Call Socket_OnConnection(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
 
     Index = User_NextOpen
 
@@ -578,7 +648,8 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Static X As Long
+
+    Log "Call Socket_OnDataArrival(" & inSox & "," & ByteArrayToStr(inData) & ")", CodeTracker '//\\LOGLINE//\\
 
     'Get the UserIndex
     Index = User_IndexFromSox(inSox)
@@ -590,22 +661,50 @@ Static X As Long
     'Reset the user's packet counter
     UserList(Index).Counters.LastPacket = timeGetTime
     
+    'Calculate data transfer rate
+    'TCP header = 20 bytes, IPv4 header = 20 bytes, socket header = 4 bytes
+    BufUBound = UBound(inData)
+    If CalcTraffic = True Then DataIn = DataIn + BufUBound + 45 '+ 1 because we have to count inData(0)
+    
+    'Check if to reset the packet flood timer
+    If UserList(Index).Counters.PacketsInTime + 1000 < timeGetTime Then
+        UserList(Index).Counters.PacketsInTime = timeGetTime
+        UserList(Index).Counters.PacketsInCount = 0
+    End If
+    
+    'Decrypt the packet
+    Select Case PacketEncType
+        Case PacketEncTypeXOR
+            Encryption_XOR_DecryptByte inData(), PacketEncKey
+        Case PacketEncTypeRC4
+            Encryption_RC4_DecryptByte inData(), PacketEncKey
+    End Select
+    
     'Create the data buffer
     Set rBuf = New DataBuffer
     rBuf.Set_Buffer inData
-    BufUBound = UBound(inData)
-
-    'Calculate data transfer rate
-    'TCP header = 20 bytes, IPv4 header = 20 bytes, GORESOCK header = 2 bytes
-    If CalcTraffic = True Then DataIn = DataIn + BufUBound + 43 '+ 1 because we have to count inData(0)
+    
+    Log "Receive: " & ByteArrayToStr(rBuf.Get_Buffer), PacketIn '//\\LOGLINE//\\
 
     'Loop through the data buffer until it's empty
     'If done right, we should use up exactly every byte in the buffer
     Do
 
+        'Raise the packets in count and check if the user has been flooding packets
+        UserList(Index).Counters.PacketsInCount = UserList(Index).Counters.PacketsInCount + 1
+        If UserList(Index).Counters.PacketsInCount > 100 Then Exit Do   '100 is our flood limit
+
         'Get the CommandID
         CommandID = rBuf.Get_Byte
-
+    
+        If CommandID >= 100 Then
+            Log " * ID: " & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn '//\\LOGLINE//\\
+        ElseIf CommandID >= 10 Then
+            Log " * ID: 0" & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn '//\\LOGLINE//\\
+        Else
+            Log " * ID: 00" & CommandID & "  Data Left: " & ByteArrayToStr(rBuf.Get_Buffer_Remainder), PacketIn '//\\LOGLINE//\\
+        End If
+        
         'Make the appropriate call based on the CommandID
         With DataCode
             
@@ -627,6 +726,8 @@ Static X As Long
             Case .GM_Raise: Data_GM_Raise rBuf, Index
             Case .GM_SetGMLevel: Data_GM_SetGMLevel rBuf, Index
             Case .GM_Summon: Data_GM_Summon rBuf, Index
+            Case .GM_Thrall: Data_GM_Thrall rBuf, Index
+            Case .GM_DeThrall: Data_GM_DeThrall rBuf, Index
             
             Case .Map_DoneLoadingMap: Data_Map_DoneLoadingMap Index
 
@@ -662,7 +763,7 @@ Static X As Long
             Case .User_Use: Data_User_Use rBuf, Index
             
             Case Else
-                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
+                Log "OnDataArrival: Command ID " & CommandID & " caused a premature packet handling abortion!", CriticalError '//\\LOGLINE//\\
                 Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
                 
             End Select
@@ -683,6 +784,8 @@ Private Sub StartServer()
 '*****************************************************************
 Dim LoopC As Long
 
+    Log "Call StartServer", CodeTracker '//\\LOGLINE//\\
+
     'Show the form
     Me.Show
     DoEvents
@@ -701,11 +804,16 @@ Dim LoopC As Long
     MySQL_RemoveOnline
     
     'Auto-optimize the database
-    Me.Caption = "Optimizing database..."
-    Me.Refresh
-    MySQL_Optimize
-
+    If OptimizeDatabase Then
+        Me.Caption = "Optimizing database..."
+        Me.Refresh
+        MySQL_Optimize
+    End If
+    
     '*** Init vars ***
+    
+    'How many bytes we need to fit all of our skills
+    NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
     
     'Setup Map borders
     MinXBorder = XMinMapSize + (XWindow \ 2)
@@ -715,9 +823,6 @@ Dim LoopC As Long
     
     'Load Data Commands
     InitDataCommands
-
-    'Calculate the max distance between a char and another in it's PC area
-    Max_Server_Distance = Fix(Sqr((MinYBorder - 1) ^ 2 + (MinXBorder - 1) ^ 2))
 
     'Reset User connections
     For LoopC = 1 To MaxUsers
@@ -742,10 +847,6 @@ Dim LoopC As Long
     'Change the 127.0.0.1 to 0.0.0.0 or your internal IP to make the server public
     LocalSoxID = Socket.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
     Socket.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
-    Socket.SetEncryption eRC4, "1!jkl@!$:!(Zxq"
-    Socket.SetBufferSize TCPBufferSize
-    Socket.SetOption LocalSoxID, soxSO_RCVBUF, TCPBufferSize
-    Socket.SetOption LocalSoxID, soxSO_SNDBUF, TCPBufferSize
 
     '*** Misc ***
     'Calculate data transfer rate
@@ -774,6 +875,3 @@ End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 3  Code: 650  Total: 653 Lines
 ':) CommentOnly: 95 (14.5%)  Commented: 5 (0.8%)  Empty: 144 (22.1%)  Max Logic Depth: 8
-Private Sub Userslst_Click()
-
-End Sub

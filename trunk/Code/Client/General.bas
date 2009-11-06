@@ -1,17 +1,36 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Public Enum LogType
+    General = 0
+    CodeTracker = 1
+    PacketIn = 2
+    PacketOut = 3
+    CriticalError = 4
+    InvalidPacketData = 5
+End Enum
+
 Public Type NPCTradeItems
     Name As String
     Price As Long
     GrhIndex As Long
 End Type
 
+Public NumBytesForSkills As Long
+
 Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
 Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+
+Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
+
+'***************************************************
+'Dummy routine for logs from the server since some files are shared between multiple projects
+'***************************************************
+
+End Sub
 
 Private Sub Draw_Stat(ByVal SkillName As String, ByVal Base As Long, ByVal Modi As Long)
 
@@ -454,6 +473,9 @@ Dim i As Integer
         End If
     End If
     
+    'Number of bytes required to fill the skills
+    NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
+    
     'Load the messages
     Engine_Init_Messages LCase$(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Language"))
 
@@ -481,8 +503,8 @@ Dim i As Integer
     UserPos.Y = MinYBorder
 
     'Set scroll pixels per frame
-    ScrollPixelsPerFrameX = 8
-    ScrollPixelsPerFrameY = 8
+    ScrollPixelsPerFrameX = 4
+    ScrollPixelsPerFrameY = 4
     ShowGameWindow(QuickBarWindow) = 1
     ShowGameWindow(ChatWindow) = 1
 

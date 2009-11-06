@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{41E14DE4-8B3E-4E31-89BB-654FD3A78163}#1.0#0"; "goresockmicro.ocx"
+Object = "{AB821988-DB15-4670-8E48-EBDC44135294}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,14 +31,14 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin GORESOCKmicro.Socket Socket 
-      Height          =   660
-      Left            =   120
-      Top             =   600
+   Begin SoxOCX.Sox Socket 
+      Height          =   420
+      Left            =   1080
+      Top             =   120
       Visible         =   0   'False
-      Width           =   660
-      _ExtentX        =   1164
-      _ExtentY        =   1164
+      Width           =   420
+      _ExtentX        =   741
+      _ExtentY        =   741
    End
    Begin VB.Timer ShutdownTimer 
       Enabled         =   0   'False
@@ -159,8 +159,22 @@ Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 Dim TempS() As String
 Dim S As String
 Dim i As Byte
-'Attack key
 
+    'Disable / enable input (for debugging)
+    If KeyCode = vbKeyF11 Then
+        If GetAsyncKeyState(vbKeyShift) Then
+            DisableInput = 1
+            Engine_AddToChatTextBuffer "Input disabled", FontColor_Info
+        End If
+    End If
+    If KeyCode = vbKeyF10 Then
+        If GetAsyncKeyState(vbKeyShift) Then
+            DisableInput = 0
+            Engine_AddToChatTextBuffer "Input enabled", FontColor_Info
+        End If
+    End If
+    
+    'Attack key
     If KeyCode = vbKeyControl Then sndBuf.Put_Byte DataCode.User_Attack
     
     'Chat buffer stuff
@@ -192,6 +206,8 @@ Dim i As Byte
                     Else
                         AmountWindowValue = vbNullString
                     End If
+                    ShowGameWindow(AmountWindow) = 0
+                    LastClickedWindow = 0
                 End If
             End If
         ElseIf LastClickedWindow = WriteMessageWindow Then
@@ -560,6 +576,7 @@ Private Sub PingTmr_Timer()
     sndBuf.Put_Byte DataCode.Server_Ping
     PingSTime = timeGetTime
     NonRetPings = NonRetPings + 1
+    If NonRetPings > 5 Then IsUnloading = 1
 
 End Sub
 
@@ -600,6 +617,14 @@ Static X As Long
     If DEBUG_PrintPacket_In Then
         Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
     End If
+    
+    'Decrypt the packet
+    Select Case PacketEncType
+        Case PacketEncTypeXOR
+            Encryption_XOR_DecryptByte inData(), PacketEncKey
+        Case PacketEncTypeRC4
+            Encryption_RC4_DecryptByte inData(), PacketEncKey
+    End Select
 
     'Set up the data buffer
     Set rBuf = New DataBuffer
@@ -610,9 +635,9 @@ Static X As Long
     'Dim i As Long
     'Dim S As String
     'For i = LBound(inData) To UBound(inData)
-    '    If inData(i) > 100 Then
+    '    If inData(i) >= 100 Then
     '        S = S & inData(i) & " "
-    '    ElseIf inData(i) > 10 Then
+    '    ElseIf inData(i) >= 10 Then
     '        S = S & "0" & inData(i) & " "
     '    Else
     '        S = S & "00" & inData(i) & " "
@@ -666,6 +691,7 @@ Static X As Long
             Case .Server_PlaySound: Data_Server_PlaySound rBuf
             Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
             Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
+            Case .Server_SetCharSpeed: Data_Server_SetCharSpeed rBuf
             Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf
             Case .Server_UserCharIndex: Data_Server_UserCharIndex rBuf
 
@@ -717,27 +743,33 @@ Dim i As Integer
 
 End Function
 
-Private Sub Socket_OnEstablish(inSox As Long)
+Private Sub Socket_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
 
-    'Pre-saved character
-    If SendNewChar = False Then
-        sndBuf.Put_Byte DataCode.User_Login
-        sndBuf.Put_String UserName
-        sndBuf.Put_String UserPassword
-    Else
-        'New character
-        sndBuf.Put_Byte DataCode.User_NewLogin
-        sndBuf.Put_String UserName
-        sndBuf.Put_String UserPassword
-    End If
-
-    'Save Game.ini
-    If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
-    Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
-    Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+    If inState = soxConnecting Then
+        If SocketOpen = 0 Then
     
-    'Send the data
-    Data_Send
-    DoEvents
+            'Pre-saved character
+            If SendNewChar = False Then
+                sndBuf.Put_Byte DataCode.User_Login
+                sndBuf.Put_String UserName
+                sndBuf.Put_String UserPassword
+            Else
+                'New character
+                sndBuf.Put_Byte DataCode.User_NewLogin
+                sndBuf.Put_String UserName
+                sndBuf.Put_String UserPassword
+            End If
+        
+            'Save Game.ini
+            If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
+            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+            
+            'Send the data
+            Data_Send
+            DoEvents
+        
+        End If
+    End If
     
 End Sub

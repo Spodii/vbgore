@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.2            ************
+'************            Official Release: Version 0.2.4            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "Declares"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
+'**        http://www.vbgore.com/index.php?title=Donate                       **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
 '**        help expend the wiki pages!                                        **
 '**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
 '**        page or a link to vbGORE in a forum you visit, every link helps    **
 '**        spread the word of vbGORE's existance! Buttons and banners for     **
 '**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
+'**        http://www.vbgore.com/index.php?title=Buttons_and_Banners          **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -88,19 +88,28 @@ Attribute VB_Name = "Declares"
 
 Option Explicit
 
-'***** Debug/Display Settings *****
-'These are your key constants - reccomended you turn off ALL debug constants before
-' compiling your code for public usage just speed reasons
-
-'These two are mostly used for checking to make sure the encryption works
-Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
-Public Const DEBUG_DebugMode As Boolean = True              'If we display critical errors
-Public Const DEBUG_RecordPacketsOut As Boolean = False      'If to record how many times we send each packet
+'Used to record the number of packets coming in/out and what command ID they have
+Public Const DEBUG_UseLogging As Boolean = False                  '//\\LOGLINE//\\
+Public Const DEBUG_RecordPacketsIn As Boolean = False
+Public Const DEBUG_RecordPacketsOut As Boolean = False
 
 '********** Public CONSTANTS ***********
 
+'Change to 1 to enable database optimization on runtime
+Public Const OptimizeDatabase As Byte = 0
+
+'How long objects can be on the ground (in miliseconds) before being removed
+Public Const GroundObjLife As Long = 300000    '5 minutes
+
+'Amount of time that must elapse for certain user events (in miliseconds)
+Public Const DelayTimeMail As Long = 3000   'Sending messages
+Public Const DelayTimeTalk As Long = 500    'Talking (in any form)
+
 'Change this value to add a cost to sending mail
 Public Const MailCost As Long = 0
+
+'Maximum amount of objects allowed on a single tile
+Public Const MaxObjsPerTile As Byte = 5
 
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1
@@ -109,8 +118,7 @@ Public Const BlockedSouth As Byte = 4
 Public Const BlockedWest As Byte = 8
 Public Const BlockedAll As Byte = 15
 
-'Time that must elapse for NPC to make another action (in miliseconds)
-Public Const NPCDelayWalk As Long = 300
+'Time that must elapse for NPC to make another action (in miliseconds) after attacking
 Public Const NPCDelayFight As Long = 1000
 
 'Calculate the data in/out per sec or ont
@@ -128,14 +136,15 @@ Public Const MaxQuests As Byte = 20
 
 'Time of last WorldSave
 Public LastWorldSave As Long
-Public Const WORLDSAVE_RATE As Long = 300000    'Save every 5 mins.
+Public Const WORLDSAVERATE As Long = 300000 'Save every 5 mins.
 
 'Character types for CharList()
 Public Const CharType_PC As Byte = 1
 Public Const CharType_NPC As Byte = 2
 
-'Max distance between a char and another in it's PC area
-Public Max_Server_Distance As Integer
+'Max distance for two chars being on the same screen (for the rect distance)
+Public Const MaxServerDistanceX As Long = 13
+Public Const MaxServerDistanceY As Long = 10
 
 'Sound constants
 Public Const SOUND_SWING As Byte = 7
@@ -163,7 +172,7 @@ Public Const MAX_INVENTORY_SLOTS = 49   'Maximum number of slots
 Public Type ObjData
     Name As String              'Name
     ObjType As Byte             'Type (armor, weapon, item, etc)
-    GrhIndex As Integer         'Graphic index
+    GrhIndex As Long            'Graphic index
     SpriteBody As Integer       'Index of the body sprite to change to
     SpriteWeapon As Integer     'Index of the weapon sprite to change to
     SpriteHair As Integer       'Index of the hair sprite to change to
@@ -190,7 +199,9 @@ Type MapBlock   'Information for each map block
     Blocked As Byte             'If the tile is blocked
     UserIndex As Integer        'Index of the user on the tile
     NPCIndex As Integer         'Index of the NPC on the tile
-    ObjInfo As Obj              'Information of the object on the tile
+    ObjInfo() As Obj            'Information of the object on the tile
+    ObjLife() As Long           'When the object was created (used to determine it's life)
+    NumObjs As Byte             'Number of objects on the tile
     TileExit As WorldPos        'Warp location when user touches the tile
     Mailbox As Byte             'If there is a mailbox on the tile
 End Type
@@ -290,13 +301,17 @@ Type UserCounters   'Counters for a user
     ProtectCounter As Long      'Time left on protection
     StrengthenCounter As Long   'Time left on strengthen
     WarCurseCounter As Long     'Time left on warcry-curse
+    DelayTimeMail As Long       'Mail write delay time
+    DelayTimeTalk As Long       'Talk delay time
+    PacketsInCount As Long      'Packets in per second (used to prevent packet flooding)
+    PacketsInTime As Long       'When the packet counting started
 End Type
 Type UserOBJ    'Objects the user has
     ObjIndex As Long    'Index of the object
     Amount As Long      'Amount of the objects
     Equipped As Byte    'If the object is equipted
 End Type
-Type Skills 'User skills casted
+Type Skills 'Skills casted on a user / NPC (the value holds how powerful it is, which is often based off of the magic stat)
     IronSkin As Byte
     Bless As Integer
     Protect As Integer
@@ -315,7 +330,6 @@ Type KnownSkills    'Known skills by the user
 End Type
 Type User   'Holds data for a user
     Name As String      'Name of the user
-    Password As String  'User's password
     Char As Char        'Defines users looks
     Desc As String      'User's description
     Pos As WorldPos     'User's current position
@@ -324,6 +338,7 @@ Type User   'Holds data for a user
     SendBuffer() As Byte    'Buffer for sending data
     BufferSize As Long      'Size of the buffer
     HasBuffer As Byte       'If there is anything in the buffer
+    HasMovePacket As Byte   'If there is a move packet in the buffer (if there is, buffer is forced to PP_High upon movement)
     PPValue As Byte         'Packet priority value
     PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
     PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
@@ -386,8 +401,11 @@ Type NPC    'Holds all the NPC variables
     ModStat(1 To NumStats) As Long  'Declares the NPC's stats
     Flags As NPCFlags               'Declares the NPC's flags
     Counters As NPCCounters         'Declares the NPC's counters
-    NumVendItems As Integer         'Number of items the NPC is vending
+    NumVendItems As Byte            'Number of items the NPC is vending
     VendItems() As Obj              'Information on the item the NPC is vending
+    NumDropItems As Byte            'Number of items the NPC is dropping
+    DropItems() As Obj              'Information on the item to drop
+    DropRate() As Single            'The drop rate of the item in the DropItems() array sharing the same index
 End Type
 Public NPCList() As NPC     'Holds data for each NPC
 
@@ -455,11 +473,11 @@ Public IdleLimit As Long
 Public LastPacket As Long
 Public MaxUsers As Integer
 
-'Connection group information
-Public Type Connection_Group
-    UserIndex() As Long
+'All the users located on a map
+Public Type MapUsersType
+    Index() As Long
 End Type
-Public ConnectionGroups() As Connection_Group
+Public MapUsers() As MapUsersType
 
 'Number of connections (used just for displaying purposes)
 Public CurrConnections As Long
@@ -478,6 +496,9 @@ Public DataIn As Long
 Public DataOut As Long
 Public DataKBIn As Long
 Public DataKBOut As Long
+
+'The number of longs we need to send all of our known skills
+Public NumBytesForSkills As Long
 
 'Help variables
 Public Const NumHelpLines As Byte = 3

@@ -324,7 +324,7 @@ Dim CurrentTile As Long
     'Set a few variables
     CurrentTile = 1
     ImgFileNum = txtImgFileNum.Text
-    FileName = App.Path & "\Grh3.raw"
+    FileName = App.Path & "\GrhRaw3.txt"
 
     StartGrh = txtStartGrh.Text
     
@@ -350,7 +350,7 @@ Dim CurrentTile As Long
             CurrentTile = CurrentTile + 1
         Next i
         
-        MsgBox ("Grh3.raw successfully created!")
+        MsgBox ("GrhRaw3.txt successfully created!")
         On Error Resume Next
         Unload frmImgPrev
         Unload Me

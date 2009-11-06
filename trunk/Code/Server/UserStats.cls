@@ -15,8 +15,10 @@ Option Explicit
 Public UserIndex As Integer     'Index of the user the class belongs to
 Public LastHPPercent As Byte    'Last percentage of HP when last sent
 Public LastMPPercent As Byte    'Last percentage of MP when last sent
+Public LastSpeed As Long        'Value of the speed since last check (we do not stick this directly in the Let ModStat routine
+                                ' because the modstat often stacks before the final result is acquired
 
-Private Update As Byte  'States if we need to update the modstats
+Public Update As Byte           'States if we need to update the modstats
 
 Private BaseStats(1 To NumStats) As Long
 Private ModStats(1 To NumStats) As Long
@@ -25,6 +27,8 @@ Private UpdateModStats(1 To NumStats) As Byte
 
 Public Sub ForceFullUpdate()
 Dim i As Long
+
+    Log "Call ForceFullUpdate", CodeTracker '//\\LOGLINE//\\
 
     'Force update of every stat
     LastHPPercent = 255
@@ -38,46 +42,64 @@ End Sub
 
 Public Property Get BaseStat(ByVal StatID As Byte) As Long
 
-'Get the stat value
-
+    Log "Get BaseStat(" & StatID & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Get the stat value
     BaseStat = BaseStats(StatID)
 
 End Property
 
 Public Property Let BaseStat(ByVal StatID As Byte, ByVal Value As Long)
 
+    Log "Let BaseStat(" & StatID & "," & Value & ")", CodeTracker '//\\LOGLINE//\\
+
     'Let the stat value
     If BaseStats(StatID) = Value Then Exit Property
     BaseStats(StatID) = Value
     UpdateBaseStats(StatID) = 1
-    Update = 1
-
+    
+    'Force update of mod stats if the base stat is a stat that has a mod stat
+    If StatID <> SID.MinHP Then
+        If StatID <> SID.MinMAN Then
+            If StatID <> SID.MinSTA Then
+                If StatID <> SID.Gold Then
+                    If StatID <> SID.Points Then
+                        If StatID <> SID.EXP Then
+                            If StatID <> SID.ELU Then
+                                If StatID <> SID.ELV Then
+                                    Update = 1
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    End If
+    
     'Apply limit on HP/Mana/Stamina
-    Select Case StatID
-    Case SID.MinHP
-        If Value > ModStat(SID.MaxHP) Then BaseStat(SID.MinHP) = ModStat(SID.MaxHP)
-    Case SID.MinMAN
-        If Value > ModStat(SID.MaxMAN) Then BaseStat(SID.MinMAN) = ModStat(SID.MaxMAN)
-    Case SID.MinSTA
-        If Value > ModStat(SID.MaxSTA) Then BaseStat(SID.MinSTA) = ModStat(SID.MaxSTA)
-    End Select
+    If BaseStat(SID.MinHP) > ModStat(SID.MaxHP) Then BaseStat(SID.MinHP) = ModStat(SID.MaxHP)
+    If BaseStat(SID.MinMAN) > ModStat(SID.MaxMAN) Then BaseStat(SID.MinMAN) = ModStat(SID.MaxMAN)
+    If BaseStat(SID.MinSTA) > ModStat(SID.MaxSTA) Then BaseStat(SID.MinSTA) = ModStat(SID.MaxSTA)
 
 End Property
 
 Public Property Get ModStat(ByVal StatID As Byte) As Long
 
-'Get the stat value
+    Log "Get ModStat(" & StatID & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Get the stat value
     ModStat = ModStats(StatID)
 
 End Property
 
 Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
 
+    Log "Let ModStat(" & StatID & "," & Value & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for a reference to a stat that can not be modded
-    If StatID = SID.MinHP Or StatID = SID.MinMAN Or StatID = SID.MinSTA Or StatID = SID.Gold Or _
-        StatID = SID.Points Or StatID = SID.EXP Or StatID = SID.ELU Or StatID = SID.ELV Then
-        If DEBUG_DebugMode Then MsgBox "Invalid stat ID was referenced for ModStat. Please refer to UserStats.ModStat[PropertyLet] for this error!" & vbCrLf & "SID of the stat referenced was: " & StatID, vbOKOnly
+    If StatID = SID.MinHP Or StatID = SID.MinMAN Or StatID = SID.MinSTA Or StatID = SID.Gold Or StatID = SID.Points Or StatID = SID.EXP Or StatID = SID.ELU Or StatID = SID.ELV Then
+        Log "ModStat(Let): Invalid stat ID (" & StatID & ") was referenced for ModStat. This stat does not use a mod value.", CriticalError '//\\LOGLINE//\\
         Exit Property
     End If
     
@@ -86,6 +108,11 @@ Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
     ModStats(StatID) = Value
     UpdateModStats(StatID) = 1
     
+    'Apply limit on HP/Mana/Stamina
+    If BaseStat(SID.MinHP) > ModStat(SID.MaxHP) Then BaseStat(SID.MinHP) = ModStat(SID.MaxHP)
+    If BaseStat(SID.MinMAN) > ModStat(SID.MaxMAN) Then BaseStat(SID.MinMAN) = ModStat(SID.MaxMAN)
+    If BaseStat(SID.MinSTA) > ModStat(SID.MaxSTA) Then BaseStat(SID.MinSTA) = ModStat(SID.MaxSTA)
+    
 End Property
 
 Public Sub SendUpdatedStats()
@@ -93,11 +120,22 @@ Public Sub SendUpdatedStats()
 Dim i As Long
 Dim j As Byte   'States if we send the packet (if stats have changed)
 
+    Log "Call SendUpdatedStats", CodeTracker '//\\LOGLINE//\\
+
 'Update modstats
 
-    If Update = 1 Then
+    If Update Then
         User_UpdateModStats UserIndex
         Update = 0
+    End If
+    
+    'Update the speed
+    If UpdateModStats(SID.Speed) Then
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_SetCharSpeed
+        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+        ConBuf.Put_Byte ModStat(SID.Speed)
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, , PP_High
     End If
 
     'Get the buffer ready
@@ -147,6 +185,16 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
         ConBuf.Put_Byte LastMPPercent
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
+    End If
+    
+    'Check the speed
+    If LastSpeed <> ModStats(SID.Speed) Then
+        LastSpeed = ModStat(SID.Speed)
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_SetCharSpeed
+        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+        ConBuf.Put_Long ModStats(SID.Speed)
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
     End If
 
 End Sub

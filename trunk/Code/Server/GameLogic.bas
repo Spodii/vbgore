@@ -1,42 +1,143 @@
 Attribute VB_Name = "GameLogic"
 Option Explicit
 
-Sub Obj_Erase(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Num As Integer, ByVal Map As Byte, ByVal X As Integer, ByVal Y As Integer)
+Sub Obj_Erase(ByVal Num As Integer, ByVal ObjSlot As Byte, ByVal Map As Byte, ByVal X As Integer, ByVal Y As Integer)
 
 '*****************************************************************
 'Erase a object
 '*****************************************************************
 
-    If Num = -1 Then Num = MapData(Map, X, Y).ObjInfo.Amount
+    Log "Call Obj_Erase(" & Num & "," & ObjSlot & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
-    MapData(Map, X, Y).ObjInfo.Amount = MapData(Map, X, Y).ObjInfo.Amount - Num
+    'Check for a valid index
+    If ObjSlot > MapData(Map, X, Y).NumObjs Then
+        Log "Obj_Erase: Invalid ObjSlot specified (" & ObjSlot & ")", CriticalError '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    
+    'Check to erase every object
+    If Num = -1 Then Num = MapData(Map, X, Y).ObjInfo(ObjSlot).Amount
 
-    If MapData(Map, X, Y).ObjInfo.Amount <= 0 Then
-        MapData(Map, X, Y).ObjInfo.ObjIndex = 0
-        MapData(Map, X, Y).ObjInfo.Amount = 0
+    'Remove the amount
+    Log "Obj_Erase: Removing " & Num & " objects from (" & Map & "," & X & "," & Y & ") - current amount = " & MapData(Map, X, Y).ObjInfo(ObjSlot).Amount, CodeTracker '//\\LOGLINE//\\
+    MapData(Map, X, Y).ObjInfo(ObjSlot).Amount = MapData(Map, X, Y).ObjInfo(ObjSlot).Amount - Num
+    
+    'Check if they are all gone
+    If MapData(Map, X, Y).ObjInfo(ObjSlot).Amount <= 0 Then
+        Log "Obj_Erase: Erasing object from client screens at (" & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+        MapData(Map, X, Y).ObjInfo(ObjSlot).ObjIndex = 0
+        MapData(Map, X, Y).ObjInfo(ObjSlot).Amount = 0
+        MapData(Map, X, Y).ObjLife(ObjSlot) = 0
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_EraseObject
         ConBuf.Put_Byte CByte(X)
         ConBuf.Put_Byte CByte(Y)
-        Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
+        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map
     End If
 
 End Sub
 
-Sub Obj_Make(ByVal sndRoute As Byte, ByVal sndIndex As Integer, Obj As Obj, ByVal X As Integer, ByVal Y As Integer)
+Function Obj_ClosestFreeSpot(ByVal Map As Integer, ByVal X As Byte, ByVal Y As Byte, ByRef NewX As Byte, ByRef NewY As Byte, ByRef NewSlot As Byte)
+
+'*****************************************************************
+'Find the closest place to put an object
+'*****************************************************************
+Dim lX As Byte
+Dim lY As Byte
+
+    Log "Call Obj_ClosestFreeSpot(" & Map & "," & X & "," & Y & "," & NewX & "," & NewY & "," & NewSlot & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Check the defined location
+    If Not (MapData(Map, X, Y).Blocked And BlockedAll) Then
+        If MapData(Map, X, Y).NumObjs < MaxObjsPerTile Then
+            
+            'Spot is useable
+            NewX = X
+            NewY = Y
+            NewSlot = MapData(Map, X, Y).NumObjs + 1
+            Log "Rtrn Obj_ClosestFreeSpot = " & Obj_ClosestFreeSpot, CodeTracker '//\\LOGLINE//\\
+            Exit Function
+            
+        End If
+    End If
+    
+    'Primary spot didn't work, so loop around it and check if those work
+    If X > 0 Then
+        If Y > 0 Then
+            For lX = X - 1 To X + 1
+                For lY = Y - 1 To Y + 1
+                    If lX > MinXBorder Then
+                        If lX < MaxXBorder Then
+                            If lY > MinYBorder Then
+                                If lY < MaxYBorder Then
+                                    If Not (MapData(Map, lX, lY).Blocked And BlockedAll) Then
+                                        If MapData(Map, lX, lY).NumObjs < MaxObjsPerTile Then
+                                            
+                                            'Spot is useable
+                                            NewX = lX
+                                            NewY = lY
+                                            NewSlot = MapData(Map, lX, lY).NumObjs + 1
+                                            Log "Rtrn Obj_ClosestFreeSpot = " & Obj_ClosestFreeSpot, CodeTracker '//\\LOGLINE//\\
+                                            Exit Function
+                                            
+                                        End If
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                Next lY
+            Next lX
+        Else '//\\LOGLINE//\\
+            Log "Obj_ClosestFreeSpot: X value is zero, can not subtract 1! Crash avoided!", CriticalError '//\\LOGLINE//\\
+        End If
+    Else    '//\\LOGLINE//\\
+        Log "Obj_ClosestFreeSpot: X value is zero, can not subtract 1! Crash avoided!", CriticalError '//\\LOGLINE//\\
+    End If
+    
+    Log "Rtrn Obj_ClosestFreeSpot = " & Obj_ClosestFreeSpot, CodeTracker '//\\LOGLINE//\\
+
+End Function
+
+Sub Obj_Make(Obj As Obj, ByVal ObjSlot As Byte, ByVal Map As Integer, ByVal X As Byte, ByVal Y As Byte, Optional ByVal BypassUpdate As Byte = 0)
 
 '*****************************************************************
 'Create an object
 '*****************************************************************
 
-    MapData(UserList(sndIndex).Pos.Map, X, Y).ObjInfo = Obj
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Server_MakeObject
-    ConBuf.Put_Long ObjData(Obj.ObjIndex).GrhIndex
-    ConBuf.Put_Byte CByte(X)
-    ConBuf.Put_Byte CByte(Y)
-    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(sndIndex).Pos.Map
+    Log "Call Obj_Make(N/A," & ObjSlot & "," & Map & "," & X & "," & Y & "," & BypassUpdate & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Make sure the ObjIndex isn't too high
+    If ObjSlot > MaxObjsPerTile Then
+        Log "Obj_Make: ObjSlot value too high (" & ObjSlot & ")", CriticalError '//\\LOGLINE//\\
+        Exit Sub
+    End If
+
+    'Resize the object array to fit the slot
+    If ObjSlot > MapData(Map, X, Y).NumObjs Then
+        ReDim Preserve MapData(Map, X, Y).ObjInfo(1 To ObjSlot)
+        ReDim Preserve MapData(Map, X, Y).ObjLife(1 To ObjSlot)
+        MapData(Map, X, Y).NumObjs = ObjSlot
+    End If
+    
+    'Add the object to the map slot
+    MapData(Map, X, Y).ObjInfo(ObjSlot) = Obj
+    MapData(Map, X, Y).ObjLife(ObjSlot) = timeGetTime
+    
+    'Clean the map tile just in case
+    Obj_CleanMapTile Map, X, Y
+    
+    'Send the update to everyone on the map
+    If BypassUpdate = 0 Then
+        Log "Obj_Make: Updating object information with packet Server_MakeObject", CodeTracker '//\\LOGLINE//\\
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_MakeObject
+        ConBuf.Put_Long ObjData(Obj.ObjIndex).GrhIndex
+        ConBuf.Put_Byte X
+        ConBuf.Put_Byte Y
+        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map
+    End If
+    
 End Sub
 
 Sub Quest_SendReqString(ByVal UserIndex As Integer, ByVal QuestID As Integer)
@@ -47,6 +148,8 @@ Sub Quest_SendReqString(ByVal UserIndex As Integer, ByVal QuestID As Integer)
 Dim MessageID As Byte
 Dim TempNPCName As String
 Dim S As String
+
+    Log "Call Quest_SendReqString(" & UserIndex & "," & QuestID & ")", CodeTracker '//\\LOGLINE//\\
 
     'Get the target NPC's name if there is one - to do this, we have to open up the NPC file since we dont store the "defaults" like we do with objects/quests/etc
     If QuestData(QuestID).FinishReqNPC Then
@@ -68,7 +171,7 @@ Dim S As String
             MessageID = 11                      'Needs object
         Else
             'No object or NPC requirement found! Stupid quests dont deserve to be talked about
-            If DEBUG_DebugMode Then MsgBox "Error in Quest by ID " & QuestID & " - quest has no requirements!"
+            Log "Quest_SendReqString: Error in Quest by ID " & QuestID & " - quest has no requirements!", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If
     End If
@@ -109,8 +212,9 @@ Sub Quest_CheckIfComplete(ByVal UserIndex As Integer, ByVal NPCIndex As Integer,
 
 Dim Slot As Byte
 
-'Check NPC kills
+    Log "Call Quest_CheckIfComplete(" & UserIndex & "," & NPCIndex & "," & UserQuestSlot & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Check NPC kills
     If QuestData(NPCList(NPCIndex).Quest).FinishReqNPC Then
         If UserList(UserIndex).QuestStatus(UserQuestSlot).NPCKills < QuestData(NPCList(NPCIndex).Quest).FinishReqNPCAmount Then
             Quest_SayIncomplete UserIndex, NPCIndex
@@ -187,19 +291,23 @@ Dim Slot As Byte
             'User already knew the skill
             ConBuf.Put_Byte 5
             ConBuf.Put_String Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Else
             'User learns the new skill
             ConBuf.Put_Byte 6
             ConBuf.Put_String Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            'Give the user the skill
+            UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1
+            User_SendKnownSkills UserIndex
         End If
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1
     End If
 
     'Add the quest to the user's finished quest list
     If QuestData(UserList(UserIndex).Quest(UserQuestSlot)).Redoable Then
 
         'Only add a redoable quest in the list once
+        Log "Quest_CheckIfComplete: Using InStr() operation", CodeTracker '//\\LOGLINE//\\
         If Not InStr(1, UserList(UserIndex).CompletedQuests & "-", "-" & UserList(UserIndex).Quest(UserQuestSlot) & "-") Then
             UserList(UserIndex).CompletedQuests = UserList(UserIndex).CompletedQuests & "-" & UserList(UserIndex).Quest(UserQuestSlot)
         End If
@@ -226,6 +334,8 @@ Sub Quest_General(ByVal UserIndex As Integer, ByVal NPCIndex As Integer)
 Dim S As String
 Dim i As Integer
 
+    Log "Call Quest_General(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for valid values
     On Error GoTo ErrOut:
     If UserIndex <= 0 Then Exit Sub
@@ -247,6 +357,7 @@ Dim i As Integer
     Next i
 
     'The user is not involved in this quest currently - check if they have already completed it
+    Log "Quest_General: Using InStr() operation", CodeTracker '//\\LOGLINE//\\
     If InStr(1, UserList(UserIndex).CompletedQuests & "-", "-" & NPCList(NPCIndex).Quest & "-") Then
 
         'The user has completed this quest before, so check if it is redoable
@@ -289,6 +400,8 @@ Sub Quest_SayIncomplete(ByVal UserIndex As Integer, ByVal NPCIndex As Integer)
 'Make the targeted NPC say the "incomplete quest" text
 '*****************************************************************
 
+    Log "Call Quest_SayIncomplete(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Incomplete text
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Comm_Talk
@@ -309,16 +422,21 @@ Function Server_CheckForSameName(ByVal UserIndex As Integer, ByVal Name As Strin
 
 Dim LoopC As Long
 
+    Log "Call Server_CheckForSameName(" & UserIndex & "," & Name & ")", CodeTracker '//\\LOGLINE//\\
+
     For LoopC = 1 To LastUser
         If UserList(LoopC).Flags.UserLogged = 1 Then
             If UCase$(UserList(LoopC).Name) = UCase$(Name) And UserIndex <> LoopC Then
                 Server_CheckForSameName = True
+                Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
                 Exit Function
             End If
         End If
     Next LoopC
 
     Server_CheckForSameName = False
+    
+    Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -330,25 +448,33 @@ Function Server_CheckTargetedDistance(ByVal UserIndex As Integer) As Byte
 
 Dim TargetID As Integer
 
+    Log "Call Server_CheckTargetedDistance(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+    
     'Set the target ID
     TargetID = UserList(UserIndex).Flags.TargetIndex
+    Log "Server_CheckTargetedDistance: Target ID acquired (" & TargetID & ")", CodeTracker '//\\LOGLINE//\\
 
     Select Case UserList(UserIndex).Flags.Target
 
         'Self
         Case 0
             Server_CheckTargetedDistance = 1
+            Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
             Exit Function
 
         'User
         Case 1
         
             'Check the map
-            If UserList(UserIndex).Pos.Map <> UserList(CharList(TargetID).Index).Pos.Map Then Exit Function
+            If UserList(UserIndex).Pos.Map <> UserList(CharList(TargetID).Index).Pos.Map Then
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
             
             'Check the X/Y position
-            If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(CharList(TargetID).Index).Pos.X, UserList(CharList(TargetID).Index).Pos.Y) <= Max_Server_Distance Then
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(CharList(TargetID).Index).Pos.X, UserList(CharList(TargetID).Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                 Server_CheckTargetedDistance = 1
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
                 Exit Function
             End If
     
@@ -356,11 +482,15 @@ Dim TargetID As Integer
         Case 2
         
             'Check the map
-            If UserList(UserIndex).Pos.Map <> NPCList(CharList(TargetID).Index).Pos.Map Then Exit Function
-        
+            If UserList(UserIndex).Pos.Map <> NPCList(CharList(TargetID).Index).Pos.Map Then
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            
             'Check the X/Y position
-            If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(CharList(TargetID).Index).Pos.X, NPCList(CharList(TargetID).Index).Pos.Y) <= Max_Server_Distance Then
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(CharList(TargetID).Index).Pos.X, NPCList(CharList(TargetID).Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                 Server_CheckTargetedDistance = 1
+                Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
                 Exit Function
             End If
 
@@ -368,6 +498,7 @@ Dim TargetID As Integer
 
     'Not in distance or nothing targeted, so tell the user it is not targeted
     If TargetID = 0 Or UserList(UserIndex).Flags.TargetIndex = 0 Then
+        Log "Server_CheckTargetedDistance: Telling user nothing is targeted", CodeTracker '//\\LOGLINE//\\
         UserList(UserIndex).Flags.Target = 0
         UserList(UserIndex).Flags.TargetIndex = 0
         ConBuf.Clear
@@ -375,6 +506,8 @@ Dim TargetID As Integer
         ConBuf.Put_Integer 0
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     End If
+    
+    Log "Rtrn Server_CheckTargetedDistance = " & Server_CheckTargetedDistance, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -388,6 +521,8 @@ Dim Notfound As Boolean
 Dim LoopC As Integer
 Dim tX As Long
 Dim tY As Long
+
+    Log "Call Server_ClosestLegalPos([M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "],N/A)", CodeTracker '//\\LOGLINE//\\
 
     'Set the new map
     nPos.Map = Pos.Map
@@ -404,6 +539,8 @@ Dim tY As Long
         'Loop through the tiles
         For tY = Pos.Y - LoopC To Pos.Y + LoopC
             For tX = Pos.X - LoopC To Pos.X + LoopC
+            
+                Log "Server_ClosestLegalPos: Checking map tile (" & nPos.Map & "," & tX & "," & tY & ")", CodeTracker '//\\LOGLINE//\\
 
                 'Check if the position is legal
                 If Server_LegalPos(nPos.Map, tX, tY, 0) = True Then
@@ -426,6 +563,8 @@ Dim tY As Long
         nPos.X = 0
         nPos.Y = 0
     End If
+    
+    Log "Server_ClosestLegalPos: Returning position (" & nPos.Map & "," & nPos.X & "," & nPos.Y & ")", CodeTracker '//\\LOGLINE//\\
 
 End Sub
 
@@ -438,14 +577,16 @@ Sub Server_DoTileEvents(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal 
 Dim TempPos As WorldPos
 Dim NewPos As WorldPos
 
-'Check for tile exit
+    Log "Call Server_DoTileEvents(" & UserIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Check for tile exit
     If MapData(Map, X, Y).TileExit.Map Then
 
         'Set the position values
         TempPos.X = MapData(Map, X, Y).TileExit.X
         TempPos.Y = MapData(Map, X, Y).TileExit.Y
         TempPos.Map = MapData(Map, X, Y).TileExit.Map
+        Log "Server_DoTileEvents: Tile exist exists, warps to (" & TempPos.Map & "," & TempPos.X & "," & TempPos.Y & ")", CodeTracker '//\\LOGLINE//\\
 
         'Get the closest legal position
         Server_ClosestLegalPos TempPos, NewPos
@@ -469,6 +610,8 @@ Dim tY As Integer
 Dim X As Integer
 Dim Y As Integer
 
+    Log "Call Server_FindDirection([M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "],[M:" & Target.Map & " X:" & Target.X & " Y:" & Target.Y & "])", CodeTracker '//\\LOGLINE//\\
+
     'Put the bytes into integer variables (causes overflows for negatives, even if the return is an integer)
     pX = Pos.X
     pY = Pos.Y
@@ -478,11 +621,13 @@ Dim Y As Integer
     'Find the difference
     X = pX - tX
     Y = pY - tY
+    Log "Server_FindDirection: Position difference (X:" & X & " Y:" & Y & ") found", CodeTracker '//\\LOGLINE//\\
 
     'NE
     If X <= -1 Then
         If Y >= 1 Then
             Server_FindDirection = NORTHEAST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
     End If
@@ -491,6 +636,7 @@ Dim Y As Integer
     If X >= 1 Then
         If Y >= 1 Then
             Server_FindDirection = NORTHWEST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
     End If
@@ -498,6 +644,7 @@ Dim Y As Integer
     'SW
     If X >= 1 And Y <= -1 Then
         Server_FindDirection = SOUTHWEST
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
 
@@ -505,6 +652,7 @@ Dim Y As Integer
     If X <= -1 Then
         If Y <= -1 Then
             Server_FindDirection = SOUTHEAST
+            Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
     End If
@@ -512,26 +660,32 @@ Dim Y As Integer
     'South
     If Y <= -1 Then
         Server_FindDirection = SOUTH
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
 
     'north
     If Y >= 1 Then
         Server_FindDirection = NORTH
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
 
     'West
     If X >= 1 Then
         Server_FindDirection = WEST
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
 
     'East
     If X <= -1 Then
         Server_FindDirection = EAST
+        Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
+    
+    Log "Rtrn Server_FindDirection = " & Server_FindDirection, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -545,6 +699,8 @@ Dim X As Integer
 Dim Y As Integer
 Dim nX As Integer
 Dim nY As Integer
+
+    Log "Call Server_HeadToPos(" & Head & ",[M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "])", CodeTracker '//\\LOGLINE//\\
 
     X = Pos.X
     Y = Pos.Y
@@ -601,6 +757,8 @@ Function Server_InMapBounds(ByVal X As Integer, ByVal Y As Integer) As Boolean
 'Checks to see if a tile position is in the maps bounds
 '*****************************************************************
 
+    Log "Call Server_InMapBounds(" & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
     If X > MinXBorder Then
         If X < MaxXBorder Then
             If Y > MinYBorder Then
@@ -608,6 +766,8 @@ Function Server_InMapBounds(ByVal X As Integer, ByVal Y As Integer) As Boolean
             End If
         End If
     End If
+    
+    Log "Rtrn Server_InMapBounds = " & Server_InMapBounds, CodeTracker '//\\LOGLINE//\\
     
 End Function
 
@@ -617,45 +777,110 @@ Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As In
 'Checks to see if a tile position is legal
 '*****************************************************************
 On Error GoTo ErrOut
+    
+    Log "Call Server_LegalPos(" & Map & "," & X & "," & Y & "," & Heading & ")", CodeTracker '//\\LOGLINE//\\
 
     'Make sure it's a legal map
-    If Map <= 0 Then Exit Function
-    If Map > NumMaps Then Exit Function
+    If Map <= 0 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Map > NumMaps Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
 
     'Check to see if its out of bounds
-    If X < MinXBorder Then Exit Function
-    If X > MaxXBorder Then Exit Function
-    If Y < MinYBorder Then Exit Function
-    If Y > MaxYBorder Then Exit Function
+    If X < MinXBorder Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If X > MaxXBorder Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Y < MinYBorder Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If Y > MaxYBorder Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
 
     'Check if a character (User or NPC) is already at the tile
-    If MapData(Map, X, Y).UserIndex > 0 Then Exit Function
-    If MapData(Map, X, Y).NPCIndex > 0 Then Exit Function
+    If MapData(Map, X, Y).UserIndex > 0 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If MapData(Map, X, Y).NPCIndex > 0 Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
 
     'Check to see if its blocked
-    If MapData(Map, X, Y).Blocked = BlockedAll Then Exit Function
+    If MapData(Map, X, Y).Blocked = BlockedAll Then
+        Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
 
     'Check the heading for directional blocking
     If Heading > 0 Then
         If MapData(Map, X, Y).Blocked And BlockedNorth Then
-            If Heading = NORTH Then Exit Function
-            If Heading = NORTHEAST Then Exit Function
-            If Heading = NORTHWEST Then Exit Function
+            If Heading = NORTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
         If MapData(Map, X, Y).Blocked And BlockedEast Then
-            If Heading = EAST Then Exit Function
-            If Heading = NORTHEAST Then Exit Function
-            If Heading = SOUTHEAST Then Exit Function
+            If Heading = EAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
         If MapData(Map, X, Y).Blocked And BlockedSouth Then
-            If Heading = SOUTH Then Exit Function
-            If Heading = SOUTHEAST Then Exit Function
-            If Heading = SOUTHWEST Then Exit Function
+            If Heading = SOUTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
         If MapData(Map, X, Y).Blocked And BlockedWest Then
-            If Heading = WEST Then Exit Function
-            If Heading = NORTHWEST Then Exit Function
-            If Heading = SOUTHWEST Then Exit Function
+            If Heading = WEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
     End If
 
@@ -663,6 +888,8 @@ On Error GoTo ErrOut
     Server_LegalPos = True
     
 ErrOut:
+
+    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -673,17 +900,20 @@ Function Server_NextOpenCharIndex() As Integer
 '*****************************************************************
 
 Dim LoopC As Long
-
-'Check for the first char creation
-
+    
+    Log "Call Server_NextOpenCharIndex", CodeTracker '//\\LOGLINE//\\
+    
+    'Check for the first char creation
     If LastChar = 0 Then
         ReDim CharList(0 To 1)
         LastChar = 1
         Server_NextOpenCharIndex = 1
+        Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
     
     'Loop through the character slots
+    Log "Server_NextOpenCharIndex: Starting loop (1 to " & LastChar & ")", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To LastChar + 1
 
         'We need to create a new slot
@@ -691,16 +921,20 @@ Dim LoopC As Long
             LastChar = LoopC
             Server_NextOpenCharIndex = LoopC
             ReDim Preserve CharList(0 To LastChar)
+            Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
 
         'Re-use an old slot that is not being used
         If CharList(LoopC).Index = 0 Then
             Server_NextOpenCharIndex = LoopC
+            Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
 
     Next LoopC
+    
+    Log "Rtrn Server_NextOpenCharIndex = " & Server_NextOpenCharIndex, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -710,17 +944,20 @@ Public Function Server_SkillIDtoSkillName(ByVal SkillID As Byte) As String
 'Takes in a SkillID and returns the name of that skill
 '***************************************************
 
+    Log "Call Server_SkillIDtoSkillName(" & SkillID & ")", CodeTracker '//\\LOGLINE//\\
+
     Select Case SkillID
-    Case SkID.Bless: Server_SkillIDtoSkillName = "Bless"
-    Case SkID.IronSkin: Server_SkillIDtoSkillName = "Iron Skin"
-    Case SkID.Strengthen: Server_SkillIDtoSkillName = "Strengthen"
-    Case SkID.Warcry: Server_SkillIDtoSkillName = "War Cry"
-    Case SkID.Protection: Server_SkillIDtoSkillName = "Protection"
-    Case SkID.Curse: Server_SkillIDtoSkillName = "Curse"
-    Case SkID.SpikeField: Server_SkillIDtoSkillName = "Spike Field"
-    Case SkID.Heal: Server_SkillIDtoSkillName = "Heal"
-    Case Else: Server_SkillIDtoSkillName = "Unknown Skill"
+        Case SkID.Bless: Server_SkillIDtoSkillName = "Bless"
+        Case SkID.IronSkin: Server_SkillIDtoSkillName = "Iron Skin"
+        Case SkID.Strengthen: Server_SkillIDtoSkillName = "Strengthen"
+        Case SkID.Warcry: Server_SkillIDtoSkillName = "Warcry"
+        Case SkID.Protection: Server_SkillIDtoSkillName = "Protection"
+        Case SkID.SpikeField: Server_SkillIDtoSkillName = "Spike Field"
+        Case SkID.Heal: Server_SkillIDtoSkillName = "Heal"
+        Case Else: Server_SkillIDtoSkillName = "Unknown Skill #" & SkillID
     End Select
+    
+    Log "Rtrn Server_SkillIDtoSkillName = " & Server_SkillIDtoSkillName, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -733,10 +970,24 @@ Dim TempStr As String
 Dim LoopC As Byte
 Dim LoopX As Byte
 Dim i As Long
+
+    Log "Call Server_WriteMail(" & WriterIndex & "," & ReceiverName & "," & Subject & ",[" & Message & "],[" & ObjIndexString & "],[" & ObjAmountString & "])", CodeTracker '//\\LOGLINE//\\
+
+    'Check for a writing delay
+    If WriterIndex > 0 Then
+        If UserList(WriterIndex).Counters.DelayTimeMail > timeGetTime Then
+            'Not enough time has passed by - goodbye! :)
+            Log "Server_WriteMail: Not enough time elapsed since last mail write for user " & WriterIndex & " (" & UserList(WriterIndex).Name & ")", CodeTracker '//\\LOGLINE//\\
+            Exit Sub
+        Else
+            'Set the delay
+            UserList(WriterIndex).Counters.DelayTimeMail = timeGetTime + DelayTimeMail
+        End If
+    End If
     
     'Check for a valid reciever
     If Server_UserExist(ReceiverName) = False Then
-        If WriterIndex <> -1 Then
+        If WriterIndex > 0 Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 13
@@ -752,6 +1003,7 @@ Dim i As Long
             If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
             
                 'Not enough money
+                Log "Server_WriteMail: User " & WriterIndex & " (" & UserList(WriterIndex).Name & ") has not enough money to write mail (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
                 ConBuf.Clear
                 ConBuf.Put_Byte DataCode.Server_Message
                 ConBuf.Put_Byte 14
@@ -764,12 +1016,12 @@ Dim i As Long
     End If
 
     'Get the next open mail ID
-    DoEvents
     DB_RS.Open "SELECT lastid FROM mail_lastid", DB_Conn, adOpenStatic, adLockOptimistic
     MailIndex = Val(DB_RS(0)) + 1
     DB_RS(0) = MailIndex    'Update the value in the database
     DB_RS.Update
     DB_RS.Close
+    Log "Server_WriteMail: MailIndex acquired from `mail_lastid` table (" & MailIndex & ")", CodeTracker '//\\LOGLINE//\\
     
     'Set up the mail type
     MailData.New = 1
@@ -856,6 +1108,7 @@ Dim i As Long
                 If MailCost > 0 Then
                     If WriterIndex > 0 Then
                         If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
+                            Log "Server_WriteMail: Not enough gold to write message (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
                             Exit Sub    'This should never be reached, but just in case it does, leave this here
                         Else
                             UserList(WriterIndex).Stats.BaseStat(SID.Gold) = UserList(WriterIndex).Stats.BaseStat(SID.Gold) - MailCost
@@ -879,6 +1132,7 @@ Dim i As Long
     TempStr = DB_RS!mail
     TempSplit = Split(TempStr, vbCrLf)
     If UBound(TempSplit) >= MaxMailPerUser Then 'No room for the mail
+        Log "Server_WriteMail: User has too much mail alread - aborting", CodeTracker '//\\LOGLINE//\\
         DB_RS.Close
         If WriterIndex <> -1 Then
             ConBuf.Clear
@@ -900,6 +1154,7 @@ Dim i As Long
     If MailCost > 0 Then
         If WriterIndex > 0 Then
             If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
+                Log "Server_WriteMail: Not enough gold to write message (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
                 Exit Sub    'This should never be reached, but just in case it does, leave this here
             Else
                 UserList(WriterIndex).Stats.BaseStat(SID.Gold) = UserList(WriterIndex).Stats.BaseStat(SID.Gold) - MailCost
@@ -927,11 +1182,16 @@ Dim i As Long
 End Sub
 
 Public Sub User_AddObjToInv(ByVal UserIndex As Integer, ByRef Object As Obj)
-
 Dim LoopC As Long
+Dim Map As Integer
+Dim NewX As Byte
+Dim NewY As Byte
+Dim NewSlot As Byte
 
-'Look for a slot
-
+    Log "Call User_AddObjToInv(" & UserIndex & ",[I:" & Object.ObjIndex & " A:" & Object.Amount & "])", CodeTracker '//\\LOGLINE//\\
+    
+    'Look for a slot
+    Log "User_AddObjToInv: Starting loop (1 to " & MAX_INVENTORY_SLOTS & ")", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To MAX_INVENTORY_SLOTS
         If UserList(UserIndex).Object(LoopC).ObjIndex = Object.ObjIndex Then
             If UserList(UserIndex).Object(LoopC).Amount + Object.Amount <= MAX_INVENTORY_OBJS Then
@@ -963,9 +1223,18 @@ Dim LoopC As Long
             End If
         Next LoopC
     End If
-
+    
     'No free slot was found, drop the object to the floor
-    Obj_Make ToMap, UserIndex, Object, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+    
+    'Find the closest legal pos
+    Obj_ClosestFreeSpot UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NewX, NewY, NewSlot
+    
+    'Make sure the spot is valid
+    If NewX > 0 Then
+        Obj_Make Object, NewSlot, UserList(UserIndex).Pos.Map, NewX, NewY
+    Else '//\\LOGLINE//\\
+        Log "User_AddObjToInv: No valid spot found to drop the object!", CodeTracker '//\\LOGLINE//\\
+    End If
 
 End Sub
 
@@ -977,11 +1246,22 @@ Sub User_Attack(ByVal UserIndex As Integer)
 
 Dim AttackPos As WorldPos
 
+    Log "Call User_Attack(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) <= 0 Then Exit Sub
-    If UserList(UserIndex).Counters.AttackCounter > timeGetTime - STAT_ATTACKWAIT Then Exit Sub
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "User_Attack: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) <= 0 Then
+        Log "User_Attack: MinSTA <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Counters.AttackCounter > timeGetTime - STAT_ATTACKWAIT Then
+        Log "User_Attack: Not enough time elapsed since last attack - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     On Error GoTo 0
 
     'Update counters
@@ -992,10 +1272,14 @@ Dim AttackPos As WorldPos
     Server_HeadToPos UserList(UserIndex).Char.Heading, AttackPos
 
     'Exit if not legal
-    If AttackPos.X < XMinMapSize Or AttackPos.X > XMaxMapSize Or AttackPos.Y <= YMinMapSize Or AttackPos.Y > YMaxMapSize Then Exit Sub
+    If AttackPos.X < XMinMapSize Or AttackPos.X > XMaxMapSize Or AttackPos.Y <= YMinMapSize Or AttackPos.Y > YMaxMapSize Then
+        Log "User_Attack: Trying to attack an illegal position - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Look for user
     If MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).UserIndex > 0 Then
+        Log "User_Attack: Found a user to attack", CodeTracker '//\\LOGLINE//\\
 
         'Play attack sound
         ConBuf.Clear
@@ -1013,11 +1297,18 @@ Dim AttackPos As WorldPos
 
     'Look for NPC
     If MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex > 0 Then
+        Log "User_Attack: Found a NPC to attack", CodeTracker '//\\LOGLINE//\\
         If NPCList(MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex).Attackable Then
-
+            
             'If NPC has no health, they can not be attacked
-            If NPCList(MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex).ModStat(SID.MaxHP) = 0 Then Exit Sub
-            If NPCList(MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex).BaseStat(SID.MaxHP) = 0 Then Exit Sub
+            If NPCList(MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex).ModStat(SID.MaxHP) = 0 Then
+                Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+                Exit Sub
+            End If
+            If NPCList(MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex).BaseStat(SID.MaxHP) = 0 Then
+                Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+                Exit Sub
+            End If
 
             'Play attack sound
             ConBuf.Clear
@@ -1031,6 +1322,7 @@ Dim AttackPos As WorldPos
             User_AttackNPC UserIndex, MapData(AttackPos.Map, AttackPos.X, AttackPos.Y).NPCIndex
 
         Else
+            Log "User_Attack: NPC is non-attackable", CodeTracker '//\\LOGLINE//\\
 
             'Can not attack the selected NPC, NPC is not attackable
             ConBuf.Clear
@@ -1055,6 +1347,8 @@ Sub User_AttackNPC(ByVal UserIndex As Integer, ByVal NPCIndex As Integer)
 Dim HitSkill As Long    'User hit skill
 Dim Hit As Integer      'Hit damage
 
+    Log "Call User_AttackNPC(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Get the user hit skill
     HitSkill = UserList(UserIndex).Stats.ModStat(SID.Agi) * 2 + UserList(UserIndex).Stats.ModStat(SID.Str)
 
@@ -1066,6 +1360,7 @@ Dim Hit As Integer      'Hit damage
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= ((HitSkill + 50) - NPCList(NPCIndex).ModStat(SID.Agi)) Then
+        Log "User_AttackNPC: Attack chance did not pass, registering as a miss", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_SetCharDamage
         ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
@@ -1076,6 +1371,7 @@ Dim Hit As Integer      'Hit damage
 
     'Update aggressive-face
     If UserList(UserIndex).Counters.AggressiveCounter <= 0 Then
+        Log "User_AttackNPC: Making the user aggressive-faced", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.User_AggressiveFace
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -1088,6 +1384,7 @@ Dim Hit As Integer      'Hit damage
     Hit = Server_RandomNumber(UserList(UserIndex).Stats.ModStat(SID.MinHIT), UserList(UserIndex).Stats.ModStat(SID.MaxHIT))
     Hit = Hit - (NPCList(NPCIndex).ModStat(SID.DEF) * 0.5)
     If Hit < 1 Then Hit = 1
+    Log "User_AttackNPC: Hit (damage) value calculated (" & Hit & ")", CodeTracker '//\\LOGLINE//\\
 
     'Hurt the NPC
     NPC_Damage NPCIndex, UserIndex, Hit
@@ -1102,9 +1399,13 @@ Sub User_AttackUser(ByVal AttackerIndex As Integer, ByVal VictimIndex As Integer
 
 Dim Hit As Integer
 
-'Don't allow if switchingmaps maps
+    Log "Call User_AttackUser(" & AttackerIndex & "," & VictimIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    If UserList(VictimIndex).Flags.SwitchingMaps Then Exit Sub
+    'Don't allow if switchingmaps maps
+    If UserList(VictimIndex).Flags.SwitchingMaps Then
+        Log "User_AttackUser: Victim switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     
     'Calculate hit
     Hit = Server_RandomNumber(UserList(AttackerIndex).Stats.ModStat(SID.MinHIT), UserList(AttackerIndex).Stats.ModStat(SID.MaxHIT))
@@ -1122,6 +1423,7 @@ Dim Hit As Integer
 
     'User Die
     If UserList(VictimIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
+        Log "User_AttackUser: Killed the user", CodeTracker '//\\LOGLINE//\\
 
         'Kill user
         ConBuf.Clear
@@ -1148,15 +1450,41 @@ Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal Use
 'Changes a user char's head,body and heading
 '*****************************************************************
 
+    Log "Call User_ChangeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for invalid values
-    If UserIndex > MaxUsers Then Exit Sub
-    If UserIndex <= 0 Then Exit Sub
-    If Body < 0 Then Exit Sub
-    If Head < 0 Then Exit Sub
-    If Heading < 0 Then Exit Sub
-    If Weapon < 0 Then Exit Sub
-    If Hair < 0 Then Exit Sub
-    If Wings < 0 Then Exit Sub
+    If UserIndex > MaxUsers Then
+        Log "User_ChangeChar: UserIndex > MaxUsers - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex <= 0 Then
+        Log "User_ChangeChar: UserIndex <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Body < 0 Then
+        Log "User_ChangeChar: Body < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Head < 0 Then
+        Log "User_ChangeChar: Head < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Heading < 0 Then
+        Log "User_ChangeChar: Heading < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Weapon < 0 Then
+        Log "User_ChangeChar: Weapon < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Hair < 0 Then
+        Log "User_ChangeChar: Hair < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Wings < 0 Then
+        Log "User_ChangeChar: Wings < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Apply the values
     If UserList(UserIndex).Char.Body <> Body Then UserList(UserIndex).Char.Body = Body
@@ -1187,31 +1515,34 @@ Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, Object As Use
 'Changes a user's inventory
 '*****************************************************************
 
-    If Object.ObjIndex < 0 Then Exit Sub
-    If Object.ObjIndex > NumObjDatas Then Exit Sub
-    UserList(UserIndex).Object(Slot) = Object
+    Log "Call User_ChangeInv(" & UserIndex & "," & Slot & ",[I:" & Object.ObjIndex & " A:" & Object.Amount & " E:" & Object.Equipped & "])", CodeTracker '//\\LOGLINE//\\
 
+    If Object.ObjIndex < 0 Then
+        Log "User_ChangeInv: ObjIndex < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Object.ObjIndex > NumObjDatas Then
+        Log "User_ChangeInv: ObjIndex > NumObjDatas - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    UserList(UserIndex).Object(Slot) = Object
+    
+    'Build the buffer
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_SetInventorySlot
+    ConBuf.Put_Byte Slot
+    ConBuf.Put_Long Object.ObjIndex
+    
+    'If the object has an index, then send the related information of the object
+    'If index = 0, then we assume we are deleting it
     If Object.ObjIndex Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.User_SetInventorySlot
-        ConBuf.Put_Byte Slot
-        ConBuf.Put_Long Object.ObjIndex
         ConBuf.Put_String ObjData(Object.ObjIndex).Name
         ConBuf.Put_Long Object.Amount
         ConBuf.Put_Byte Object.Equipped
-        ConBuf.Put_Integer ObjData(Object.ObjIndex).GrhIndex
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-    Else
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.User_SetInventorySlot
-        ConBuf.Put_Byte Slot
-        ConBuf.Put_Long 0
-        ConBuf.Put_String "(None)"
-        ConBuf.Put_Long 0
-        ConBuf.Put_Byte 0
-        ConBuf.Put_Integer 0
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        ConBuf.Put_Long ObjData(Object.ObjIndex).GrhIndex
     End If
+    
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
 End Sub
 
@@ -1220,26 +1551,72 @@ Sub User_DropObj(ByVal UserIndex As Integer, ByVal Slot As Byte, ByVal Num As In
 '*****************************************************************
 'Drops a object from a User's slot
 '*****************************************************************
-
 Dim Obj As Obj
+Dim i As Byte
+Dim NewX As Byte
+Dim NewY As Byte
+Dim NewSlot As Byte
+
+    Log "Call User_DropObj(" & UserIndex & "," & Slot & "," & Num & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
-    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
-    If UserList(UserIndex).Pos.X < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.X > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.Y < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.Y > YMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If Slot <= 0 Then Exit Sub
-    If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
-    If UserList(UserIndex).Object(Slot).Amount <= 0 Then Exit Sub
-    If Num > UserList(UserIndex).Object(Slot).Amount Then Num = UserList(UserIndex).Object(Slot).Amount
+    If UserList(UserIndex).Pos.Map <= 0 Then
+        Log "User_DropObj: Map <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Map > NumMaps Then
+        Log "User_DropObj: Map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.X < XMinMapSize Then
+        Log "User_DropObj: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.X > XMaxMapSize Then
+        Log "User_DropObj: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Y < YMinMapSize Then
+        Log "User_DropObj: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Y > YMaxMapSize Then
+        Log "User_DropObj: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "User_DropObj: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Slot <= 0 Then
+        Log "User_DropObj: Slot <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Slot > MAX_INVENTORY_SLOTS Then
+        Log "User_DropObj: Slot > MAX_INVENTORY_SLOTS - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Object(Slot).Amount <= 0 Then
+        Log "User_DropObj: Object amount <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Num > UserList(UserIndex).Object(Slot).Amount Then
+        Log "User_DropObj: Requested drop amount > User's object amount - aborting", CodeTracker '//\\LOGLINE//\\
+        Num = UserList(UserIndex).Object(Slot).Amount
+    End If
+    If Num <= 0 Then
+        Log "User_DropObj: Requested drop amount <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     On Error GoTo 0
+    
+    'Get the closest free slot available
+    Obj_ClosestFreeSpot UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NewX, NewY, NewSlot
 
-    'Check for object on gorund
-    If MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex <> 0 Then
+    'Check if the new spot is valid
+    If NewX = 0 Then
+        Log "User_DropObj: No free position could be found", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 24
@@ -1247,24 +1624,32 @@ Dim Obj As Obj
         Exit Sub
     End If
 
+    'Set up the object
     Obj.ObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
     Obj.Amount = Num
-    Obj_Make ToMap, UserIndex, Obj, X, Y
+    Obj_Make Obj, NewSlot, UserList(UserIndex).Pos.Map, NewX, NewY
 
-    'Remove object
+    'Remove object from the user
     UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - Num
     If UserList(UserIndex).Object(Slot).Amount <= 0 Then
-        'Unequip is the object is currently equipped
+        Log "User_DropObj: User dropped all of the item, removing item from client", CodeTracker '//\\LOGLINE//\\
+    
+        'Unequip if the object is currently equipped
         If UserList(UserIndex).Object(Slot).Equipped = 1 Then User_RemoveInvItem UserIndex, Slot
 
         UserList(UserIndex).Object(Slot).ObjIndex = 0
         UserList(UserIndex).Object(Slot).Amount = 0
         UserList(UserIndex).Object(Slot).Equipped = 0
+        
     End If
 
     User_UpdateInv False, UserIndex, Slot
     
+    Exit Sub    '//\\LOGLINE//\\
+    
 ErrOut:
+
+    Log "User_DropObj: Unexpected error in User_DropObj - GoTo ErrOut called!", CriticalError '//\\LOGLINE//\\
 
 End Sub
 
@@ -1274,9 +1659,17 @@ Sub User_EraseChar(ByVal UserIndex As Integer)
 'Erase a character
 '*****************************************************************
 
+    Log "Call User_EraseChar(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     On Error GoTo ErrOut
-    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
-    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
+    If UserList(UserIndex).Pos.Map <= 0 Then
+        Log "User_EraseChar: Map <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Map > NumMaps Then
+        Log "User_EraseChar: Map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     On Error GoTo 0
     
     'Send erase command to clients
@@ -1292,15 +1685,103 @@ Sub User_EraseChar(ByVal UserIndex As Integer)
     'Update userlist
     UserList(UserIndex).Char.CharIndex = 0
     
-    If UserList(UserIndex).Pos.X < XMinMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.X > XMaxMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.Y < YMinMapSize Then Exit Sub
-    If UserList(UserIndex).Pos.Y > YMaxMapSize Then Exit Sub
+    If UserList(UserIndex).Pos.X < XMinMapSize Then
+        Log "User_EraseChar: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.X > XMaxMapSize Then
+        Log "User_EraseChar: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Y < YMinMapSize Then
+        Log "User_EraseChar: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Pos.Y > YMaxMapSize Then
+        Log "User_EraseChar: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Remove from map
     MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = 0
     
+    Exit Sub '//\\LOGLINE//\\
+    
 ErrOut:
+
+    Log "User_EraseChar: Unexpected error in User_EraseChar - GoTo ErrOut called!", CriticalError '//\\LOGLINE//\\
+
+End Sub
+
+Sub Obj_CleanMapTile(ByVal Map As Integer, ByVal X As Byte, ByVal Y As Byte)
+
+'*****************************************************************
+'Removes all the unused obj slots on a map tile
+'Make sure you call this every time you remove an object from a tile!
+'*****************************************************************
+Dim NumObjs As Byte
+Dim i As Long
+Dim j As Long
+
+    Log "Call Obj_CleanMapTile(" & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Make sure we wern't given an empty map tile
+    If MapData(Map, X, Y).NumObjs = 0 Then
+        Log "Obj_CleanMapTile: NumObjs = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    
+    'Check through all the object slots
+    For i = 1 To MapData(Map, X, Y).NumObjs
+        If MapData(Map, X, Y).ObjInfo(i).ObjIndex > 0 Then
+            If MapData(Map, X, Y).ObjInfo(i).Amount > 0 Then
+                
+                'Object found, so raise the count
+                NumObjs = NumObjs + 1
+                
+                'Move down in the array if possible
+                If i > 1 Then   'We can't sort any lower then 1, so don't even try it
+                    
+                    'Loop through all the previous object slots
+                    For j = 1 To (i - 1)    '(i - 1) is since we don't to check the slot it is already on!
+                    
+                        'If the object slot is unused then
+                        If MapData(Map, X, Y).ObjInfo(j).ObjIndex = 0 Or MapData(Map, X, Y).ObjInfo(j).Amount = 0 Then
+                
+                            'Scoot the item's keester down to that slot (swap the used into the unused)
+                            MapData(Map, X, Y).ObjInfo(j) = MapData(Map, X, Y).ObjInfo(i)
+                            MapData(Map, X, Y).ObjLife(j) = MapData(Map, X, Y).ObjLife(i)
+                            
+                            'Clear the old object
+                            ZeroMemory MapData(Map, X, Y).ObjInfo(i), Len(MapData(Map, X, Y).ObjInfo(i))
+                            MapData(Map, X, Y).ObjLife(i) = 0
+                        
+                        End If
+                        
+                    Next j
+                    
+                End If
+                
+            End If
+        End If
+    Next i
+    
+    'Once all that code above has gone through, NumObjs should have the number of valid objects
+    ' and the first object slots should be used (unused at the end), so if redim the array by
+    ' the NumObjs value, all we will cut off is the unused slots! :)
+    If NumObjs > 0 Then
+        Log "Obj_CleanMapTile: Resizing ObjInfo() array (1 To " & NumObjs & ")", CodeTracker '//\\LOGLINE//\\
+        ReDim Preserve MapData(Map, X, Y).ObjInfo(1 To NumObjs)
+        ReDim Preserve MapData(Map, X, Y).ObjLife(1 To NumObjs)
+    Else
+        'We have no slots at all used, so kill the whole damn thing
+        Log "Obj_CleanMapTile: Erasing ObjInfo() array", CodeTracker '//\\LOGLINE//\\
+        Erase MapData(Map, X, Y).ObjInfo
+        Erase MapData(Map, X, Y).ObjLife
+    End If
+    
+    'Assign the value to the map array for later usage
+    MapData(Map, X, Y).NumObjs = NumObjs
 
 End Sub
 
@@ -1309,28 +1790,55 @@ Sub User_GetObj(ByVal UserIndex As Integer)
 '*****************************************************************
 'Puts a object in a User's slot from the current User's position
 '*****************************************************************
-
-Dim X As Integer
-Dim Y As Integer
+Dim ObjSlot As Byte
 Dim Slot As Byte
+Dim Map As Integer
+Dim X As Byte
+Dim Y As Byte
+Dim i As Long
 
-    'Check for invalud values
-    On Error GoTo ErrOut
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Pos.Map <= 0 Then Exit Sub
-    If UserList(UserIndex).Pos.Map > NumMaps Then Exit Sub
+    Log "Call User_GetObj(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
+    'Assign the values to some smaller variables
+    Map = UserList(UserIndex).Pos.Map
     X = UserList(UserIndex).Pos.X
     Y = UserList(UserIndex).Pos.Y
-    
-    If X < XMinMapSize Then Exit Sub
-    If X > XMaxMapSize Then Exit Sub
-    If Y < YMinMapSize Then Exit Sub
-    If Y > YMaxMapSize Then Exit Sub
-    On Error GoTo 0
 
-    'Check for object on ground
-    If MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex <= 0 Then
+    'Check for invalid values
+    On Error GoTo ErrOut
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "User_GetObj: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Map <= 0 Then
+        Log "User_GetObj: User map <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Map > NumMaps Then
+        Log "User_GetObj: User map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If X < XMinMapSize Then
+        Log "User_GetObj: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If X > XMaxMapSize Then
+        Log "User_GetObj: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Y < YMinMapSize Then
+        Log "User_GetObj: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Y > YMaxMapSize Then
+        Log "User_GetObj: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    On Error GoTo 0
+    
+    'No objects exist on the tile
+    If MapData(Map, X, Y).NumObjs = 0 Then
+        Log "User_GetObj: NumObjs on tile (" & Map & "," & X & "," & Y & ") = 0", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 25
@@ -1338,12 +1846,34 @@ Dim Slot As Byte
         Exit Sub
     End If
 
-    'Check to see if User already has object type
+    'Check for object on ground
+    For i = 1 To MapData(Map, X, Y).NumObjs
+        If MapData(Map, X, Y).ObjInfo(i).ObjIndex > 0 Then
+            ObjSlot = i
+            Exit For
+        End If
+    Next i
+    Log "User_GetObj: ObjSlot = " & ObjSlot, CodeTracker '//\\LOGLINE//\\
+    
+    'For some reason, the NumObjs value is > 0 but there are no objects - no objs found
+    If ObjSlot = 0 Then
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 25
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        
+        'Also request a cleaning of the map object array since it is obviously messy
+        Obj_CleanMapTile Map, X, Y
+        
+        Exit Sub
+    End If
+    
+    'Check to see if User already has the object type
     Slot = 1
-    Do Until UserList(UserIndex).Object(Slot).ObjIndex = MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex
+    Do Until UserList(UserIndex).Object(Slot).ObjIndex = MapData(Map, X, Y).ObjInfo(ObjSlot).ObjIndex
         Slot = Slot + 1
-
         If Slot > MAX_INVENTORY_SLOTS Then
+            Log "User_GetObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
             Exit Do
         End If
     Loop
@@ -1365,41 +1895,41 @@ Dim Slot As Byte
     End If
 
     'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount <= MAX_INVENTORY_OBJS Then
+    If UserList(UserIndex).Object(Slot).Amount + MapData(Map, X, Y).ObjInfo(ObjSlot).Amount <= MAX_INVENTORY_OBJS Then
 
         'Tell the user they recieved the items
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 27
-        ConBuf.Put_Integer MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount
-        ConBuf.Put_String ObjData(MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex).Name
+        ConBuf.Put_Integer MapData(Map, X, Y).ObjInfo(ObjSlot).Amount
+        ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo(ObjSlot).ObjIndex).Name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
         'User takes all the items
-        UserList(UserIndex).Object(Slot).ObjIndex = MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex
-        UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount
-        Obj_Erase ToMap, UserIndex, MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+        UserList(UserIndex).Object(Slot).ObjIndex = MapData(Map, X, Y).ObjInfo(ObjSlot).ObjIndex
+        UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + MapData(Map, X, Y).ObjInfo(ObjSlot).Amount
+        Obj_Erase MapData(Map, X, Y).ObjInfo(ObjSlot).Amount, ObjSlot, Map, X, Y
 
     Else
         'Over MAX_INV_OBJS
-        If MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount < UserList(UserIndex).Object(Slot).Amount Then
+        If MapData(Map, X, Y).ObjInfo(Slot).Amount < UserList(UserIndex).Object(Slot).Amount Then
             'Tell the user they recieved the items
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount))
-            ConBuf.Put_String ObjData(MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex).Name
+            ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapData(Map, X, Y).ObjInfo(Slot).Amount))
+            ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo(Slot).ObjIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount = Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount))
+            MapData(Map, X, Y).ObjInfo(Slot).Amount = Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapData(Map, X, Y).ObjInfo(Slot).Amount))
         Else
             'Tell the user they recieved the items
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount)
-            ConBuf.Put_String ObjData(MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.ObjIndex).Name
+            ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapData(Map, X, Y).ObjInfo(Slot).Amount)
+            ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo(Slot).ObjIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount = Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapData(UserList(UserIndex).Pos.Map, X, Y).ObjInfo.Amount)
+            MapData(Map, X, Y).ObjInfo(Slot).Amount = Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapData(Map, X, Y).ObjInfo(Slot).Amount)
         End If
         UserList(UserIndex).Object(Slot).Amount = MAX_INVENTORY_OBJS
     End If
@@ -1419,11 +1949,25 @@ Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Am
 
 Dim Slot As Byte
 
+    Log "Call User_GiveObj(" & UserIndex & "," & ObjIndex & "," & Amount & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for invalid values
-    If UserIndex <= 0 Then Exit Sub
-    If ObjIndex <= 0 Then Exit Sub
-    If UserIndex > LastUser Then Exit Sub
-    If ObjIndex > NumObjDatas Then Exit Sub
+    If UserIndex <= 0 Then
+        Log "User_GiveObj: UserIndex <= 0", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If ObjIndex <= 0 Then
+        Log "User_GiveObj: ObjIndex <= 0", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex > LastUser Then
+        Log "User_GiveObj: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If ObjIndex > NumObjDatas Then
+        Log "User_GiveObj: ObjIndex > NumObjDatas", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Check to see if User already has object type
     Slot = 1
@@ -1436,9 +1980,11 @@ Dim Slot As Byte
     If Slot > MAX_INVENTORY_SLOTS Then
         Slot = 1
         Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
+            Log "User_GiveObj: Checking slot " & Slot, CodeTracker '//\\LOGLINE//\\
             Slot = Slot + 1
 
             If Slot > MAX_INVENTORY_SLOTS Then
+                Log "User_GiveObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
                 ConBuf.Clear
                 ConBuf.Put_Byte DataCode.Server_Message
                 ConBuf.Put_Byte 26
@@ -1462,7 +2008,6 @@ Dim Slot As Byte
         'User takes all the items
         UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
         UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + Amount
-        Obj_Erase ToMap, UserIndex, Amount, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
 
     Else
         'Over MAX_INV_OBJS
@@ -1499,14 +2044,19 @@ Public Function User_IndexFromSox(inSox As Long) As Integer
 
 Dim i As Long
 
+    Log "Call User_IndexFromSox(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
+
     Do
         i = i + 1
-        If i > NumUsers + 10 Then
+        If i > LastUser Then
             User_IndexFromSox = -1
+            Log "Rtrn User_IndexFromSox = " & User_IndexFromSox, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
     Loop While UserList(i).ConnID <> inSox
     User_IndexFromSox = i
+    
+    Log "Rtrn User_IndexFromSox = " & User_IndexFromSox, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -1517,6 +2067,8 @@ Sub User_Kill(ByVal UserIndex As Integer)
 '*****************************************************************
 
 Dim TempPos As WorldPos
+
+    Log "Call User_Kill(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Set user health/mana/stamina back to full
     UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.ModStat(SID.MaxHP)
@@ -1560,14 +2112,34 @@ Dim TempCharIndex As Integer
 Dim TempIndex As Integer
 Dim MsgData As MailData
 
+    Log "Call User_LookAtTile(" & UserIndex & "," & Map & "," & X & "," & Y & "," & Button & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for invalid values
     On Error GoTo ErrOut
-    If Not Server_InMapBounds(X, Y) Then Exit Sub
-    If UserIndex <= 0 Then Exit Sub
-    If UserIndex > MaxUsers Then Exit Sub
-    If Map <= 0 Then Exit Sub
-    If Map > NumMaps Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
+    If Not Server_InMapBounds(X, Y) Then
+        Log "User_LookAtTile: Invalid tile looked at (X:" & X & " Y:" & Y & ")", InvalidPacketData '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex <= 0 Then
+        Log "User_LookAtTile: UserIndex <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex > MaxUsers Then
+        Log "User_LookAtTile: UserIndex > MaxUsers - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Map <= 0 Then
+        Log "User_LookAtTile: Map <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Map > NumMaps Then
+        Log "User_LookAtTile: Map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "User_LookAtTile: User witching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     On Error GoTo 0
 
     '***** Right Click *****
@@ -1578,7 +2150,7 @@ Dim MsgData As MailData
 
             'Only check mail if right next to the mailbox
             If UserList(UserIndex).Pos.Map = Map Then
-                If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, CInt(X), CInt(Y)) < 2 Then
+                If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, CInt(X), CInt(Y), 1, 1) Then
 
                     'Store the position of the mailbox for later reference in case user tries to use items away from mailbox
                     UserList(UserIndex).MailboxPos.Map = Map
@@ -1604,6 +2176,7 @@ Dim MsgData As MailData
             End If
 
             'User isn't next to the mailbox
+            Log "User_LookAtTile: User not next to mailbox", CodeTracker '//\\LOGLINE//\\
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 29
@@ -1680,13 +2253,30 @@ Dim MsgData As MailData
         End If
 
         '*** Check for object ***
-        If MapData(Map, X, Y).ObjInfo.ObjIndex > 0 Then
-            ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 32
-            ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo.ObjIndex).Name
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            FoundSomething = 1
+        If MapData(Map, X, Y).NumObjs > 0 Then
+            For LoopC = 1 To MapData(Map, X, Y).NumObjs
+                If MapData(Map, X, Y).ObjInfo(LoopC).ObjIndex > 0 Then
+                    'Check whether to use the singular or plural message
+                    If MapData(Map, X, Y).ObjInfo(LoopC).Amount = 1 Then
+                        ConBuf.Clear
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 32
+                        ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo(LoopC).ObjIndex).Name
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    Else
+                        ConBuf.Clear
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 86
+                        ConBuf.Put_String ObjData(MapData(Map, X, Y).ObjInfo(LoopC).ObjIndex).Name
+                        ConBuf.Put_Integer MapData(Map, X, Y).ObjInfo(LoopC).Amount
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    End If
+                    FoundSomething = 1
+                End If
+            Next LoopC
+            'If we went through that loop and FoundSomething = 0, then NumObjs > 0 while there are
+            ' no objects, so we need to clean the array since it didn't get cleaned
+            Obj_CleanMapTile Map, X, Y
         End If
 
         '*** Didn't find anything ***
@@ -1738,7 +2328,7 @@ Dim MsgData As MailData
             End If
             Exit Sub
         ElseIf FoundChar = 1 Then
-            If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(TempIndex).Pos.X, UserList(TempIndex).Pos.Y) <= Max_Server_Distance Then
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(TempIndex).Pos.X, UserList(TempIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                 UserList(UserIndex).Flags.Target = 1
                 UserList(UserIndex).Flags.TargetIndex = TempCharIndex
                 ConBuf.Clear
@@ -1756,7 +2346,7 @@ Dim MsgData As MailData
                 End If
             End If
         ElseIf FoundChar = 2 Then
-            If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(TempIndex).Pos.X, NPCList(TempIndex).Pos.Y) <= Max_Server_Distance Then
+            If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(TempIndex).Pos.X, NPCList(TempIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                 UserList(UserIndex).Flags.Target = 2
                 UserList(UserIndex).Flags.TargetIndex = TempCharIndex
                 ConBuf.Clear
@@ -1789,6 +2379,8 @@ Sub User_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal UserI
 
 Dim CharIndex As Integer
 
+    Log "Call User_MakeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
 'Place character on map
 
     MapData(Map, X, Y).UserIndex = UserIndex
@@ -1810,6 +2402,7 @@ Dim CharIndex As Integer
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     ConBuf.Put_Byte X
     ConBuf.Put_Byte Y
+    ConBuf.Put_Byte UserList(UserIndex).Stats.ModStat(SID.Speed)
     ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_Integer UserList(UserIndex).Char.Weapon
     ConBuf.Put_Integer UserList(UserIndex).Char.Hair
@@ -1872,17 +2465,34 @@ Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte)
 '*****************************************************************
 'Moves a User from one tile to another
 '*****************************************************************
+Dim TempIndex As Integer
 Dim nPos As WorldPos
+Dim i As Long
+
+    Log "Call User_MoveChar(" & UserIndex & "," & nHeading & ")", CodeTracker '//\\LOGLINE//\\
 
 'Check for invalid values
 
-    If UserIndex <= 0 Then Exit Sub
-    If UserIndex > MaxUsers Then Exit Sub
-    If nHeading <= 0 Then Exit Sub
-    If nHeading > 8 Then Exit Sub
+    If UserIndex <= 0 Then
+        Log "User_MoveChar: UserIndex <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex > MaxUsers Then
+        Log "User_MoveChar: UserIndex > MaxUsers - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If nHeading = 0 Then
+        Log "User_MoveChar: nHeading = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If nHeading > 8 Then
+        Log "User_MoveChar: nHeading > 8 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Update the move counter
-    If timeGetTime < UserList(UserIndex).Counters.MoveCounter + 50 Then
+    If timeGetTime < UserList(UserIndex).Counters.MoveCounter Then
+        Log "User_MoveChar: Not enough time has elapsed for movement.", CodeTracker '//\\LOGLINE//\\
 
         'If the user is moving too fast, then put them back
         ConBuf.Clear
@@ -1898,7 +2508,7 @@ Dim nPos As WorldPos
     UserList(UserIndex).Flags.QuestNPC = 0
 
     'Get the new time
-    UserList(UserIndex).Counters.MoveCounter = timeGetTime
+    UserList(UserIndex).Counters.MoveCounter = timeGetTime + Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed))
 
     'Get the new position
     nPos = UserList(UserIndex).Pos
@@ -1914,7 +2524,7 @@ Dim nPos As WorldPos
         ConBuf.Put_Byte nPos.X
         ConBuf.Put_Byte nPos.Y
         ConBuf.Put_Byte nHeading
-        Data_Send ToPCAreaButIndex, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToUserMove, UserIndex, ConBuf.Get_Buffer
 
         'Update map and user pos
         MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = 0
@@ -1922,6 +2532,11 @@ Dim nPos As WorldPos
         UserList(UserIndex).Char.Heading = nHeading
         UserList(UserIndex).Char.HeadHeading = nHeading
         MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = UserIndex
+
+        'If the user has movement packets in their buffer, force them to be sent asap since they could be queued packets
+        ' from distant movements. If they are not queued packets, then they are going to be high priority anyways
+        ' (unless you have changed the packet priorities lower, which for local movement, is not a good idea)
+        If UserList(UserIndex).HasMovePacket Then UserList(UserIndex).PPValue = PP_High
 
         'Do tile events
         Server_DoTileEvents UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
@@ -1945,9 +2560,12 @@ Function User_NameToIndex(ByVal Name As String) As Integer
 
 Dim UserIndex As Integer
 
+    Log "Call User_NameToIndex(" & Name & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for bad name
     If Len(Name) = 0 Then
         User_NameToIndex = 0
+        Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
     
@@ -1956,13 +2574,17 @@ Dim UserIndex As Integer
     Do Until UCase$(UserList(UserIndex).Name) = UCase$(Name)
         UserIndex = UserIndex + 1
         If UserIndex > LastUser Then
+            Log "User_NameToIndex: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
             UserIndex = 0
+            Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
             Exit Do
         End If
     Loop
     
     'Return the results
     User_NameToIndex = UserIndex
+    
+    Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -1972,16 +2594,42 @@ Function User_NextOpen() As Integer
 'Finds the next open UserIndex in UserList
 '*****************************************************************
 
-Dim LoopC As Long
+    Log "Call User_NextOpen", CodeTracker '//\\LOGLINE//\\
 
-    LoopC = 1
+    'Check if a user is logging into an empty server
+    If LastUser = 0 Then
+        User_NextOpen = 1
+        LastUser = 1
+        ReDim UserList(1 To 1)
+        Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
 
-    Do Until UserList(LoopC).Flags.UserLogged = 0
-        LoopC = LoopC + 1
-        If LoopC > MaxUsers Then Exit Do
+    'Start with the first index
+    User_NextOpen = 1
+
+    'Find the next free user slot
+    Do Until UserList(User_NextOpen).Flags.UserLogged = 0
+        
+        'Raise the value to check the next index
+        User_NextOpen = User_NextOpen + 1
+        
+        'Check if we have gone over the maximum users allowed
+        If User_NextOpen > MaxUsers Then
+            Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
+            Exit Do
+        End If
+        
+        'Check if we have exceeded the current array size (every slot is used)
+        If User_NextOpen > UBound(UserList()) Then
+            LastUser = User_NextOpen
+            ReDim Preserve UserList(1 To User_NextOpen)
+            Exit Do
+        End If
+        
     Loop
 
-    User_NextOpen = LoopC
+    Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -1993,12 +2641,15 @@ Public Sub User_RaiseExp(ByVal UserIndex As Integer, ByVal EXP As Long)
 
 Dim Levels As Integer
 
+    Log "Call User_RaiseExp(" & UserIndex & "," & EXP & ")", CodeTracker '//\\LOGLINE//\\
+
     'Update the user's experience
     UserList(UserIndex).Stats.BaseStat(SID.EXP) = UserList(UserIndex).Stats.BaseStat(SID.EXP) + EXP
 
     'Loop as many times as needed to get every level gained in
     Do While UserList(UserIndex).Stats.BaseStat(SID.EXP) >= UserList(UserIndex).Stats.BaseStat(SID.ELU)
-
+        Log "User_RaiseExp: User by index " & UserIndex & " (" & UserList(UserIndex).Name & ") leveled up", CodeTracker '//\\LOGLINE//\\
+        
         'Set the number of levels gained
         Levels = Levels + 1
         
@@ -2023,6 +2674,7 @@ Dim Levels As Integer
 
     'Check if needing to update from leveling
     If Levels = 1 Then
+        Log "User_RaiseExp: User gained a level", CodeTracker '//\\LOGLINE//\\
 
         'Say the user's level raised
         ConBuf.Clear
@@ -2031,6 +2683,7 @@ Dim Levels As Integer
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     ElseIf Levels > 1 Then
+        Log "User_RaiseExp: User ganed multiple levels (" & Levels & ")", CodeTracker '//\\LOGLINE//\\
 
         'Say the user's level raised
         ConBuf.Clear
@@ -2051,6 +2704,8 @@ Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte)
 
 Dim Obj As ObjData
 
+    Log "Call User_RemoveInvItem(" & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
+
 'Set the object
 
     Obj = ObjData(UserList(UserIndex).Object(Slot).ObjIndex)
@@ -2060,7 +2715,8 @@ Dim Obj As ObjData
 
         'Check for weapon
     Case OBJTYPE_WEAPON
-
+        Log "User_RemoveInvItem: Object type OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
+        
         'Set the equipted variables
         UserList(UserIndex).Object(Slot).Equipped = 0
         UserList(UserIndex).WeaponEqpObjIndex = 0
@@ -2071,6 +2727,7 @@ Dim Obj As ObjData
 
         'Check for armor
     Case OBJTYPE_ARMOR
+        Log "User_RemoveInvItem: Object type OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
 
         'Set the equipted variables
         UserList(UserIndex).Object(Slot).Equipped = 0
@@ -2081,6 +2738,7 @@ Dim Obj As ObjData
 
         'Check for wings
     Case OBJTYPE_WINGS
+        Log "User_RemoveInvItem: Object type OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
     
         'Set the equipted variables
         UserList(UserIndex).Object(Slot).Equipped = 0
@@ -2089,7 +2747,13 @@ Dim Obj As ObjData
         UserList(UserIndex).Char.Wings = 0
         User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
 
+    Case Else   '//\\LOGLINE//\\
+        Log "User_RemoveInvItem: Unknown object type! Object type: " & Obj.ObjType, CriticalError '//\\LOGLINE//\\
+
     End Select
+    
+    'Force update of the modstats
+    UserList(UserIndex).Stats.Update = 1
 
     'Update the user's stats
     User_UpdateInv False, UserIndex, Slot
@@ -2097,25 +2761,50 @@ Dim Obj As ObjData
 End Sub
 
 Public Sub User_SendKnownSkills(ByVal UserIndex As Integer)
-
-Dim KnowSkillList As Long
+Dim KnowSkillList() As Byte
+Dim Index As Long   'Which KnowSkillList array index to use
 Dim i As Byte
 
-'Check for a valid userindex
+    Log "Call User_SendKnownSkills(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    If UserIndex <= 0 Then Exit Sub
-    If UserIndex > MaxUsers Then Exit Sub
+    'Check for a valid userindex
+    If UserIndex <= 0 Then
+        Log "User_SendKnownSkills: User index <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex > MaxUsers Then
+        Log "User_SendKnownSkills: User index > Max users - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
-    'Compile all the known skills into a long
-    'Once you start getting overflows, you will have to program in another long
+    'Size the knowskilllist
+    Log "User_SendKnownSkills: ReDim KnowSkillList(1 To " & NumBytesForSkills & ")", CodeTracker '//\\LOGLINE//\\
+    ReDim KnowSkillList(1 To NumBytesForSkills)
+
+    'Compile all the known skills into a long (or array of longs if too many skills)
     For i = 1 To NumSkills
-        If UserList(UserIndex).KnownSkills(i) Then KnowSkillList = KnowSkillList Or (1 * (2 ^ (i - 1)))
+        
+        'Check if the skill is known
+        Log "User_SendKnownSkills: Checking if skill ID " & i & " is known", CodeTracker '//\\LOGLINE//\\
+        If UserList(UserIndex).KnownSkills(i) Then
+            
+            'Find out which KnowSkillList array index to use
+            Log "User_SendKnownSkills: Index value = " & Int((i - 1) / 8) + 1, CodeTracker '//\\LOGLINE//\\
+            Index = Int((i - 1) / 8) + 1
+            
+            'Pack the information
+            KnowSkillList(Index) = KnowSkillList(Index) Or (2 ^ (i - ((Index - 1) * 8) - 1))
+
+        End If
+            
     Next i
 
-    'Send the long to the user
+    'Send the information to the user
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.User_KnownSkills
-    ConBuf.Put_Long KnowSkillList
+    For i = 1 To NumBytesForSkills
+        ConBuf.Put_Byte KnowSkillList(i)
+    Next i
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
 End Sub
@@ -2128,12 +2817,16 @@ Public Sub User_TradeWithNPC(ByVal UserIndex As Integer, ByVal NPCIndex As Integ
 
 Dim LoopC As Integer
 
+    Log "Call User_TradeWithNPC(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
 'Trade with a NPC
 
     If NPCList(NPCIndex).NumVendItems > 0 Then
+        Log "User_TradeWithNPC: NumVendItems = " & NPCList(NPCIndex).NumVendItems, CodeTracker '//\\LOGLINE//\\
 
         'Check if close enough to trade with
-        If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y) > 5 Then
+        If Not Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, 6, 6) Then
+            Log "User_TradeWithNPC: Can not trade - user too far away", CodeTracker '//\\LOGLINE//\\
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 36
@@ -2141,12 +2834,13 @@ Dim LoopC As Integer
             Exit Sub
         End If
 
+        Log "User_TradeWithNPC: Building vending items list", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.User_Trade_StartNPCTrade
         ConBuf.Put_String NPCList(NPCIndex).Name
         ConBuf.Put_Integer NPCList(NPCIndex).NumVendItems
         For LoopC = 1 To NPCList(NPCIndex).NumVendItems
-            ConBuf.Put_Integer ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).GrhIndex
+            ConBuf.Put_Long ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).GrhIndex
             ConBuf.Put_String ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).Name
             ConBuf.Put_Long ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).Price
         Next LoopC
@@ -2165,6 +2859,8 @@ Sub User_UpdateInv(ByVal UpdateAll As Boolean, ByVal UserIndex As Integer, ByVal
 
 Dim NullObj As UserOBJ
 Dim LoopC As Long
+
+    Log "Call User_UpdateInv(" & UpdateAll & "," & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
 
 'Update one slot
 
@@ -2194,21 +2890,41 @@ Sub User_UpdateMap(ByVal UserIndex As Integer)
 '*****************************************************************
 
 Dim Map As Integer
-Dim X As Long
-Dim Y As Long
+Dim X As Byte
+Dim Y As Byte
+Dim i As Long
+
+    Log "Call User_UpdateMap(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     Map = UserList(UserIndex).Pos.Map
 
     'Send user char's pos
-    For X = 1 To UBound(ConnectionGroups(Map).UserIndex())
-        Call User_MakeChar(ToIndex, UserIndex, ConnectionGroups(Map).UserIndex(X), Map, UserList(ConnectionGroups(Map).UserIndex(X)).Pos.X, UserList(ConnectionGroups(Map).UserIndex(X)).Pos.Y)
+    Log "User_UpdateMap: For X = 1 to " & UBound(MapUsers(Map).Index()), CodeTracker '//\\LOGLINE//\\
+    For X = 1 To UBound(MapUsers(Map).Index())
+        Call User_MakeChar(ToIndex, UserIndex, MapUsers(Map).Index(X), Map, UserList(MapUsers(Map).Index(X)).Pos.X, UserList(MapUsers(Map).Index(X)).Pos.Y)
     Next X
 
     'Place chars and objects
     For Y = YMinMapSize To YMaxMapSize
         For X = XMinMapSize To XMaxMapSize
+            
+            'NPC update
             If MapData(Map, X, Y).NPCIndex Then NPC_MakeChar ToIndex, UserIndex, MapData(Map, X, Y).NPCIndex, Map, X, Y
-            If MapData(Map, X, Y).ObjInfo.ObjIndex Then Obj_Make ToIndex, UserIndex, MapData(Map, X, Y).ObjInfo, X, Y
+            
+            'Object update
+            If MapData(Map, X, Y).NumObjs > 0 Then
+                For i = 1 To MapData(Map, X, Y).NumObjs
+                    If MapData(Map, X, Y).ObjInfo(i).ObjIndex Then
+                        ConBuf.Clear
+                        ConBuf.Put_Byte DataCode.Server_MakeObject
+                        ConBuf.Put_Long ObjData(MapData(Map, X, Y).ObjInfo(i).ObjIndex).GrhIndex
+                        ConBuf.Put_Byte X
+                        ConBuf.Put_Byte Y
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map
+                    End If
+                Next i
+            End If
+
         Next X
     Next Y
 
@@ -2225,7 +2941,12 @@ Dim ArmorObj As ObjData
 Dim WingsObj As ObjData
 Dim i As Integer
 
-    If UserList(UserIndex).Flags.UserLogged = 0 Then Exit Sub
+    Log "Call User_UpdateModStats(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
+        Log "User_UpdateModStats: UserLogged = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Set the equipted items
     If UserList(UserIndex).WeaponEqpObjIndex > 0 Then WeaponObj = ObjData(UserList(UserIndex).WeaponEqpObjIndex)
@@ -2244,6 +2965,7 @@ Dim i As Integer
                                 If i <> SID.EXP Then
                                     If i <> SID.ELU Then
                                         If i <> SID.ELV Then
+                                            Log "User_UpdateModStats: Updating ModStat ID " & i, CodeTracker '//\\LOGLINE//\\
                                             .ModStat(i) = .BaseStat(i) + WeaponObj.AddStat(i) + ArmorObj.AddStat(i) + WingsObj.AddStat(i)
                                         End If
                                     End If
@@ -2255,19 +2977,34 @@ Dim i As Integer
             End If
         Next i
         
+        'War curse
+        If UserList(UserIndex).Skills.WarCurse > 0 Then
+            Log "User_UpdateModStats: Updating effects of skill/spell WarCurse", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.Str) = .ModStat(SID.Str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.WeaponSkill) = .ModStat(SID.WeaponSkill) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+        End If
+        
         'Strengthen
         If UserList(UserIndex).Skills.Strengthen > 0 Then
+            Log "User_UpdateModStats: Updating effects of skill/spell Strengthen", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Strengthen
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Strengthen
         End If
         
         'Protection
-        If UserList(UserIndex).Skills.Strengthen > 0 Then
+        If UserList(UserIndex).Skills.Protect > 0 Then
+            Log "User_UpdateModStats: Updating effects of skill/spell Protection", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Protect
         End If
         
         'Bless
-        If UserList(UserIndex).Skills.Strengthen > 0 Then
+        If UserList(UserIndex).Skills.Bless > 0 Then
+            Log "User_UpdateModStats: Updating effects of skill/spell Bless", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless * 0.5
@@ -2277,7 +3014,8 @@ Dim i As Integer
         End If
         
         'Iron skin
-        If UserList(UserIndex).Skills.Strengthen > 0 Then
+        If UserList(UserIndex).Skills.IronSkin > 0 Then
+            Log "User_UpdateModStats: Updating effects of skill/spell Iron Skin", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.IronSkin * 2
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - UserList(UserIndex).Skills.IronSkin * 1.5
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - UserList(UserIndex).Skills.IronSkin * 1.5
@@ -2295,16 +3033,42 @@ Sub User_UseInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte)
 
 Dim Obj As ObjData
 
+    Log "Call User_UseInvItem(" & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).Flags.UserLogged = 0 Then Exit Sub
-    If UserIndex > MaxUsers Then Exit Sub
-    If UserIndex <= 0 Then Exit Sub
-    If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
-    If Slot <= 0 Then Exit Sub
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
-    If UserList(UserIndex).Object(Slot).ObjIndex < 0 Then Exit Sub
-    If UserList(UserIndex).Object(Slot).ObjIndex > NumObjDatas Then Exit Sub
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
+        Log "User_UseInvItem: UserLogged = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex > MaxUsers Then
+        Log "User_UseInvItem: UserIndex > MaxUsers - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserIndex <= 0 Then
+        Log "User_UseInvItem: UserIndex <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Slot > MAX_INVENTORY_SLOTS Then
+        Log "User_UseInvItem: Slot > MAX_INVENTORY_SLOTS - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If Slot <= 0 Then
+        Log "User_UseInvItem: Slot <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "User_UseInvItem: SwitchingMaps = Yes - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Object(Slot).ObjIndex < 0 Then
+        Log "User_UseInvItem: ObjIndex < 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If UserList(UserIndex).Object(Slot).ObjIndex > NumObjDatas Then
+        Log "User_UseInvItem: ObjIndex > NumObjDatas - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     On Error GoTo 0
     
     Obj = ObjData(UserList(UserIndex).Object(Slot).ObjIndex)
@@ -2319,6 +3083,7 @@ Dim Obj As ObjData
     Select Case Obj.ObjType
     
     Case OBJTYPE_USEONCE
+        Log "User_UseInvItem: ObjType = OBJTYPE_USEONCE", CodeTracker '//\\LOGLINE//\\
 
         'Remove from inventory
         UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
@@ -2330,8 +3095,9 @@ Dim Obj As ObjData
         If Obj.SpriteHead <> -1 Then UserList(UserIndex).Char.Head = Obj.SpriteHead
         If Obj.SpriteWeapon <> -1 Then UserList(UserIndex).Char.Weapon = Obj.SpriteWeapon
         User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
+        
     Case OBJTYPE_WEAPON
+        Log "User_UseInvItem: ObjType = OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
 
         'If currently equipped remove instead
         If UserList(UserIndex).Object(Slot).Equipped Then
@@ -2356,6 +3122,7 @@ Dim Obj As ObjData
         User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
 
     Case OBJTYPE_ARMOR
+        Log "User_UseInvItem: ObjType = OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
 
         'If currently equipped remove instead
         If UserList(UserIndex).Object(Slot).Equipped Then
@@ -2379,6 +3146,7 @@ Dim Obj As ObjData
         User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
 
     Case OBJTYPE_WINGS
+        Log "User_UseInvItem: ObjType = OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
     
         'If currently equipped remove instead
         If UserList(UserIndex).Object(Slot).Equipped Then
@@ -2398,7 +3166,15 @@ Dim Obj As ObjData
         If Obj.SpriteWings <> -1 Then UserList(UserIndex).Char.Wings = Obj.SpriteWings
         User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
 
+    Case Else
+    
+        'We have no idea what type of object it is! OMG!!!
+        Log "User_UseInvItem: Unknown object type used! Object type: " & Obj.ObjType, CriticalError '//\\LOGLINE//\\
+
     End Select
+    
+    'Force update of the modstats
+    UserList(UserIndex).Stats.Update = 1
 
     'Update user's stats and inventory
     User_UpdateInv False, UserIndex, Slot
@@ -2416,10 +3192,18 @@ Sub User_WarpChar(ByVal UserIndex As Integer, ByVal Map As Integer, ByVal X As I
 Dim OldMap As Integer
 Dim LoopC As Long
 
+    Log "Call User_WarpChar(" & UserIndex & "," & Map & "," & X & "," & Y & "," & ForceSwitch & ")", CodeTracker '//\\LOGLINE//\\
+
     OldMap = UserList(UserIndex).Pos.Map
 
-    If OldMap <= 0 Then Exit Sub
-    If OldMap > NumMaps Then Exit Sub
+    If OldMap <= 0 Then
+        Log "User_WarpChar: OldMap <= 0", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If OldMap > NumMaps Then
+        Log "User_WarpChar: OldMap > NumMaps", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     User_EraseChar UserIndex
 
@@ -2428,9 +3212,11 @@ Dim LoopC As Long
     UserList(UserIndex).Pos.Map = Map
 
     If (OldMap <> Map) Or ForceSwitch = True Then
+        Log "User_WarpChar: Switching maps", CodeTracker '//\\LOGLINE//\\
     
         'Check to update the database
         If MySQLUpdate_UserMap Then
+            Log "User_WarpChar: Updating database with new map", CodeTracker '//\\LOGLINE//\\
             DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
             DB_RS!pos_map = Map
             DB_RS.Update
@@ -2451,34 +3237,37 @@ Dim LoopC As Long
 
         'Update new Map Users
         MapInfo(Map).NumUsers = MapInfo(Map).NumUsers + 1
+        Log "User_WarpChar: MapInfo(" & Map & ").NumUsers = " & MapInfo(Map).NumUsers, CodeTracker '//\\LOGLINE//\\
+        
         'Check if it's the first user on the map
         If MapInfo(Map).NumUsers = 1 Then
-            ReDim ConnectionGroups(Map).UserIndex(1 To 1)
+            ReDim MapUsers(Map).Index(1 To 1)
         Else
-            ReDim Preserve ConnectionGroups(Map).UserIndex(1 To MapInfo(Map).NumUsers)
+            ReDim Preserve MapUsers(Map).Index(1 To MapInfo(Map).NumUsers)
         End If
-        ConnectionGroups(Map).UserIndex(MapInfo(Map).NumUsers) = UserIndex
+        MapUsers(Map).Index(MapInfo(Map).NumUsers) = UserIndex
 
         'Update old Map Users
         MapInfo(OldMap).NumUsers = MapInfo(OldMap).NumUsers - 1
         If MapInfo(OldMap).NumUsers Then
             'Find current pos within connection group
             For LoopC = 1 To MapInfo(OldMap).NumUsers + 1
-                If ConnectionGroups(OldMap).UserIndex(LoopC) = UserIndex Then Exit For
+                If MapUsers(OldMap).Index(LoopC) = UserIndex Then Exit For
             Next LoopC
             'Move the rest of the list backwards
             For LoopC = LoopC To MapInfo(OldMap).NumUsers
-                ConnectionGroups(OldMap).UserIndex(LoopC) = ConnectionGroups(OldMap).UserIndex(LoopC + 1)
+                MapUsers(OldMap).Index(LoopC) = MapUsers(OldMap).Index(LoopC + 1)
             Next LoopC
             'Resize the list
-            ReDim Preserve ConnectionGroups(OldMap).UserIndex(1 To MapInfo(OldMap).NumUsers)
+            ReDim Preserve MapUsers(OldMap).Index(1 To MapInfo(OldMap).NumUsers)
         Else
-            ReDim ConnectionGroups(OldMap).UserIndex(0)
+            ReDim MapUsers(OldMap).Index(0)
         End If
 
         'Show Character to others
         User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
     Else
+        Log "User_WarpChar: Moving user, map is not changing", CodeTracker '//\\LOGLINE//\\
         User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_UserCharIndex

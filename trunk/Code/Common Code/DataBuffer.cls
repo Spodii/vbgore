@@ -49,6 +49,22 @@ Public Sub Clear()
 
 End Sub
 
+Public Function Get_Buffer_Remainder() As Byte()
+Dim b() As Byte
+
+'Return the remainder of the byte array buffer
+
+    'Check if we already hit the end of the buffer
+    If UBound(ByteBuffer) - GetBytePos + 1 = 0 Then
+        Get_Buffer_Remainder = b
+    Else
+        ReDim b(0 To (UBound(ByteBuffer) - GetBytePos + 1))
+        CopyMemory b(0), ByteBuffer(GetBytePos), UBound(ByteBuffer) - GetBytePos + 1
+        Get_Buffer_Remainder = ByteBuffer
+    End If
+    
+End Function
+
 Public Function Get_Buffer() As Byte()
 
 'Return the byte array buffer
@@ -71,7 +87,7 @@ Exit Function
 
 ErrOut:
 
-    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire BYTE from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    Log "Get_Byte: Could not acquire BYTE from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
 End Function
 
@@ -89,7 +105,7 @@ Exit Function
 
 ErrOut:
 
-    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    Log "Get_Integer: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
 End Function
 
@@ -107,7 +123,7 @@ Exit Function
 
 ErrOut:
 
-    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer)
+    Log "Get_Long: Could not acquire INTEGER from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer), CriticalError '//\\LOGLINE//\\
 
 End Function
 
@@ -154,7 +170,7 @@ Exit Function
 
 ErrOut:
 
-    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
+    Log "Get_String: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
 End Function
 
@@ -185,7 +201,7 @@ Exit Function
 
 ErrOut:
 
-    If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize
+    Log "Get_StringEX: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
 End Function
 
@@ -232,7 +248,7 @@ Dim tempB() As Byte
     
     'Store a byte-long value that represents the size of the string
     If UBound(tempB) > 254 Then
-        If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: The following string was too large to pack into the Put_String buffer! " & Value
+        Log "Put_String: The following string was too large to pack into the Put_String buffer! " & Value, CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
     Put_Byte UBound(tempB) + 1
@@ -259,7 +275,7 @@ Dim tempB() As Byte
 
     'Store a byte-long value that represents the size of the string
     If UBound(tempB) > 32760 Then
-        If DEBUG_PrintPacketReadErrors Then Debug.Print "Error: The following string was too large to pack into the Put_StringEX buffer! " & Value
+        Log "Put_StringEX: The following string was too large to pack into the Put_StringEX buffer! " & Value, CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
     Put_Integer UBound(tempB) + 1
@@ -288,4 +304,5 @@ End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 27  Code: 236  Total: 263 Lines
 ':) CommentOnly: 54 (20.5%)  Commented: 2 (0.8%)  Empty: 96 (36.5%)  Max Logic Depth: 1
+
 

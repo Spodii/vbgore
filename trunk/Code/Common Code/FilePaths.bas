@@ -11,6 +11,7 @@ Public MusicPath As String
 Public ServerDataPath As String
 Public SfxPath As String
 Public MessagePath As String
+Public LogPath As String
 
 Public Sub InitFilePaths()
 '***************************************
@@ -27,5 +28,6 @@ Public Sub InitFilePaths()
     ServerDataPath = App.Path & "\ServerData\"
     SfxPath = App.Path & "\Sfx\"
     MessagePath = DataPath & "Messages\"
+    LogPath = App.Path & "\Logs\"
 
 End Sub

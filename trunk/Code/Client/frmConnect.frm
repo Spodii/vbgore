@@ -141,10 +141,6 @@ Private Sub InitSoxSocket()
         MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
     Else
         frmMain.Socket.SetOption SoxID, soxSO_TCP_NODELAY, True
-        frmMain.Socket.SetEncryption eRC4, "1!jkl@!$:!(Zxq"
-        frmMain.Socket.SetBufferSize TCPBufferSize
-        frmMain.Socket.SetOption SoxID, soxSO_RCVBUF, TCPBufferSize
-        frmMain.Socket.SetOption SoxID, soxSO_SNDBUF, TCPBufferSize
     End If
 
 End Sub

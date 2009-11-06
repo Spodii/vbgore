@@ -3,6 +3,13 @@ Option Explicit
 
 'Credits goes to Fredrik Qvarfort for writing the algorithms in Visual Basic!
 
+'***** Packet encryption options *****
+Public Const PacketEncTypeNone As Byte = 0
+Public Const PacketEncTypeRC4 As Byte = 1
+Public Const PacketEncTypeXOR As Byte = 2
+Public Const PacketEncType As Byte = PacketEncTypeRC4
+Public Const PacketEncKey As String = "L234)Zlka;2341DFLJK"
+
 '***** BLOWFISH *****
 'Constant for number of rounds
 Private Const ROUNDS = 16

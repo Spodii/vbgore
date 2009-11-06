@@ -39,7 +39,7 @@ End Function
 Private Sub Main()
 
 '*****************************************************************
-'Loads Grh.raw, parses and outputs Grh.dat
+'Loads GrhRaw.txt, parses and outputs Grh.dat
 '*****************************************************************
 
 Dim GrhBuffer() As Integer  'Holds all the entered Grh values
@@ -57,7 +57,6 @@ Dim Grh As Long
 Dim Frame As Long
 Dim ln As String
 Dim TempLine As String
-Dim RawFile As String
 Dim NumRawFile As Long
 Dim LastFile As Long
 Dim Lines As Long
@@ -71,127 +70,122 @@ Dim Lines As Long
     Open DataPath & "grh.dat" For Binary As #1
     Seek #1, 1
 
-    RawFile = Dir$(Data2Path & "grh*.raw", vbArchive)
+    Open Data2Path & "GrhRaw.txt" For Input As #2
 
-    Do While RawFile <> ""
-        Open Data2Path & RawFile For Input As #2
+    'Set the buffer's initial size
+    ReDim GrhBuffer(1 To 2000000)
 
-        'Set the buffer's initial size
-        ReDim GrhBuffer(1 To 2000000)
+    'Do a loop to check for repeat numbers
+    While Not EOF(2)
+        DoEvents
+        Line Input #2, TempLine
+        If LCase$(Left$(TempLine, 3)) = "grh" Then
+            TempLine = Right$(TempLine, Len(TempLine) - 3)
+            If InStr(1, TempLine, "=") <= 0 Then GoTo ErrorHandler
+            Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
+            Lines = Lines + 1
+            ReDim Preserve GrhBuffer(1 To Lines)
+            GrhBuffer(Lines) = Grh
+        End If
 
-        'Do a loop to check for repeat numbers
-        While Not EOF(2)
-            DoEvents
-            Line Input #2, TempLine
-            If LCase$(Left$(TempLine, 3)) = "grh" Then
-                TempLine = Right$(TempLine, Len(TempLine) - 3)
-                If InStr(1, TempLine, "=") <= 0 Then GoTo ErrorHandler
-                Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
-                Lines = Lines + 1
-                ReDim Preserve GrhBuffer(1 To Lines)
-                GrhBuffer(Lines) = Grh
-            End If
+    Wend
 
-        Wend
+    'Check for duplicate entries (slow, but whatever - this tool doesn't need to be fast)
+    For sX = 1 To Lines
+        For sY = sX + 1 To Lines
+            If GrhBuffer(sX) = GrhBuffer(sY) Then
 
-        'Check for duplicate entries (slow, but whatever - this tool doesn't need to be fast)
-        For sX = 1 To Lines
-            For sY = sX + 1 To Lines
-                If GrhBuffer(sX) = GrhBuffer(sY) Then
-
-                    'Notify of duplicate
-                    If MsgBox("Duplcates entries of Grh" & GrhBuffer(sX) & " found. Do you wish to continue compiling Grh.dat?" & vbCrLf _
-                              & "Duplicate Grh numbers can lead to graphical display failures and artifacts.", vbYesNo) = vbNo Then
-                        Exit Sub
-                    End If
-
+                'Notify of duplicate
+                If MsgBox("Duplcates entries of Grh" & GrhBuffer(sX) & " found. Do you wish to continue compiling Grh.dat?" & vbCrLf _
+                          & "Duplicate Grh numbers can lead to graphical display failures and artifacts.", vbYesNo) = vbNo Then
+                    Exit Sub
                 End If
-            Next sY
-        Next sX
 
-        Close #2
+            End If
+        Next sY
+    Next sX
 
-        Open Data2Path & RawFile For Input As #2
+    Close #2
 
-        'Clear variables
-        sX = 0
-        sY = 0
-        Lines = 0
-        Grh = 0
+    Open Data2Path & "GrhRaw.txt" For Input As #2
 
-        While Not EOF(2)
-            DoEvents
-            Line Input #2, TempLine
-            If LCase$(Left$(TempLine, 3)) = "grh" Then
-                TempLine = Right$(TempLine, Len(TempLine) - 3)
+    'Clear variables
+    sX = 0
+    sY = 0
+    Lines = 0
+    Grh = 0
 
-                If InStr(1, TempLine, "=") <= 0 Then GoTo ErrorHandler
+    While Not EOF(2)
+        DoEvents
+        Line Input #2, TempLine
+        If LCase$(Left$(TempLine, 3)) = "grh" Then
+            TempLine = Right$(TempLine, Len(TempLine) - 3)
 
-                Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
-                If Grh > LastGrh Then LastGrh = Grh
+            If InStr(1, TempLine, "=") <= 0 Then GoTo ErrorHandler
 
-                ln = Right$(TempLine, Len(TempLine) - Len(CStr(Grh)) - 1)
+            Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
+            If Grh > LastGrh Then LastGrh = Grh
 
-                If ln <> "" Then
-                    'Get number of frames and check
-                    NumFrames = Val(ReadField(1, ln, "-"))
-                    If NumFrames <= 0 Then GoTo ErrorHandler
+            ln = Right$(TempLine, Len(TempLine) - Len(CStr(Grh)) - 1)
 
-                    'Put grh number
-                    Put #1, , Grh
-                    
-                    'Put number of frames
-                    Put #1, , NumFrames
+            If ln <> "" Then
+                'Get number of frames and check
+                NumFrames = Val(ReadField(1, ln, "-"))
+                If NumFrames <= 0 Then GoTo ErrorHandler
 
-                    If NumFrames > 1 Then
-                        ReDim Frames(1 To NumFrames)
-                        
-                        'Read a animation GRH set
-                        For Frame = 1 To NumFrames
-                        
-                            'Check and put each frame
-                            Frames(Frame) = Val(ReadField(Frame + 1, ln, "-"))
-                            If Frames(Frame) <= 0 Or Frames(Frame) > LastGrh Then GoTo ErrorHandler
-                            Put #1, , Frames(Frame)
+                'Put grh number
+                Put #1, , Grh
                 
-                        Next Frame
-                        
-                        'Check and put speed
-                        Speed = CSng(ReadField(NumFrames + 2, ln, "-"))
-                        If Speed = 0 Then GoTo ErrorHandler
-                        Put #1, , Speed
-                        
-                    Else
-                        'check and put normal GRH data
-                        FileNum = Val(ReadField(2, ln, "-"))
-                        If FileNum <= 0 Then GoTo ErrorHandler
-                        If FileNum > LastFile Then LastFile = FileNum
+                'Put number of frames
+                Put #1, , NumFrames
 
-                        Put #1, , FileNum
+                If NumFrames > 1 Then
+                    ReDim Frames(1 To NumFrames)
+                    
+                    'Read a animation GRH set
+                    For Frame = 1 To NumFrames
+                    
+                        'Check and put each frame
+                        Frames(Frame) = Val(ReadField(Frame + 1, ln, "-"))
+                        If Frames(Frame) <= 0 Or Frames(Frame) > LastGrh Then GoTo ErrorHandler
+                        Put #1, , Frames(Frame)
+            
+                    Next Frame
+                    
+                    'Check and put speed
+                    Speed = CSng(ReadField(NumFrames + 2, ln, "-"))
+                    If Speed = 0 Then GoTo ErrorHandler
+                    Put #1, , Speed
+                    
+                Else
+                    'check and put normal GRH data
+                    FileNum = Val(ReadField(2, ln, "-"))
+                    If FileNum <= 0 Then GoTo ErrorHandler
+                    If FileNum > LastFile Then LastFile = FileNum
 
-                        sX = Val(ReadField(3, ln, "-"))
-                        If sX < 0 Then GoTo ErrorHandler
-                        Put #1, , sX
+                    Put #1, , FileNum
 
-                        sY = Val(ReadField(4, ln, "-"))
-                        If sY < 0 Then GoTo ErrorHandler
-                        Put #1, , sY
+                    sX = Val(ReadField(3, ln, "-"))
+                    If sX < 0 Then GoTo ErrorHandler
+                    Put #1, , sX
 
-                        PixelWidth = Val(ReadField(5, ln, "-"))
-                        If PixelWidth <= 0 Then GoTo ErrorHandler
-                        Put #1, , PixelWidth
+                    sY = Val(ReadField(4, ln, "-"))
+                    If sY < 0 Then GoTo ErrorHandler
+                    Put #1, , sY
 
-                        PixelHeight = Val(ReadField(6, ln, "-"))
-                        If PixelHeight <= 0 Then GoTo ErrorHandler
-                        Put #1, , PixelHeight
-                    End If
+                    PixelWidth = Val(ReadField(5, ln, "-"))
+                    If PixelWidth <= 0 Then GoTo ErrorHandler
+                    Put #1, , PixelWidth
+
+                    PixelHeight = Val(ReadField(6, ln, "-"))
+                    If PixelHeight <= 0 Then GoTo ErrorHandler
+                    Put #1, , PixelHeight
                 End If
             End If
-        Wend
+        End If
+    Wend
 
-        Close #2
-        RawFile = Dir
-    Loop
+    Close #2
     Close #1
 
     WriteVar DataPath & "grh.ini", "INIT", "NumGrhFiles", CStr(LastFile)

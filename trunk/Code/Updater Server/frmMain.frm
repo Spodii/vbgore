@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{598D2D95-4E74-49D9-8F45-E9E53990E851}#1.0#0"; "goresockfull.ocx"
+Object = "{C7B4A030-D912-4416-A588-3658960C7145}#1.0#0"; "vbgoresocketstring.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
@@ -34,14 +34,14 @@ Begin VB.Form frmMain
       TabIndex        =   8
       Top             =   480
       Width           =   3615
-      Begin GORESOCKfull.Socket Socket 
-         Height          =   660
+      Begin SoxOCX.Sox Socket 
+         Height          =   420
          Left            =   2880
          Top             =   240
          Visible         =   0   'False
-         Width           =   660
-         _ExtentX        =   1164
-         _ExtentY        =   1164
+         Width           =   420
+         _ExtentX        =   741
+         _ExtentY        =   741
       End
       Begin VB.Timer SecondTmr 
          Interval        =   1000
@@ -462,7 +462,7 @@ Dim j As Integer
 
     'Start up the socket (change the ip to 0.0.0.0 or your internal IP)
     LocalID = Socket.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
-    Socket.SetOption LocalID, soxSO_TCP_NODELAY, True
+    Socket.SetOption LocalID, soxSO_TCP_NODELAY, False
     
     If frmMain.Socket.Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
@@ -477,15 +477,15 @@ Private Sub Form_DblClick()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     ReleaseCapture
     SendMessage Me.hwnd, &HA1, 2, 0&
 
     'Close form
     If Button = vbLeftButton Then
-        If x >= Me.ScaleWidth - 23 Then
-            If x <= Me.ScaleWidth - 10 Then
+        If X >= Me.ScaleWidth - 23 Then
+            If X <= Me.ScaleWidth - 10 Then
                 If Y <= 26 Then
                     If Y >= 11 Then
                         Unload Me
@@ -536,9 +536,9 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
 End Function
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    Select Case x
+    Select Case X
     Case MouseMove
     Case LeftUp
     Case LeftDown

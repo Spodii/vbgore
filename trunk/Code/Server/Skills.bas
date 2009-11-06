@@ -7,22 +7,46 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 'Increases all of the user's stats by modbless / 3
 '*****************************************************************
 
+    Log "Call Skill_Bless(" & TargetIndex & "," & CasterIndex & "," & TargetType & "," & CasterType & ")", CodeTracker '//\\LOGLINE//\\
+
 'Check for invalid values
 
-    If CasterType < 1 Then Exit Sub
-    If CasterType > 2 Then Exit Sub
-    If TargetType < 1 Then Exit Sub
-    If TargetType > 2 Then Exit Sub
+    If CasterType < 1 Then
+        Log "Skill_Bless: CasterType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If CasterType > 2 Then
+        Log "Skill_Bless: CasterType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType < 1 Then
+        Log "Skill_Bless: TargetType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType > 2 Then
+        Log "Skill_Bless: TargetType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     If CasterType = CharType_PC Then
-        If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Sub
-        If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+        If UserList(TargetIndex).Flags.SwitchingMaps Then
+            Log "Skill_Bless: TargetType switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+            Exit Sub
+        End If
+        If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then
+            Log "Skill_Bless: PC Caster spell exhaustion > 0 - aborting", CodeTracker '//\\LOGLINE//\\
+            Exit Sub
+        End If
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+        If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then
+            Log "Skill_Bless: NPC caster spell exhaustion > 0 - aborting", CodeTracker '//\\LOGLINE//\\
+            Exit Sub
+        End If
     End If
 
     'Check if the user knows the skill
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
+            Log "Skill_Bless: Skill not known by user - aborting", CodeTracker '//\\LOGLINE//\\
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 37
@@ -34,6 +58,7 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
     'Check for enough mana
     If CasterType = CharType_PC Then
         If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
+            Log "Skill_Bless: PC has not enough mana to cast - aborting", CodeTracker '//\\LOGLINE//\\
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 38
@@ -42,7 +67,10 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
         End If
         UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5) Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5) Then
+            Log "Skill_Bless: NPC has not enough mana to cast - aborting", CodeTracker '//\\LOGLINE//\\
+            Exit Sub
+        End If
         NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
@@ -196,12 +224,26 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
 'Heal the target at the cost of mana
 '*****************************************************************
 
+    Log "Call Skill_Heal(" & TargetIndex & "," & CasterIndex & "," & TargetType & "," & CasterType & ")", CodeTracker '//\\LOGLINE//\\
+
 'Check for invalid values
 
-    If CasterType < 1 Then Exit Sub
-    If CasterType > 2 Then Exit Sub
-    If TargetType < 1 Then Exit Sub
-    If TargetType > 2 Then Exit Sub
+    If CasterType < 1 Then
+        Log "Skill_Bless: CasterType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If CasterType > 2 Then
+        Log "Skill_Bless: CasterType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType < 1 Then
+        Log "Skill_Bless: TargetType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType > 2 Then
+        Log "Skill_Bless: TargetType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     If CasterType = CharType_PC Then
         If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Sub
         If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
@@ -322,6 +364,8 @@ Public Sub Skill_IronSkin(ByVal UserIndex As Integer)
 'Decreases user attack by 50% to increase defence by 200%
 '*****************************************************************
 
+    Log "Call Skill_IronSkin(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
+
 'Check for invalid values
 
     If UserIndex = 0 Then Exit Sub
@@ -377,12 +421,26 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 'Increase the user's armor value by modprotect / 5
 '*****************************************************************
 
+    Log "Call Skill_Protection(" & TargetIndex & "," & CasterIndex & "," & TargetType & "," & CasterType & ")", CodeTracker '//\\LOGLINE//\\
+
 'Check for invalid values
 
-    If CasterType < 1 Then Exit Sub
-    If CasterType > 2 Then Exit Sub
-    If TargetType < 1 Then Exit Sub
-    If TargetType > 2 Then Exit Sub
+    If CasterType < 1 Then
+        Log "Skill_Bless: CasterType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If CasterType > 2 Then
+        Log "Skill_Bless: CasterType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType < 1 Then
+        Log "Skill_Bless: TargetType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType > 2 Then
+        Log "Skill_Bless: TargetType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     If CasterType = CharType_PC Then
         If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Sub
         If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
@@ -577,6 +635,8 @@ Dim aX As Integer
 Dim aY As Integer
 Dim Damage As Integer
 
+    Log "Call Skill_SpikeField(" & CasterIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for spell exhaustion
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
@@ -748,12 +808,26 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 'Increase the user's armor value by modstrengthen / 5
 '*****************************************************************
 
+    Log "Call Skill_Strengthen(" & TargetIndex & "," & CasterIndex & "," & TargetType & "," & CasterType & ")", CodeTracker '//\\LOGLINE//\\
+
 'Check for invalid values
 
-    If CasterType < 1 Then Exit Sub
-    If CasterType > 2 Then Exit Sub
-    If TargetType < 1 Then Exit Sub
-    If TargetType > 2 Then Exit Sub
+    If CasterType < 1 Then
+        Log "Skill_Bless: CasterType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If CasterType > 2 Then
+        Log "Skill_Bless: CasterType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType < 1 Then
+        Log "Skill_Bless: TargetType < 1 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If TargetType > 2 Then
+        Log "Skill_Bless: TargetType > 2 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
     If CasterType = CharType_PC Then
         If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Sub
         If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
@@ -938,6 +1012,8 @@ Public Sub Skill_Warcry(ByVal CasterIndex As Integer)
 Dim LoopC As Integer
 Dim WarCursePower As Integer
 
+    Log "Call Skill_Warcry(" & CasterIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check if still exhausted
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
@@ -983,7 +1059,7 @@ Dim WarCursePower As Integer
                     If NPCList(LoopC).Attackable Then
                         WarCursePower = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
                         If NPCList(LoopC).Skills.WarCurse <= WarCursePower Then
-                            If Server_Distance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y) <= Max_Server_Distance Then
+                            If Server_RectDistance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                                 NPCList(LoopC).Skills.WarCurse = WarCursePower
                                 NPCList(LoopC).Counters.WarCurseCounter = 30000 '30 seconds
                                 

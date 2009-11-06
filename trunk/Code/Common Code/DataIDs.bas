@@ -61,6 +61,7 @@ Public Type DataCode
     Server_Disconnect As Byte
     Server_Connect As Byte
     Server_Message As Byte
+    Server_SetCharSpeed As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_DoneSwitching As Byte
@@ -104,8 +105,8 @@ End Type
 Public DataCode As DataCode
 
 '********** Character Stats/Skills ************
-Public Const NumStats As Byte = 18
-Public Const NumSkills As Byte = 8
+Public Const NumStats As Byte = 19
+Public Const NumSkills As Byte = 7
 Public Type StatOrder
     Gold As Byte
     EXP As Byte
@@ -125,6 +126,7 @@ Public Type StatOrder
     Agi As Byte
     Mag As Byte
     WeaponSkill As Byte
+    Speed As Byte   'Speed works as + (Speed / 2) on the client since just + Speed would be too drastic (8 would double the normal speed)
 End Type
 Public SID As StatOrder 'Stat ID
 Public Type SkillID
@@ -134,7 +136,6 @@ Public Type SkillID
     Warcry As Byte
     Heal As Byte
     IronSkin As Byte
-    Curse As Byte
     SpikeField As Byte
 End Type
 Public SkID As SkillID  'Skill IDs
@@ -158,13 +159,12 @@ Public Sub InitDataCommands()
 
     With SkID
         .Bless = 1
-        .Curse = 2
-        .Heal = 3
-        .IronSkin = 4
-        .Protection = 5
-        .Strengthen = 6
-        .Warcry = 7
-        .SpikeField = 8
+        .Heal = 2
+        .IronSkin = 3
+        .Protection = 4
+        .Strengthen = 5
+        .Warcry = 6
+        .SpikeField = 7
     End With
 
     With SID
@@ -186,6 +186,7 @@ Public Sub InitDataCommands()
         .Agi = 16
         .Mag = 17
         .Str = 18
+        .Speed = 19
     End With
 
     With DataCode
@@ -269,6 +270,7 @@ Public Sub InitDataCommands()
         .Server_Message = 79
         .GM_DeThrall = 80
         .Server_PlaySound3D = 81
+        .Server_SetCharSpeed = 82
     End With
 
 End Sub

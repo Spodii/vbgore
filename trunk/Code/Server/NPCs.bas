@@ -2,17 +2,60 @@ Attribute VB_Name = "NPCs"
 Option Explicit
 
 Public Sub NPC_UpdateModStats(ByVal NPCIndex As Integer)
+Dim i As Long
 
-Dim Temp As Integer
+    Log "Call NPC_UpdateModStats(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    'Set the HP
-    Temp = NPCList(NPCIndex).BaseStat(SID.MinHP)
-
-    'Copy over the base stats to the mod stats
-    CopyMemory NPCList(NPCIndex).ModStat(1), NPCList(NPCIndex).BaseStat(1), 4 * NumStats
-
-    'Put back the HP
-    NPCList(NPCIndex).BaseStat(SID.MinHP) = Temp
+    With NPCList(NPCIndex)
+    
+        'Copy the base stats to the mod stats (we can use copymemory since we dont have to give item bonuses)
+        CopyMemory .ModStat(1), .BaseStat(1), NumStats * 4  '* 4 since we are using longs (4 bytes)
+            
+        'War curse
+        If .Skills.WarCurse > 0 Then
+            Log "NPC_UpdateModStats: Updating modstats with effects from WarCurse", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.Str) = .ModStat(SID.Str) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.WeaponSkill) = .ModStat(SID.WeaponSkill) - (.Skills.WarCurse * 0.25)
+        End If
+            
+        'Strengthen
+        If .Skills.Strengthen > 0 Then
+            Log "NPC_UpdateModStats: Updating modstats with effects from Strengthen", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .Skills.Strengthen
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .Skills.Strengthen
+        End If
+        
+        'Protection
+        If .Skills.Protect > 0 Then
+            Log "NPC_UpdateModStats: Updating modstats with effects from Protect", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + .Skills.Protect
+        End If
+        
+        'Bless
+        If .Skills.Bless > 0 Then
+            Log "NPC_UpdateModStats: Updating modstats with effects from Bless", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) + .Skills.Bless * 0.5
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) + .Skills.Bless * 0.5
+            .ModStat(SID.Str) = .ModStat(SID.Str) + .Skills.Bless * 0.5
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + .Skills.Bless * 0.25
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .Skills.Bless * 0.25
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .Skills.Bless * 0.25
+        End If
+        
+        'Iron skin
+        If .Skills.IronSkin > 0 Then
+            Log "NPC_UpdateModStats: Updating modstats with effects from IronSkin", CodeTracker '//\\LOGLINE//\\
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + .Skills.IronSkin * 2
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - .Skills.IronSkin * 1.5
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - .Skills.IronSkin * 1.5
+        End If
+        
+    End With
 
 End Sub
 
@@ -30,11 +73,17 @@ Dim t2 As Byte
 Dim Y As Long
 Dim X As Long
 
+    Log "Call NPC_AI(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     'Do nothing if no players are on the map
-    If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers = 0 Then Exit Sub
+    If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers = 0 Then
+        Log "NPC_AI: NPC's map has no users - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Update the action delay counter
     If NPCList(NPCIndex).Flags.ActionDelay > 0 Then
+        Log "NPC_AI: NPC's action delay > 0 - aborting", CodeTracker '//\\LOGLINE//\\
         NPCList(NPCIndex).Flags.ActionDelay = NPCList(NPCIndex).Flags.ActionDelay - Elapsed
         Exit Sub
         
@@ -42,6 +91,7 @@ Dim X As Long
     
         'Look for someone to attack if hostile
         If NPCList(NPCIndex).Hostile Then
+            Log "NPC_AI: NPC looking for something to attack", CodeTracker '//\\LOGLINE//\\
     
             'Check in all directions
             For HeadingLoop = NORTH To NORTHWEST
@@ -72,6 +122,8 @@ Dim X As Long
         End If
         
     End If
+    
+    Log "NPC_AI: NPC did not attack, looking for movement (movement type = " & NPCList(NPCIndex).Movement & ")", CodeTracker '//\\LOGLINE//\\
 
     'Movement
     Select Case NPCList(NPCIndex).Movement
@@ -123,6 +175,7 @@ Dim X As Long
                     
                     'Do the alternate movement
                     If NPC_MoveChar(NPCIndex, t1) = 0 Then
+                        Log "NPC_AI: Using alternate movement method for AI 3", CodeTracker '//\\LOGLINE//\\
                         NPC_MoveChar NPCIndex, t2   'If this doesn't happen, then we're out of stuff to do
                     End If
                 
@@ -145,6 +198,8 @@ Dim tX As Integer
 Dim tY As Integer
 Dim X As Integer
 Dim Y As Integer
+
+    Log "Call NPC_AI_ClosestPC(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
     
     'Expand the search range
     For tX = 1 To SearchX
@@ -160,6 +215,7 @@ Dim Y As Integer
                                     'Look for a user
                                     If MapData(NPCList(NPCIndex).Pos.Map, X, Y).UserIndex > 0 Then
                                         NPC_AI_ClosestPC = MapData(NPCList(NPCIndex).Pos.Map, X, Y).UserIndex
+                                        Log "Rtrn NPC_AI_ClosestPC = " & NPC_AI_ClosestPC, CodeTracker '//\\LOGLINE//\\
                                         Exit Function
                                     End If
                                 End If
@@ -170,6 +226,8 @@ Dim Y As Integer
             Next X
         Next tY
     Next tX
+    
+    Log "Rtrn NPC_AI_ClosestPC = " & NPC_AI_ClosestPC, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -181,11 +239,25 @@ Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer)
 
 Dim Hit As Integer
 
-    'Check for an action delay
-    If NPCList(NPCIndex).Flags.ActionDelay > 0 Then Exit Sub
+    Log "Call NPC_AttackUser(" & NPCIndex & "," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    'Don't allow if switchingmaps maps
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Sub
+    'Check for an action delay
+    If NPCList(NPCIndex).Flags.ActionDelay > 0 Then
+        Log "NPC_AttackUser: NPC action delay > 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+
+    'Don't allow if switching maps
+    If UserList(UserIndex).Flags.SwitchingMaps Then
+        Log "NPC_AttackUser: NPC switching maps - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    
+    'Don't allow if not logged in completely
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
+        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Set the action delay
     NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
@@ -198,11 +270,9 @@ Dim Hit As Integer
     ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
-    'Check if the user has a 100% chance to miss
-    If NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50 < UserList(UserIndex).Stats.ModStat(SID.Agi) Then Exit Sub
-
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= ((NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50) - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
+        Log "NPC_AttackUser: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_SetCharDamage
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -215,6 +285,7 @@ Dim Hit As Integer
     Hit = Server_RandomNumber(NPCList(NPCIndex).ModStat(SID.MinHIT), NPCList(NPCIndex).ModStat(SID.MaxHIT))
     Hit = Hit - (UserList(UserIndex).Stats.ModStat(SID.DEF) \ 2)
     If Hit < 1 Then Hit = 1
+    Log "NPC_AttackUser: Hit value = " & Hit, CodeTracker '//\\LOGLINE//\\
 
     'Hit user
     UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) - Hit
@@ -228,6 +299,7 @@ Dim Hit As Integer
 
     'User Die
     If UserList(UserIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
+        Log "NPC_AttackUser: NPC's attack killed user", CodeTracker '//\\LOGLINE//\\
     
         'Kill user
         ConBuf.Clear
@@ -246,6 +318,8 @@ Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCI
 '*****************************************************************
 'Changes a NPC char's head,body and heading
 '*****************************************************************
+
+    Log "Call NPC_ChangeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
 
     NPCList(NPCIndex).Char.Body = Body
     NPCList(NPCIndex).Char.Head = Head
@@ -272,9 +346,12 @@ Sub NPC_Close(ByVal NPCIndex As Integer)
 'Closes a NPC
 '*****************************************************************
 
+    Log "Call NPC_Close(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
     NPCList(NPCIndex).Flags.NPCActive = 0
 
     'Update LastNPC
+    Log "NPC_Close: Updating LastNPC", CodeTracker '//\\LOGLINE//\\
     If NPCIndex = LastNPC Then
         Do Until NPCList(LastNPC).Flags.NPCActive = 1
             LastNPC = LastNPC - 1
@@ -293,6 +370,7 @@ Sub NPC_Close(ByVal NPCIndex As Integer)
     If NumNPCs <> 0 Then
         NumNPCs = NumNPCs - 1
     End If
+    Log "NPC_Close: NumNPCs = " & NumNPCs, CodeTracker '//\\LOGLINE//\\
 
 End Sub
 
@@ -301,17 +379,30 @@ Public Sub NPC_Damage(NPCIndex As Integer, UserIndex As Integer, Damage As Integ
 '*****************************************************************
 'Do damage to a NPC - ONLY USE THIS SUB TO HURT NPCS
 '*****************************************************************
-
+Dim NewSlot As Byte
+Dim NewX As Byte
+Dim NewY As Byte
 Dim HPA As Byte         'HP percentage before reducing hp
 Dim HPB As Byte         'HP percentage after reducing hp
 Dim i As Integer
 
+    Log "Call NPC_Damage(" & NPCIndex & "," & UserIndex & "," & Damage & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check if the NPC can be attacked
-    If NPCList(NPCIndex).Attackable = 0 Then Exit Sub
+    If NPCList(NPCIndex).Attackable = 0 Then
+        Log "NPC_Damage: Attackable = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'If NPC has no health, they can not be attacked
-    If NPCList(NPCIndex).ModStat(SID.MaxHP) = 0 Then Exit Sub
-    If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then Exit Sub
+    If NPCList(NPCIndex).ModStat(SID.MaxHP) = 0 Then
+        Log "NPC_Damage: ModStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+    If NPCList(NPCIndex).BaseStat(SID.MaxHP) = 0 Then
+        Log "NPC_Damage: BaseStat MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Get the pre-damage percentage
     HPA = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
@@ -350,24 +441,34 @@ Dim i As Integer
 
     'Check if the NPC died
     If NPCList(NPCIndex).BaseStat(SID.MinHP) <= 0 Then
-
+        Log "NPC_Damage: NPC killed", CodeTracker '//\\LOGLINE//\\
+    
+        'If the NPC was killed by a user
         If UserIndex > 0 Then
+            Log "NPC_Damage: It was a user who killed the NPC", CodeTracker '//\\LOGLINE//\\
 
             'Check on quests
             For i = 1 To MaxQuests
                 If UserList(UserIndex).Quest(i) > 0 Then
                     If QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC = NPCList(NPCIndex).NPCNumber Then
+                        Log "NPC_Damage: User killed a NPC required for a quest", CodeTracker '//\\LOGLINE//\\
 
                         'User must kill at least one more of the NPC
-                        If UserList(UserIndex).QuestStatus(i).NPCKills <= QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount Then
+                        If UserList(UserIndex).QuestStatus(i).NPCKills < QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount Then
                             UserList(UserIndex).QuestStatus(i).NPCKills = UserList(UserIndex).QuestStatus(i).NPCKills + 1
                             ConBuf.Clear
                             ConBuf.Put_Byte DataCode.Server_Message
                             ConBuf.Put_Byte 74
                             ConBuf.Put_Integer UserList(UserIndex).QuestStatus(i).NPCKills
                             ConBuf.Put_Integer QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount
-                            ConBuf.Put_String NPCList(QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC).Name
+                            
+                            'Get the NPC's name from the database
+                            DB_RS.Open "SELECT name FROM npcs WHERE `id`='" & QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC & "'", DB_Conn, adOpenStatic, adLockOptimistic
+                            ConBuf.Put_String DB_RS!Name
+                            DB_RS.Close
+                            
                             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                            
                         End If
 
                     End If
@@ -385,6 +486,31 @@ Dim i As Integer
             ConBuf.Put_String NPCList(NPCIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
+            'Drop items
+            If NPCList(NPCIndex).NumDropItems > 0 Then
+                For i = 1 To NPCList(NPCIndex).NumDropItems
+                    If NPCList(NPCIndex).DropRate(i) > (Rnd * 100) Then
+                        Log "NPC_Damage: Item dropped (" & NPCList(NPCIndex).DropRate(i) & ")", CodeTracker '//\\LOGLINE//\\
+                        
+                        'Get the closest available position to put the item
+                        Obj_ClosestFreeSpot NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NewX, NewY, NewSlot
+                        
+                        'Make sure the position is valid
+                        If NewX = 0 Then
+                            
+                            'If this object is invalid, so will the rest of them be, so just skip them all :(
+                            Log "NPC_Damage: No valid item drop spot found - current and following loot will not appear", CodeTracker '//\\LOGLINE//\\
+                            Exit For
+                        
+                        End If
+                    
+                        'Create the object
+                        Obj_Make NPCList(NPCIndex).DropItems(i), NewSlot, NPCList(NPCIndex).Pos.Map, NewX, NewY
+                    
+                    End If
+                Next i
+            End If
+            
         End If
 
         'Kill off the NPC
@@ -399,6 +525,8 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 '*****************************************************************
 'Erase a character
 '*****************************************************************
+
+    Log "Call NPC_EraseChar(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Remove from list
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
@@ -433,6 +561,8 @@ Sub NPC_Kill(ByVal NPCIndex As Integer)
 'Kill a NPC
 '*****************************************************************
     
+    Log "Call NPC_Kill(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+    
     'Set health back to 100%
     NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
 
@@ -451,6 +581,8 @@ Sub NPC_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCInd
 '*****************************************************************
 Dim SndHP As Byte
 Dim SndMP As Byte
+
+    Log "Call NPC_MakeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
 'Place character on map
 
@@ -472,7 +604,8 @@ Dim SndMP As Byte
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     ConBuf.Put_Byte X
     ConBuf.Put_Byte Y
-    ConBuf.Put_String NPCList(NPCIndex).Name
+    ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
+    ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
@@ -495,8 +628,9 @@ Function NPC_MoveChar(ByVal NPCIndex As Integer, ByVal nHeading As Byte) As Byte
 
 Dim nPos As WorldPos
 
-'Move
-
+    Log "Call NPC_MoveChar(" & NPCIndex & "," & nHeading & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Move
     nPos = NPCList(NPCIndex).Pos
     Server_HeadToPos nHeading, nPos
 
@@ -504,7 +638,7 @@ Dim nPos As WorldPos
     If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading) = True Then
 
         'Set the move delay
-        NPCList(NPCIndex).Flags.ActionDelay = NPCDelayWalk
+        NPCList(NPCIndex).Flags.ActionDelay = Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed))
 
         'Send the movement update packet
         ConBuf.Clear
@@ -513,7 +647,7 @@ Dim nPos As WorldPos
         ConBuf.Put_Byte nPos.X
         ConBuf.Put_Byte nPos.Y
         ConBuf.Put_Byte nHeading
-        Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+        Data_Send ToNPCMove, NPCIndex, ConBuf.Get_Buffer
 
         'Update map and user pos
         MapData(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y).NPCIndex = 0
@@ -526,6 +660,8 @@ Dim nPos As WorldPos
         NPC_MoveChar = 1
 
     End If
+    
+    Log "Rtrn NPC_MoveChar = " & NPC_MoveChar, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -537,6 +673,8 @@ Function NPC_NextOpen() As Integer
 
 Dim LoopC As Long
 
+    Log "Call NPC_NextOpen", CodeTracker '//\\LOGLINE//\\
+
     Do
         LoopC = LoopC + 1
         If LoopC > LastNPC Then
@@ -546,6 +684,8 @@ Dim LoopC As Long
     Loop While NPCList(LoopC).Flags.NPCActive = 1
 
     NPC_NextOpen = LoopC
+    
+    Log "Rtrn NPC_NextOpen = " & NPC_NextOpen, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -558,6 +698,8 @@ Sub NPC_Spawn(ByVal NPCIndex As Integer, Optional ByVal BypassUpdate As Byte = 0
 Dim TempPos As WorldPos
 Dim CharIndex As Integer
 
+    Log "Call NPC_Spawn(" & NPCIndex & "," & BypassUpdate & ")", CodeTracker '//\\LOGLINE//\\
+
 'Give it a char index if needed
 
     If NPCList(NPCIndex).Char.CharIndex = 0 Then
@@ -569,7 +711,10 @@ Dim CharIndex As Integer
 
     'Find a place to put npc
     Server_ClosestLegalPos NPCList(NPCIndex).StartPos, TempPos
-    If Not Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) Then Exit Sub
+    If Not Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) Then
+        Log "NPC_Spawn: No legal pos found", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
 
     'Set vars
     NPCList(NPCIndex).Pos = TempPos
@@ -577,8 +722,8 @@ Dim CharIndex As Integer
 
     'Make NPC Char
     If Not BypassUpdate Then
-        If UBound(ConnectionGroups(TempPos.Map).UserIndex) > 0 Then
-            NPC_MakeChar ToMap, ConnectionGroups(TempPos.Map).UserIndex(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
+        If UBound(MapUsers(TempPos.Map).Index) > 0 Then
+            NPC_MakeChar ToMap, MapUsers(TempPos.Map).Index(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
         End If
     End If
     

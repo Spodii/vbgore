@@ -1,12 +1,202 @@
 Attribute VB_Name = "FileIO"
 Option Explicit
 
+'Want to remove the log lines? Just run ToolLogRemover.exe! Be sure to back up, since you can not undo it!          '//\\LOGLINE//\\
+Public Enum LogType                                                                                                 '//\\LOGLINE//\\
+    'Uncategorized information - it is best that you don't use this since you want to keep everything               '//\\LOGLINE//\\
+    ' categorized for easy searching (no one wants to dig through a million lines to find one thing)                '//\\LOGLINE//\\
+    General = 0                                                                                                     '//\\LOGLINE//\\
+    'Tracking what code was called last - very useful for finding what caused your application to crash             '//\\LOGLINE//\\
+    CodeTracker = 1                                                                                                 '//\\LOGLINE//\\
+    'Printing the incoming packets and how they are being handled                                                   '//\\LOGLINE//\\
+    PacketIn = 2                                                                                                    '//\\LOGLINE//\\
+    'Printing the outgoing packets and how they are put together / who they are sent to                             '//\\LOGLINE//\\
+    PacketOut = 3                                                                                                   '//\\LOGLINE//\\
+    'Critical errors that should really be looked at - this often contains incorrect / invalid usage                '//\\LOGLINE//\\
+    ' of the vbGORE engine                                                                                          '//\\LOGLINE//\\
+    CriticalError = 4                                                                                               '//\\LOGLINE//\\
+    'Packet data received, but did not work with the routine - common with either incorrect packet offsets          '//\\LOGLINE//\\
+    ' (packet handling is wrong) or packet hacking (people sending custom packets)                                  '//\\LOGLINE//\\
+    InvalidPacketData = 5                                                                                           '//\\LOGLINE//\\
+End Enum                                                                                                            '//\\LOGLINE//\\
+Public LogFileNumGeneral As Byte                                                                                    '//\\LOGLINE//\\
+Public LogFileNumCodeTracker As Byte                                                                                '//\\LOGLINE//\\
+Public LogFileNumPacketIn As Byte                                                                                   '//\\LOGLINE//\\
+Public LogFileNumPacketOut As Byte                                                                                  '//\\LOGLINE//\\
+Public LogFileNumCriticalError As Byte                                                                              '//\\LOGLINE//\\
+Public LogFileNumInvalidPacketData As Byte                                                                          '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+'How much of the file we preserve when cropping (starting from the end and working backwords)                       '//\\LOGLINE//\\
+Private Const MinLogFileSize As Long = 5242880   '5 MB                                                              '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+'How large the file must be before we crop it - recommended you keep a decent value between the min and max         '//\\LOGLINE//\\
+' values since the cropping routine can be pretty slow                                                              '//\\LOGLINE//\\
+Private Const MaxLogFileSize As Long = 10485760  '10 MB                                                             '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long            '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+Sub Log(ByVal Text As String, ByVal LogType As LogType)                                                             '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+'*****************************************************************                                                  '//\\LOGLINE//\\
+'Logs data for finding errors                                                                                       '//\\LOGLINE//\\
+'*****************************************************************                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+'Check if we are using logging                                                                                      '//\\LOGLINE//\\
+If DEBUG_UseLogging = False Then Exit Sub                                                                           '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+Dim LogFile As String   'Path to our log file (depends on LogType)                                                  '//\\LOGLINE//\\
+Dim b() As Byte         'Used for cropping down the file if it gets too large                                       '//\\LOGLINE//\\
+Dim C() As Byte         'The cropped down version of b()                                                            '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+    'We put the line break on here because it'd be soooo tedious and worthless to write it for every log call       '//\\LOGLINE//\\
+    Text = Text & vbCrLf                                                                                            '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+    'Define the log file path according to the log type                                                             '//\\LOGLINE//\\
+    Select Case LogType                                                                                             '//\\LOGLINE//\\
+        Case General                                                                                                '//\\LOGLINE//\\
+            If LogFileNumGeneral = 0 Then                                                                           '//\\LOGLINE//\\
+                LogFile = LogPath & "General.log"                                                                   '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumGeneral = FreeFile                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumGeneral                                                       '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumGeneral, , Text                                                                          '//\\LOGLINE//\\
+            If LOF(LogFileNumGeneral) > MaxLogFileSize Then                                                         '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumGeneral, 1                                                                          '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumGeneral))                                                                     '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumGeneral, , b                                                                         '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumGeneral) - MinLogFileSize), MinLogFileSize                         '//\\LOGLINE//\\
+                Close #LogFileNumGeneral                                                                            '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumGeneral                                                       '//\\LOGLINE//\\
+                Put #LogFileNumGeneral, , C                                                                         '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+        Case CodeTracker                                                                                            '//\\LOGLINE//\\
+            If LogFileNumCodeTracker = 0 Then                                                                       '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumCodeTracker = FreeFile                                                                    '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumCodeTracker                                                   '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumCodeTracker, , Text                                                                      '//\\LOGLINE//\\
+            If LOF(LogFileNumCodeTracker) > MaxLogFileSize Then                                                     '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumCodeTracker, 1                                                                      '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumCodeTracker))                                                                 '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumCodeTracker, , b                                                                     '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumCodeTracker) - MinLogFileSize), MinLogFileSize                     '//\\LOGLINE//\\
+                Close #LogFileNumCodeTracker                                                                        '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumCodeTracker                                                   '//\\LOGLINE//\\
+                Put #LogFileNumCodeTracker, , C                                                                     '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+        Case PacketIn                                                                                               '//\\LOGLINE//\\
+            If LogFileNumPacketIn = 0 Then                                                                          '//\\LOGLINE//\\
+                LogFile = LogPath & "PacketIn.log"                                                                  '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumPacketIn = FreeFile                                                                       '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumPacketIn                                                      '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumPacketIn, , Text                                                                         '//\\LOGLINE//\\
+            If LOF(LogFileNumPacketIn) > MaxLogFileSize Then                                                        '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumPacketIn, 1                                                                         '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumPacketIn))                                                                    '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumPacketIn, , b                                                                        '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumPacketIn) - MinLogFileSize), MinLogFileSize                        '//\\LOGLINE//\\
+                Close #LogFileNumPacketIn                                                                           '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumPacketIn                                                      '//\\LOGLINE//\\
+                Put #LogFileNumPacketIn, , C                                                                        '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+        Case PacketOut                                                                                              '//\\LOGLINE//\\
+            If LogFileNumPacketOut = 0 Then                                                                         '//\\LOGLINE//\\
+                LogFile = LogPath & "PacketOut.log"                                                                 '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumPacketOut = FreeFile                                                                      '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumPacketOut                                                     '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumPacketOut, , Text                                                                        '//\\LOGLINE//\\
+            If LOF(LogFileNumPacketOut) > MaxLogFileSize Then                                                       '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumPacketOut, 1                                                                        '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumPacketOut))                                                                   '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumPacketOut, , b                                                                       '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumPacketOut) - MinLogFileSize), MinLogFileSize                       '//\\LOGLINE//\\
+                Close #LogFileNumPacketOut                                                                          '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumPacketOut                                                     '//\\LOGLINE//\\
+                Put #LogFileNumPacketOut, , C                                                                       '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+        Case CriticalError                                                                                          '//\\LOGLINE//\\
+            If LogFileNumCriticalError = 0 Then                                                                     '//\\LOGLINE//\\
+                LogFile = LogPath & "CriticalError.log"                                                             '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumCriticalError = FreeFile                                                                  '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumCriticalError                                                 '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumCriticalError, , Text                                                                    '//\\LOGLINE//\\
+            If LOF(LogFileNumCriticalError) > MaxLogFileSize Then                                                   '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumCriticalError, 1                                                                    '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumCriticalError))                                                               '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumCriticalError, , b                                                                   '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumCriticalError) - MinLogFileSize), MinLogFileSize                   '//\\LOGLINE//\\
+                Close #LogFileNumCriticalError                                                                      '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumCriticalError                                                 '//\\LOGLINE//\\
+                Put #LogFileNumCriticalError, , C                                                                   '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+        Case InvalidPacketData                                                                                      '//\\LOGLINE//\\
+            If LogFileNumInvalidPacketData = 0 Then                                                                 '//\\LOGLINE//\\
+                LogFile = LogPath & "InvalidPacketData.log"                                                         '//\\LOGLINE//\\
+                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
+                LogFileNumInvalidPacketData = FreeFile                                                              '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumInvalidPacketData                                             '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+            Put #LogFileNumInvalidPacketData, , Text                                                                '//\\LOGLINE//\\
+            If LOF(LogFileNumInvalidPacketData) > MaxLogFileSize Then                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                Seek #LogFileNumInvalidPacketData, 1                                                                '//\\LOGLINE//\\
+                ReDim b(LOF(LogFileNumInvalidPacketData))                                                           '//\\LOGLINE//\\
+                ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
+                Get #LogFileNumInvalidPacketData, , b                                                               '//\\LOGLINE//\\
+                CopyMemory C(0), b(LOF(LogFileNumInvalidPacketData) - MinLogFileSize), MinLogFileSize               '//\\LOGLINE//\\
+                Close #LogFileNumInvalidPacketData                                                                  '//\\LOGLINE//\\
+                Kill LogFile                                                                                        '//\\LOGLINE//\\
+                Open LogFile For Binary As #LogFileNumInvalidPacketData                                             '//\\LOGLINE//\\
+                Put #LogFileNumInvalidPacketData, , C                                                               '//\\LOGLINE//\\
+            End If                                                                                                  '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+    End Select                                                                                                      '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+
 Function Load_Mail(ByVal MailIndex As Long) As MailData
 Dim DataSplit() As String
 Dim ObjSplit() As String
 Dim ObjStr As String
 Dim S As String
 Dim i As Long
+
+    Log "Call Load_Mail(" & MailIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Open the database
     DB_RS.Open "SELECT * FROM mail WHERE id=" & MailIndex, DB_Conn, adOpenStatic, adLockOptimistic
@@ -15,7 +205,7 @@ Dim i As Long
     If DB_RS.EOF = False Then
         
         'Apply the values
-        Load_Mail.Subject = Trim$(DB_RS!Sub)
+        Load_Mail.Subject = Trim$(DB_RS!sub)
         Load_Mail.WriterName = Trim$(DB_RS!By)
         Load_Mail.RecieveDate = DB_RS!Date
         Load_Mail.Message = Trim$(DB_RS!msg)
@@ -25,11 +215,15 @@ Dim i As Long
         'Check for a valid object string
         If ObjStr <> "" Then
         
+            Log "Load_Mail: Splitting ObjStr (" & ObjStr & ")", CodeTracker '//\\LOGLINE//\\
+        
             'Split the objects up from the object string
             ObjSplit = Split(ObjStr, vbCrLf)
-            
+
             'Loop through the objects
             For i = 0 To UBound(ObjSplit)
+            
+                Log "Load_Mail: Splitting object data (" & ObjSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
             
                 'Split up the index and amount
                 DataSplit = Split(ObjSplit(i), " ")
@@ -54,6 +248,9 @@ Sub Load_Maps()
 '*****************************************************************
 'Loads the MapX.X files
 '*****************************************************************
+Dim TempObj As Obj
+Dim ObjIndex As Integer
+Dim ObjAmount As Integer
 Dim TempSplit() As String
 Dim FileNumMap As Byte
 Dim FileNumInf As Byte
@@ -69,6 +266,8 @@ Dim X As Long
 Dim Y As Long
 Dim i As Long
 
+    Log "Call Load_Maps", CodeTracker '//\\LOGLINE//\\
+
     frmMain.Caption = "Loading maps..."
     frmMain.Refresh
 
@@ -76,13 +275,15 @@ Dim i As Long
     ReDim MapData(1 To NumMaps, XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
     ReDim MapInfo(1 To NumMaps) As MapInfo
 
-    'Create ConnectionGroups
-    ReDim ConnectionGroups(1 To NumMaps)
+    'Create MapUsers
+    ReDim MapUsers(1 To NumMaps)
     For LoopC = 1 To NumMaps
-        ReDim ConnectionGroups(LoopC).UserIndex(0)
+        ReDim MapUsers(LoopC).Index(0)
     Next LoopC
 
     For Map = 1 To NumMaps
+    
+        Log "Load_Maps: Loading map (" & Map & ")", CodeTracker '//\\LOGLINE//\\
 
         'Map
         FileNumMap = FreeFile
@@ -194,8 +395,11 @@ Dim i As Long
 
                 'Item
                 If BxFlags And 4 Then
-                    Get #FileNumInf, , MapData(Map, X, Y).ObjInfo.ObjIndex
-                    Get #FileNumInf, , MapData(Map, X, Y).ObjInfo.Amount
+                    Get #FileNumInf, , ObjIndex
+                    Get #FileNumInf, , ObjAmount
+                    TempObj.ObjIndex = ObjIndex
+                    TempObj.Amount = ObjAmount
+                    Obj_Make TempObj, 1, Map, X, Y, 1
                 End If
 
             Next X
@@ -222,23 +426,39 @@ Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 
 
 Dim NPCIndex As Integer
 Dim ShopStr As String
+Dim DropStr As String
 Dim ItemSplit() As String
 Dim TempSplit() As String
 Dim S As String
 Dim i As Long
 
+    Log "Call Load_NPC(" & NPCNumber & "," & Thralled & ")", CodeTracker '//\\LOGLINE//\\
+
     'Check for valid NPCNumber
-    If NPCNumber <= 0 Then Exit Function
+    If NPCNumber <= 0 Then
+        Log "Rtrn Load_NPC = " & Load_NPC, CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    Log "Load_NPC: Acquiring NPC index", CodeTracker '//\\LOGLINE//\\
 
     'Find next open NPCindex
     NPCIndex = NPC_NextOpen
+    
+    Log "Load_NPC: NPC index acquired (" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Update NPC counters
     If NPCIndex > LastNPC Then
         LastNPC = NPCIndex
-        If LastNPC <> 0 Then ReDim Preserve NPCList(1 To LastNPC)
+        If LastNPC <> 0 Then
+            Log "Load_NPC: ReDimming NPCList array with LastNPC value (" & LastNPC & ")", CodeTracker '//\\LOGLINE//\\
+            ReDim Preserve NPCList(1 To LastNPC)
+        End If
     End If
     NumNPCs = NumNPCs + 1
+    
+    'Make sure the NPC's array is empty
+    ZeroMemory NPCList(NPCIndex), Len(NPCList(NPCIndex))
 
     'Load the NPC information from the database
     DB_RS.Open "SELECT * FROM npcs WHERE id=" & NPCNumber, DB_Conn, adOpenStatic, adLockOptimistic
@@ -246,15 +466,17 @@ Dim i As Long
     'Make sure the NPC exists
     If DB_RS.EOF Then
         If Thralled = 0 Then    'Don't give the error from an invalid thrall
-            If DEBUG_DebugMode Then MsgBox "Error loading NPC " & NPCIndex & " with NPCNumber " & NPCNumber & " - no NPC by the number found!", vbOKOnly
+            Log "Load_NPC: Error loading NPC " & NPCIndex & " with NPCNumber " & NPCNumber & " - no NPC by the number found!", CriticalError '//\\LOGLINE//\\
         End If
+        Log "Rtrn Load_NPC = " & Load_NPC, CodeTracker '//\\LOGLINE//\\
+        DB_RS.Close
         Exit Function
     End If
 
     'Loop through every field - match up the names then set the data accordingly
     With NPCList(NPCIndex)
         .Name = Trim$(DB_RS!Name)
-        .Desc = Trim$(DB_RS!Desc)
+        .Desc = Trim$(DB_RS!Descr)
         .Movement = Val(DB_RS!Movement)
         .RespawnWait = Val(DB_RS!RespawnWait)
         .Attackable = Val(DB_RS!Attackable)
@@ -269,6 +491,7 @@ Dim i As Long
         .Char.Wings = Val(DB_RS!char_wings)
         .Char.Heading = Val(DB_RS!char_heading)
         .Char.HeadHeading = Val(DB_RS!char_headheading)
+        .BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
         .BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
         .BaseStat(SID.DEF) = Val(DB_RS!stat_def)
         .BaseStat(SID.MinHIT) = Val(DB_RS!stat_hit_min)
@@ -277,19 +500,45 @@ Dim i As Long
         .BaseStat(SID.MaxMAN) = Val(DB_RS!stat_mp)
         .BaseStat(SID.MaxSTA) = Val(DB_RS!stat_sp)
         ShopStr = Trim$(DB_RS!objs_shop)
+        DropStr = Trim$(DB_RS!drops)
+        
+        'Close the recordset
+        DB_RS.Close
         
         'Create the shop list
         If ShopStr <> "" Then
+            Log "Load_NPC: Splitting ShopStr (" & ShopStr & ")", CodeTracker '//\\LOGLINE//\\
             TempSplit = Split(ShopStr, vbCrLf)
             ReDim .VendItems(1 To UBound(TempSplit) + 1)
             .NumVendItems = UBound(TempSplit) + 1
             For i = 0 To UBound(TempSplit)
+                Log "Load_NPC: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
                 ItemSplit = Split(TempSplit(i), " ")
                 If UBound(ItemSplit) = 1 Then   'If ubound <> 1, we have an invalid item entry
                     .VendItems(i + 1).ObjIndex = Val(ItemSplit(0))
                     .VendItems(i + 1).Amount = Val(ItemSplit(1))
                 Else
-                    If DEBUG_DebugMode Then MsgBox "Invalid shop/vending item entry found in the database!" & vbCrLf & "NPC: " & NPCNumber & vbCrLf & "Slot: " & i, vbOKOnly
+                    Log "Load_NPC: Invalid shop/vending item entry found in the database. NPC: " & NPCNumber & " Slot: " & i, CriticalError '//\\LOGLINE//\\
+                End If
+            Next i
+        End If
+        
+        'Create the drop list
+        If DropStr <> "" Then
+            Log "Load_NPC: Splitting DropStr (" & DropStr & ")", CodeTracker '//\\LOGLINE//\\
+            TempSplit = Split(DropStr, vbCrLf)
+            ReDim .DropItems(1 To UBound(TempSplit) + 1)
+            ReDim .DropRate(1 To UBound(TempSplit) + 1)
+            .NumDropItems = UBound(TempSplit) + 1
+            For i = 0 To UBound(TempSplit)
+                Log "Load_NPC: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
+                ItemSplit = Split(TempSplit(i), " ")
+                If UBound(ItemSplit) = 2 Then   'If ubound <> 2, we have an invalid item entry
+                    .DropItems(i + 1).ObjIndex = Val(ItemSplit(0))
+                    .DropItems(i + 1).Amount = Val(ItemSplit(1))
+                    .DropRate(i + 1) = Val(ItemSplit(2))
+                Else
+                    Log "Load_NPC: Invalid drop item entry found in the database. NPC: " & NPCNumber & " Slot: " & i, CriticalError '//\\LOGLINE//\\
                 End If
             Next i
         End If
@@ -303,19 +552,20 @@ Dim i As Long
         .Flags.Thralled = Thralled
                 
     End With
-    
-    'Close the recordset
-    DB_RS.Close
 
     'Set the temp mod stats
     NPC_UpdateModStats NPCIndex
 
     'Return new NPCIndex
     Load_NPC = NPCIndex
+    
+    Log "Rtrn Load_NPC = " & Load_NPC, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
 Sub Load_OBJs()
+
+    Log "Call Load_OBJs", CodeTracker '//\\LOGLINE//\\
 
     frmMain.Caption = "Loading objects..."
     frmMain.Refresh
@@ -324,6 +574,8 @@ Sub Load_OBJs()
     DB_RS.Open "SELECT id FROM objects ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
     NumObjDatas = DB_RS(0)
     DB_RS.Close
+    
+    Log "Load_OBJs: Resizing ObjData() array by NumObjDatas (" & NumObjDatas & ")", CodeTracker '//\\LOGLINE//\\
     
     'Resize the objects array
     ReDim ObjData(1 To NumObjDatas)
@@ -334,6 +586,7 @@ Sub Load_OBJs()
     'Fill the object list
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         With ObjData(DB_RS!id)
+            Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
             .Price = Val(DB_RS!Price)
             .ObjType = Val(DB_RS!ObjType)
@@ -350,6 +603,7 @@ Sub Load_OBJs()
             .RepHPP = Val(DB_RS!replenish_hp_percent)
             .RepMPP = Val(DB_RS!replenish_mp_percent)
             .RepSPP = Val(DB_RS!replenish_sp_percent)
+            .AddStat(SID.Speed) = Val(DB_RS!stat_speed)
             .AddStat(SID.Str) = Val(DB_RS!stat_str)
             .AddStat(SID.Agi) = Val(DB_RS!stat_agi)
             .AddStat(SID.Mag) = Val(DB_RS!stat_mag)
@@ -376,6 +630,8 @@ Dim LoopQuest As Long
 Dim S As String
 Dim i As Long
 
+    Log "Call Load_Quests", CodeTracker '//\\LOGLINE//\\
+
     frmMain.Caption = "Loading quests..."
     frmMain.Refresh
     
@@ -383,6 +639,8 @@ Dim i As Long
     DB_RS.Open "SELECT id FROM quests ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
     NumQuests = DB_RS(0)
     DB_RS.Close
+    
+    Log "Load_Quests: Resizing QuestData array by NumQuests (" & NumQuests & ")", CodeTracker '//\\LOGLINE//\\
     
     'Resize the quests array
     ReDim QuestData(1 To NumQuests)
@@ -393,6 +651,7 @@ Dim i As Long
     'Fill in the information
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         With QuestData(DB_RS!id)
+            Log "Load_Quests: Filling QuestData for quest " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
             .Redoable = Val(DB_RS!Redoable)
             .StartTxt = Trim$(DB_RS!text_start)
@@ -432,6 +691,8 @@ Sub Load_ServerIni()
 '*****************************************************************
 Dim TempSplit() As String
 
+    Log "Call Load_ServerIni", CodeTracker '//\\LOGLINE//\\
+
     frmMain.Caption = "Loading configuration..."
     frmMain.Refresh
 
@@ -457,7 +718,7 @@ Dim TempSplit() As String
 
 End Sub
 
-Sub Load_User(UserChar As User, UserName As String)
+Sub Load_User(UserChar As User, ByVal UserName As String)
 Dim TempStr() As String
 Dim TempStr2() As String
 Dim InvStr As String
@@ -466,6 +727,8 @@ Dim KSStr As String
 Dim CurQStr As String
 Dim S As String
 Dim i As Long
+
+    Log "Call Load_User(N/A," & UserName & ")", CodeTracker '//\\LOGLINE//\\
 
     'Retrieve the user from the database
     DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserName & "'", DB_Conn, adOpenStatic, adLockOptimistic
@@ -477,12 +740,7 @@ Dim i As Long
     End If
     
     'Loop through every field - match up the names then set the data accordingly
-    If DB_PasswordKey <> "" Then
-        UserChar.Password = Encryption_RC4_DecryptString(Trim$(DB_RS!Password), DB_PasswordKey)
-    Else
-        UserChar.Password = Trim$(DB_RS!Password)
-    End If
-    UserChar.Desc = Trim$(DB_RS!Desc)
+    UserChar.Desc = Trim$(DB_RS!Descr)
     UserChar.Flags.GMLevel = DB_RS!gm
     InvStr = DB_RS!inventory
     MailStr = DB_RS!mail
@@ -502,6 +760,7 @@ Dim i As Long
     UserChar.WeaponEqpSlot = Val(DB_RS!eq_weapon)
     UserChar.ArmorEqpSlot = Val(DB_RS!eq_armor)
     UserChar.WingsEqpSlot = Val(DB_RS!eq_wings)
+    UserChar.Stats.BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
     UserChar.Stats.BaseStat(SID.Str) = Val(DB_RS!stat_str)
     UserChar.Stats.BaseStat(SID.Agi) = Val(DB_RS!stat_agi)
     UserChar.Stats.BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
@@ -534,22 +793,31 @@ Dim i As Long
 
     'Inventory string
     If InvStr <> "" Then
+        Log "Load_User: Splitting inventory string (" & InvStr & ")", CodeTracker '//\\LOGLINE//\\
         TempStr = Split(InvStr, vbCrLf) 'Split up the inventory slots
         For i = 0 To UBound(TempStr)    'Loop through the slots
+            Log "Load_User: Splitting item data (" & TempStr(i) & ")", CodeTracker '//\\LOGLINE//\\
             TempStr2 = Split(TempStr(i), " ")   'Split up the slot, objindex, amount and equipted (in that order)
             If Val(TempStr2(0)) <= MAX_INVENTORY_SLOTS Then
                 UserChar.Object(Val(TempStr2(0))).ObjIndex = Val(TempStr2(1))
                 UserChar.Object(Val(TempStr2(0))).Amount = Val(TempStr2(2))
                 UserChar.Object(Val(TempStr2(0))).Equipped = Val(TempStr2(3))
+            Else '//\\LOGLINE//\\
+                Log "Load_User: User has too many inventory slots - tried applying slot " & Val(TempStr2(0)), CriticalError '//\\LOGLINE//\\
             End If
         Next i
     End If
     
     'Mail string
     If MailStr <> "" Then
+        Log "Load_User: Splititng mail string (" & MailStr & ")", CodeTracker '//\\LOGLINE//\\
         TempStr = Split(MailStr, vbCrLf)    'Split up the mail indexes
         For i = 0 To UBound(TempStr)
-            If i <= MaxMailPerUser Then UserChar.MailID(i + 1) = Val(TempStr(i))
+            If i <= MaxMailPerUser Then
+                UserChar.MailID(i + 1) = Val(TempStr(i))
+            Else '//\\LOGLINE//\\
+                Log "Load_User: User has too many mails - tried applying slot " & i, CriticalError '//\\LOGLINE//\\
+            End If
         Next i
     End If
     
@@ -557,7 +825,11 @@ Dim i As Long
     If KSStr <> "" Then
         TempStr = Split(KSStr, vbCrLf)      'Split up the known skill indexes
         For i = 0 To UBound(TempStr)
-            If Val(TempStr(i)) <= NumSkills Then UserChar.KnownSkills(Val(TempStr(i))) = 1
+            If Val(TempStr(i)) <= NumSkills Then
+                UserChar.KnownSkills(Val(TempStr(i))) = 1
+            Else '//\\LOGLINE//\\
+                Log "Load_User: User has too many skills - tried applying slot " & i, CriticalError '//\\LOGLINE//\\
+            End If
         Next i
     End If
     
@@ -569,6 +841,8 @@ Dim i As Long
                 TempStr2 = Split(TempStr(i), " ")   'Split up the QuestID and NPCKills (in that order)
                 UserChar.Quest(i + 1) = Val(TempStr2(0))
                 UserChar.QuestStatus(i + 1).NPCKills = Val(TempStr2(1))
+            Else '//\\LOGLINE//\\
+                Log "Load_User: User has too many quests - tried applying quest " & i + 1, CriticalError '//\\LOGLINE//\\
             End If
         Next i
     End If
@@ -591,6 +865,8 @@ Dim ObjStr As String
 Dim S As String
 Dim i As Long
 
+    Log "Call Save_Mail(" & MailIndex & "," & "N/A)", CodeTracker '//\\LOGLINE//\\
+
     'Build the object string
     For i = 1 To MaxMailObjs
         If MailData.Obj(i).ObjIndex > 0 Then
@@ -600,6 +876,7 @@ Dim i As Long
             End If
         End If
     Next i
+    Log "Save_Mail: Built object string (" & S & ")", CodeTracker '//\\LOGLINE//\\
     
     'If we are updating the mail, then the record must be deleted, so make sure it isn't there (or else we get a duplicate key entry error)
     DB_Conn.Execute "DELETE FROM mail WHERE id=" & MailIndex
@@ -610,7 +887,7 @@ Dim i As Long
     
     'Put the data in the recordset
     DB_RS!id = Str$(MailIndex)
-    DB_RS!Sub = MailData.Subject
+    DB_RS!sub = MailData.Subject
     DB_RS!By = MailData.WriterName
     DB_RS!Date = MailData.RecieveDate
     DB_RS!msg = MailData.Message
@@ -625,7 +902,7 @@ Dim i As Long
 
 End Sub
 
-Sub Save_User(UserChar As User)
+Sub Save_User(UserChar As User, Optional ByVal Password As String, Optional ByVal NewUser As Byte)
 
 '*****************************************************************
 'Saves a user's data to a .chr file
@@ -636,17 +913,20 @@ Dim KSStr As String
 Dim CurQStr As String
 Dim i As Long
 
+    Log "Call Save_User(N/A," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
+
     With UserChar
     
         'Make sure we are trying to save a valid user by testing a few variables first
-        If Len(.Name) < 3 Then Exit Sub
-        If Len(.Name) > 10 Then Exit Sub
-        If Len(.Password) < 3 Then Exit Sub
-        If Len(.Password) > 10 Then Exit Sub
-    
-        'If we are updating the user, then the record must be deleted, so make sure it isn't there (or else we get a duplicate key entry error)
-        Server_UserExist .Name, True
-            
+        If Len(.Name) < 3 Then
+            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
+            Exit Sub
+        End If
+        If Len(.Name) > 10 Then
+            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
+            Exit Sub
+        End If
+
         'Build the inventory string
         For i = 1 To MAX_INVENTORY_SLOTS
             If .Object(i).ObjIndex > 0 Then
@@ -654,6 +934,7 @@ Dim i As Long
                 InvStr = InvStr & i & " " & .Object(i).ObjIndex & " " & .Object(i).Amount & " " & .Object(i).Equipped
             End If
         Next i
+        Log "Save_User: Built inventory string (" & InvStr & ")", CodeTracker '//\\LOGLINE//\\
         
         'Build mail string
         For i = 1 To MaxMailPerUser
@@ -662,6 +943,7 @@ Dim i As Long
                 MailStr = MailStr & .MailID(i)
             End If
         Next i
+        Log "Save_User: Built mail string (" & MailStr & ")", CodeTracker '//\\LOGLINE//\\
         
         'Build known skills string
         For i = 1 To NumSkills
@@ -670,6 +952,7 @@ Dim i As Long
                 KSStr = KSStr & i
             End If
         Next i
+        Log "Save_User: Built known skills string (" & KSStr & ")", CodeTracker '//\\LOGLINE//\\
         
         'Build current quest string
         For i = 1 To MaxQuests
@@ -678,20 +961,27 @@ Dim i As Long
                 CurQStr = CurQStr & .Quest(i) & " " & .QuestStatus(i).NPCKills
             End If
         Next i
-    
-        'Open the database with an empty table
-        DB_RS.Open "SELECT * FROM users WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
-        DB_RS.AddNew
+        Log "Save_User: Built current quest string (" & CurQStr & ")", CodeTracker '//\\LOGLINE//\\
+
+        'Check whether we have to make a new entry or can update an old one
+        If NewUser Then
+        
+            'Open the database with an empty record and create the new user
+            DB_RS.Open "SELECT * FROM users WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS.AddNew
+            
+        Else
+        
+            'Open the old record and update it
+            DB_RS.Open "SELECT * FROM users WHERE `name`='" & .Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+            
+        End If
         
         'Put the data in the recordset
-        If DB_PasswordKey <> "" Then
-            DB_RS!Password = Encryption_RC4_EncryptString(.Password, DB_PasswordKey)
-        Else
-            DB_RS!Password = .Password
-        End If
-        DB_RS!Name = .Name
+        If Password <> "" Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
+        If NewUser Then DB_RS!Name = .Name
         DB_RS!gm = .Flags.GMLevel
-        DB_RS!Desc = .Desc
+        DB_RS!Descr = .Desc
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr
         DB_RS!KnownSkills = KSStr
@@ -710,6 +1000,7 @@ Dim i As Long
         DB_RS!eq_weapon = .WeaponEqpSlot
         DB_RS!eq_armor = .ArmorEqpSlot
         DB_RS!eq_wings = .WingsEqpSlot
+        DB_RS!stat_speed = .Stats.BaseStat(SID.Speed)
         DB_RS!stat_str = .Stats.BaseStat(SID.Str)
         DB_RS!stat_agi = .Stats.BaseStat(SID.Agi)
         DB_RS!stat_mag = .Stats.BaseStat(SID.Mag)
@@ -748,6 +1039,8 @@ Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String
 Dim sSpaces As String ' This will hold the input that the program will retrieve
 Dim szReturn As String ' This will be the defaul value if the string is not found
 
+    Log "Call Var_Get(" & File & "," & Main & "," & Var & ")", CodeTracker '//\\LOGLINE//\\
+
     szReturn = vbNullString
 
     sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
@@ -756,6 +1049,8 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
     Var_Get = RTrim$(sSpaces)
     Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
+    
+    Log "Rtrn Var_Get = " & Var_Get, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -764,6 +1059,8 @@ Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As String, B
 '*****************************************************************
 'Writes a var to a text file
 '*****************************************************************
+
+    Log "Call Var_Write(" & File & "," & Main & "," & Var & "," & Value & ")", CodeTracker '//\\LOGLINE//\\
 
     writeprivateprofilestring Main, Var, Value, File
 

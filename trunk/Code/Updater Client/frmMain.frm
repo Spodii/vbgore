@@ -1,6 +1,5 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "Comdlg32.ocx"
-Object = "{598D2D95-4E74-49D9-8F45-E9E53990E851}#1.0#0"; "goresockfull.ocx"
+Object = "{C7B4A030-D912-4416-A588-3658960C7145}#1.0#0"; "vbgoresocketstring.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
@@ -17,27 +16,20 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   203
    StartUpPosition =   2  'CenterScreen
-   Begin GORESOCKfull.Socket Socket 
-      Height          =   660
-      Left            =   2280
-      Top             =   480
-      Width           =   660
-      _ExtentX        =   1164
-      _ExtentY        =   1164
+   Begin SoxOCX.Sox Socket 
+      Height          =   420
+      Left            =   2400
+      Top             =   720
+      Visible         =   0   'False
+      Width           =   420
+      _ExtentX        =   741
+      _ExtentY        =   741
    End
    Begin VB.Timer CloseTimer 
       Enabled         =   0   'False
       Interval        =   200
       Left            =   2400
       Top             =   1200
-   End
-   Begin MSComDlg.CommonDialog C1 
-      Left            =   3600
-      Top             =   5040
-      _ExtentX        =   847
-      _ExtentY        =   847
-      _Version        =   393216
-      CancelError     =   -1  'True
    End
    Begin VB.Label ConnectCmd 
       AutoSize        =   -1  'True
@@ -241,7 +233,7 @@ Private Sub Connect()
         StatusLbl.Caption = "Unable to connect!"
         ConnectCmd.Enabled = True
     Else
-        Socket.SetOption LocalID, soxSO_TCP_NODELAY, True
+        Socket.SetOption LocalID, soxSO_TCP_NODELAY, False
     End If
     
 End Sub

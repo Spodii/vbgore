@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.2            ************
+'************            Official Release: Version 0.2.4            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -43,14 +43,14 @@ Attribute VB_Name = "Declares"
 '** can do:                                                                   **
 '**  *Donate - Great way to keep a free project going. :) Info and benifits   **
 '**        for donating can be found at:                                      **
-'**        http://www.vbgore.com/en/index.php?title=Donate                    **
+'**        http://www.vbgore.com/index.php?title=Donate                       **
 '**  *Contribute - Check out our forums, contribute ideas, report bugs, or    **
 '**        help expend the wiki pages!                                        **
 '**  *Link To Us - Creating a link to vbGORE, whether it is on your own web   **
 '**        page or a link to vbGORE in a forum you visit, every link helps    **
 '**        spread the word of vbGORE's existance! Buttons and banners for     **
 '**        linking to vbGORE can be found on the following page:              **
-'**        http://www.vbgore.com/en/index.php?title=Buttons_and_Banners       **
+'**        http://www.vbgore.com/index.php?title=Buttons_and_Banners          **
 '*******************************************************************************
 '***** Conact Information: *****************************************************
 '*******************************************************************************
@@ -182,6 +182,9 @@ Public IsUnloading As Byte
 'User login information
 Public UserPassword As String
 Public UserName As String
+
+'Disable / enable input (for debugging purposes on multiple clients so all clients dont move at once)
+Public DisableInput As Byte
 
 'Zoom level - 0 = No Zoom, > 0 = Zoomed
 Public ZoomLevel As Single
