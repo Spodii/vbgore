@@ -184,13 +184,15 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     
     'Face the caster to the target
-    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
-    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    If CasterIndex <> TargetIndex Then
+        NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+        NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    End If
     
     'Successfully casted
     NPCList(TargetIndex).Flags.UpdateStats = 1
@@ -253,13 +255,15 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     
     'Face the caster to the target
-    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
-    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    If CasterIndex <> TargetIndex Then
+        NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+        NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    End If
     
     'Successfully casted
     NPCList(TargetIndex).Flags.UpdateStats = 1
@@ -322,13 +326,15 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     
     'Face the caster to the target
-    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
-    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    If CasterIndex <> TargetIndex Then
+        NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+        NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    End If
     
     'Successfully casted
     NPCList(TargetIndex).Flags.UpdateStats = 1
@@ -624,6 +630,16 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
         ConBuf.Put_Byte 40
         ConBuf.Put_String UserList(TargetIndex).Name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        
+        'Face the caster to the target
+        UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+        UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        
     End If
     
     'Send the message to the target
@@ -640,15 +656,6 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
-    
-    'Face the caster to the target
-    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
-    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -738,6 +745,16 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         ConBuf.Put_Byte 46
         ConBuf.Put_String UserList(TargetIndex).Name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        
+        'Face the caster to the target
+        UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+        UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        
     End If
     
     'Send the message to the target
@@ -754,15 +771,6 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
-    
-    'Face the caster to the target
-    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
-    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -852,6 +860,16 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         ConBuf.Put_Byte 44
         ConBuf.Put_String UserList(TargetIndex).Name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        
+        'Face the caster to the target
+        UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+        UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        
     End If
     
     'Send the message to the target
@@ -868,15 +886,6 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
-    
-    'Face the caster to the target
-    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
-    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -945,6 +954,16 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
         ConBuf.Put_Byte 42
         ConBuf.Put_String UserList(TargetIndex).Name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        
+        'Face the caster to the target
+        UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+        UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
     End If
     
     'Message to the target
@@ -954,15 +973,6 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     ConBuf.Put_String UserList(CasterIndex).Name
     ConBuf.Put_Integer UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
-    
-    'Face the caster to the target
-    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
-    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
     Skill_Heal_PCtoPC = 1
@@ -1003,14 +1013,16 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     NPC_Heal TargetIndex, (NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Value)
     
     'Face the caster to the target
-    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
-    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.User_Rotate
-    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
-
+    If CasterIndex <> TargetIndex Then
+        NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+        NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.User_Rotate
+        ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+        ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    End If
+    
     'Successfully casted
     Skill_Heal_NPCtoNPC = 1
 

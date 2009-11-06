@@ -208,7 +208,7 @@ Public Type Char
     ScrollDirectionY As Integer
     BubbleStr As String
     BubbleTime As Long
-    Name As String
+    name As String
     NameOffset As Integer       'Used to acquire the center position for the name
     ActionIndex As Byte
     HealthPercent As Byte
@@ -217,6 +217,9 @@ Public Type Char
     Emoticon As Grh
     EmoFade As Single
     EmoDir As Byte      'Direction the fading is going - 0 = Stopped, 1 = Up, 2 = Down
+    NPCChatIndex As Byte
+    NPCChatLine As Byte
+    NPCChatDelay As Long
 End Type
 
 'Holds info about each tile position
@@ -234,7 +237,7 @@ End Type
 
 'Hold info about each map
 Public Type MapInfo
-    Name As String
+    name As String
     StartPos As WorldPos
     MapVersion As Integer
     Weather As Byte
@@ -614,14 +617,15 @@ Public LineBreakChr As String * 1
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
-Private Declare Function IntersectRect Lib "user32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
+Private Declare Function IntersectRect Lib "User32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
 
 Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
 
 '************************************************************
 'Adds text to a chat bubble
 '************************************************************
-
+    
+    If LenB(Text) = 0 Then Exit Sub 'No text passed
     CharList(CharIndex).BubbleStr = Text
     CharList(CharIndex).BubbleTime = 5000
     
@@ -699,10 +703,18 @@ Dim j As Long
         For i = 1 To Len(TempSplit(TSLoop))
         
             'If it is a space, store it so we can easily break at it
-            If Mid$(TempSplit(TSLoop), i, 1) = " " Or Mid$(TempSplit(TSLoop), i, 1) = "_" Or Mid$(TempSplit(TSLoop), i, 1) = "-" Then LastSpace = i
-        
-            'Add up the size
-            Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            Select Case Mid$(TempSplit(TSLoop), i, 1)
+                Case " ": LastSpace = i
+                Case "_": LastSpace = i
+                Case "-": LastSpace = i
+            End Select
+            
+            'Add up the size - Do not count the "|" character (high-lighter)!
+            If Not Mid$(TempSplit(TSLoop), i, 1) = "|" Then
+                Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            End If
+            
+            'Check for too large of a size
             If Size > GameWindow.ChatWindow.Screen.Width - 24 Then
                 
                 'Check if the last space was too far back
@@ -889,8 +901,13 @@ Dim TempColor As Long
     'Set the vertex array to the vertex buffer
     If Pos = 0 Then Pos = 1
     If ObjPtr(D3DDevice) Then   'Make sure the D3DDevice exists - this will only return false if we received messages before it had time to load
-        Set ChatVB = D3DDevice.CreateVertexBuffer(Len(ChatArray(0)) * Pos * 4, 0, FVF, D3DPOOL_MANAGED)
-        D3DVertexBuffer8SetData ChatVB, 0, Len(ChatArray(0)) * Pos * 4, 0, ChatArray(0)
+        
+        'Check if we have the device
+        If D3DDevice.TestCooperativeLevel = D3D_OK Then
+            Set ChatVB = D3DDevice.CreateVertexBuffer(Len(ChatArray(0)) * Pos * 4, 0, FVF, D3DPOOL_MANAGED)
+            D3DVertexBuffer8SetData ChatVB, 0, Len(ChatArray(0)) * Pos * 4, 0, ChatArray(0)
+        End If
+        
     End If
     
 End Sub
@@ -1072,7 +1089,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -1101,12 +1118,8 @@ Dim EmptyChar As Char
     CharList(CharIndex).HealthPercent = HP
     CharList(CharIndex).ManaPercent = MP
     CharList(CharIndex).Speed = Speed
-
-    'Reset moving stats
-    CharList(CharIndex).Moving = 0
-    CharList(CharIndex).MoveOffset.X = 0
-    CharList(CharIndex).MoveOffset.Y = 0
-
+    CharList(CharIndex).NPCChatIndex = ChatID
+    
     'Update position
     CharList(CharIndex).Pos.X = X
     CharList(CharIndex).Pos.Y = Y
@@ -1115,8 +1128,8 @@ Dim EmptyChar As Char
     CharList(CharIndex).Active = 1
     
     'Calculate the name length so we can center the name above the head
-    CharList(CharIndex).Name = Name
-    CharList(CharIndex).NameOffset = Engine_GetTextWidth(Name) * 0.5
+    CharList(CharIndex).name = name
+    CharList(CharIndex).NameOffset = Engine_GetTextWidth(name) * 0.5
 
     'Set action index
     CharList(CharIndex).ActionIndex = 0
@@ -1635,7 +1648,7 @@ Sub Engine_Init_Signs()
 '*****************************************************************
 Dim NumSigns As Integer
 Dim LoopC As Integer
-Dim S As String
+Dim s As String
 
     'Get the number of signs
     NumSigns = Val(Engine_Var_Get(DataPath & "Signs.dat", "SIGNS", "NumSigns"))
@@ -1649,27 +1662,27 @@ Dim S As String
     
 End Sub
 
-Sub Engine_Init_Messages(ByVal Language As String)
+Function Engine_Init_Messages(ByVal Language As String) As String
 
 '*****************************************************************
 'Loads the game messages
 '*****************************************************************
 Dim LoopC As Byte
-Dim S As String
+Dim s As String
 
     'Make sure we are working in lowercase (since all our files are in lowercase)
     Language = LCase$(Language)
     
     'Check for a redirection flag (will return nothing if the flag doesn't exist)
     Do  'This "Do" will allow us to do redirections to redirections, even though we shouldn't even do that
-        S = Engine_Var_Get(MessagePath & Language & ".ini", "REDIRECT", "TO")
-        If S <> "" Then
-            If Engine_FileExist(MessagePath & LCase$(S) & ".ini", vbNormal) = False Then
+        s = Engine_Var_Get(MessagePath & Language & ".ini", "REDIRECT", "TO")
+        If s <> "" Then
+            If Engine_FileExist(MessagePath & LCase$(s) & ".ini", vbNormal) = False Then
                 MsgBox "Invalid language redirection! Could not load system messages!" & vbCrLf & _
-                        "Language '" & Language & "' redirected to '" & LCase$(S) & "', which could not be found!", vbOKOnly
-                Exit Sub
+                        "Language '" & Language & "' redirected to '" & LCase$(s) & "', which could not be found!", vbOKOnly
+                Exit Function
             End If
-            Language = LCase$(S)
+            Language = LCase$(s)
         Else
         
             'No redirection was found, so move on
@@ -1677,6 +1690,8 @@ Dim S As String
             
         End If
     Loop
+    
+    Engine_Init_Messages = Language
 
     'Get the number of messages
     NumMessages = CByte(Engine_Var_Get(MessagePath & Language & ".ini", "MAIN", "NumMessages"))
@@ -1684,7 +1699,7 @@ Dim S As String
     'Check for a valid number of messages
     If NumMessages = 0 Then
         MsgBox "Error loading messages from file:" & vbCrLf & MessagePath & Language & ".ini", vbOKOnly
-        Exit Sub
+        Exit Function
     End If
     
     'Resize our message array to hold all the messages
@@ -1694,8 +1709,11 @@ Dim S As String
     For LoopC = 1 To NumMessages
         Message(LoopC) = Engine_Var_Get(MessagePath & Language & ".ini", "MAIN", CStr(LoopC))
     Next LoopC
-
-End Sub
+    
+    'Load the NPC chat messages
+    Engine_Init_NPCChat Language
+    
+End Function
 
 Sub Engine_Init_BodyData()
 
@@ -1759,7 +1777,7 @@ Private Sub Engine_Init_Sound()
 
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
-    DS.SetCooperativeLevel frmMain.hwnd, DSSCL_PRIORITY
+    DS.SetCooperativeLevel frmMain.hWnd, DSSCL_PRIORITY
     
     'Set up the buffer description for later use
     'We are only using panning and volume - combined, we will use this to create a custom 3D effect
@@ -1819,7 +1837,7 @@ Dim SY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
-
+    
     'Set the user's position to sX/sY
     SX = CharList(UserCharIndex).Pos.X
     SY = CharList(UserCharIndex).Pos.Y
@@ -1854,13 +1872,13 @@ Dim L As Long
 
 End Sub
 
-Public Sub Engine_Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal Flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
+Public Sub Engine_Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, Optional ByVal flags As CONST_DSBPLAYFLAGS = DSBPLAY_DEFAULT)
 '************************************************************
 'Used for non area-specific sound effects, such as weather
 '************************************************************
 
     'Play the sound
-    SoundBuffer.Play Flags
+    SoundBuffer.Play flags
     
 End Sub
 
@@ -2019,12 +2037,12 @@ Dim i As Byte
         D3DWindow.BackBufferFormat = DispMode.Format
         D3DWindow.BackBufferWidth = 800
         D3DWindow.BackBufferHeight = 600
-        D3DWindow.hDeviceWindow = frmMain.hwnd
+        D3DWindow.hDeviceWindow = frmMain.hWnd
     End If
 
     'Set the D3DDevices
     If ObjPtr(D3DDevice) Then Set D3DDevice = Nothing
-    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hwnd, D3DCREATEFLAGS, D3DWindow)
+    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hWnd, D3DCREATEFLAGS, D3DWindow)
 
     'Store the create flags
     UsedCreateFlags = D3DCREATEFLAGS
@@ -2176,10 +2194,10 @@ Dim ImageOffsetY As Long
 Dim ImageSpaceX As Long
 Dim ImageSpaceY As Long
 Dim LoopC As Long
-Dim S As String 'Stores the path to our master skins file (.ini)
+Dim s As String 'Stores the path to our master skins file (.ini)
 Dim t As String 'Stores the path to our custom window positions file (.dat)
 
-    S = DataPath & "Skins\" & CurrentSkin & ".ini"
+    s = DataPath & "Skins\" & CurrentSkin & ".ini"
     t = DataPath & "Skins\" & CurrentSkin & ".dat"
     
     'Load Quickbar
@@ -2188,17 +2206,17 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "QUICKBAR", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "QUICKBAR", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "QUICKBAR", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "QUICKBAR", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "QUICKBAR", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "QUICKBAR", "ScreenY"))
         End If
-        .Screen.Width = Val(Engine_Var_Get(S, "QUICKBAR", "ScreenWidth"))
-        .Screen.Height = Val(Engine_Var_Get(S, "QUICKBAR", "ScreenHeight"))
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "QUICKBAR", "Grh"))
+        .Screen.Width = Val(Engine_Var_Get(s, "QUICKBAR", "ScreenWidth"))
+        .Screen.Height = Val(Engine_Var_Get(s, "QUICKBAR", "ScreenHeight"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "QUICKBAR", "Grh"))
     End With
     For LoopC = 1 To 12
         With GameWindow.QuickBar.Image(LoopC)
-            .X = Val(Engine_Var_Get(S, "QUICKBAR", "Image" & LoopC & "X"))
-            .Y = Val(Engine_Var_Get(S, "QUICKBAR", "Image" & LoopC & "Y"))
+            .X = Val(Engine_Var_Get(s, "QUICKBAR", "Image" & LoopC & "X"))
+            .Y = Val(Engine_Var_Get(s, "QUICKBAR", "Image" & LoopC & "Y"))
             .Width = 32
             .Height = 32
         End With
@@ -2210,39 +2228,39 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "STATWINDOW", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "STATWINDOW", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "STATWINDOW", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "STATWINDOW", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "STATWINDOW", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "STATWINDOW", "ScreenY"))
         End If
-        .Screen.Width = Val(Engine_Var_Get(S, "STATWINDOW", "ScreenWidth"))
-        .Screen.Height = Val(Engine_Var_Get(S, "STATWINDOW", "ScreenHeight"))
-        .AddStr.X = Val(Engine_Var_Get(S, "STATWINDOW", "AddStrX"))
-        .AddStr.Y = Val(Engine_Var_Get(S, "STATWINDOW", "AddStrY"))
-        .AddStr.Width = Val(Engine_Var_Get(S, "STATWINDOW", "AddStrWidth"))
-        .AddStr.Height = Val(Engine_Var_Get(S, "STATWINDOW", "AddStrHeight"))
-        .AddAgi.X = Val(Engine_Var_Get(S, "STATWINDOW", "AddAgiX"))
-        .AddAgi.Y = Val(Engine_Var_Get(S, "STATWINDOW", "AddAgiY"))
-        .AddAgi.Width = Val(Engine_Var_Get(S, "STATWINDOW", "AddAgiWidth"))
-        .AddAgi.Height = Val(Engine_Var_Get(S, "STATWINDOW", "AddAgiHeight"))
-        .AddMag.X = Val(Engine_Var_Get(S, "STATWINDOW", "AddMagX"))
-        .AddMag.Y = Val(Engine_Var_Get(S, "STATWINDOW", "AddMagY"))
-        .AddMag.Width = Val(Engine_Var_Get(S, "STATWINDOW", "AddMagWidth"))
-        .AddMag.Height = Val(Engine_Var_Get(S, "STATWINDOW", "AddMagHeight"))
-        .Str.X = Val(Engine_Var_Get(S, "STATWINDOW", "StrX"))
-        .Str.Y = Val(Engine_Var_Get(S, "STATWINDOW", "StrY"))
-        .Agi.X = Val(Engine_Var_Get(S, "STATWINDOW", "AgiX"))
-        .Agi.Y = Val(Engine_Var_Get(S, "STATWINDOW", "AgiY"))
-        .Mag.X = Val(Engine_Var_Get(S, "STATWINDOW", "MagX"))
-        .Mag.Y = Val(Engine_Var_Get(S, "STATWINDOW", "MagY"))
-        .Gold.X = Val(Engine_Var_Get(S, "STATWINDOW", "GoldX"))
-        .Gold.Y = Val(Engine_Var_Get(S, "STATWINDOW", "GoldY"))
-        .DEF.X = Val(Engine_Var_Get(S, "STATWINDOW", "DefX"))
-        .DEF.Y = Val(Engine_Var_Get(S, "STATWINDOW", "DefY"))
-        .Dmg.X = Val(Engine_Var_Get(S, "STATWINDOW", "DmgX"))
-        .Dmg.Y = Val(Engine_Var_Get(S, "STATWINDOW", "DmgY"))
-        .Points.X = Val(Engine_Var_Get(S, "STATWINDOW", "PointsX"))
-        .Points.Y = Val(Engine_Var_Get(S, "STATWINDOW", "PointsY"))
-        Engine_Init_Grh .AddGrh, Val(Engine_Var_Get(S, "STATWINDOW", "AddGrh"))
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "STATWINDOW", "Grh"))
+        .Screen.Width = Val(Engine_Var_Get(s, "STATWINDOW", "ScreenWidth"))
+        .Screen.Height = Val(Engine_Var_Get(s, "STATWINDOW", "ScreenHeight"))
+        .AddStr.X = Val(Engine_Var_Get(s, "STATWINDOW", "AddStrX"))
+        .AddStr.Y = Val(Engine_Var_Get(s, "STATWINDOW", "AddStrY"))
+        .AddStr.Width = Val(Engine_Var_Get(s, "STATWINDOW", "AddStrWidth"))
+        .AddStr.Height = Val(Engine_Var_Get(s, "STATWINDOW", "AddStrHeight"))
+        .AddAgi.X = Val(Engine_Var_Get(s, "STATWINDOW", "AddAgiX"))
+        .AddAgi.Y = Val(Engine_Var_Get(s, "STATWINDOW", "AddAgiY"))
+        .AddAgi.Width = Val(Engine_Var_Get(s, "STATWINDOW", "AddAgiWidth"))
+        .AddAgi.Height = Val(Engine_Var_Get(s, "STATWINDOW", "AddAgiHeight"))
+        .AddMag.X = Val(Engine_Var_Get(s, "STATWINDOW", "AddMagX"))
+        .AddMag.Y = Val(Engine_Var_Get(s, "STATWINDOW", "AddMagY"))
+        .AddMag.Width = Val(Engine_Var_Get(s, "STATWINDOW", "AddMagWidth"))
+        .AddMag.Height = Val(Engine_Var_Get(s, "STATWINDOW", "AddMagHeight"))
+        .Str.X = Val(Engine_Var_Get(s, "STATWINDOW", "StrX"))
+        .Str.Y = Val(Engine_Var_Get(s, "STATWINDOW", "StrY"))
+        .Agi.X = Val(Engine_Var_Get(s, "STATWINDOW", "AgiX"))
+        .Agi.Y = Val(Engine_Var_Get(s, "STATWINDOW", "AgiY"))
+        .Mag.X = Val(Engine_Var_Get(s, "STATWINDOW", "MagX"))
+        .Mag.Y = Val(Engine_Var_Get(s, "STATWINDOW", "MagY"))
+        .Gold.X = Val(Engine_Var_Get(s, "STATWINDOW", "GoldX"))
+        .Gold.Y = Val(Engine_Var_Get(s, "STATWINDOW", "GoldY"))
+        .DEF.X = Val(Engine_Var_Get(s, "STATWINDOW", "DefX"))
+        .DEF.Y = Val(Engine_Var_Get(s, "STATWINDOW", "DefY"))
+        .Dmg.X = Val(Engine_Var_Get(s, "STATWINDOW", "DmgX"))
+        .Dmg.Y = Val(Engine_Var_Get(s, "STATWINDOW", "DmgY"))
+        .Points.X = Val(Engine_Var_Get(s, "STATWINDOW", "PointsX"))
+        .Points.Y = Val(Engine_Var_Get(s, "STATWINDOW", "PointsY"))
+        Engine_Init_Grh .AddGrh, Val(Engine_Var_Get(s, "STATWINDOW", "AddGrh"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "STATWINDOW", "Grh"))
     End With
     
     'Load chat window
@@ -2251,16 +2269,16 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "CHATWINDOW", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "CHATWINDOW", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "CHATWINDOW", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "CHATWINDOW", "ScreenY"))
         End If
-        .Screen.Width = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenWidth"))
-        .Screen.Height = Val(Engine_Var_Get(S, "CHATWINDOW", "ScreenHeight"))
-        .Text.X = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatX"))
-        .Text.Y = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatY"))
-        .Text.Width = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatWidth"))
-        .Text.Height = Val(Engine_Var_Get(S, "CHATWINDOW", "ChatHeight"))
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "CHATWINDOW", "Grh"))
+        .Screen.Width = Val(Engine_Var_Get(s, "CHATWINDOW", "ScreenWidth"))
+        .Screen.Height = Val(Engine_Var_Get(s, "CHATWINDOW", "ScreenHeight"))
+        .Text.X = Val(Engine_Var_Get(s, "CHATWINDOW", "ChatX"))
+        .Text.Y = Val(Engine_Var_Get(s, "CHATWINDOW", "ChatY"))
+        .Text.Width = Val(Engine_Var_Get(s, "CHATWINDOW", "ChatWidth"))
+        .Text.Height = Val(Engine_Var_Get(s, "CHATWINDOW", "ChatHeight"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "CHATWINDOW", "Grh"))
     End With
 
     'Load Inventory
@@ -2269,17 +2287,17 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "INVENTORY", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "INVENTORY", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "INVENTORY", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "INVENTORY", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "INVENTORY", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "INVENTORY", "ScreenY"))
         End If
-        .Screen.Width = Val(Engine_Var_Get(S, "INVENTORY", "ScreenWidth"))
-        .Screen.Height = Val(Engine_Var_Get(S, "INVENTORY", "ScreenHeight"))
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "INVENTORY", "Grh"))
+        .Screen.Width = Val(Engine_Var_Get(s, "INVENTORY", "ScreenWidth"))
+        .Screen.Height = Val(Engine_Var_Get(s, "INVENTORY", "ScreenHeight"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "INVENTORY", "Grh"))
     End With
-    ImageOffsetX = Val(Engine_Var_Get(S, "INVENTORY", "ImageOffsetX"))
-    ImageOffsetY = Val(Engine_Var_Get(S, "INVENTORY", "ImageOffsetY"))
-    ImageSpaceX = Val(Engine_Var_Get(S, "INVENTORY", "ImageSpaceX"))
-    ImageSpaceY = Val(Engine_Var_Get(S, "INVENTORY", "ImageSpaceY"))
+    ImageOffsetX = Val(Engine_Var_Get(s, "INVENTORY", "ImageOffsetX"))
+    ImageOffsetY = Val(Engine_Var_Get(s, "INVENTORY", "ImageOffsetY"))
+    ImageSpaceX = Val(Engine_Var_Get(s, "INVENTORY", "ImageSpaceX"))
+    ImageSpaceY = Val(Engine_Var_Get(s, "INVENTORY", "ImageSpaceY"))
     For LoopC = 1 To 49
         With GameWindow.Inventory.Image(LoopC)
             .X = ImageOffsetX + ((ImageSpaceX + 32) * (((LoopC - 1) Mod 7)))
@@ -2296,10 +2314,10 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "SHOP", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "SHOP", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "SHOP", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "SHOP", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "SHOP", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "SHOP", "ScreenY"))
         End If
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "SHOP", "Grh"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "SHOP", "Grh"))
     End With
     
     'Load bank window
@@ -2309,10 +2327,10 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .Screen.X = Val(Engine_Var_Get(t, "BANK", "ScreenX"))
             .Screen.Y = Val(Engine_Var_Get(t, "BANK", "ScreenY"))
         Else
-            .Screen.X = Val(Engine_Var_Get(S, "BANK", "ScreenX"))
-            .Screen.Y = Val(Engine_Var_Get(S, "BANK", "ScreenY"))
+            .Screen.X = Val(Engine_Var_Get(s, "BANK", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(s, "BANK", "ScreenY"))
         End If
-        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "BANK", "Grh"))
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(s, "BANK", "Grh"))
     End With
 
     'Load Mailbox window
@@ -2321,36 +2339,36 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .X = Val(Engine_Var_Get(t, "MAILBOX", "ScreenX"))
             .Y = Val(Engine_Var_Get(t, "MAILBOX", "ScreenY"))
         Else
-            .X = Val(Engine_Var_Get(S, "MAILBOX", "ScreenX"))
-            .Y = Val(Engine_Var_Get(S, "MAILBOX", "ScreenY"))
+            .X = Val(Engine_Var_Get(s, "MAILBOX", "ScreenX"))
+            .Y = Val(Engine_Var_Get(s, "MAILBOX", "ScreenY"))
         End If
-        .Width = Val(Engine_Var_Get(S, "MAILBOX", "ScreenWidth"))
-        .Height = Val(Engine_Var_Get(S, "MAILBOX", "ScreenHeight"))
+        .Width = Val(Engine_Var_Get(s, "MAILBOX", "ScreenWidth"))
+        .Height = Val(Engine_Var_Get(s, "MAILBOX", "ScreenHeight"))
     End With
-    Engine_Init_Grh GameWindow.Mailbox.SkinGrh, Val(Engine_Var_Get(S, "MAILBOX", "Grh"))
+    Engine_Init_Grh GameWindow.Mailbox.SkinGrh, Val(Engine_Var_Get(s, "MAILBOX", "Grh"))
     With GameWindow.Mailbox.WriteLbl
-        .X = Val(Engine_Var_Get(S, "MAILBOX", "WriteMessageX"))
-        .Y = Val(Engine_Var_Get(S, "MAILBOX", "WriteMessageY"))
-        .Width = Val(Engine_Var_Get(S, "MAILBOX", "WriteMessageWidth"))
-        .Height = Val(Engine_Var_Get(S, "MAILBOX", "WriteMessageHeight"))
+        .X = Val(Engine_Var_Get(s, "MAILBOX", "WriteMessageX"))
+        .Y = Val(Engine_Var_Get(s, "MAILBOX", "WriteMessageY"))
+        .Width = Val(Engine_Var_Get(s, "MAILBOX", "WriteMessageWidth"))
+        .Height = Val(Engine_Var_Get(s, "MAILBOX", "WriteMessageHeight"))
     End With
     With GameWindow.Mailbox.DeleteLbl
-        .X = Val(Engine_Var_Get(S, "MAILBOX", "DeleteMessageX"))
-        .Y = Val(Engine_Var_Get(S, "MAILBOX", "DeleteMessageY"))
-        .Width = Val(Engine_Var_Get(S, "MAILBOX", "DeleteMessageWidth"))
-        .Height = Val(Engine_Var_Get(S, "MAILBOX", "DeleteMessageHeight"))
+        .X = Val(Engine_Var_Get(s, "MAILBOX", "DeleteMessageX"))
+        .Y = Val(Engine_Var_Get(s, "MAILBOX", "DeleteMessageY"))
+        .Width = Val(Engine_Var_Get(s, "MAILBOX", "DeleteMessageWidth"))
+        .Height = Val(Engine_Var_Get(s, "MAILBOX", "DeleteMessageHeight"))
     End With
     With GameWindow.Mailbox.ReadLbl
-        .X = Val(Engine_Var_Get(S, "MAILBOX", "ReadMessageX"))
-        .Y = Val(Engine_Var_Get(S, "MAILBOX", "ReadMessageY"))
-        .Width = Val(Engine_Var_Get(S, "MAILBOX", "ReadMessageWidth"))
-        .Height = Val(Engine_Var_Get(S, "MAILBOX", "ReadMessageHeight"))
+        .X = Val(Engine_Var_Get(s, "MAILBOX", "ReadMessageX"))
+        .Y = Val(Engine_Var_Get(s, "MAILBOX", "ReadMessageY"))
+        .Width = Val(Engine_Var_Get(s, "MAILBOX", "ReadMessageWidth"))
+        .Height = Val(Engine_Var_Get(s, "MAILBOX", "ReadMessageHeight"))
     End With
     With GameWindow.Mailbox.List
-        .X = Val(Engine_Var_Get(S, "MAILBOX", "ListX"))
-        .Y = Val(Engine_Var_Get(S, "MAILBOX", "ListY"))
-        .Width = Val(Engine_Var_Get(S, "MAILBOX", "ListWidth"))
-        .Height = Val(Engine_Var_Get(S, "MAILBOX", "ListHeight"))
+        .X = Val(Engine_Var_Get(s, "MAILBOX", "ListX"))
+        .Y = Val(Engine_Var_Get(s, "MAILBOX", "ListY"))
+        .Width = Val(Engine_Var_Get(s, "MAILBOX", "ListWidth"))
+        .Height = Val(Engine_Var_Get(s, "MAILBOX", "ListHeight"))
     End With
 
     'Load View Message window
@@ -2359,34 +2377,34 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .X = Val(Engine_Var_Get(t, "VIEWMESSAGE", "ScreenX"))
             .Y = Val(Engine_Var_Get(t, "VIEWMESSAGE", "ScreenY"))
         Else
-            .X = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ScreenX"))
-            .Y = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ScreenY"))
+            .X = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ScreenX"))
+            .Y = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ScreenY"))
         End If
-        .Width = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ScreenWidth"))
-        .Height = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ScreenHeight"))
+        .Width = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ScreenWidth"))
+        .Height = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ScreenHeight"))
     End With
-    Engine_Init_Grh GameWindow.ViewMessage.SkinGrh, Val(Engine_Var_Get(S, "VIEWMESSAGE", "Grh"))
+    Engine_Init_Grh GameWindow.ViewMessage.SkinGrh, Val(Engine_Var_Get(s, "VIEWMESSAGE", "Grh"))
     With GameWindow.ViewMessage.From
-        .X = Val(Engine_Var_Get(S, "VIEWMESSAGE", "FromX"))
-        .Y = Val(Engine_Var_Get(S, "VIEWMESSAGE", "FromY"))
-        .Width = Val(Engine_Var_Get(S, "VIEWMESSAGE", "FromWidth"))
-        .Height = Val(Engine_Var_Get(S, "VIEWMESSAGE", "FromHeight"))
+        .X = Val(Engine_Var_Get(s, "VIEWMESSAGE", "FromX"))
+        .Y = Val(Engine_Var_Get(s, "VIEWMESSAGE", "FromY"))
+        .Width = Val(Engine_Var_Get(s, "VIEWMESSAGE", "FromWidth"))
+        .Height = Val(Engine_Var_Get(s, "VIEWMESSAGE", "FromHeight"))
     End With
     With GameWindow.ViewMessage.Subject
-        .X = Val(Engine_Var_Get(S, "VIEWMESSAGE", "SubjectX"))
-        .Y = Val(Engine_Var_Get(S, "VIEWMESSAGE", "SubjectY"))
-        .Width = Val(Engine_Var_Get(S, "VIEWMESSAGE", "SubjectWidth"))
-        .Height = Val(Engine_Var_Get(S, "VIEWMESSAGE", "SubjectHeight"))
+        .X = Val(Engine_Var_Get(s, "VIEWMESSAGE", "SubjectX"))
+        .Y = Val(Engine_Var_Get(s, "VIEWMESSAGE", "SubjectY"))
+        .Width = Val(Engine_Var_Get(s, "VIEWMESSAGE", "SubjectWidth"))
+        .Height = Val(Engine_Var_Get(s, "VIEWMESSAGE", "SubjectHeight"))
     End With
     With GameWindow.ViewMessage.Message
-        .X = Val(Engine_Var_Get(S, "VIEWMESSAGE", "MessageX"))
-        .Y = Val(Engine_Var_Get(S, "VIEWMESSAGE", "MessageY"))
-        .Width = Val(Engine_Var_Get(S, "VIEWMESSAGE", "MessageWidth"))
-        .Height = Val(Engine_Var_Get(S, "VIEWMESSAGE", "MessageHeight"))
+        .X = Val(Engine_Var_Get(s, "VIEWMESSAGE", "MessageX"))
+        .Y = Val(Engine_Var_Get(s, "VIEWMESSAGE", "MessageY"))
+        .Width = Val(Engine_Var_Get(s, "VIEWMESSAGE", "MessageWidth"))
+        .Height = Val(Engine_Var_Get(s, "VIEWMESSAGE", "MessageHeight"))
     End With
-    ImageOffsetX = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ImageOffsetX"))
-    ImageOffsetY = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ImageOffsetY"))
-    ImageSpaceX = Val(Engine_Var_Get(S, "VIEWMESSAGE", "ImageSpaceX"))
+    ImageOffsetX = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ImageOffsetX"))
+    ImageOffsetY = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ImageOffsetY"))
+    ImageSpaceX = Val(Engine_Var_Get(s, "VIEWMESSAGE", "ImageSpaceX"))
     For LoopC = 1 To MaxMailObjs
         With GameWindow.ViewMessage.Image(LoopC)
             .X = ImageOffsetX + ((LoopC - 1) * (ImageSpaceX + 32))
@@ -2403,11 +2421,11 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .X = Val(Engine_Var_Get(t, "WRITEMESSAGE", "ScreenX"))
             .Y = Val(Engine_Var_Get(t, "WRITEMESSAGE", "ScreenY"))
         Else
-            .X = Val(Engine_Var_Get(S, "WRITEMESSAGE", "ScreenX"))
-            .Y = Val(Engine_Var_Get(S, "WRITEMESSAGE", "ScreenY"))
+            .X = Val(Engine_Var_Get(s, "WRITEMESSAGE", "ScreenX"))
+            .Y = Val(Engine_Var_Get(s, "WRITEMESSAGE", "ScreenY"))
         End If
     End With
-    Engine_Init_Grh GameWindow.ViewMessage.SkinGrh, Val(Engine_Var_Get(S, "WRITEMESSAGE", "Grh"))
+    Engine_Init_Grh GameWindow.ViewMessage.SkinGrh, Val(Engine_Var_Get(s, "WRITEMESSAGE", "Grh"))
 
     'Load Amount window
     With GameWindow.Amount.Screen
@@ -2415,18 +2433,18 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .X = Val(Engine_Var_Get(t, "AMOUNT", "ScreenX"))
             .Y = Val(Engine_Var_Get(t, "AMOUNT", "ScreenY"))
         Else
-            .X = Val(Engine_Var_Get(S, "AMOUNT", "ScreenX"))
-            .Y = Val(Engine_Var_Get(S, "AMOUNT", "ScreenY"))
+            .X = Val(Engine_Var_Get(s, "AMOUNT", "ScreenX"))
+            .Y = Val(Engine_Var_Get(s, "AMOUNT", "ScreenY"))
         End If
-        .Width = Val(Engine_Var_Get(S, "AMOUNT", "ScreenWidth"))
-        .Height = Val(Engine_Var_Get(S, "AMOUNT", "ScreenHeight"))
+        .Width = Val(Engine_Var_Get(s, "AMOUNT", "ScreenWidth"))
+        .Height = Val(Engine_Var_Get(s, "AMOUNT", "ScreenHeight"))
     End With
-    Engine_Init_Grh GameWindow.Amount.SkinGrh, Val(Engine_Var_Get(S, "AMOUNT", "Grh"))
+    Engine_Init_Grh GameWindow.Amount.SkinGrh, Val(Engine_Var_Get(s, "AMOUNT", "Grh"))
     With GameWindow.Amount.Value
-        .X = Val(Engine_Var_Get(S, "AMOUNT", "ValueX"))
-        .Y = Val(Engine_Var_Get(S, "AMOUNT", "ValueY"))
-        .Width = Val(Engine_Var_Get(S, "AMOUNT", "ValueWidth"))
-        .Height = Val(Engine_Var_Get(S, "AMOUNT", "ValueHeight"))
+        .X = Val(Engine_Var_Get(s, "AMOUNT", "ValueX"))
+        .Y = Val(Engine_Var_Get(s, "AMOUNT", "ValueY"))
+        .Width = Val(Engine_Var_Get(s, "AMOUNT", "ValueWidth"))
+        .Height = Val(Engine_Var_Get(s, "AMOUNT", "ValueHeight"))
     End With
 
     'Load Menu Window
@@ -2435,18 +2453,18 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
             .X = Val(Engine_Var_Get(t, "MENU", "ScreenX"))
             .Y = Val(Engine_Var_Get(t, "MENU", "ScreenY"))
         Else
-            .X = Val(Engine_Var_Get(S, "MENU", "ScreenX"))
-            .Y = Val(Engine_Var_Get(S, "MENU", "ScreenY"))
+            .X = Val(Engine_Var_Get(s, "MENU", "ScreenX"))
+            .Y = Val(Engine_Var_Get(s, "MENU", "ScreenY"))
         End If
-        .Width = Val(Engine_Var_Get(S, "MENU", "ScreenWidth"))
-        .Height = Val(Engine_Var_Get(S, "MENU", "ScreenHeight"))
+        .Width = Val(Engine_Var_Get(s, "MENU", "ScreenWidth"))
+        .Height = Val(Engine_Var_Get(s, "MENU", "ScreenHeight"))
     End With
-    Engine_Init_Grh GameWindow.Menu.SkinGrh, Val(Engine_Var_Get(S, "MENU", "Grh"))
+    Engine_Init_Grh GameWindow.Menu.SkinGrh, Val(Engine_Var_Get(s, "MENU", "Grh"))
     With GameWindow.Menu.QuitLbl
-        .X = Val(Engine_Var_Get(S, "MENU", "QuitX"))
-        .Y = Val(Engine_Var_Get(S, "MENU", "QuitY"))
-        .Width = Val(Engine_Var_Get(S, "MENU", "QuitWidth"))
-        .Height = Val(Engine_Var_Get(S, "MENU", "QuitHeight"))
+        .X = Val(Engine_Var_Get(s, "MENU", "QuitX"))
+        .Y = Val(Engine_Var_Get(s, "MENU", "QuitY"))
+        .Width = Val(Engine_Var_Get(s, "MENU", "QuitWidth"))
+        .Height = Val(Engine_Var_Get(s, "MENU", "QuitHeight"))
     End With
     
     'Reset text position
@@ -2503,6 +2521,242 @@ Dim i As Integer
 
 End Sub
 
+Public Sub Engine_Init_NPCChat(ByVal Language As String)
+
+'*****************************************************************
+'Loads the NPC messages according to the language
+'*****************************************************************
+Dim Conditions() As NPCChatLineCondition
+Dim NumConditions As Byte   'The number of conditions
+Dim ConditionFlags As Long  'States what conditions are currently used (so we don't have to loop through the Conditions() array)
+Dim ChatLine As Byte    'The chat line for the current index
+Dim ErrTxt As String    'If there is an error, this extra text is added
+Dim ChatIndex As Byte   'Index of the chat line
+Dim HighIndex As Long   'Highest index retrieved
+Dim Index As Long       'Current index
+Dim FileNum As Byte
+Dim ln As String        'Used to grab our lines
+Dim Style As Byte       'Style used for the current index
+Dim TempSplit() As String
+Dim i As Long
+
+    On Error GoTo ErrOut
+
+    'Make sure the file exists
+    If Not Engine_FileExist(DataPath & "NPC Chat\" & LCase$(Language) & ".ini", vbNormal) Then
+        
+        'Error! Change to English before we die!
+        Language = "english"
+    
+    End If
+    
+    'Open the file
+    FileNum = FreeFile
+    Open DataPath & "NPC Chat\" & LCase$(Language) & ".ini" For Input Access Read As FileNum
+        
+        'Loop until we reach the BEGINFILE line, stating the data is going to start coming in
+        Do
+            Line Input #FileNum, ln
+        Loop While UCase$(ln) <> "BEGINFILE"
+        
+        'Loop through the data
+        Do
+        
+            'Get the line
+            Line Input #FileNum, ln
+            ln = Trim$(ln)
+            
+            'Look for empty lines
+            If LenB(ln) = 0 Then GoTo NextLine
+            
+            '*** Look for a new index ***
+            If Left$(ln, 1) = "[" Then
+                
+                'Grab the index
+                Index = Mid$(ln, 2, Len(ln) - 2)
+                
+                'Clear the variables from the last line
+                Style = 0
+                ChatLine = 0
+                Erase Conditions
+                NumConditions = 0
+                ConditionFlags = 0
+
+                'Resize the chat array according to the index if needed
+                If Index > HighIndex Then
+                    ReDim Preserve NPCChat(1 To Index)
+                    HighIndex = Index
+                End If
+                
+                'Grab the format - this little loop will help us ignore blank lines
+                Do
+                    Line Input #FileNum, ln
+                Loop While LenB(Trim$(ln)) = 0
+                
+                'Format text not found!
+                If UCase$(Left$(ln, 6)) <> "FORMAT" Then
+                    ErrTxt = "FORMAT not found immediately after index ([x]) tag!"
+                    GoTo ErrOut
+                End If
+                
+                'Figure out what format it is
+                ln = Trim$(ln)
+                Select Case UCase$(Right$(ln, Len(ln) - 7))
+                    Case "RANDOM"
+                        NPCChat(Index).Format = NPCCHAT_FORMAT_RANDOM
+                    Case "LINEAR"
+                        NPCChat(Index).Format = NPCCHAT_FORMAT_LINEAR
+                    Case Else
+                        ErrTxt = "Unknown format " & UCase$(Right$(ln, Len(ln) - 7)) & " retrieved!"
+                        GoTo ErrOut
+                End Select
+                GoTo NextLine
+                
+            End If
+            
+            '*** Look for a new style ***
+            If UCase$(Left$(ln, 6)) = "STYLE " Then
+            
+                'Figure out what style it is
+                ln = Trim$(ln)
+                Select Case UCase$(Right$(ln, Len(ln) - 6))
+                    Case "BUBBLE"
+                        Style = NPCCHAT_STYLE_BUBBLE
+                    Case "BOX"
+                        Style = NPCCHAT_STYLE_BOX
+                    Case "BOTH"
+                        Style = NPCCHAT_STYLE_BOTH
+                    Case Else
+                        ErrTxt = "Unknown style " & UCase$(Right$(ln, Len(ln) - 6)) & " retrieved!"
+                        GoTo ErrOut
+                End Select
+                
+            End If
+            
+            '*** Look for a new condition ***
+            If Left$(ln, 1) = "!" Then
+                
+                'Figure out what condition it is
+                ln = Trim$(ln)  'Trim off spaces
+                TempSplit = Split(UCase$(Right$(ln, Len(ln) - 1)), " ") 'Remove the ! and turn to uppercase
+                Select Case TempSplit(0)
+                    Case "CLEAR"
+                        Erase Conditions
+                        NumConditions = 0
+                        ConditionFlags = 0
+                    Case "LEVELLESSTHAN"
+                        If Not ConditionFlags And NPCCHAT_COND_LEVELLESSTHAN Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_LEVELLESSTHAN
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_LEVELLESSTHAN
+                        End If
+                    Case "LEVELMORETHAN"
+                        If Not ConditionFlags And NPCCHAT_COND_LEVELMORETHAN Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_LEVELMORETHAN
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_LEVELMORETHAN
+                        End If
+                    Case "HPLESSTHAN"
+                        If Not ConditionFlags And NPCCHAT_COND_HPLESSTHAN Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_HPLESSTHAN
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_HPLESSTHAN
+                        End If
+                    Case "HPMORETHAN"
+                        If Not ConditionFlags And NPCCHAT_COND_HPMORETHAN Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_HPMORETHAN
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_HPMORETHAN
+                        End If
+                    Case "KNOWSKILL"
+                        If Not ConditionFlags And NPCCHAT_COND_KNOWSKILL Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_KNOWSKILL
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_KNOWSKILL
+                        End If
+                    Case "DONTKNOWSKILL"
+                        If Not ConditionFlags And NPCCHAT_COND_DONTKNOWSKILL Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_DONTKNOWSKILL
+                            Conditions(NumConditions).Value = Val(TempSplit(1))
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_DONTKNOWSKILL
+                        End If
+                    Case "SAY"
+                        If Not ConditionFlags And NPCCHAT_COND_SAY Then
+                            NumConditions = NumConditions + 1
+                            ReDim Preserve Conditions(1 To NumConditions)
+                            Conditions(NumConditions).Condition = NPCCHAT_COND_SAY  'Notice we UCase$() the next line - this is so we can ignore the case
+                            Conditions(NumConditions).ValueStr = UCase$(Replace$(TempSplit(1), "_", " "))   'Replace underscores with spaces
+                            ConditionFlags = ConditionFlags Or NPCCHAT_COND_SAY
+                        End If
+                    Case Else
+                        ErrTxt = "Unknown condition " & TempSplit(0) & " retrieved!"
+                        GoTo ErrOut
+                End Select
+                
+            End If
+            
+            '*** Look for a chat line ***
+            If UCase$(Left$(ln, 4)) = "SAY " Then
+                
+                'Split up the information (0 = "SAY", 1 = Delay, 2 = Chat text)
+                TempSplit() = Split(ln, " ", 3)
+                
+                'Raise the lines count
+                ChatLine = ChatLine + 1
+                ReDim Preserve NPCChat(Index).ChatLine(1 To ChatLine)
+                NPCChat(Index).NumLines = ChatLine
+                
+                'Set the delay, style and text
+                NPCChat(Index).ChatLine(ChatLine).Delay = Val(TempSplit(1))
+                NPCChat(Index).ChatLine(ChatLine).Text = Trim$(TempSplit(2))
+                NPCChat(Index).ChatLine(ChatLine).Style = Style
+                
+                'Check for empty text lines
+                If UCase$(NPCChat(Index).ChatLine(ChatLine).Text) = "[EMPTY]" Then
+                    NPCChat(Index).ChatLine(ChatLine).Text = vbNullString
+                End If
+                
+                'Set the conditions
+                NPCChat(Index).ChatLine(ChatLine).NumConditions = NumConditions
+                If NumConditions > 0 Then
+                    ReDim NPCChat(Index).ChatLine(ChatLine).Conditions(1 To NumConditions)
+                    For i = 1 To NumConditions
+                        NPCChat(Index).ChatLine(ChatLine).Conditions(i) = Conditions(i)
+                    Next i
+                End If
+                
+            End If
+
+NextLine:
+        
+        Loop While Not EOF(FileNum)
+    
+    Close #FileNum
+    
+    Exit Sub
+    
+ErrOut:
+
+    MsgBox "Error in NPCChat routine! Stopped on line " & Loc(FileNum) & "!" & vbNewLine & _
+            "The remainder of the line text is: " & vbNewLine & ln & vbNewLine & vbNewLine & _
+            "The following message has been added:" & vbNewLine & ErrTxt, vbOKOnly Or vbCritical
+            
+    If FileNum > 0 Then Close #FileNum
+    
+End Sub
+
 Public Sub Engine_Init_Input()
 
 '*****************************************************************
@@ -2515,7 +2769,7 @@ Dim diProp As DIPROPLONG
     Set DI = DX.DirectInputCreate
     Set DIDevice = DI.CreateDevice("guid_SysMouse")
     Call DIDevice.SetCommonDataFormat(DIFORMAT_MOUSE)
-    Call DIDevice.SetCooperativeLevel(frmMain.hwnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
+    Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
     diProp.lHow = DIPH_DEVICE
     diProp.lObj = 0
     diProp.lData = BufferSize
@@ -2596,6 +2850,9 @@ Sub Engine_Init_Texture(ByVal TextureNum As Integer)
 Dim TexInfo As D3DXIMAGE_INFO_A
 Dim FilePath As String
 
+    'Check if we have the device
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
+
     'Make sure we try not to load a file while the engine is unloading
     If IsUnloading Then Exit Sub
 
@@ -2627,6 +2884,9 @@ Sub Engine_Init_FontTextures()
 'Init the custom font textures
 '*****************************************************************
 Dim FileNum As Byte
+
+    'Check if we have the device
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
     '*** Default font ***
     Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
@@ -3788,7 +4048,7 @@ Dim i As Integer
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             'An item in the quickbar was clicked - get description
                             If QuickBarID(i).Type = QuickBarType_Item Then
-                                Engine_SetItemDesc UserInventory(QuickBarID(i).ID).Name, UserInventory(QuickBarID(i).ID).Amount
+                                Engine_SetItemDesc UserInventory(QuickBarID(i).ID).name, UserInventory(QuickBarID(i).ID).Amount
                                 'A skill in the quickbar was clicked - get the name
                             ElseIf QuickBarID(i).Type = QuickBarType_Skill Then
                                 Engine_SetItemDesc Engine_SkillIDtoSkillName(QuickBarID(i).ID)
@@ -3813,7 +4073,7 @@ Dim i As Integer
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If UserInventory(i).GrhIndex > 0 Then
-                                Engine_SetItemDesc UserInventory(i).Name, UserInventory(i).Amount
+                                Engine_SetItemDesc UserInventory(i).name, UserInventory(i).Amount
                                 DragSourceWindow = InventoryWindow
                                 DragItemSlot = i
                             End If
@@ -3838,7 +4098,7 @@ Dim i As Integer
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If i <= NPCTradeItemArraySize Then
                                 If NPCTradeItems(i).GrhIndex > 0 Then
-                                    Engine_SetItemDesc NPCTradeItems(i).Name, 0, NPCTradeItems(i).Price
+                                    Engine_SetItemDesc NPCTradeItems(i).name, 0, NPCTradeItems(i).Price
                                     DragSourceWindow = ShopWindow
                                     DragItemSlot = i
                                 End If
@@ -3862,7 +4122,7 @@ Dim i As Integer
                     'Check if an item was clicked
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            If UserBank(i).GrhIndex > 0 Then Engine_SetItemDesc UserBank(i).Name, UserBank(i).Amount
+                            If UserBank(i).GrhIndex > 0 Then Engine_SetItemDesc UserBank(i).name, UserBank(i).Amount
                             DragSourceWindow = BankWindow
                             DragItemSlot = i
                             Exit Function
@@ -3904,7 +4164,7 @@ Dim i As Integer
                     'Click an item
                     For i = 1 To MaxMailObjs
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
-                            Engine_SetItemDesc UserInventory(WriteMailData.ObjIndex(i)).Name, WriteMailData.ObjAmount(i)
+                            Engine_SetItemDesc UserInventory(WriteMailData.ObjIndex(i)).name, WriteMailData.ObjAmount(i)
                             Exit Function
                         End If
                     Next i
@@ -4306,6 +4566,10 @@ Dim aY As Integer
         Else
             sndBuf.Put_Byte Direction
         End If
+        
+        'Put the position
+        sndBuf.Put_Byte UserPos.X
+        sndBuf.Put_Byte UserPos.Y
 
         'Move the screen and character
         Engine_Char_Move_ByHead UserCharIndex, Direction, Running
@@ -4816,7 +5080,7 @@ Dim WingsGrh As Grh
     '***** Render Extras *****
 
     'Draw name over head
-    Engine_Render_Text CharList(CharIndex).Name, PixelOffsetX + 16 - CharList(CharIndex).NameOffset, PixelOffsetY - 40, RenderColor(1)
+    Engine_Render_Text CharList(CharIndex).name, PixelOffsetX + 16 - CharList(CharIndex).NameOffset, PixelOffsetY - 40, RenderColor(1)
 
     'Count the number of icons that will be needed to draw
     With CharList(CharIndex).CharStatus
@@ -4909,6 +5173,9 @@ Private Sub Engine_Render_ChatTextBuffer(X As Integer, Y As Integer)
 
 Dim LoopC As Integer
 Dim Chunk As Integer
+
+    'Check if we have the device
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
     If ChatBufferChunk = 0 Then ChatBufferChunk = 1
     Chunk = 12
@@ -5842,12 +6109,7 @@ Dim Angle As Single
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then
 
         'Do a loop while device is lost
-        Do While D3DDevice.TestCooperativeLevel = D3DERR_DEVICELOST
-
-            'Let windows do its stuff
-            DoEvents
-
-        Loop
+        If D3DDevice.TestCooperativeLevel = D3DERR_DEVICELOST Then Exit Sub
 
         'Reset the device
         D3DDevice.Reset D3DWindow
@@ -5997,7 +6259,13 @@ Dim Angle As Single
                 If Y <= 632 Then
                     If X >= -32 Then
                         If X <= 832 Then
+                        
+                            'Update the NPC chat
+                            Engine_NPCChat_Update ChrID(j)
+                        
+                            'Draw the character
                             Engine_Render_Char ChrID(j), X, Y
+                            
                         End If
                     End If
                 End If
@@ -6192,11 +6460,19 @@ Dim Angle As Single
     For j = 1 To LastChar
         If CharList(j).Active Then
             If LenB(CharList(j).BubbleStr) Then
-                Engine_Render_ChatBubble CharList(j).BubbleStr, CharList(j).RealPos.X, CharList(j).RealPos.Y
-                CharList(j).BubbleTime = CharList(j).BubbleTime - ElapsedTime
-                If CharList(j).BubbleTime <= 0 Then
-                    CharList(j).BubbleTime = 0
-                    CharList(j).BubbleStr = ""
+                If CharList(j).RealPos.X > -25 Then
+                    If CharList(j).RealPos.X < 825 Then
+                        If CharList(j).RealPos.Y > -25 Then
+                            If CharList(j).RealPos.Y < 625 Then
+                                Engine_Render_ChatBubble CharList(j).BubbleStr, CharList(j).RealPos.X, CharList(j).RealPos.Y
+                                CharList(j).BubbleTime = CharList(j).BubbleTime - ElapsedTime
+                                If CharList(j).BubbleTime <= 0 Then
+                                    CharList(j).BubbleTime = 0
+                                    CharList(j).BubbleStr = ""
+                                End If
+                            End If
+                        End If
+                    End If
                 End If
             End If
         End If
@@ -6261,6 +6537,303 @@ Dim Angle As Single
     Engine_Render_Text "FPS: " & FPS & vbCrLf & "Ping: " & Ping, 730, 2, -1
     
 End Sub
+
+Private Function Engine_NPCChat_MeetsConditions(ByVal NPCIndex As Integer, ByVal LineIndex As Byte, Optional ByVal SayLine As String = "") As Byte
+
+'***************************************************
+'Checks if the conditions have been satisfied for a chat line
+'***************************************************
+Dim s() As String
+Dim j As Byte
+Dim i As Byte
+
+    'Make sure we have a valid line and index
+    If LineIndex = 0 Then Exit Function
+    If CharList(NPCIndex).NPCChatIndex = 0 Then Exit Function
+    If CharList(NPCIndex).NPCChatIndex > UBound(NPCChat()) Then Exit Function
+    If LineIndex > UBound(NPCChat(CharList(NPCIndex).NPCChatIndex).ChatLine()) Then Exit Function
+
+    'Woo baby, we're not going to want to type THIS line more then once!
+    With NPCChat(CharList(NPCIndex).NPCChatIndex).ChatLine(LineIndex)
+        
+        'If the SayLine is used, it must be the user just talked - so we ONLY want a trigger line!
+        If LenB(SayLine) Then   'If the string is not empty
+            SayLine = UCase$(SayLine)   'We compair it in UCase$(), since case doesn't matter
+            If .NumConditions = 0 Then Exit Function        'If there are no conditions, then theres definintely no SAY condition
+            For i = 1 To .NumConditions
+                If .Conditions(i).Condition = NPCCHAT_COND_SAY Then Exit For    'Good, we have a SAY condition! We can continue...
+                If i = .NumConditions Then Exit Function    'Last condition checked, and it wasn't a SAY, so no SAYs found - goodbye :(
+            Next i
+        End If
+        
+        'Loop through all the conditions
+        For i = 1 To .NumConditions
+        
+            'Check what condition it is - keep in mind we exit on a "False" situation, so are checks
+            ' are written to check if the condition is false, not true (a little more confusing, but effecient)
+            Select Case .Conditions(i).Condition
+                
+                'If there is a SAY requirement, things get tricky...
+                Case NPCCHAT_COND_SAY
+                    If SayLine = "" Then Exit Function  'No chance it can be right if theres no text!
+                    s() = Split(.Conditions(i).ValueStr, ",")   'Split up our commas (which allow us to have multiple valid words)
+                    For j = 0 To UBound(s)  'Loop through each word so we can check if it is in the SayLine
+                        If InStr(1, SayLine, s(j)) Then 'Check if the trigger word is in the SayLine
+                            Exit For    'Match made! We're good to go - get the hell outta here!
+                        End If
+                        If j = UBound(s) Then Exit Function 'Oh bummer, the last trigger word was checked and was a no-go, we loose!
+                    Next j
+                    
+                'User doesn't know skill X
+                Case NPCCHAT_COND_DONTKNOWSKILL
+                    If Not (UserKnowSkill(.Conditions(i).Value) = 0) Then Exit Function
+                    
+                'User knows skill X
+                Case NPCCHAT_COND_KNOWSKILL
+                    If Not (UserKnowSkill(.Conditions(i).Value) = 1) Then Exit Function
+                
+                'NPC's HP is less then or equal to X percent
+                Case NPCCHAT_COND_HPLESSTHAN
+                    If Not (CharList(UserCharIndex).HealthPercent <= .Conditions(i).Value) Then Exit Function
+                    
+                'NPC's HP is greater then or equal to X percent
+                Case NPCCHAT_COND_HPMORETHAN
+                    If Not (CharList(UserCharIndex).HealthPercent >= .Conditions(i).Value) Then Exit Function
+
+                'User's level is less than or equal to X
+                Case NPCCHAT_COND_LEVELLESSTHAN
+                    If Not (BaseStats(SID.ELV) <= .Conditions(i).Value) Then Exit Function
+                    
+                'User level is greater than or equal to X
+                Case NPCCHAT_COND_LEVELMORETHAN
+                    If Not (BaseStats(SID.ELV) >= .Conditions(i).Value) Then Exit Function
+            
+            End Select
+            
+        Next i
+        
+    End With
+    
+    'We made it, horray!
+    Engine_NPCChat_MeetsConditions = 1
+    
+End Function
+
+Public Sub Engine_NPCChat_CheckForChatTriggers(ByVal ChatTxt As String)
+
+'***************************************************
+'Checks for a NPC chat triggers
+'***************************************************
+Dim i As Integer
+Dim j As Byte
+
+    For i = 1 To LastChar
+        
+        'We're going to be using this object a hell of a lot...
+        With CharList(i)
+            
+            'We only want an active char
+            If .Active Then
+            
+                'Make sure the NPC has automated chat
+                If .NPCChatIndex > 0 Then
+    
+                    'Check for a valid distance
+                    If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - 350, .RealPos.Y - 250, 351, 251) Then
+                    
+                        'Get the next line to use
+                        j = Engine_NPCChat_NextLine(i, ChatTxt)
+                        
+                        'If j = 0, then no valid lines were found
+                        If j > 0 Then
+                        
+                            'Assign the new line
+                            .NPCChatLine = j
+                            
+                            'Say the chat (delay assigned through the routine)
+                            Engine_NPCChat_AddText i
+                            
+                        End If
+                    
+                    End If
+                    
+                End If
+                    
+            End If
+            
+        End With
+    
+    Next i
+                    
+
+End Sub
+
+Private Sub Engine_NPCChat_Update(ByVal CharIndex As Integer)
+
+'***************************************************
+'Updates the automated NPC chatting
+'***************************************************
+Dim i As Byte
+
+    'We're going to be using this object a hell of a lot...
+    With CharList(CharIndex)
+        
+        'Make sure the NPC has automated chat
+        If .NPCChatIndex > 0 Then
+            
+            'Check for a valid distance
+            If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - 350, .RealPos.Y - 250, 351, 251) Then
+            
+                'Update the delay time
+                If .NPCChatDelay > 0 Then
+                    .NPCChatDelay = .NPCChatDelay - ElapsedTime
+                    
+                'Time to get a new line!
+                Else
+                    
+                    'Get the new NPCChat line
+                    i = Engine_NPCChat_NextLine(CharIndex)
+                    If i = 0 Then Exit Sub
+                    .NPCChatLine = i
+                    
+                    'Add the chat
+                    Engine_NPCChat_AddText CharIndex
+
+                End If
+            End If
+        End If
+        
+    End With
+
+End Sub
+
+Private Sub Engine_NPCChat_AddText(ByVal CharIndex As Integer)
+
+'***************************************************
+'Adds the NPCChat text according to the style
+'***************************************************
+    
+    With CharList(CharIndex)
+
+        'Check for text before adding it
+        If LenB(NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text) Then
+    
+            'Find out the style used, and add the chat according to the style
+            Select Case NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Style
+                Case NPCCHAT_STYLE_BUBBLE
+                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
+                Case NPCCHAT_STYLE_BOX
+                    Engine_AddToChatTextBuffer .name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
+                Case NPCCHAT_STYLE_BOTH
+                    Engine_MakeChatBubble CharIndex, Engine_WordWrap(.name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, BubbleMaxWidth)
+                    Engine_AddToChatTextBuffer .name & ": " & NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Text, FontColor_Talk
+            End Select
+            
+        End If
+            
+        'Add the chat delay (we do the delay even if theres no text)
+        .NPCChatDelay = NPCChat(.NPCChatIndex).ChatLine(.NPCChatLine).Delay
+        
+    End With
+
+End Sub
+
+Private Function Engine_NPCChat_NextLine(ByVal CharIndex As Integer, Optional ByVal ChatTxt As String = "")
+
+'***************************************************
+'Gets the next free line to use for the NPC chat (0 if none found)
+'***************************************************
+Dim b() As Byte
+Dim k As Byte
+Dim j As Byte
+Dim i As Byte
+
+    With CharList(CharIndex)
+    
+        'Select the new line to start from according to the format
+        Select Case NPCChat(.NPCChatIndex).Format
+        
+            'Linear selection
+            Case NPCCHAT_FORMAT_LINEAR
+            
+                'Start with the next line
+                i = .NPCChatLine + 1
+                If i > NPCChat(.NPCChatIndex).NumLines Then i = 1
+                
+                'Loop through all the lines, checking for the next line with a valid condition
+                For j = 1 To NPCChat(.NPCChatIndex).NumLines
+                    
+                    'Get the new line number to check - roll over to the start if needed
+                    k = i + j
+                    If k > NPCChat(.NPCChatIndex).NumLines Then k = k - NPCChat(.NPCChatIndex).NumLines
+                    
+                    'Check if the conditions were met
+                    If Engine_NPCChat_MeetsConditions(CharIndex, k, ChatTxt) = 1 Then Exit For
+                    
+                    'If j is on the last index, then no conditions were met - put on a delay and leave
+                    If j = NPCChat(.NPCChatIndex).NumLines Then
+                        .NPCChatDelay = 1500    'This delay lets a load off the client
+                        Exit Function
+                    End If
+                    
+                Next j
+                
+            'Random selection
+            Case NPCCHAT_FORMAT_RANDOM
+            
+                'Scramble the numbers so we can pick randomly
+                ReDim b(1 To NPCChat(.NPCChatIndex).NumLines)       'Room for all the lines
+                For i = 1 To NPCChat(.NPCChatIndex).NumLines        'Loop through every line
+                    Do  'Keep looping until we get what we want
+                        j = Int(Rnd * NPCChat(.NPCChatIndex).NumLines) + 1  'We have to hold the value in a temp variable
+                        If b(j) = 0 Then    'If = 0, the index is free
+                            b(j) = i        'Store the index in the random array slot
+                            Exit Do         'Leave the DO loop since we have what we want
+                        End If
+                    Loop
+                Next i
+
+                'Now b() holds all the line numbers scrambled up, so we can go through one by one just like with linear
+                For j = 1 To NPCChat(.NPCChatIndex).NumLines - 1    '-1 because we are took out the index we already used
+                    
+                    'Make sure the number is valid (just in case)
+                    If b(j) <> 0 Then
+                        
+                        'Don't check the line we just used (yet)
+                        If .NPCChatLine <> b(j) Then
+                            
+                            'Check the conditions
+                            If Engine_NPCChat_MeetsConditions(CharIndex, b(j), ChatTxt) = 1 Then
+                                k = b(j)    'Store the successful value in the k variable for below
+                                Exit For
+                            End If
+                        
+                        End If
+                        
+                    End If
+                        
+                    'If j is on the last index, and no conditions were met, we try the line we last used
+                    If j = NPCChat(.NPCChatIndex).NumLines - 1 Then 'If the For loop is just about to end
+                        If b(j) > 0 Then    'If this is the NPC's first line, it'd be 0, so check to make sure its not 0 just in case
+                            If Engine_NPCChat_MeetsConditions(CharIndex, .NPCChatLine, ChatTxt) = 1 Then
+                                k = b(j)    'Store the successful value in the k variable for below
+                                Exit For    'We got the text!
+                            Else
+                                Exit Function   'None of the lines worked :(
+                            End If
+                        End If
+                    End If
+                
+                Next j
+  
+        End Select
+
+        'Return the value
+        Engine_NPCChat_NextLine = k
+        
+    End With
+
+End Function
 
 Public Function Engine_ClearPath(ByVal UserX As Long, ByVal UserY As Long, ByVal TargetX As Long, ByVal TargetY As Long) As Byte
 
@@ -6553,6 +7126,9 @@ Dim KeyPhrase As Byte
 Dim TempColor As Long
 Dim ResetColor As Byte  'Required to get the last character in there
 
+    'Check if we have the device
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
+
     'Check for valid text to render
     If LenB(Text) = 0 Then Exit Sub
 
@@ -6636,7 +7212,7 @@ Dim ResetColor As Byte  'Required to get the last character in there
 
 End Sub
 
-Public Sub Engine_SetItemDesc(ByVal Name As String, Optional ByVal Amount As Integer = 0, Optional ByVal Price As Long = 0)
+Public Sub Engine_SetItemDesc(ByVal name As String, Optional ByVal Amount As Integer = 0, Optional ByVal Price As Long = 0)
 
 '************************************************************
 'Set item description values
@@ -6647,7 +7223,7 @@ Dim X As Long
 
 'Set the item values
 
-    ItemDescLine(1) = Name
+    ItemDescLine(1) = name
     ItemDescLines = 1
     If Amount <> 0 Then
         ItemDescLines = ItemDescLines + 1
@@ -6770,7 +7346,7 @@ Public Sub Engine_SortIntArray(TheArray() As Integer, TheIndex() As Integer, ByV
 'Sort an array of integers
 '*****************************************************************
 
-Dim S(1 To 64) As Integer   'Stack space for pending Subarrays
+Dim s(1 To 64) As Integer   'Stack space for pending Subarrays
 Dim indxt As Long   'Stored index
 Dim swp As Integer  'Swap variable
 Dim F As Integer    'Subarray Minimum
@@ -6802,8 +7378,8 @@ Dim t As Integer    'Stack pointer
         If t = 0 Then Exit Do
 
         'Pop stack and begin new partitioning round
-        G = S(t)
-        F = S(t - 1)
+        G = s(t)
+        F = s(t - 1)
         t = t - 2
 
     Loop
@@ -6937,17 +7513,21 @@ Dim j As Long
                 Case "-": LastSpace = i
             End Select
 
-            'Add up the size
-            Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            'Add up the size - Do not count the "|" character (high-lighter)!
+            If Not Mid$(TempSplit(TSLoop), i, 1) = "|" Then
+                Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            End If
+            
+            'Check for too large of a size
             If Size > MaxLineLen Then
                 
                 'Check if the last space was too far back
-                If i - LastSpace > 5 Then
+                If i - LastSpace > 4 Then
                     
                     'Too far away to the last space, so break at the last character
                     Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
                     b = i - 1
-                
+
                 Else
                 
                     'Break at the last space to preserve the word
@@ -7020,7 +7600,6 @@ Public Function Engine_Music_Play(ByVal BufferNumber As Long) As Boolean
 '************************************************************
 'Plays the mp3 in the specified buffer
 '************************************************************
-
     On Error GoTo Error_Handler
     
     DirectShow_Control(BufferNumber).Run
@@ -7262,6 +7841,16 @@ Public Function Engine_GetBlinkTime() As Long
     
 End Function
 
+Public Function Engine_RectDistance(ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long, ByVal MaxXDist As Long, ByVal MaxYDist As Long) As Byte
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:35)  Decl: 562  Code: 4465  Total: 5027 Lines
-':) CommentOnly: 753 (15%)  Commented: 113 (2.2%)  Empty: 709 (14.1%)  Max Logic Depth: 12
+'*****************************************************************
+'Check if two tile points are in the same area
+'*****************************************************************
+
+    If Abs(x1 - x2) < MaxXDist + 1 Then
+        If Abs(Y1 - Y2) < MaxYDist + 1 Then
+            Engine_RectDistance = True
+        End If
+    End If
+
+End Function

@@ -4,27 +4,27 @@ Option Explicit
 'How much time between the server loops - this is to let some slack on the CPU as to not overwork it
 ' The server will stop sleeping if the elapsed time for the loop is > this value. It is suggested
 ' you don't change this value lower than 5 (unless you hate your server computer and want it to die).
-Private Const GameLoopTime As Currency = 15
+Private Const GameLoopTime As Long = 10
 
 'Adjust these values accordingly depending on how often you want routines to update
 'Low values = faster updating (smoother gameplay), but more CPU usage
-Private Const UpdateRate_UserStats As Currency = 400        'Updating user stats on the client
-Private Const UpdateRate_UserRecover As Currency = 3000     'Recovering the user's stats (HP, MP, etc)
-Private Const UpdateRate_UserCounters As Currency = 200     'Updating user counters (aggressive face, spells, exhaustion, etc)
-Private Const UpdateRate_UserSendBuffer As Currency = 50    'Check to send the user's buffer
-Private Const UpdateRate_NPCAI As Currency = 50             'Updating NPC AI
-Private Const UpdateRate_NPCCounters As Currency = 200      'Updating NPC counters
-Private Const UpdateRate_Maps As Currency = 30000           'Updating map ground objects / unloading maps from memory
-Private Const UpdateRate_Bandwidth As Currency = 1000       'Updating bandwidth in/out information
+Private Const UpdateRate_UserStats As Long = 400        'Updating user stats on the client
+Private Const UpdateRate_UserRecover As Long = 3000     'Recovering the user's stats (HP, MP, etc)
+Private Const UpdateRate_UserCounters As Long = 200     'Updating user counters (aggressive face, spells, exhaustion, etc)
+Private Const UpdateRate_UserSendBuffer As Long = 50    'Check to send the user's buffer
+Private Const UpdateRate_NPCAI As Long = 50             'Updating NPC AI
+Private Const UpdateRate_NPCCounters As Long = 200      'Updating NPC counters
+Private Const UpdateRate_Maps As Long = 30000           'Updating map ground objects / unloading maps from memory
+Private Const UpdateRate_Bandwidth As Long = 1000       'Updating bandwidth in/out information
 
-Private LastUpdate_UserStats As Currency
-Private LastUpdate_UserRecover As Currency
-Private LastUpdate_UserCounters As Currency
-Private LastUpdate_UserSendBuffer As Currency
-Private LastUpdate_NPCAI As Currency
-Private LastUpdate_NPCCounters As Currency
-Private LastUpdate_Maps As Currency
-Private LastUpdate_Bandwidth As Currency
+Private LastUpdate_UserStats As Long
+Private LastUpdate_UserRecover As Long
+Private LastUpdate_UserCounters As Long
+Private LastUpdate_UserSendBuffer As Long
+Private LastUpdate_NPCAI As Long
+Private LastUpdate_NPCCounters As Long
+Private LastUpdate_Maps As Long
+Private LastUpdate_Bandwidth As Long
 
 'To save excessive looping, flags are set to go with the next loop instead of a loop in their own
 Private UpdateUserStats As Byte     'If the user stats will update
@@ -42,10 +42,10 @@ Public Sub Server_Update()
 '*****************************************************************
 'Primary update unit - looks for routines to update
 '*****************************************************************
-Dim UpdateUsers As Byte 'We only update users if one of the user counters go off
-Dim UpdateNPCs As Byte  'Same as above, but with NPCs
-Dim LoopStartTime As Currency   'Time at the start of the loop (to find the elapsed time)
-Dim Elapsed As Currency         'Time elapsed through the loop
+Dim LoopStartTime As Long       'Time at the start of the update loop
+Dim UpdateUsers As Byte         'We only update users if one of the user counters go off
+Dim UpdateNPCs As Byte          'Same as above, but with NPCs
+Dim Elapsed As Long             'Time elapsed through the loop
     
     'Set the server as running
     ServerRunning = 1
@@ -59,44 +59,44 @@ Dim Elapsed As Currency         'Time elapsed through the loop
         '*** Check for updating flags ***
         
         'User stats (updating client-side view)
-        If LastUpdate_UserStats + UpdateRate_UserStats < CurrentTime Then
+        If LastUpdate_UserStats + UpdateRate_UserStats < LoopStartTime Then
             UpdateUserStats = 1
-            LastUpdate_UserStats = CurrentTime
+            LastUpdate_UserStats = LoopStartTime
             UpdateUsers = 1
         End If
         
         'User stat recovery (raising HP, MP, SP, etc)
-        If LastUpdate_UserRecover + UpdateRate_UserRecover < CurrentTime Then
+        If LastUpdate_UserRecover + UpdateRate_UserRecover < LoopStartTime Then
             RecoverUserStats = 1
-            LastUpdate_UserRecover = CurrentTime
+            LastUpdate_UserRecover = LoopStartTime
             UpdateUsers = 1
         End If
         
         'User counters (aggressive face, spells, spell exhaustion, etc)
-        If LastUpdate_UserCounters + UpdateRate_UserCounters < CurrentTime Then
+        If LastUpdate_UserCounters + UpdateRate_UserCounters < LoopStartTime Then
             UpdateUserCounters = 1
-            LastUpdate_UserCounters = CurrentTime
+            LastUpdate_UserCounters = LoopStartTime
             UpdateUsers = 1
         End If
         
         'Sending the packet buffer
-        If LastUpdate_UserSendBuffer + UpdateRate_UserSendBuffer < CurrentTime Then
+        If LastUpdate_UserSendBuffer + UpdateRate_UserSendBuffer < LoopStartTime Then
             SendUserBuffer = 1
-            LastUpdate_UserSendBuffer = CurrentTime
+            LastUpdate_UserSendBuffer = LoopStartTime
             UpdateUsers = 1
         End If
         
         'NPC AI
-        If LastUpdate_NPCAI + UpdateRate_NPCAI < CurrentTime Then
+        If LastUpdate_NPCAI + UpdateRate_NPCAI < LoopStartTime Then
             UpdateNPCAI = 1
-            LastUpdate_NPCAI = CurrentTime
+            LastUpdate_NPCAI = LoopStartTime
             UpdateNPCs = 1
         End If
         
         'NPC counters
-        If LastUpdate_NPCCounters + UpdateRate_NPCCounters < CurrentTime Then
+        If LastUpdate_NPCCounters + UpdateRate_NPCCounters < LoopStartTime Then
             UpdateNPCCounters = 1
-            LastUpdate_NPCCounters = CurrentTime
+            LastUpdate_NPCCounters = LoopStartTime
             UpdateNPCs = 1
         End If
         
@@ -109,15 +109,15 @@ Dim Elapsed As Currency         'Time elapsed through the loop
         If UpdateNPCs Then Server_Update_NPCs
         
         'Map updating
-        If LastUpdate_Maps + UpdateRate_Maps < CurrentTime Then
+        If LastUpdate_Maps + UpdateRate_Maps < LoopStartTime Then
             Server_Update_Maps
-            LastUpdate_Maps = CurrentTime
+            LastUpdate_Maps = LoopStartTime
         End If
         
         'Bandwidth report updating
         If CalcTraffic Then
-            If LastUpdate_Bandwidth + UpdateRate_Bandwidth < CurrentTime Then
-                LastUpdate_Bandwidth = CurrentTime
+            If LastUpdate_Bandwidth + UpdateRate_Bandwidth < LoopStartTime Then
+                LastUpdate_Bandwidth = LoopStartTime
                 Server_Update_Bandwidth
             End If
         End If
@@ -133,6 +133,17 @@ Dim Elapsed As Currency         'Time elapsed through the loop
             If Elapsed >= 0 Then    'Make sure nothing weird happens, causing for a huge sleep time
                 Sleep Int(GameLoopTime - Elapsed)
             End If
+        End If
+        
+        '*** Unload ***
+        'Note that we have to put this in the loop in case the socket fails to unload
+        'The socket is going to fail to unload once if theres connections made to it
+        'Check if we're unloading the server
+        If UnloadServer Then
+            
+            'Close the server
+            Server_Unload
+            
         End If
         
     Loop
@@ -159,19 +170,9 @@ Private Sub Server_Update_Bandwidth()
             DataKBOut = DataKBOut + 1
         Loop
     End If
-
-    'Ignore any errors (since they're most likely due to strange times with CurrentTime)
-    On Error Resume Next
     
-        'Display statistics (KB)
-        frmMain.BytesInTxt.Text = Round((DataKBIn + (DataIn / 1024)) / ((CurrentTime - ServerStartTime) * 0.001), 6)
-        frmMain.BytesOutTxt.Text = Round((DataKBOut + (DataOut / 1024)) / ((CurrentTime - ServerStartTime) * 0.001), 6)
-    
-        'Display statistics (Bytes)
-        'frmMain.BytesInTxt.Text = Round(((DataKBIn * 1024) + DataIn) / ((CurrentTime - ServerStartTime) / 1000), 6)
-        'frmMain.BytesOutTxt.Text = Round(((DataKBOut * 1024) + DataOut) / ((CurrentTime - ServerStartTime) / 1000), 6)
-
-    On Error GoTo 0
+    'Update the tooltip
+    TrayModify ToolTip, Server_BuildToolTipString
 
 End Sub
 
@@ -186,17 +187,17 @@ Dim NPCIndex As Integer
     For NPCIndex = 1 To LastNPC
 
         'Make sure NPC is active
-        If NPCList(NPCIndex).Flags.NPCActive Then
+        If NPCList(NPCIndex).flags.NPCActive Then
 
             'See if npc is alive
-            If NPCList(NPCIndex).Flags.NPCAlive Then
+            If NPCList(NPCIndex).flags.NPCAlive Then
 
                 'Only update npcs in user populated maps
                 If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
                 
                     'Check to update mod stats
-                    If NPCList(NPCIndex).Flags.UpdateStats Then
-                        NPCList(NPCIndex).Flags.UpdateStats = 0
+                    If NPCList(NPCIndex).flags.UpdateStats Then
+                        NPCList(NPCIndex).flags.UpdateStats = 0
                         NPC_UpdateModStats NPCIndex
                     End If
                     
@@ -219,7 +220,7 @@ Dim NPCIndex As Integer
                                 ConBuf.Clear
                                 ConBuf.Put_Byte DataCode.Server_Message
                                 ConBuf.Put_Byte 1
-                                ConBuf.Put_String NPCList(NPCIndex).Name
+                                ConBuf.Put_String NPCList(NPCIndex).name
                                 Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
                                 ConBuf.Clear
                                 ConBuf.Put_Byte DataCode.Server_IconWarCursed
@@ -276,7 +277,7 @@ Dim UserIndex As Integer
     For UserIndex = 1 To LastUser
 
         'Make sure user is logged on
-        If UserList(UserIndex).Flags.UserLogged Then
+        If UserList(UserIndex).flags.UserLogged Then
 
             '*** Disconnection timers ***
             'Check if it has been idle for too long
@@ -836,7 +837,7 @@ ErrOut:
     
 End Function
 
-Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBuffer As Integer = 350) As Long
+Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBuffer As Integer = 250) As Long
 '*****************************************************************
 'Takes a speed value and returns the time it takes to walk a tile
 'To fine the value:
@@ -849,11 +850,12 @@ Public Function Server_WalkTimePerTile(ByVal Speed As Long, Optional ByVal LagBu
 
     '4 = The client works off a base value of 4 for speed, so the speed is calculated as 4 + Speed in the client
     '11 = BaseWalkSpeed - how fast we move in pixels/sec
-    '32 = The size of a tile
+    '1/32 = The size of a tile
     '1000 = Miliseconds in a second
     'LagBuffer = We have to give some slack for network lag and client lag - raise this value if people skip too much
     '     and lower it if people are speedhacking and getting too much extra speed
-    Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - LagBuffer
+    'Server_WalkTimePerTile = 1000 / (((Speed + 4) * 11) / 32) - LagBuffer
+    Server_WalkTimePerTile = (1000 / ((Speed + 4) * 0.34375)) - LagBuffer
     
     'Make sure the lag buffer doesn't overshoot the value into the negatives
     If Server_WalkTimePerTile < 0 Then Server_WalkTimePerTile = 0
@@ -1074,7 +1076,7 @@ End Function
 Public Function Server_RectDistance(ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long, ByVal MaxXDist As Long, ByVal MaxYDist As Long) As Byte
 
 '*****************************************************************
-'Check if two tile points are in the same screen
+'Check if two tile points are in the same area
 '*****************************************************************
 
     Log "Call Server_RectDistance(" & x1 & "," & Y1 & "," & x2 & "," & Y2 & "," & MaxXDist & "," & MaxYDist & ")", CodeTracker '//\\LOGLINE//\\
@@ -1126,42 +1128,157 @@ Public Function Server_RandomNumber(ByVal LowerBound As Long, ByVal UpperBound A
 
 End Function
 
-Public Sub Server_RefreshUserListBox()
+Public Function Server_BuildToolTipString() As String
 
 '*****************************************************************
-'Refreshes the User list box
+'Builds the tooltip string
+'*****************************************************************
+Dim kBpsIn As Single
+Dim kBpsOut As Single
+
+    'Display statistics (Kilobytes)
+    On Error Resume Next
+        kBpsIn = Round((DataKBIn + (DataIn * 0.0009765625)) / ((CurrentTime - ServerStartTime) * 0.001), 5)
+        kBpsOut = Round((DataKBOut + (DataOut * 0.0009765625)) / ((CurrentTime - ServerStartTime) * 0.001), 5)
+    On Error GoTo 0
+
+    'Display statistics (Bytes)
+    'kBpsIn = Round(((DataKBIn * 1024) + DataIn) / ((CurrentTime - ServerStartTime) / 1000), 5)
+    'kBpsOut = Round(((DataKBOut * 1024) + DataOut) / ((CurrentTime - ServerStartTime) / 1000), 5)
+    
+    'Build the string
+    Server_BuildToolTipString = "Connections: " & CurrConnections & vbNewLine & _
+                                "kBps in: " & kBpsIn & vbNewLine & _
+                                "kBps out: " & kBpsOut
+
+End Function
+
+Public Function Server_BuildUserList() As String
+
+'*****************************************************************
+'Builds a string of the users
 '*****************************************************************
 
 Dim LoopC As Long
 
     Log "Call Server_RefreshUserListBox", CodeTracker '//\\LOGLINE//\\
 
-    If LastUser < 0 Then
+    'No users
+    If LastUser <= 0 Then
         Log "Server_RefreshUserListBox: No users to update", CodeTracker '//\\LOGLINE//\\
-        frmMain.Userslst.Clear
-        Exit Sub
+        Exit Function
     End If
 
-    frmMain.Userslst.Clear
+    'Create the string
     CurrConnections = 0
     Log "Server_RefreshUserListBox: Updating " & LastUser & " users", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To LastUser
-        If LenB(UserList(LoopC).Name) Then
-            frmMain.Userslst.AddItem UserList(LoopC).Name
+        If LenB(UserList(LoopC).name) Then
+            If LenB(Server_BuildUserList) Then Server_BuildUserList = Server_BuildUserList & vbNewLine
+            Server_BuildUserList = Server_BuildUserList & UserList(LoopC).name
             CurrConnections = CurrConnections + 1
         End If
     Next LoopC
-    TrayModify ToolTip, "Game Server: " & CurrConnections & " connections"
-
-End Sub
-
-Public Function CurrentTime() As Currency
-
-'*****************************************************************
-'Wrapper for returning the system time in the format of a function
-'instead of a passing a variable as ByRef - much easier this way to use.
-'*****************************************************************
-
-    GetSystemTime CurrentTime
 
 End Function
+
+Public Function CurrentTime() As Long
+
+'*****************************************************************
+'Call this instead of timeGetTime - its a little slower, but it will
+' turn off the server if there is a counter rollover (since a counter
+' roll-over will ruin every timer currently active)
+'*****************************************************************
+    
+    'Get the time
+    CurrentTime = timeGetTime
+    
+    'Check if there was a roll-over
+    If CurrentTime < LastTimeGetTime Then UnloadServer = 1
+    
+    'Set the time check
+    LastTimeGetTime = CurrentTime
+    
+End Function
+
+Private Sub Server_Unload()
+
+'*****************************************************************
+'Unload the server and all the variables
+'*****************************************************************
+Dim Cancel As Byte
+Dim FileNum As Byte
+Dim LoopC As Long
+Dim s As String
+
+    On Error Resume Next
+
+    Log "Call Server_Unload()", CodeTracker '//\\LOGLINE//\\
+    
+    'Close down the socket
+    GOREsock_ShutDown
+    GOREsock_UnHook
+    If GOREsock_Loaded Then
+        GOREsock_Terminate
+        Cancel = 1
+    End If
+    
+    If Cancel <> 1 Then
+        
+        'Stop the server loop
+        ServerRunning = 0
+        
+        'Remove from system tray
+        TrayDelete
+        
+        'Kill the database connection
+        DB_Conn.Close
+    
+        'Save the debug packets out
+        If DEBUG_RecordPacketsOut Then
+            s = vbNewLine
+            For LoopC = 0 To 255
+                s = s & LoopC & ": " & DebugPacketsOut(LoopC) & vbNewLine
+            Next LoopC
+            FileNum = FreeFile
+            Open App.Path & "\packetsout.txt" For Output As #FileNum
+                Write #FileNum, s
+            Close #FileNum
+        End If
+        
+        'Kill the temp files
+        Kill ServerTempPath & "*"
+        
+        'Close the log files                                                                                            '//\\LOGLINE//\\
+        If LogFileNumGeneral Then Close #LogFileNumGeneral                                                              '//\\LOGLINE//\\
+        If LogFileNumCodeTracker Then Close #LogFileNumCodeTracker                                                      '//\\LOGLINE//\\
+        If LogFileNumPacketIn Then Close #LogFileNumPacketIn                                                            '//\\LOGLINE//\\
+        If LogFileNumPacketOut Then Close #LogFileNumPacketOut                                                          '//\\LOGLINE//\\
+        If LogFileNumCriticalError Then Close #LogFileNumCriticalError                                                  '//\\LOGLINE//\\
+        If LogFileNumInvalidPacketData Then Close #LogFileNumInvalidPacketData                                          '//\\LOGLINE//\\
+    
+        'Deallocate all arrays to avoid memory leaks
+        Erase UserList
+        Erase NPCList
+        Erase MapInfo
+        Erase CharList
+        Erase ObjData
+        Erase NPCName
+        Erase QuestData
+        Erase HelpLine
+        Erase DebugPacketsOut
+        Erase MapUsers
+        For LoopC = 1 To NumMaps
+            Erase MapUsers(LoopC).Index
+        Next LoopC
+        Erase MapUsers
+        
+        'Unload the form
+        Unload frmMain
+        
+        'Close everything down
+        End
+    
+    End If
+
+End Sub

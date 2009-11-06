@@ -86,7 +86,7 @@ Dim Y As Single
 Dim R As Single
     
     Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.1
-    R = (Index / 20) * Exp(Index / Effect(EffectIndex).Progression Mod 3)
+    R = (Index / 20) * EXP(Index / Effect(EffectIndex).Progression Mod 3)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     
@@ -812,8 +812,10 @@ End Sub
 
 Public Sub Effect_Render(ByVal EffectIndex As Byte)
 
-'Set The Render State To Point Blitting
+    'Check if we have the device
+    If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
+    'Set The Render State To Point Blitting
     D3DDevice.SetRenderState D3DRS_POINTSIZE, Effect(EffectIndex).FloatSize
     D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
 

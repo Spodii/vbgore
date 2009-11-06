@@ -168,7 +168,10 @@ Dim i As Integer
             End If
             
             'Move
-            NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
+            If Int(Rnd * 3) = 0 Then
+                NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
+            End If
+            NPCList(NPCIndex).Counters.ActionDelay = NPCList(NPCIndex).Counters.ActionDelay + 500
 
         '*** Go towards nearby players - simple/fast AI ***
         Case 3
@@ -446,6 +449,11 @@ Dim i As Integer
                 NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + 750
                 
             End If
+            
+        '*** Banker ***
+        Case 6
+            'This NPC has no AI here - the only reference to the banker AI is in the clicking events.
+            ' Just do a search for "ai = 6" to find it.
 
     End Select
 
@@ -470,10 +478,10 @@ Dim Y As Integer
             For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                     'Make sure tile is legal
-                    If X > MinXBorder Then
-                        If X < MaxXBorder Then
-                            If Y > MinYBorder Then
-                                If Y < MaxYBorder Then
+                    If X >= MinXBorder Then
+                        If X <= MaxXBorder Then
+                            If Y >= MinYBorder Then
+                                If Y <= MaxYBorder Then
                                     'Look for a user
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex > 0 Then
                                         NPC_AI_ClosestPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex
@@ -512,10 +520,10 @@ Dim Y As Integer
             For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                     'Make sure tile is legal
-                    If X > MinXBorder Then
-                        If X < MaxXBorder Then
-                            If Y > MinYBorder Then
-                                If Y < MaxYBorder Then
+                    If X >= MinXBorder Then
+                        If X <= MaxXBorder Then
+                            If Y >= MinYBorder Then
+                                If Y <= MaxYBorder Then
                                     'Look for a npc
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
                                         NPC_AI_ClosestNPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
@@ -552,14 +560,14 @@ Dim Hit As Integer
     End If
 
     'Don't allow if switching maps
-    If UserList(UserIndex).Flags.SwitchingMaps Then
+    If UserList(UserIndex).flags.SwitchingMaps Then
         Log "NPC_AttackUser: NPC switching maps - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
     
     'Don't allow if not logged in completely
-    If UserList(UserIndex).Flags.UserLogged = 0 Then
-        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
+    If UserList(UserIndex).flags.UserLogged = 0 Then
+        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
 
@@ -622,7 +630,7 @@ Dim Hit As Integer
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 73
-        ConBuf.Put_String NPCList(NPCIndex).Name
+        ConBuf.Put_String NPCList(NPCIndex).name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         User_Kill UserIndex
         
@@ -704,7 +712,7 @@ Public Sub NPC_Close(ByVal NPCIndex As Integer, Optional ByVal CleanArray As Byt
     Log "Call NPC_Close(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Close down the NPC
-    NPCList(NPCIndex).Flags.NPCActive = 0
+    NPCList(NPCIndex).flags.NPCActive = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).CharType = 0
 
@@ -730,7 +738,7 @@ Dim t As Integer    'Holds the unaltered value of LastNPC
     t = LastNPC
 
     'Loop through the NPCs from the last NPC backwards to find the number of slots we can clear
-    Do Until NPCList(LastNPC).Flags.NPCActive = 1
+    Do Until NPCList(LastNPC).flags.NPCActive = 1
         LastNPC = LastNPC - 1
         If LastNPC = 0 Then Exit Do
     Loop
@@ -884,7 +892,7 @@ Dim i As Integer
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 75
-            ConBuf.Put_String NPCList(NPCIndex).Name
+            ConBuf.Put_String NPCList(NPCIndex).name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
             'Drop items
@@ -944,7 +952,7 @@ Private Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
-    NPCList(NPCIndex).Flags.NPCAlive = 0
+    NPCList(NPCIndex).flags.NPCAlive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map
@@ -962,7 +970,7 @@ Public Sub NPC_Kill(ByVal NPCIndex As Integer)
     Log "Call NPC_Kill(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
     
     'If thralled, remove them
-    If NPCList(NPCIndex).Flags.Thralled Then NPCList(NPCIndex).Flags.NPCActive = 0
+    If NPCList(NPCIndex).flags.Thralled Then NPCList(NPCIndex).flags.NPCActive = 0
     
     'Set health back to 100%
     NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
@@ -990,7 +998,7 @@ Dim SndMP As Byte
     MapInfo(Map).Data(X, Y).NPCIndex = NPCIndex
 
     'Set alive flag
-    NPCList(NPCIndex).Flags.NPCAlive = 1
+    NPCList(NPCIndex).flags.NPCAlive = 1
 
     'Set the hp/mp to send
     If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
@@ -1006,12 +1014,13 @@ Dim SndMP As Byte
     ConBuf.Put_Byte X
     ConBuf.Put_Byte Y
     ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
-    ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
+    ConBuf.Put_String NPCList(NPCIndex).name                ' yet, along with theres nothing to mod the stat
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
     ConBuf.Put_Byte SndHP
     ConBuf.Put_Byte SndMP
+    ConBuf.Put_Byte NPCList(NPCIndex).ChatID
 
     'NPCs wont be created with active spells
     ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
@@ -1082,7 +1091,7 @@ Dim LoopC As Long
             LoopC = LastNPC + 1
             Exit Do
         End If
-    Loop While NPCList(LoopC).Flags.NPCActive = 1
+    Loop While NPCList(LoopC).flags.NPCActive = 1
 
     NPC_NextOpen = LoopC
     
@@ -1119,11 +1128,11 @@ Dim CharIndex As Integer
 
     'Set vars
     NPCList(NPCIndex).Pos = TempPos
-    NPCList(NPCIndex).Flags.NPCAlive = 1
+    NPCList(NPCIndex).flags.NPCAlive = 1
 
     'Make NPC Char
     If Not BypassUpdate Then
-        If UBound(MapUsers(TempPos.Map).Index) > 0 Then
+        If MapInfo(TempPos.Map).NumUsers > 0 Then
             NPC_MakeChar ToMap, MapUsers(TempPos.Map).Index(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
         End If
     End If

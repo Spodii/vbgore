@@ -46,7 +46,7 @@ Public Sub Log(ByVal Text As String, ByVal LogType As LogType)                  
 '*****************************************************************                                                  '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
 'Check if we are using logging                                                                                      '//\\LOGLINE//\\
-If DEBUG_UseLogging = False Then Exit Sub                                                                           '//\\LOGLINE//\\
+If Not DEBUG_UseLogging Then Exit Sub                                                                               '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
 Dim LogFile As String   'Path to our log file (depends on LogType)                                                  '//\\LOGLINE//\\
 Dim b() As Byte         'Used for cropping down the file if it gets too large                                       '//\\LOGLINE//\\
@@ -67,7 +67,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumGeneral, , Text                                                                          '//\\LOGLINE//\\
             If LOF(LogFileNumGeneral) > MaxLogFileSize Then                                                         '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "General.log"                                                                   '//\\LOGLINE//\\
                 Seek #LogFileNumGeneral, 1                                                                          '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumGeneral))                                                                     '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -111,7 +111,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumPacketIn, , Text                                                                         '//\\LOGLINE//\\
             If LOF(LogFileNumPacketIn) > MaxLogFileSize Then                                                        '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "PacketIn.log"                                                                  '//\\LOGLINE//\\
                 Seek #LogFileNumPacketIn, 1                                                                         '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumPacketIn))                                                                    '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -133,7 +133,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumPacketOut, , Text                                                                        '//\\LOGLINE//\\
             If LOF(LogFileNumPacketOut) > MaxLogFileSize Then                                                       '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "PacketOut.log"                                                                 '//\\LOGLINE//\\
                 Seek #LogFileNumPacketOut, 1                                                                        '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumPacketOut))                                                                   '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -155,7 +155,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumCriticalError, , Text                                                                    '//\\LOGLINE//\\
             If LOF(LogFileNumCriticalError) > MaxLogFileSize Then                                                   '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "CriticalError.log"                                                             '//\\LOGLINE//\\
                 Seek #LogFileNumCriticalError, 1                                                                    '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumCriticalError))                                                               '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -177,7 +177,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumInvalidPacketData, , Text                                                                '//\\LOGLINE//\\
             If LOF(LogFileNumInvalidPacketData) > MaxLogFileSize Then                                               '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & "InvalidPacketData.log"                                                         '//\\LOGLINE//\\
                 Seek #LogFileNumInvalidPacketData, 1                                                                '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumInvalidPacketData))                                                           '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -211,7 +211,7 @@ Dim i As Long
         Load_Mail.Subject = Trim$(DB_RS!Sub)
         Load_Mail.WriterName = Trim$(DB_RS!By)
         Load_Mail.RecieveDate = DB_RS!Date
-        Load_Mail.Message = Trim$(DB_RS!msg)
+        Load_Mail.Message = Trim$(DB_RS!Msg)
         Load_Mail.New = Val(DB_RS!New)
         ObjStr = Trim$(DB_RS!Objs)
     
@@ -303,7 +303,7 @@ Dim i As Long
                 CharList(CharIndex).CharType = CharType_NPC
                 
                 'Set the NPC as used
-                .Flags.NPCActive = 1
+                .flags.NPCActive = 1
             
             End With
         Next i
@@ -520,7 +520,7 @@ Dim i As Long
                     If .Pos.Map = MapNum Then
                         CharList(.Char.CharIndex).Index = 0
                         CharList(.Char.CharIndex).CharType = 0
-                        .Flags.NPCActive = 0
+                        .flags.NPCActive = 0
                         NPC_Close i, 0
                     End If
                 End With
@@ -548,9 +548,6 @@ Dim Map As Long
 
     Log "Call Load_Maps", CodeTracker '//\\LOGLINE//\\
 
-    frmMain.Caption = "Loading maps..."
-    frmMain.Refresh
-
     NumMaps = Val(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
     ReDim MapInfo(1 To NumMaps)
 
@@ -566,7 +563,7 @@ Dim Map As Long
 
         'Other Room Data
         With MapInfo(Map)
-            .Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+            .name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
             .Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
             .Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
         End With
@@ -617,11 +614,12 @@ Dim i As Long
     
         With NPCList(1)
             Log "Save_NPCs_Temp: Filling in values for NPC " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .Name = Trim$(DB_RS!Name)
+            .name = Trim$(DB_RS!name)
             .Desc = Trim$(DB_RS!Descr)
             .AttackGrh = Val(DB_RS!AttackGrh)
             .AttackRange = Val(DB_RS!AttackRange)
             .AI = Val(DB_RS!AI)
+            .ChatID = Val(DB_RS!Chat)
             .RespawnWait = Val(DB_RS!RespawnWait)
             .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
             .Attackable = Val(DB_RS!Attackable)
@@ -648,7 +646,7 @@ Dim i As Long
             .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
             .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
             .NPCNumber = DB_RS!id
-            .Flags.NPCActive = 1
+            .flags.NPCActive = 1
             ShopStr = Trim$(DB_RS!objs_shop)
             DropStr = Trim$(DB_RS!drops)
 
@@ -837,7 +835,7 @@ Dim b As Byte
             Get #FileNum, , NPCList(NPCIndex)
         
             'Set the NPC's thralled value
-            .Flags.Thralled = Thralled
+            .flags.Thralled = Thralled
 
         Close #FileNum
 
@@ -853,9 +851,6 @@ End Function
 Public Sub Load_OBJs()
 
     Log "Call Load_OBJs", CodeTracker '//\\LOGLINE//\\
-
-    frmMain.Caption = "Loading objects..."
-    frmMain.Refresh
     
     'Get the number of objects (Sort by id, descending, only get 1 entry, only return id)
     DB_RS.Open "SELECT id FROM objects ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
@@ -874,7 +869,7 @@ Public Sub Load_OBJs()
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         With ObjData(DB_RS!id)
             Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .Name = Trim$(DB_RS!Name)
+            .name = Trim$(DB_RS!name)
             .Price = Val(DB_RS!Price)
             .ObjType = Val(DB_RS!ObjType)
             .WeaponType = Val(DB_RS!WeaponType)
@@ -918,9 +913,6 @@ End Sub
 Public Sub Load_Quests()
 
     Log "Call Load_Quests", CodeTracker '//\\LOGLINE//\\
-
-    frmMain.Caption = "Loading quests..."
-    frmMain.Refresh
     
     'Get the number of quests (Sort by id, descending, only get 1 entry, only return id)
     DB_RS.Open "SELECT id FROM quests ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
@@ -939,7 +931,7 @@ Public Sub Load_Quests()
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         With QuestData(DB_RS!id)
             Log "Load_Quests: Filling QuestData for quest " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .Name = Trim$(DB_RS!Name)
+            .name = Trim$(DB_RS!name)
             .Redoable = Val(DB_RS!Redoable)
             .StartTxt = Trim$(DB_RS!text_start)
             .AcceptTxt = Trim$(DB_RS!text_accept)
@@ -979,9 +971,6 @@ Public Sub Load_ServerIni()
 Dim TempSplit() As String
 
     Log "Call Load_ServerIni", CodeTracker '//\\LOGLINE//\\
-
-    frmMain.Caption = "Loading configuration..."
-    frmMain.Refresh
 
     'Misc
     IdleLimit = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "IdleLimit"))
@@ -1029,7 +1018,7 @@ Dim i As Long
     'Loop through every field - match up the names then set the data accordingly
     With DB_RS
         UserChar.Desc = Trim$(!Descr)
-        UserChar.Flags.GMLevel = !gm
+        UserChar.flags.GMLevel = !gm
         InvStr = !inventory
         MailStr = !mail
         BankStr = !Bank
@@ -1166,12 +1155,12 @@ Dim i As Long
     UserChar.Stats.ForceFullUpdate
 
     'Misc values
-    UserChar.Name = UserName
+    UserChar.name = UserName
     
 End Sub
 
 Public Sub Save_Mail(ByVal MailIndex As Long, ByRef MailData As MailData)
-Dim S As String
+Dim s As String
 Dim i As Long
 
     Log "Call Save_Mail(" & MailIndex & "," & "N/A)", CodeTracker '//\\LOGLINE//\\
@@ -1180,12 +1169,12 @@ Dim i As Long
     For i = 1 To MaxMailObjs
         If MailData.Obj(i).ObjIndex > 0 Then
             If MailData.Obj(i).Amount > 0 Then
-                If LenB(S) Then S = S & vbNewLine   'Split the line, but make sure we dont add a split on first entry
-                S = S & MailData.Obj(i).ObjIndex & " " & MailData.Obj(i).Amount
+                If LenB(s) Then s = s & vbNewLine   'Split the line, but make sure we dont add a split on first entry
+                s = s & MailData.Obj(i).ObjIndex & " " & MailData.Obj(i).Amount
             End If
         End If
     Next i
-    Log "Save_Mail: Built object string (" & S & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Save_Mail: Built object string (" & s & ")", CodeTracker '//\\LOGLINE//\\
     
     With DB_RS
         
@@ -1201,9 +1190,9 @@ Dim i As Long
         !Sub = MailData.Subject
         !By = MailData.WriterName
         !Date = MailData.RecieveDate
-        !msg = MailData.Message
+        !Msg = MailData.Message
         !New = Str$(MailData.New)
-        !Objs = S
+        !Objs = s
         
         'Update the database with the new piece of mail
         .Update
@@ -1232,12 +1221,12 @@ Dim i As Long
     With UserChar
     
         'Make sure we are trying to save a valid user by testing a few variables first
-        If Len(.Name) < 3 Then
-            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
+        If Len(.name) < 3 Then
+            Log "Save_User: Specified name was invalid (" & .name & ")", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If
-        If Len(.Name) > 10 Then
-            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
+        If Len(.name) > 10 Then
+            Log "Save_User: Specified name was invalid (" & .name & ")", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If
 
@@ -1296,14 +1285,14 @@ Dim i As Long
         Else
         
             'Open the old record and update it
-            DB_RS.Open "SELECT * FROM users WHERE `name`='" & .Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS.Open "SELECT * FROM users WHERE `name`='" & .name & "'", DB_Conn, adOpenStatic, adLockOptimistic
             
         End If
         
         'Put the data in the recordset
         If LenB(Password) Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
-        If NewUser Then DB_RS!Name = .Name
-        DB_RS!gm = .Flags.GMLevel
+        If NewUser Then DB_RS!name = .name
+        DB_RS!gm = .flags.GMLevel
         DB_RS!Descr = .Desc
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr

@@ -11,7 +11,7 @@ Public Enum LogType
 End Enum
 
 Public Type NPCTradeItems
-    Name As String
+    name As String
     Price As Long
     GrhIndex As Long
 End Type
@@ -22,7 +22,7 @@ Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
-Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
+Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
 
@@ -491,7 +491,7 @@ Dim X As Byte
     Close #MapNum
 
     'Clear out old mapinfo variables
-    MapInfo.Name = vbNullString
+    MapInfo.name = vbNullString
 
     'Set current map
     CurMap = Map
@@ -590,6 +590,9 @@ Dim i As Integer
     'Init file paths
     InitFilePaths
     
+    'Load the socket
+    GOREsock_Initialize frmMain.hWnd
+    
     'Check if we need to run the updater
     If ForceUpdateCheck = True Then
     
@@ -602,7 +605,7 @@ Dim i As Integer
             frmConnect.Hide
             
             'Load the updater
-            ShellExecute frmConnect.hwnd, vbNullString, App.Path & "\UpdateClient.exe", vbNullString, vbNullString, 1   'The 1 means "show normal"
+            ShellExecute frmConnect.hWnd, vbNullString, App.Path & "\UpdateClient.exe", vbNullString, vbNullString, 1   'The 1 means "show normal"
     
             'Unload the client
             Engine_UnloadAllForms
@@ -684,14 +687,20 @@ Dim i As Integer
 
     'Main Loop
     Do
+    
+        'Calculate the starttime - this is the absolute time it takes from start to finish, disincluding DoEvents
+        ' The idea is that it works just like the ElapsedTime, but in slightly different placing
+        StartTime = timeGetTime
+    
+        'Check if unloading
+        If IsUnloading = 1 Then
+            GOREsock_UnHook
+            Exit Do
+        End If
 
         'Don't draw frame is window is minimized or there is no map loaded
         If frmMain.WindowState <> 1 Then
             If CurMap > 0 Then
-            
-                'Calculate the starttime - this is the absolute time it takes from start to finish, disincluding DoEvents
-                ' The idea is that it works just like the ElapsedTime, but in slightly different placing
-                StartTime = timeGetTime
 
                 'Show the next frame
                 Engine_ShowNextFrame
@@ -739,26 +748,20 @@ Dim i As Integer
                     End If
                     
                 Next i
-                
-                'Do sleep event - force FPS at ~60 (62.5) average (prevents extensive processing)
-                If (timeGetTime - StartTime) < 16 Then  'If Elapsed Time < Time Required For 60 FPS
-                    Sleep 16 - (timeGetTime - StartTime)
-                End If
 
             End If
-        End If
-        
-        'Do other events
-       DoEvents
-
-        'Check if unloading
-        If IsUnloading = 1 Then
-            frmMain.Socket.UnHook
-            Exit Do
         End If
 
         'Send the data buffer
         If SocketOpen = 1 Then Data_Send
+        
+        'Do other events
+        DoEvents
+        
+        'Do sleep event - force FPS at ~60 (62.5) average (prevents extensive processing)
+        If (timeGetTime - StartTime) < 16 Then  'If Elapsed Time < Time required for 60 FPS
+            Sleep 16 - (timeGetTime - StartTime)
+        End If
 
     Loop
 
@@ -770,6 +773,3 @@ Dim i As Integer
 
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 11  Code: 602  Total: 613 Lines
-':) CommentOnly: 103 (16.8%)  Commented: 4 (0.7%)  Empty: 108 (17.6%)  Max Logic Depth: 7

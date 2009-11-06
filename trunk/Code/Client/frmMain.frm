@@ -1,5 +1,4 @@
 VERSION 5.00
-Object = "{5D0A4D01-701F-4AEF-8518-952FB5EC23FF}#1.0#0"; "vbgoresocketbinary.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,15 +30,6 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin SoxOCXBinary.SoxBinary Socket 
-      Height          =   420
-      Left            =   1080
-      Top             =   120
-      Visible         =   0   'False
-      Width           =   420
-      _ExtentX        =   741
-      _ExtentY        =   741
-   End
    Begin VB.Timer ShutdownTimer 
       Enabled         =   0   'False
       Interval        =   200
@@ -145,8 +135,7 @@ End Sub
 
 Private Sub Form_Click()
 
-'Regain focus to DImouse
-
+    'Regain focus to Direct Input mouse
     If NC Then
         DIDevice.Acquire
         NC = 0
@@ -157,7 +146,7 @@ End Sub
 Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 
 Dim TempS() As String
-Dim S As String
+Dim s As String
 Dim i As Byte
 Dim j As Long
 
@@ -402,22 +391,24 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.Comm_Emote
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
-                        S = LCase$(SplitCommandFromString(EnterTextBuffer))
-                        If Engine_FileExist(MessagePath & S & ".ini", vbNormal) Then
-                            Engine_Init_Messages S
-                            Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", S
-                            Engine_AddToChatTextBuffer "Language changed to " & S, FontColor_Info
+                        s = LCase$(SplitCommandFromString(EnterTextBuffer))
+                        If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
+                            s = Dir$(MessagePath & s & "*.ini", vbNormal)
+                            s = Left$(s, Len(s) - 4)
+                            Engine_Init_Messages s
+                            Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", s
+                            Engine_AddToChatTextBuffer "Language changed to " & s, FontColor_Info
                         Else
                             Engine_AddToChatTextBuffer "Specified language does not exist!", FontColor_Info
                         End If
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/SKIN" Then
-                        S = LCase$(SplitCommandFromString(EnterTextBuffer))
-                        If S = "" Then
+                        s = LCase$(SplitCommandFromString(EnterTextBuffer))
+                        If s = "" Then
                             Engine_AddToChatTextBuffer Engine_BuildSkinsList, FontColor_Info
                         Else
-                            If Engine_FileExist(DataPath & "Skins\" & S & "*.ini", vbNormal) Then
-                                S = Dir$(DataPath & "Skins\" & S & "*.ini", vbNormal)
-                                CurrentSkin = Left$(S, Len(S) - 4)
+                            If Engine_FileExist(DataPath & "Skins\" & s & "*.ini", vbNormal) Then
+                                s = Dir$(DataPath & "Skins\" & s & "*.ini", vbNormal)
+                                CurrentSkin = Left$(s, Len(s) - 4)
                                 Engine_Init_GUI 0
                                 Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
                                 Engine_AddToChatTextBuffer "Skin changed to " & CurrentSkin, FontColor_Info
@@ -480,8 +471,12 @@ Dim j As Long
                             End If
                         End If
                     Else
+                        '*** No commands sent, send as text ***
                         sndBuf.Put_Byte DataCode.Comm_Talk
                         sndBuf.Put_String EnterTextBuffer
+                        
+                        'We just sent a chat message, so check if it had triggers!
+                        Engine_NPCChat_CheckForChatTriggers EnterTextBuffer
                     End If
                     EnterTextBuffer = vbNullString
                     EnterTextBufferWidth = 10
@@ -707,149 +702,19 @@ Private Sub ShutdownTimer_Timer()
 
     On Error Resume Next    'Who cares about an error if we are closing down
 
-    'Make sure the socket is closed
-    frmMain.Socket.Shut SoxID
-    frmMain.Socket.ShutDown
-    frmMain.Socket.UnHook
+    'Close down the socket
+    GOREsock_ShutDown
+    GOREsock_UnHook
+    If GOREsock_Loaded Then
+        GOREsock_Terminate
+    Else
 
-    'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
-    Engine_Init_UnloadTileEngine
-    Engine_UnloadAllForms
-    End
+        'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
+        Engine_Init_UnloadTileEngine
+        Engine_UnloadAllForms
+        End
 
-End Sub
-
-Private Sub Socket_OnClose(inSox As Long)
-
-    If SocketOpen = 1 Then IsUnloading = 1
-
-End Sub
-
-Private Sub Socket_OnDataArrival(inSox As Long, inData() As Byte)
-
-'*********************************************
-'Retrieve the CommandIDs and send to corresponding data handler
-'*********************************************
-
-Dim rBuf As DataBuffer
-Dim CommandID As Byte
-Dim BufUBound As Long
-Static X As Long
-
-    'Display packet
-    If DEBUG_PrintPacket_In Then
-        Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
     End If
-    
-    'Decrypt the packet
-    Select Case PacketEncType
-        Case PacketEncTypeXOR
-            Encryption_XOR_DecryptByte inData(), PacketEncKey
-        Case PacketEncTypeRC4
-            Encryption_RC4_DecryptByte inData(), PacketEncKey
-    End Select
-
-    'Set up the data buffer
-    Set rBuf = New DataBuffer
-    rBuf.Set_Buffer inData
-    BufUBound = UBound(inData)
-    
-    'Uncomment this to see packets going in to the client
-    'Dim i As Long
-    'Dim S As String
-    'For i = LBound(inData) To UBound(inData)
-    '    If inData(i) >= 100 Then
-    '        S = S & inData(i) & " "
-    '    ElseIf inData(i) >= 10 Then
-    '        S = S & "0" & inData(i) & " "
-    '    Else
-    '        S = S & "00" & inData(i) & " "
-    '    End If
-    'Next i
-    'Debug.Print S
-
-    Do
-        'Get the Command ID
-        CommandID = rBuf.Get_Byte
-
-        'Make the appropriate call based on the Command ID
-        With DataCode
-            Select Case CommandID
-
-            Case 0
-                If DEBUG_PrintPacketReadErrors Then
-                    X = X + 1
-                    Debug.Print "Empty Command ID #" & X
-                End If
-
-            Case .Comm_Talk: Data_Comm_Talk rBuf
-
-            Case .Map_DoneSwitching: Data_Map_DoneSwitching
-            Case .Map_LoadMap: Data_Map_LoadMap rBuf
-            Case .Map_SendName:  Data_Map_SendName rBuf
-
-            Case .Server_ChangeChar: Data_Server_ChangeChar rBuf
-            Case .Server_CharHP: Data_Server_CharHP rBuf
-            Case .Server_CharMP: Data_Server_CharMP rBuf
-            Case .Server_Connect: Data_Server_Connect
-            Case .Server_Disconnect: Data_Server_Disconnect
-            Case .Server_EraseChar: Data_Server_EraseChar rBuf
-            Case .Server_EraseObject: Data_Server_EraseObject rBuf
-            Case .Server_IconBlessed: Data_Server_IconBlessed rBuf
-            Case .Server_IconCursed: Data_Server_IconCursed rBuf
-            Case .Server_IconIronSkin: Data_Server_IconIronSkin rBuf
-            Case .Server_IconProtected: Data_Server_IconProtected rBuf
-            Case .Server_IconStrengthened: Data_Server_IconStrengthened rBuf
-            Case .Server_IconWarCursed:  Data_Server_IconWarCursed rBuf
-            Case .Server_IconSpellExhaustion: Data_Server_IconSpellExhaustion rBuf
-            Case .Server_MailBox: Data_Server_Mailbox rBuf
-            Case .Server_MailItemRemove: Data_Server_MailItemRemove rBuf
-            Case .Server_MailMessage: Data_Server_MailMessage rBuf
-            Case .Server_MailObjUpdate: Data_Server_MailObjUpdate rBuf
-            Case .Server_MakeChar: Data_Server_MakeChar rBuf
-            Case .Server_MakeEffect: Data_Server_MakeEffect rBuf
-            Case .Server_MakeSlash: Data_Server_MakeSlash rBuf
-            Case .Server_MakeObject: Data_Server_MakeObject rBuf
-            Case .Server_MakeProjectile: Data_Server_MakeProjectile rBuf
-            Case .Server_Message: Data_Server_Message rBuf
-            Case .Server_MoveChar: Data_Server_MoveChar rBuf
-            Case .Server_Ping: Data_Server_Ping
-            Case .Server_PlaySound: Data_Server_PlaySound rBuf
-            Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
-            Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
-            Case .Server_SetCharSpeed: Data_Server_SetCharSpeed rBuf
-            Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf
-            Case .Server_UserCharIndex: Data_Server_UserCharIndex rBuf
-
-            Case .User_AggressiveFace: Data_User_AggressiveFace rBuf
-            Case .User_Attack: Data_User_Attack rBuf
-            Case .User_Bank_Open: Data_User_Bank_Open rBuf
-            Case .User_Bank_UpdateSlot: Data_User_Bank_UpdateSlot rBuf
-            Case .User_BaseStat: Data_User_BaseStat rBuf
-            Case .User_Blink: Data_User_Blink rBuf
-            Case .User_CastSkill: Data_User_CastSkill rBuf
-            Case .User_Emote: Data_User_Emote rBuf
-            Case .User_KnownSkills: Data_User_KnownSkills rBuf
-            Case .User_LookLeft: Data_User_LookLeft rBuf
-            Case .User_LookRight: Data_User_LookLeft rBuf
-            Case .User_ModStat: Data_User_ModStat rBuf
-            Case .User_Rotate: Data_User_Rotate rBuf
-            Case .User_SetInventorySlot: Data_User_SetInventorySlot rBuf
-            Case .User_SetWeaponRange: Data_User_SetWeaponRange rBuf
-            Case .User_Target: Data_User_Target rBuf
-            Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
-
-            Case Else
-                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
-                Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
-
-            End Select
-        End With
-
-        'Exit when the buffer runs out
-        If rBuf.Get_ReadPos > BufUBound Then Exit Do
-
-    Loop
 
 End Sub
 
@@ -871,35 +736,3 @@ Dim i As Integer
     SplitCommandFromString = Left$(SplitCommandFromString, Len(SplitCommandFromString) - 1)
 
 End Function
-
-Private Sub Socket_OnConnecting(inSox As Long)
-
-    If SocketOpen = 0 Then
-        
-        Sleep 50
-        DoEvents
-        
-        'Pre-saved character
-        If SendNewChar = False Then
-            sndBuf.Put_Byte DataCode.User_Login
-            sndBuf.Put_String UserName
-            sndBuf.Put_String UserPassword
-        Else
-            'New character
-            sndBuf.Put_Byte DataCode.User_NewLogin
-            sndBuf.Put_String UserName
-            sndBuf.Put_String UserPassword
-        End If
-    
-        'Save Game.ini
-        If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
-        Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
-        Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
-        
-        'Send the data
-        Data_Send
-        DoEvents
-    
-    End If
-    
-End Sub

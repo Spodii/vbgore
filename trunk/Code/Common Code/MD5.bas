@@ -90,7 +90,7 @@ End Function
 Private Function MD5_StringToArray(InString As String) As Byte()
     
     'Convert a string to a byte array
-    If InString = "" Then
+    If LenB(InString) = 0 Then
         ReDim MD5_StringToArray(0)
     Else
         MD5_StringToArray = StrConv(InString, vbFromUnicode)

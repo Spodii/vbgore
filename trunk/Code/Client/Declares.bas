@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.0            ************
+'************            Official Release: Version 0.3.1            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -106,11 +106,50 @@ Public Const RunningSpeed As Byte = 5
 Public Const Windowed As Boolean = False
 
 'Max chat bubble width
-Public Const BubbleMaxWidth As Long = 100
+Public Const BubbleMaxWidth As Long = 140
 
-'********** Object types ************
+'********** NPC chat info ************
+Public Type NPCChatLineCondition
+    Condition As Byte           'The condition used (see NPCCHAT_COND_)
+    Value As Long               'Used to hold a numeric condition value
+    ValueStr As String          'Used to hold a value for SAY conditions
+End Type
+Public Type NPCChatLine
+    NumConditions As Byte       'Total number of conditions
+    Conditions() As NPCChatLineCondition
+    Text As String              'The text that will be said
+    Style As Byte               'The style used for the text (see NPCCHAT_STYLE_)
+    Delay As Integer            'The delay time applied after saying this line
+End Type
+Public Type NPCChat
+    Format As Byte              'Format of the chat (see NPCCHAT_FORMAT_)
+    ChatLine() As NPCChatLine   'The information on the chat line
+    NumLines As Byte            'The number of chat lines
+End Type
+Public NPCChat() As NPCChat
+
+'Conditions (this are used as bit-flags, so only use powers of 2!)
+Public Const NPCCHAT_COND_NUMCONDITIONS As Byte = 7
+Public Const NPCCHAT_COND_LEVELLESSTHAN As Long = 2 ^ 0
+Public Const NPCCHAT_COND_LEVELMORETHAN As Long = 2 ^ 1
+Public Const NPCCHAT_COND_HPLESSTHAN As Long = 2 ^ 2
+Public Const NPCCHAT_COND_HPMORETHAN As Long = 2 ^ 3
+Public Const NPCCHAT_COND_KNOWSKILL As Long = 2 ^ 4
+Public Const NPCCHAT_COND_DONTKNOWSKILL As Long = 2 ^ 5
+Public Const NPCCHAT_COND_SAY As Long = 2 ^ 6
+
+'Chat formats
+Public Const NPCCHAT_FORMAT_RANDOM As Byte = 0
+Public Const NPCCHAT_FORMAT_LINEAR As Byte = 1
+
+'Chat sytles
+Public Const NPCCHAT_STYLE_BOTH As Byte = 0
+Public Const NPCCHAT_STYLE_BOX As Byte = 1
+Public Const NPCCHAT_STYLE_BUBBLE As Byte = 2
+
+'********** Object info ************
 Public Type ObjData
-    Name As String              'Name
+    name As String              'Name
     ObjType As Byte             'Type (armor, weapon, item, etc)
     GrhIndex As Long            'Graphic index
     MinHP As Integer            'Bonus HP regenerated
@@ -124,6 +163,7 @@ Public Type ObjData
     Price As Long               'Price of the object
 End Type
 
+'********** Other stuff ************
 Public BaseStats(1 To NumStats) As Long
 Public ModStats(1 To NumStats) As Long
 
@@ -147,7 +187,7 @@ Public Const MAX_INVENTORY_SLOTS As Byte = 49
 'User's inventory
 Type Inventory
     ObjIndex As Long
-    Name As String
+    name As String
     GrhIndex As Long
     Amount As Integer
     Equipped As Boolean
@@ -161,7 +201,7 @@ Public Message() As String
 Public Signs() As String
 
 'Known user skills/spells
-Public UserKnowSkill(1 To NumSkills)
+Public UserKnowSkill(1 To NumSkills) As Byte
 
 'Attack range
 Public UserAttackRange As Byte
@@ -221,16 +261,14 @@ Public Const MaxZoomLevel As Single = 0.4
 'Cursor flash rate
 Public Const CursorFlashRate As Long = 450
 
+'Maximum variable sizes
 Public Const MAXLONG As Long = 2147483647
 Public Const MAXINT As Integer = 32767
 Public Const MAXBYTE As Byte = 255
 
 '********** OUTSIDE FUNCTIONS ***********
 'For Get and Write Var
-Public Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
+Public Declare Function GetKeyState Lib "User32" (ByVal nVirtKey As Long) As Integer
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 285  Code: 0  Total: 285 Lines
-':) CommentOnly: 72 (25.3%)  Commented: 45 (15.8%)  Empty: 18 (6.3%)  Max Logic Depth: 1
