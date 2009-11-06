@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.0            ************
+'************            Official Release: Version 0.4.1            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -280,6 +280,9 @@ Public IsUnloading As Byte
 'User login information
 Public UserPassword As String
 Public UserName As String
+Public UserClass As Byte
+Public UserBody As Byte
+Public UserHead As Byte
 
 'Holds the name of the last person to whisper to the client
 Public LastWhisperName As String

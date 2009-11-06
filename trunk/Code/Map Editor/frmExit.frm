@@ -3,14 +3,14 @@ Begin VB.Form frmExit
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Exits / Warps"
-   ClientHeight    =   975
+   ClientHeight    =   1230
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   1560
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   65
+   ScaleHeight     =   82
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   104
    ShowInTaskbar   =   0   'False
@@ -37,7 +37,7 @@ Begin VB.Form frmExit
       Left            =   120
       TabIndex        =   3
       ToolTipText     =   "Set an exit when clicking on the map"
-      Top             =   600
+      Top             =   840
       Width           =   615
    End
    Begin VB.OptionButton EraseOpt 
@@ -49,38 +49,38 @@ Begin VB.Form frmExit
       Left            =   720
       TabIndex        =   4
       ToolTipText     =   "Erase an already placed exit when clicking on the map"
-      Top             =   600
+      Top             =   840
       Width           =   735
    End
    Begin VB.TextBox YTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1080
       TabIndex        =   2
       Text            =   "20"
       ToolTipText     =   "Y co-ordinate which the user will warp to when stepping on the tile"
-      Top             =   360
+      Top             =   480
       Width           =   375
    End
    Begin VB.TextBox XTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   360
       TabIndex        =   1
       Text            =   "20"
       ToolTipText     =   "X co-ordinate which the user will warp to when stepping on the tile"
-      Top             =   360
+      Top             =   480
       Width           =   375
    End
    Begin VB.TextBox MapTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   600
       TabIndex        =   0
       Text            =   "1"
@@ -106,7 +106,7 @@ Begin VB.Form frmExit
       Index           =   2
       Left            =   840
       TabIndex        =   7
-      Top             =   360
+      Top             =   480
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -127,7 +127,7 @@ Begin VB.Form frmExit
       Index           =   1
       Left            =   120
       TabIndex        =   6
-      Top             =   360
+      Top             =   480
       Width           =   195
    End
    Begin VB.Label MiscLbl 

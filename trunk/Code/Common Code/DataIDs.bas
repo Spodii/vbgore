@@ -17,6 +17,28 @@ Public Type EmoID
 End Type
 Public EmoID As EmoID
 
+'********** Classes ************
+'Classes work by using bitwise operations, so each class ID must be a power of 2 (1, 2, 4, 8, 16, 32, 64, or 128)
+'If you want more clases, change the classes to "Integer"
+'To set class requirements, OR the values together
+'EX:
+'ClassReq = Warrior OR Rogue
+'This means the class must be a Warrior or Rogue
+'To check the values, use AND
+'EX:
+'If ClassReq AND UserClass Then
+'   User meets requirements
+'Else
+'   User doesn't meet requirements
+'End If
+Public Type ClassID
+    Warrior As Byte
+    Mage As Byte
+    Rogue As Byte
+    NoReq As Byte
+End Type
+Public ClassID As ClassID
+
 '********** Packets ************
 'Data String Codenames (Reduces all data transfers to 1 byte tags)
 Public Type DataCode
@@ -69,7 +91,6 @@ Public Type DataCode
     Server_SendQuestInfo As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
-    Map_DoneSwitching As Byte
     Map_SendName As Byte
     Map_RequestPositionUpdate As Byte
     User_Target As Byte
@@ -108,6 +129,7 @@ Public Type DataCode
     User_RequestUserCharIndex As Byte
     User_ChangeServer As Byte
     User_AddFriend As Byte
+    User_ConfirmPosition As Byte
     User_RemoveFriend As Byte
     GM_Approach As Byte
     GM_Summon As Byte
@@ -185,6 +207,16 @@ Public Sub InitDataCommands()
         .Warcry = 6
         .SpikeField = 7
     End With
+    
+    With ClassID
+        'These values must be based off of powers of 2!
+        .Warrior = 1    '2 ^ 0
+        .Mage = 2       '2 ^ 1
+        .Rogue = 4      '2 ^ 2 ... etc
+        
+        'This sets every bit to 1, which means that it will work with every class
+        .NoReq = 255
+    End With
 
     With SID
         'These can NOT be modded
@@ -223,7 +255,7 @@ Public Sub InitDataCommands()
         .GM_Kick = 11
         .Server_CharHP = 12
         .GM_Summon = 13
-        .Map_DoneSwitching = 14
+        .User_ChangeServer = 14
         .Map_SendName = 15
         .User_Attack = 16
         .Server_MakeChar = 17
@@ -303,7 +335,7 @@ Public Sub InitDataCommands()
         .GM_BanIP = 91
         .GM_UnBanIP = 92
         .Server_SendQuestInfo = 93
-        .User_ChangeServer = 94
+        .User_ConfirmPosition = 94
 
         'Value 128 can be used over again since this does not count as an ID in itself - just ignore this variable! ;)
         .Comm_UseBubble = 128

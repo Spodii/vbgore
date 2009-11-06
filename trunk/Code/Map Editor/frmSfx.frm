@@ -3,16 +3,16 @@ Begin VB.Form frmSfx
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Add Sfx"
-   ClientHeight    =   420
+   ClientHeight    =   540
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   1815
+   ClientWidth     =   1860
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   28
+   ScaleHeight     =   36
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   121
+   ScaleWidth      =   124
    ShowInTaskbar   =   0   'False
    Begin MapEditor.cForm cForm 
       Height          =   255
@@ -32,7 +32,7 @@ Begin VB.Form frmSfx
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   0
       Text            =   "0"

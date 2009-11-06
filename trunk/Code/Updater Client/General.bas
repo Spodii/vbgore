@@ -105,6 +105,7 @@ Dim b() As Byte
     'End of file reached
     If Right$(rData, 17) = "****ENDOFFILE****" Then
         TempStr = Left$(rData, Len(rData) - 17) 'Crop out the ENDOFFILE to recieve the last bit of data
+        Debug.Print Rnd
         If Len(TempStr) Then Put #WriteFileNum, , TempStr   'Write the last data
         Close #WriteFileNum     'Close the file since we're done
         Compression_DeCompress App.Path & RecFileName & ".compressed", App.Path & RecFileName, LZW 'Take the compressed file and decompress it
@@ -150,6 +151,7 @@ Dim b() As Byte
     End If
 
     'If not the above, then we are *hopefully* recieving the file data
+    Debug.Print Rnd
     Put #WriteFileNum, , rData
 
 End Sub

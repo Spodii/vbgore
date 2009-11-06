@@ -3,16 +3,16 @@ Begin VB.Form frmMapInfo
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Map Info"
-   ClientHeight    =   945
+   ClientHeight    =   1215
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   3375
+   ClientWidth     =   3120
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   63
+   ScaleHeight     =   81
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   225
+   ScaleWidth      =   208
    ShowInTaskbar   =   0   'False
    Begin MapEditor.cForm cForm 
       Height          =   255
@@ -32,44 +32,44 @@ Begin VB.Form frmMapInfo
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   840
+      Height          =   285
+      Left            =   720
       TabIndex        =   3
       Text            =   "0"
       ToolTipText     =   "ID of the music file to be played in the map. 0 for nothing."
-      Top             =   600
+      Top             =   840
       Width           =   495
    End
    Begin VB.TextBox WeatherTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   2640
+      Height          =   285
+      Left            =   2520
       TabIndex        =   2
       Text            =   "0"
       ToolTipText     =   "What kind of weather goes on on the map - 0 for none"
-      Top             =   360
+      Top             =   480
       Width           =   495
    End
    Begin VB.TextBox VersionTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   960
+      Height          =   285
+      Left            =   840
       TabIndex        =   1
       Text            =   "1"
       ToolTipText     =   "Version of the map - if the client's version does not match the server's version, the map will be automatically updated"
-      Top             =   360
+      Top             =   480
       Width           =   735
    End
    Begin VB.TextBox MapNameTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   1320
+      Height          =   300
+      Left            =   1200
       TabIndex        =   0
       Text            =   "Name"
       ToolTipText     =   "Name of the map"
@@ -92,9 +92,9 @@ Begin VB.Form frmMapInfo
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   3
-      Left            =   240
+      Left            =   120
       TabIndex        =   7
-      Top             =   600
+      Top             =   840
       Width           =   570
    End
    Begin VB.Label MiscLbl 
@@ -113,9 +113,9 @@ Begin VB.Form frmMapInfo
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   2
-      Left            =   1800
+      Left            =   1680
       TabIndex        =   6
-      Top             =   360
+      Top             =   480
       Width           =   795
    End
    Begin VB.Label MiscLbl 
@@ -134,9 +134,9 @@ Begin VB.Form frmMapInfo
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   1
-      Left            =   240
+      Left            =   120
       TabIndex        =   5
-      Top             =   360
+      Top             =   480
       Width           =   705
    End
    Begin VB.Label MiscLbl 
@@ -155,7 +155,7 @@ Begin VB.Form frmMapInfo
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   0
-      Left            =   240
+      Left            =   120
       TabIndex        =   4
       Top             =   120
       Width           =   975

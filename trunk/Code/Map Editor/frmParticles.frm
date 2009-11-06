@@ -3,23 +3,23 @@ Begin VB.Form frmParticles
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Particle Effects"
-   ClientHeight    =   3495
+   ClientHeight    =   3720
    ClientLeft      =   0
    ClientTop       =   0
-   ClientWidth     =   3360
+   ClientWidth     =   3270
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   233
+   ScaleHeight     =   248
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   224
+   ScaleWidth      =   218
    ShowInTaskbar   =   0   'False
    Begin MapEditor.cButton RefreshBtn 
       Height          =   375
-      Left            =   2040
+      Left            =   1920
       TabIndex        =   17
       ToolTipText     =   "Refresh the list of effects in play"
-      Top             =   2640
+      Top             =   2880
       Width           =   1215
       _ExtentX        =   2143
       _ExtentY        =   661
@@ -49,7 +49,7 @@ Begin VB.Form frmParticles
       TabIndex        =   6
       Text            =   "0"
       ToolTipText     =   "Direction the effect is animating "
-      Top             =   3000
+      Top             =   3360
       Width           =   495
    End
    Begin VB.TextBox YTxt 
@@ -62,7 +62,7 @@ Begin VB.Form frmParticles
       TabIndex        =   4
       Text            =   "0"
       ToolTipText     =   "Y co-ordinate of the effect"
-      Top             =   2520
+      Top             =   2640
       Width           =   495
    End
    Begin VB.TextBox XTxt 
@@ -75,7 +75,7 @@ Begin VB.Form frmParticles
       TabIndex        =   3
       Text            =   "0"
       ToolTipText     =   "X co-ordinate of the effect"
-      Top             =   2520
+      Top             =   2640
       Width           =   495
    End
    Begin VB.TextBox ParticlesTxt 
@@ -88,7 +88,7 @@ Begin VB.Form frmParticles
       TabIndex        =   5
       Text            =   "0"
       ToolTipText     =   "Number of particles the effect has"
-      Top             =   2760
+      Top             =   3000
       Width           =   615
    End
    Begin VB.TextBox GfxTxt 
@@ -126,14 +126,14 @@ Begin VB.Form frmParticles
       TabIndex        =   12
       ToolTipText     =   "The list of particle effect slots, whether used or unused"
       Top             =   360
-      Width           =   3015
+      Width           =   2895
    End
    Begin MapEditor.cButton CreateBtn 
       Height          =   375
-      Left            =   2040
+      Left            =   1920
       TabIndex        =   18
       ToolTipText     =   "Create an effect with the values entered to the left"
-      Top             =   3000
+      Top             =   3240
       Width           =   1215
       _ExtentX        =   2143
       _ExtentY        =   661
@@ -158,7 +158,7 @@ Begin VB.Form frmParticles
       Left            =   1200
       TabIndex        =   15
       ToolTipText     =   "Help on what the *s mean"
-      Top             =   3000
+      Top             =   3360
       Width           =   240
    End
    Begin VB.Label MiscLbl 
@@ -179,7 +179,7 @@ Begin VB.Form frmParticles
       Index           =   7
       Left            =   240
       TabIndex        =   14
-      Top             =   3000
+      Top             =   3360
       Width           =   315
    End
    Begin VB.Label MiscLbl 
@@ -200,7 +200,7 @@ Begin VB.Form frmParticles
       Index           =   6
       Left            =   1080
       TabIndex        =   13
-      Top             =   2520
+      Top             =   2640
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -221,7 +221,7 @@ Begin VB.Form frmParticles
       Index           =   5
       Left            =   240
       TabIndex        =   11
-      Top             =   2520
+      Top             =   2640
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -242,7 +242,7 @@ Begin VB.Form frmParticles
       Index           =   4
       Left            =   240
       TabIndex        =   10
-      Top             =   2760
+      Top             =   3000
       Width           =   810
    End
    Begin VB.Label MiscLbl 

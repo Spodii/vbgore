@@ -59,7 +59,7 @@ Dim C() As Byte         'The cropped down version of b()                        
     Select Case LogType                                                                                             '//\\LOGLINE//\\
         Case General                                                                                                '//\\LOGLINE//\\
             If LogFileNumGeneral = 0 Then                                                                           '//\\LOGLINE//\\
-                LogFile = LogPath & "General.log"                                                                   '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\General.log"                                                       '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumGeneral = FreeFile                                                                        '//\\LOGLINE//\\
@@ -67,7 +67,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumGeneral, , Text                                                                          '//\\LOGLINE//\\
             If LOF(LogFileNumGeneral) > MaxLogFileSize Then                                                         '//\\LOGLINE//\\
-                LogFile = LogPath & "General.log"                                                                   '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\General.log"                                                       '//\\LOGLINE//\\
                 Seek #LogFileNumGeneral, 1                                                                          '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumGeneral))                                                                     '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -81,7 +81,7 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
         Case CodeTracker                                                                                            '//\\LOGLINE//\\
             If LogFileNumCodeTracker = 0 Then                                                                       '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\CodeTracker.log"                                                   '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumCodeTracker = FreeFile                                                                    '//\\LOGLINE//\\
@@ -89,7 +89,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumCodeTracker, , Text                                                                      '//\\LOGLINE//\\
             If LOF(LogFileNumCodeTracker) > MaxLogFileSize Then                                                     '//\\LOGLINE//\\
-                LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\CodeTracker.log"                                                   '//\\LOGLINE//\\
                 Seek #LogFileNumCodeTracker, 1                                                                      '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumCodeTracker))                                                                 '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -103,7 +103,7 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
         Case PacketIn                                                                                               '//\\LOGLINE//\\
             If LogFileNumPacketIn = 0 Then                                                                          '//\\LOGLINE//\\
-                LogFile = LogPath & "PacketIn.log"                                                                  '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\PacketIn.log"                                                      '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumPacketIn = FreeFile                                                                       '//\\LOGLINE//\\
@@ -111,7 +111,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumPacketIn, , Text                                                                         '//\\LOGLINE//\\
             If LOF(LogFileNumPacketIn) > MaxLogFileSize Then                                                        '//\\LOGLINE//\\
-                LogFile = LogPath & "PacketIn.log"                                                                  '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\PacketIn.log"                                                      '//\\LOGLINE//\\
                 Seek #LogFileNumPacketIn, 1                                                                         '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumPacketIn))                                                                    '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -125,7 +125,7 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
         Case PacketOut                                                                                              '//\\LOGLINE//\\
             If LogFileNumPacketOut = 0 Then                                                                         '//\\LOGLINE//\\
-                LogFile = LogPath & "PacketOut.log"                                                                 '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\PacketOut.log"                                                     '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumPacketOut = FreeFile                                                                      '//\\LOGLINE//\\
@@ -133,7 +133,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumPacketOut, , Text                                                                        '//\\LOGLINE//\\
             If LOF(LogFileNumPacketOut) > MaxLogFileSize Then                                                       '//\\LOGLINE//\\
-                LogFile = LogPath & "PacketOut.log"                                                                 '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\PacketOut.log"                                                     '//\\LOGLINE//\\
                 Seek #LogFileNumPacketOut, 1                                                                        '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumPacketOut))                                                                   '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -147,7 +147,7 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
         Case CriticalError                                                                                          '//\\LOGLINE//\\
             If LogFileNumCriticalError = 0 Then                                                                     '//\\LOGLINE//\\
-                LogFile = LogPath & "CriticalError.log"                                                             '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\CriticalError.log"                                                 '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumCriticalError = FreeFile                                                                  '//\\LOGLINE//\\
@@ -155,7 +155,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumCriticalError, , Text                                                                    '//\\LOGLINE//\\
             If LOF(LogFileNumCriticalError) > MaxLogFileSize Then                                                   '//\\LOGLINE//\\
-                LogFile = LogPath & "CriticalError.log"                                                             '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\CriticalError.log"                                                 '//\\LOGLINE//\\
                 Seek #LogFileNumCriticalError, 1                                                                    '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumCriticalError))                                                               '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -169,7 +169,7 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
         Case InvalidPacketData                                                                                      '//\\LOGLINE//\\
             If LogFileNumInvalidPacketData = 0 Then                                                                 '//\\LOGLINE//\\
-                LogFile = LogPath & "InvalidPacketData.log"                                                         '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\InvalidPacketData.log"                                             '//\\LOGLINE//\\
                 If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumInvalidPacketData = FreeFile                                                              '//\\LOGLINE//\\
@@ -177,7 +177,7 @@ Dim C() As Byte         'The cropped down version of b()                        
             End If                                                                                                  '//\\LOGLINE//\\
             Put #LogFileNumInvalidPacketData, , Text                                                                '//\\LOGLINE//\\
             If LOF(LogFileNumInvalidPacketData) > MaxLogFileSize Then                                               '//\\LOGLINE//\\
-                LogFile = LogPath & "InvalidPacketData.log"                                                         '//\\LOGLINE//\\
+                LogFile = LogPath & ServerID & "\InvalidPacketData.log"                                             '//\\LOGLINE//\\
                 Seek #LogFileNumInvalidPacketData, 1                                                                '//\\LOGLINE//\\
                 ReDim b(LOF(LogFileNumInvalidPacketData))                                                           '//\\LOGLINE//\\
                 ReDim C(MinLogFileSize)                                                                             '//\\LOGLINE//\\
@@ -881,6 +881,7 @@ Dim FileNum As Byte
             Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
             .Name = Trim$(DB_RS!Name)
             .Price = Val(DB_RS!Price)
+            .ClassReq = Val(DB_RS!ClassReq)
             .ObjType = Val(DB_RS!ObjType)
             .WeaponType = Val(DB_RS!WeaponType)
             .WeaponRange = Val(DB_RS!WeaponRange)
@@ -994,17 +995,6 @@ Dim k As Byte
 
     Log "Call Load_ServerIni", CodeTracker '//\\LOGLINE//\\
 
-    'Get the ID of this server
-    'Check first if an ID is specified in the ID (ie 1.exe overwrites to ID = 1)
-    TempSplit = Split(App.EXEName, ".")
-    If IsNumeric(TempSplit(0)) Then
-        If Val(TempSplit(0)) > 0 Then
-            ServerID = Val(TempSplit(0))
-        End If
-    End If
-    'No server ID defined in the EXE name, get it from the file
-    If ServerID = 0 Then ServerID = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "ServerID"))
-
     'Misc
     IdleLimit = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "IdleLimit"))
     LastPacket = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "LastPacket"))
@@ -1024,6 +1014,9 @@ Dim k As Byte
     'Get the total number of servers
     NumServers = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "Servers"))
     ReDim ServerInfo(1 To NumServers)
+    
+    'Make sure the server ID is not over the number of servers specified
+    If ServerID > NumServers Then MsgBox "The ID for this server is " & ServerID & " but the max servers defined (NumServers) is " & NumServers & "!", vbOKOnly Or vbCritical
     
     'Get the list of servers
     ReDim ServerMap(1 To NumMaps)
@@ -1054,7 +1047,24 @@ Dim k As Byte
             Next j
             
         End With
+        
     Next i
+    
+    'Make sure all maps have a server, since a map without a server = very bad
+    ' - if a user goes to that map, they won't ever be able to get off, along with it can crash all the servers
+    j = 10
+    s = vbNullString
+    For i = 1 To NumMaps
+        If ServerMap(i) = 0 Or ServerMap(i) > NumServers Then
+            j = j + 1
+            If j > 10 Then  'Display only 10 maps per line
+                s = s & vbNewLine & i & "(" & ServerMap(i) & ")"
+            Else
+                s = s & "," & i & "(" & ServerMap(i) & ")"
+            End If
+        End If
+    Next i
+    If LenB(s) Then MsgBox "The following map files contain invalid servers:" & vbNewLine & "(Server shown in parenthesis)" & vbNewLine & s, vbCritical Or vbOKOnly
 
 End Sub
 
@@ -1090,6 +1100,7 @@ Dim i As Long
         KSStr = !KnownSkills
         CompQStr = Trim$(!CompletedQuests)
         CurQStr = Trim$(!currentquest)
+        UserChar.Class = !Class
         UserChar.Pos.X = Val(!pos_x)
         UserChar.Pos.Y = Val(!pos_y)
         UserChar.Pos.Map = Val(!pos_map)
@@ -1394,6 +1405,7 @@ Dim i As Long
         End If
         DB_RS!date_lastlogin = Date$
         DB_RS!gm = .flags.GMLevel
+        DB_RS!Class = .Class
         DB_RS!Descr = .Desc
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr
@@ -1524,7 +1536,7 @@ Dim FileNum As Byte
     
 End Sub
 
-Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
+Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String, Optional ByVal DontLog As Byte = 0) As String
 
 '*****************************************************************
 'Gets a variable from a text file
@@ -1533,7 +1545,7 @@ Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As
 Dim sSpaces As String ' This will hold the input that the program will retrieve
 Dim szReturn As String ' This will be the defaul value if the string is not found
 
-    Log "Call Var_Get(" & File & "," & Main & "," & Var & ")", CodeTracker '//\\LOGLINE//\\
+    If DontLog = 0 Then Log "Call Var_Get(" & File & "," & Main & "," & Var & ")", CodeTracker '//\\LOGLINE//\\
 
     szReturn = vbNullString
 
@@ -1544,7 +1556,7 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
     Var_Get = RTrim$(sSpaces)
     Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
     
-    Log "Rtrn Var_Get = " & Var_Get, CodeTracker '//\\LOGLINE//\\
+    If DontLog = 0 Then Log "Rtrn Var_Get = " & Var_Get, CodeTracker '//\\LOGLINE//\\
 
 End Function
 

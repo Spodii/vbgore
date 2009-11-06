@@ -3,14 +3,14 @@ Begin VB.Form frmTile
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Tile"
-   ClientHeight    =   6060
+   ClientHeight    =   7980
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   1680
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   404
+   ScaleHeight     =   532
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   112
    ShowInTaskbar   =   0   'False
@@ -32,88 +32,88 @@ Begin VB.Form frmTile
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   4
       Left            =   480
       TabIndex        =   53
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   5400
+      Top             =   7320
       Width           =   975
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   3
       Left            =   480
       TabIndex        =   52
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   4920
+      Top             =   6600
       Width           =   975
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   2
       Left            =   480
       TabIndex        =   51
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   4440
+      Top             =   5880
       Width           =   975
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   1
       Left            =   480
       TabIndex        =   50
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   3960
+      Top             =   5160
       Width           =   975
    End
    Begin VB.TextBox OldGLbl 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   600
       TabIndex        =   49
       Text            =   "0"
       ToolTipText     =   "The graphic index of the layer"
-      Top             =   3240
+      Top             =   4200
       Width           =   975
    End
    Begin VB.TextBox SignTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   47
       Text            =   "0"
       ToolTipText     =   "The number of the sign from Signs.dat"
-      Top             =   840
+      Top             =   1080
       Width           =   735
    End
    Begin VB.TextBox SfxTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   600
       TabIndex        =   6
       Text            =   "0"
       ToolTipText     =   "The number of the .wav file that will be looped on the tile for stuff like waterfalls, birds, etc - set to 0 for nothing"
-      Top             =   2040
+      Top             =   2880
       Width           =   855
    End
    Begin VB.CheckBox ShadowChk 
@@ -124,55 +124,55 @@ Begin VB.Form frmTile
       Height          =   195
       Left            =   240
       TabIndex        =   12
-      Top             =   5760
+      Top             =   7680
       Width           =   1215
    End
    Begin VB.TextBox WYTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   5
       Text            =   "0"
       ToolTipText     =   "The Y co-ordinate the user will warp to when stepping on the tile"
-      Top             =   1800
+      Top             =   2520
       Width           =   255
    End
    Begin VB.TextBox WXTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   4
       Text            =   "0"
       ToolTipText     =   "The X co-ordinate the user will warp to when stepping on the tile"
-      Top             =   1560
+      Top             =   2160
       Width           =   255
    End
    Begin VB.TextBox WMapTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   3
       Text            =   "0"
       ToolTipText     =   "The map the user will warp to when stepping on the tile"
-      Top             =   1320
+      Top             =   1800
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   480
       TabIndex        =   7
       Text            =   "0"
       ToolTipText     =   "The graphic index of the layer"
-      Top             =   3000
+      Top             =   3840
       Width           =   975
    End
    Begin VB.TextBox NPCTxt 
@@ -180,32 +180,32 @@ Begin VB.Form frmTile
       BackColor       =   &H00000000&
       Enabled         =   0   'False
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   720
       TabIndex        =   2
       Text            =   "0"
       ToolTipText     =   "The index of the NPC placed on the tile by the *.npc file number"
-      Top             =   1080
+      Top             =   1440
       Width           =   735
    End
    Begin VB.TextBox MailboxTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1080
       MaxLength       =   1
       TabIndex        =   1
       Text            =   "0"
       ToolTipText     =   $"frmTile.frx":0000
-      Top             =   600
+      Top             =   720
       Width           =   375
    End
    Begin VB.TextBox BlockedTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1080
       MaxLength       =   2
       TabIndex        =   0
@@ -218,52 +218,52 @@ Begin VB.Form frmTile
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   4
       Left            =   480
       TabIndex        =   11
       Text            =   "0"
       ToolTipText     =   "Bottom-right light value of the layer"
-      Top             =   5160
+      Top             =   6960
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   3
       Left            =   480
       TabIndex        =   10
       Text            =   "0"
       ToolTipText     =   "Bottom-left light value of the layer"
-      Top             =   4680
+      Top             =   6240
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   2
       Left            =   480
       TabIndex        =   9
       Text            =   "0"
       ToolTipText     =   "Top-right light value of the layer"
-      Top             =   4200
+      Top             =   5520
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Index           =   1
       Left            =   480
       TabIndex        =   8
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   3720
+      Top             =   4800
       Width           =   975
    End
    Begin VB.Label MiscLbl 
@@ -284,7 +284,7 @@ Begin VB.Form frmTile
       Index           =   23
       Left            =   240
       TabIndex        =   48
-      Top             =   840
+      Top             =   1080
       Width           =   450
    End
    Begin VB.Label MiscLbl 
@@ -305,7 +305,7 @@ Begin VB.Form frmTile
       Index           =   22
       Left            =   240
       TabIndex        =   46
-      Top             =   2040
+      Top             =   2880
       Width           =   345
    End
    Begin VB.Label GrhSelectLbl 
@@ -326,7 +326,7 @@ Begin VB.Form frmTile
       Index           =   0
       Left            =   1440
       TabIndex        =   45
-      Top             =   3000
+      Top             =   3840
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -347,7 +347,7 @@ Begin VB.Form frmTile
       Index           =   4
       Left            =   1440
       TabIndex        =   44
-      Top             =   5160
+      Top             =   6960
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -368,7 +368,7 @@ Begin VB.Form frmTile
       Index           =   3
       Left            =   1440
       TabIndex        =   43
-      Top             =   4680
+      Top             =   6240
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -389,7 +389,7 @@ Begin VB.Form frmTile
       Index           =   2
       Left            =   1440
       TabIndex        =   42
-      Top             =   4200
+      Top             =   5520
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -410,7 +410,7 @@ Begin VB.Form frmTile
       Index           =   1
       Left            =   1440
       TabIndex        =   41
-      Top             =   3720
+      Top             =   4800
       Width           =   90
    End
    Begin VB.Label MiscLbl 
@@ -431,7 +431,7 @@ Begin VB.Form frmTile
       Index           =   21
       Left            =   480
       TabIndex        =   40
-      Top             =   1800
+      Top             =   2520
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -452,7 +452,7 @@ Begin VB.Form frmTile
       Index           =   16
       Left            =   480
       TabIndex        =   39
-      Top             =   1560
+      Top             =   2160
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -473,7 +473,7 @@ Begin VB.Form frmTile
       Index           =   15
       Left            =   120
       TabIndex        =   38
-      Top             =   1320
+      Top             =   1800
       Width           =   525
    End
    Begin VB.Label LayerLbl 
@@ -495,7 +495,7 @@ Begin VB.Form frmTile
       Left            =   120
       TabIndex        =   37
       ToolTipText     =   "Click to view layer 1"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label MiscLbl 
@@ -516,7 +516,7 @@ Begin VB.Form frmTile
       Index           =   14
       Left            =   240
       TabIndex        =   36
-      Top             =   3240
+      Top             =   4200
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -537,7 +537,7 @@ Begin VB.Form frmTile
       Index           =   13
       Left            =   120
       TabIndex        =   35
-      Top             =   3480
+      Top             =   4560
       Width           =   585
    End
    Begin VB.Label MiscLbl 
@@ -558,7 +558,7 @@ Begin VB.Form frmTile
       Index           =   12
       Left            =   120
       TabIndex        =   34
-      Top             =   3000
+      Top             =   3840
       Width           =   375
    End
    Begin VB.Label LayerLbl 
@@ -580,7 +580,7 @@ Begin VB.Form frmTile
       Left            =   1320
       TabIndex        =   33
       ToolTipText     =   "Click to view layer 6"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -602,7 +602,7 @@ Begin VB.Form frmTile
       Left            =   1080
       TabIndex        =   32
       ToolTipText     =   "Click to view layer 5"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -624,7 +624,7 @@ Begin VB.Form frmTile
       Left            =   840
       TabIndex        =   31
       ToolTipText     =   "Click to view layer 4"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -646,7 +646,7 @@ Begin VB.Form frmTile
       Left            =   600
       TabIndex        =   30
       ToolTipText     =   "Click to view layer 3"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -668,7 +668,7 @@ Begin VB.Form frmTile
       Left            =   360
       TabIndex        =   29
       ToolTipText     =   "Click to view layer 2"
-      Top             =   2640
+      Top             =   3480
       Width           =   120
    End
    Begin VB.Label MiscLbl 
@@ -689,7 +689,7 @@ Begin VB.Form frmTile
       Index           =   17
       Left            =   120
       TabIndex        =   28
-      Top             =   3960
+      Top             =   5160
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -710,7 +710,7 @@ Begin VB.Form frmTile
       Index           =   18
       Left            =   120
       TabIndex        =   27
-      Top             =   4440
+      Top             =   5880
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -731,7 +731,7 @@ Begin VB.Form frmTile
       Index           =   19
       Left            =   120
       TabIndex        =   26
-      Top             =   4920
+      Top             =   6600
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -752,7 +752,7 @@ Begin VB.Form frmTile
       Index           =   20
       Left            =   120
       TabIndex        =   25
-      Top             =   5400
+      Top             =   7320
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -773,7 +773,7 @@ Begin VB.Form frmTile
       Index           =   9
       Left            =   240
       TabIndex        =   24
-      Top             =   1080
+      Top             =   1440
       Width           =   450
    End
    Begin VB.Label MiscLbl 
@@ -794,7 +794,7 @@ Begin VB.Form frmTile
       Index           =   8
       Left            =   240
       TabIndex        =   23
-      Top             =   600
+      Top             =   720
       Width           =   720
    End
    Begin VB.Label MiscLbl 
@@ -836,7 +836,7 @@ Begin VB.Form frmTile
       Index           =   6
       Left            =   240
       TabIndex        =   21
-      Top             =   5160
+      Top             =   6960
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -857,7 +857,7 @@ Begin VB.Form frmTile
       Index           =   5
       Left            =   240
       TabIndex        =   20
-      Top             =   4680
+      Top             =   6240
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -878,7 +878,7 @@ Begin VB.Form frmTile
       Index           =   4
       Left            =   240
       TabIndex        =   19
-      Top             =   4200
+      Top             =   5520
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -899,7 +899,7 @@ Begin VB.Form frmTile
       Index           =   3
       Left            =   240
       TabIndex        =   18
-      Top             =   3720
+      Top             =   4800
       Width           =   180
    End
    Begin VB.Label YLbl 
@@ -946,7 +946,7 @@ Begin VB.Form frmTile
       Index           =   2
       Left            =   120
       TabIndex        =   15
-      Top             =   2400
+      Top             =   3240
       Width           =   630
    End
    Begin VB.Label MiscLbl 

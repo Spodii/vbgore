@@ -95,19 +95,19 @@ Dim v_iLoop As Integer
 Dim c As Control
 
     With UserControl
-        .pic_Buttons.Picture = LoadPicture(SkinPath & "\img_Buttons.bmp")
+        .pic_Buttons.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Buttons.*"))
         .pic_Button.Width = .Width
         .pic_Button.Height = 360
         
         .pic_Button.Cls
-        v_lRtn = BitBlt(.pic_Button.hDC, 0, 0, 15, 24, .pic_Buttons.hDC, 0, 0, SRCCOPY)
+        v_lRtn = BitBlt(.pic_Button.hdc, 0, 0, 15, 24, .pic_Buttons.hdc, 0, 0, SRCCOPY)
         v_iCenterImgFrequency = Abs((.Width / Screen.TwipsPerPixelX) / 15)
         If v_iCenterImgFrequency > 0 Then
             For v_iLoop = 1 To v_iCenterImgFrequency
-                v_lRtn = BitBlt(.pic_Button.hDC, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hDC, 15, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hdc, 15, 0, SRCCOPY)
             Next v_iLoop
         End If
-        v_lRtn = BitBlt(.pic_Button.hDC, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hDC, 55, 0, SRCCOPY)
+        v_lRtn = BitBlt(.pic_Button.hdc, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hdc, 55, 0, SRCCOPY)
         pic_Button.Refresh
         
         .lbl_Caption.Top = 60
@@ -140,14 +140,14 @@ Dim v_iLoop As Integer
                 .pic_Button.Height = 360
                 
                 .pic_Button.Cls
-                v_lRtn = BitBlt(.pic_Button.hDC, 0, 0, 15, 24, .pic_Buttons.hDC, 0, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, 0, 0, 15, 24, .pic_Buttons.hdc, 0, 0, SRCCOPY)
                 v_iCenterImgFrequency = Abs((.Width / Screen.TwipsPerPixelX) / 15)
                 If v_iCenterImgFrequency > 0 Then
                     For v_iLoop = 1 To v_iCenterImgFrequency
-                        v_lRtn = BitBlt(.pic_Button.hDC, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hDC, 15, 0, SRCCOPY)
+                        v_lRtn = BitBlt(.pic_Button.hdc, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hdc, 15, 0, SRCCOPY)
                     Next v_iLoop
                 End If
-                v_lRtn = BitBlt(.pic_Button.hDC, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hDC, 55, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hdc, 55, 0, SRCCOPY)
                 
                 .lbl_Caption.Width = .Width
                 .lbl_Caption.Top = 60
@@ -157,14 +157,14 @@ Dim v_iLoop As Integer
         Case DrawState_Hover
             With UserControl
                 .pic_Button.Cls
-                v_lRtn = BitBlt(.pic_Button.hDC, 0, 0, 15, 24, .pic_Buttons.hDC, 72, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, 0, 0, 15, 24, .pic_Buttons.hdc, 72, 0, SRCCOPY)
                 v_iCenterImgFrequency = Abs((.Width / Screen.TwipsPerPixelX) / 15)
                 If v_iCenterImgFrequency > 0 Then
                     For v_iLoop = 1 To v_iCenterImgFrequency
-                        v_lRtn = BitBlt(.pic_Button.hDC, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hDC, 83, 0, SRCCOPY)
+                        v_lRtn = BitBlt(.pic_Button.hdc, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hdc, 83, 0, SRCCOPY)
                     Next v_iLoop
                 End If
-                v_lRtn = BitBlt(.pic_Button.hDC, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hDC, 128, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hdc, 128, 0, SRCCOPY)
                 
                 .lbl_Caption.Width = .Width
                 .lbl_Caption.Top = 75
@@ -174,14 +174,14 @@ Dim v_iLoop As Integer
         Case DrawState_Down
             With UserControl
                 .pic_Button.Cls
-                v_lRtn = BitBlt(.pic_Button.hDC, 0, 0, 15, 24, .pic_Buttons.hDC, 144, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, 0, 0, 15, 24, .pic_Buttons.hdc, 144, 0, SRCCOPY)
                 v_iCenterImgFrequency = Abs((.Width / Screen.TwipsPerPixelX) / 15)
                 If v_iCenterImgFrequency > 0 Then
                     For v_iLoop = 1 To v_iCenterImgFrequency
-                        v_lRtn = BitBlt(.pic_Button.hDC, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hDC, 159, 0, SRCCOPY)
+                        v_lRtn = BitBlt(.pic_Button.hdc, v_iLoop * 15, 0, 15, 24, .pic_Buttons.hdc, 159, 0, SRCCOPY)
                     Next v_iLoop
                 End If
-                v_lRtn = BitBlt(.pic_Button.hDC, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hDC, 202, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_Button.hdc, (.Width / Screen.TwipsPerPixelX) - 16, 0, 16, 24, .pic_Buttons.hdc, 202, 0, SRCCOPY)
                 
                 .lbl_Caption.Width = .Width
                 .lbl_Caption.Top = 75

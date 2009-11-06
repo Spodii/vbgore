@@ -593,6 +593,9 @@ Public Type TexInfo
     BmpFormat As Long
 End Type
 
+'If to use the sounds or not
+Public UseSounds As Byte
+
 '********** Public ARRAYS ***********
 Public GrhData() As GrhData             'Holds data for the graphic structure
 Public SurfaceSize() As TexInfo         'Holds the size of the surfaces for SurfaceDB()
@@ -827,9 +830,9 @@ Dim ResetColor As Byte
 Dim TempColor As Long
 
     'Set the position
-    If ChatBufferChunk = 0 Then ChatBufferChunk = 1
+    If ChatBufferChunk <= 1 Then ChatBufferChunk = 1
     Chunk = 12
-
+    
     'Get the number of characters in all the visible buffer
     Size = 0
     For LoopC = (Chunk * ChatBufferChunk) - 11 To Chunk * ChatBufferChunk
@@ -1144,8 +1147,7 @@ Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal He
 
 Dim EmptyChar As Char
 
-'Update LastChar
-
+    'Update LastChar
     If CharIndex > LastChar Then
         LastChar = CharIndex
         ReDim Preserve CharList(1 To LastChar)
@@ -1301,25 +1303,6 @@ Dim nHeading As Byte
 
 End Sub
 
-Sub Engine_ClearMapArray()
-
-'*****************************************************************
-'Clears all the map information
-'*****************************************************************
-
-    'Clear the map
-    ZeroMemory MapData(1, 1), Len(MapData(1, 1)) * XMaxMapSize * YMaxMapSize    'Width * Height * Size
-
-    'Erase characters
-    LastChar = 0
-    Erase CharList
-
-    'Erase objects
-    LastObj = 0
-    Erase OBJList
-    
-End Sub
-
 Sub Engine_ConvertCPtoTP(ByVal StartPixelLeft As Integer, ByVal StartPixelTop As Integer, ByVal cx As Integer, ByVal cy As Integer, ByRef tX As Integer, ByRef tY As Integer)
 
 '******************************************
@@ -1444,8 +1427,7 @@ Public Sub Engine_Effect_Create(ByVal X As Integer, ByVal Y As Integer, ByVal Gr
 
 Dim EffectIndex As Integer
 
-'Get the next open effect slot
-
+    'Get the next open effect slot
     Do
         EffectIndex = EffectIndex + 1
 
@@ -1513,13 +1495,8 @@ Public Sub Engine_Effect_Erase(ByVal EffectIndex As Integer)
 
 Dim j As Integer
 
-'Clear the selected index
-
-    EffectList(EffectIndex).Grh.FrameCounter = 0
-    EffectList(EffectIndex).Grh.GrhIndex = 0
-    EffectList(EffectIndex).Pos.X = 0
-    EffectList(EffectIndex).Pos.Y = 0
-    EffectList(EffectIndex).Time = 0
+    'Clear the selected index
+    ZeroMemory EffectList(EffectIndex), Len(EffectList(EffectIndex))
 
     'Update LastEffect
     If j = LastEffect Then
@@ -1529,6 +1506,7 @@ Dim j As Integer
             LastEffect = LastEffect - 1
 
             If LastEffect = 0 Then
+                Erase EffectList
                 Exit Sub
             Else
                 'We still have effects, resize the array to end at the last used slot
@@ -1813,6 +1791,8 @@ Private Sub Engine_Init_Sound()
 
     'Make sure we try not to load a file while the engine is unloading
     If IsUnloading Then Exit Sub
+    
+    On Error GoTo ErrOut
 
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
@@ -1821,22 +1801,34 @@ Private Sub Engine_Init_Sound()
     'Set up the buffer description for later use
     'We are only using panning and volume - combined, we will use this to create a custom 3D effect
     DSBDesc.lFlags = DSBCAPS_CTRLPAN Or DSBCAPS_CTRLVOLUME
-
+    
     'Check if the texture exists
-    If Engine_FileExist(DataPath & "Sfx.ini", vbNormal) = False Then
-        MsgBox "Error! Could not find the following data file:" & vbCrLf & DataPath & "Sfx.ini", vbOKOnly
+    If Engine_FileExist(SfxPath & "Sfx.ini", vbNormal) = False Then
+        MsgBox "Error! Could not find the following data file:" & vbCrLf & SfxPath & "Sfx.ini", vbOKOnly
         IsUnloading = 1
         Exit Sub
     End If
 
     'Get the number of sound effects
-    NumSfx = Val(Engine_Var_Get(DataPath & "Sfx.ini", "INIT", "NumSfx"))
+    NumSfx = Val(Engine_Var_Get(SfxPath & "Sfx.ini", "INIT", "NumSfx"))
     
     'Resize the sound buffer array
     If NumSfx > 0 Then
         ReDim DSBuffer(1 To NumSfx)
         ReDim SoundBufferTimer(1 To NumSfx)
     End If
+    
+    On Error GoTo 0
+    
+    'All successful, use sounds
+    UseSounds = 1
+    
+    Exit Sub
+    
+ErrOut:
+
+    'Failure loading sounds, so we won't use them
+    UseSounds = 0
 
 End Sub
 
@@ -1845,6 +1837,8 @@ Public Sub Engine_Sound_SetToMap(ByVal SoundID As Integer, ByVal TileX As Byte, 
 '************************************************************
 'Create a looping sound on the tile
 '************************************************************
+
+    If UseSounds = 0 Then Exit Sub
     
     'Make sure the sound isn't already going
     If Not MapData(TileX, TileY).Sfx Is Nothing Then
@@ -1876,6 +1870,8 @@ Dim SY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
+
+    If UseSounds = 0 Then Exit Sub
 
     'Set the user's position to sX/sY
     SX = CharList(UserCharIndex).Pos.X
@@ -1946,6 +1942,8 @@ Public Sub Engine_Sound_Set(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, By
 'Set the SoundID to the sound buffer
 '************************************************************
 
+    If UseSounds = 0 Then Exit Sub
+
     'Check if the sound buffer is in use
     Engine_Sound_Erase SoundBuffer
     
@@ -1961,6 +1959,8 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 '************************************************************
 Dim SX As Integer
 Dim SY As Integer
+
+    If UseSounds = 0 Then Exit Sub
 
     'Make sure we have the UserCharIndex, or else we cant play the sound! :o
     If UserCharIndex = 0 Then Exit Sub
@@ -2040,6 +2040,8 @@ Private Sub Engine_Sound_Volume(ByRef SoundBuffer As DirectSoundSecondaryBuffer8
 '************************************************************
 'Pan the selected SoundID (-10,000 to 0)
 '************************************************************
+
+    If UseSounds = 0 Then Exit Sub
 
     If SoundBuffer Is Nothing Then Exit Sub
     If Value > 0 Then Value = 0
@@ -4628,19 +4630,19 @@ Dim aY As Integer
         If GetAsyncKeyState(vbKeyShift) Then Running = 1
 
         'Send the information to the server
-        sndBuf.Allocate 4
+        sndBuf.Allocate 2
         sndBuf.Put_Byte DataCode.User_Move
         
         'Running or not
-        If Running Then
-            sndBuf.Put_Byte Direction Or 128
-        Else
-            sndBuf.Put_Byte Direction
+        If Running Then sndBuf.Put_Byte Direction Or 128 Else sndBuf.Put_Byte Direction
+
+        'If the user changed directions or just started moving, request a position update
+        If CharList(UserCharIndex).Moving = 0 Or CharList(UserCharIndex).Heading <> Direction Then
+            sndBuf.Allocate 3
+            sndBuf.Put_Byte DataCode.Server_SetUserPosition
+            sndBuf.Put_Byte UserPos.X
+            sndBuf.Put_Byte UserPos.Y
         End If
-        
-        'Put the position
-        sndBuf.Put_Byte UserPos.X
-        sndBuf.Put_Byte UserPos.Y
 
         'Move the screen and character
         Engine_Char_Move_ByHead UserCharIndex, Direction, Running
@@ -5025,8 +5027,16 @@ Dim WingsGrh As Grh
                 'Stop animation
                 CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 0
                 CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).FrameCounter = 1
-                CharList(CharIndex).Moving = False
+                CharList(CharIndex).Moving = 0
                 If CharList(CharIndex).ActionIndex = 1 Then CharList(CharIndex).ActionIndex = 0
+                
+                'If it is the user's character, confirm the position is correct
+                If CharIndex = UserCharIndex Then
+                    sndBuf.Allocate 3
+                    sndBuf.Put_Byte DataCode.Server_SetUserPosition
+                    sndBuf.Put_Byte CharList(CharIndex).Pos.X
+                    sndBuf.Put_Byte CharList(CharIndex).Pos.Y
+                End If
 
             End If
         End If
@@ -5260,6 +5270,42 @@ Private Sub Engine_Render_ChatTextBuffer()
 
 End Sub
 
+Private Function Engine_UpdateGrh(ByRef Grh As Grh, Optional ByVal LoopAnim As Boolean = True) As Boolean
+
+'*****************************************************************
+'Updates the grh's animation
+'*****************************************************************
+
+    'Check that the grh is started
+    If Grh.Started = 1 Then
+    
+        'Update the frame counter
+        Grh.FrameCounter = Grh.FrameCounter + (TimerMultiplier * GrhData(Grh.GrhIndex).Speed)
+        
+        'If the frame counter is higher then the number of frames...
+        If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
+        
+            'Loop the animation
+            If LoopAnim Then
+                Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
+                    Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
+                Loop
+            
+            'Looping isn't set, just kill the animation
+            Else
+                Grh.Started = 0
+                Exit Function
+            End If
+            
+        End If
+        
+    End If
+    
+    'The grpahic will be rendered
+    Engine_UpdateGrh = True
+    
+End Function
+
 Sub Engine_Render_GrhEX(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal Shadow As Byte = 0)
 
 '*****************************************************************
@@ -5286,21 +5332,9 @@ Dim NewY As Single
 
     'Update the animation frame
     If Animate Then
-        If Grh.Started = 1 Then
-            Grh.FrameCounter = Grh.FrameCounter + (TimerMultiplier * GrhData(Grh.GrhIndex).Speed)
-            If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
-                If LoopAnim = True Then
-                    Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
-                        Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
-                    Loop
-                Else
-                    Grh.Started = 0
-                    Exit Sub
-                End If
-            End If
-        End If
+        If Not Engine_UpdateGrh(Grh, LoopAnim) Then Exit Sub
     End If
-
+    
     'Figure out what frame to draw (always 1 if not animated)
     CurrGrhIndex = GrhData(Grh.GrhIndex).Frames(Int(Grh.FrameCounter))
 
@@ -5451,21 +5485,7 @@ Dim FileNum As Integer
 
     'Update the animation frame
     If Animate Then
-        If Grh.Started = 1 Then
-            Grh.FrameCounter = Grh.FrameCounter + ((timeGetTime - Grh.LastCount) * GrhData(Grh.GrhIndex).Speed * 0.0009)
-            Grh.LastCount = timeGetTime
-            If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
-                If LoopAnim = True Then
-                    Do While Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1
-                        Grh.FrameCounter = Grh.FrameCounter - GrhData(Grh.GrhIndex).NumFrames
-                    Loop
-                Else
-                    Grh.Started = 0
-                    Grh.FrameCounter = GrhData(Grh.GrhIndex).NumFrames  'Force the last frame and stick with it
-                    Exit Sub
-                End If
-            End If
-        End If
+        If Not Engine_UpdateGrh(Grh, LoopAnim) Then Exit Sub
     End If
     
     'Figure out what frame to draw (always 1 if not animated)
@@ -6124,6 +6144,11 @@ Dim X As Long
 Dim j As Long
 Dim Angle As Single
 
+    'Check for valid positions
+    If UserPos.X = 0 Then Exit Sub
+    If UserPos.Y = 0 Then Exit Sub
+    
+    'Clear the offset variables
     minXOffset = 0
     minYOffset = 0
 
@@ -6139,8 +6164,8 @@ Dim Angle As Single
 
     'Calculate the particle offset values
     'Do NOT move this any farther down in the module or you will get "jumps" as the left/top borders on particles
-    ParticleOffsetX = (Engine_PixelPosX(ScreenMinX) - PixelOffsetX) * 1
-    ParticleOffsetY = (Engine_PixelPosY(ScreenMinY) - PixelOffsetY) * 1
+    ParticleOffsetX = (Engine_PixelPosX(ScreenMinX) - PixelOffsetX)
+    ParticleOffsetY = (Engine_PixelPosY(ScreenMinY) - PixelOffsetY)
 
     'Make sure mins and maxs are allways in map bounds
     If minY < XMinMapSize Then
@@ -6328,20 +6353,20 @@ Dim Angle As Single
         If CharList(ChrID(j)).Active Then
             X = Engine_PixelPosX(minXOffset + (CharList(ChrID(j)).Pos.X - minX)) + PixelOffsetX
             Y = Engine_PixelPosY(minYOffset + (CharList(ChrID(j)).Pos.Y - minY)) + PixelOffsetY
-            If Y >= -32 Then
-                If Y <= 632 Then
-                    If X >= -32 Then
-                        If X <= 832 Then
+            If Y >= -32 And Y <= 632 And X >= -32 And X <= 832 Then
                         
-                            'Update the NPC chat
-                            Engine_NPCChat_Update ChrID(j)
-                        
-                            'Draw the character
-                            Engine_Render_Char ChrID(j), X, Y
-                            
-                        End If
-                    End If
-                End If
+                'Update the NPC chat
+                Engine_NPCChat_Update ChrID(j)
+            
+                'Draw the character
+                Engine_Render_Char ChrID(j), X, Y
+                
+            Else
+                
+                'Update just the real position
+                CharList(ChrID(j)).RealPos.X = X + CharList(ChrID(j)).MoveOffset.X
+                CharList(ChrID(j)).RealPos.Y = Y + CharList(ChrID(j)).MoveOffset.Y
+            
             End If
         End If
     Next j
@@ -6407,34 +6432,35 @@ Dim Angle As Single
             If EffectList(j).Grh.GrhIndex Then
                 X = Engine_PixelPosX(minXOffset + (EffectList(j).Pos.X - minX)) + PixelOffsetX
                 Y = Engine_PixelPosY(minYOffset + (EffectList(j).Pos.Y - minY)) + PixelOffsetY
-                If EffectList(j).Time <> 0 Then
-                    If EffectList(j).Time < timeGetTime Then
-                        EffectList(j).Time = 0
-                    End If
-                End If
-                If Y >= -32 Then
-                    If Y <= 632 Then
-                        If X >= -32 Then
-                            If X <= 832 Then
-                                Engine_Render_GrhEX EffectList(j).Grh, X, Y, 1, 1, 0, , , , , EffectList(j).Angle
-                            End If
-                        End If
-                    End If
-                End If
-            End If
-        Next j
-    
-        'Seperate loop to remove the unused - I dont like removing while drawing
-        For j = 1 To LastEffect
-            If EffectList(j).Grh.GrhIndex Then
-                If EffectList(j).Animated = 1 Then
-                    If EffectList(j).Grh.Started = 0 Then Engine_Effect_Erase j
-                ElseIf EffectList(j).Time = 0 Then
+                If EffectList(j).Time <> 0 And EffectList(j).Time < timeGetTime Then
+                
+                    'Timer ran out
                     Engine_Effect_Erase j
+                    
+                ElseIf Y >= -32 And Y <= 632 And X >= -32 And X <= 832 Then
+                
+                    'Timer or animation going, render
+                    Engine_Render_GrhEX EffectList(j).Grh, X, Y, 1, 1, 0, , , , , EffectList(j).Angle
+                    
+                    'Check if the animation is still running
+                    If EffectList(j).Animated = 1 Then
+                        If EffectList(j).Grh.Started = 0 Then Engine_Effect_Erase j
+                    End If
+                    
+                Else
+                
+                    'Animation is going but not in screen, update the animation frame
+                    Engine_UpdateGrh EffectList(j).Grh, False
+                    
+                    'Check if the animation is still running
+                    If EffectList(j).Animated = 1 Then
+                        If EffectList(j).Grh.Started = 0 Then Engine_Effect_Erase j
+                    End If
+                    
                 End If
             End If
         Next j
-        
+
     End If
     
     '************** Projectiles **************
@@ -7960,7 +7986,7 @@ Error_Handler:
 
 End Function
 
-Public Function Engine_Music_Play(ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Play(ByVal BufferNumber As Long)
 
 '************************************************************
 'Plays the mp3 in the specified buffer
@@ -7969,17 +7995,11 @@ Public Function Engine_Music_Play(ByVal BufferNumber As Long) As Boolean
 
     DirectShow_Control(BufferNumber).Run
 
-    Engine_Music_Play = True
-    
-    Exit Function
-
 Error_Handler:
-    
-    Engine_Music_Play = False
 
-End Function
+End Sub
 
-Public Function Engine_Music_Stop(ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Stop(ByVal BufferNumber As Long)
 
 '************************************************************
 'Stops the mp3 in the specified buffer
@@ -7991,17 +8011,13 @@ Public Function Engine_Music_Stop(ByVal BufferNumber As Long) As Boolean
     
     DirectShow_Position(BufferNumber).CurrentPosition = 0
 
-    Engine_Music_Stop = True
-    
-    Exit Function
+    Exit Sub
 
 Error_Handler:
 
-    Engine_Music_Stop = False
+End Sub
 
-End Function
-
-Public Function Engine_Music_Pause(ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Pause(ByVal BufferNumber As Long)
 
 '************************************************************
 'Pause the music in the specified buffer
@@ -8010,18 +8026,12 @@ Public Function Engine_Music_Pause(ByVal BufferNumber As Long) As Boolean
     On Error GoTo Error_Handler
     
     DirectShow_Control(BufferNumber).Stop
-
-    Engine_Music_Pause = True
-    
-    Exit Function
     
 Error_Handler:
-    
-    Engine_Music_Pause = False
 
-End Function
+End Sub
 
-Public Function Engine_Music_Volume(ByVal Volume As Long, ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Volume(ByVal Volume As Long, ByVal BufferNumber As Long)
 
 '************************************************************
 'Set the volume of the music in the specified buffer
@@ -8034,18 +8044,12 @@ Public Function Engine_Music_Volume(ByVal Volume As Long, ByVal BufferNumber As 
     If Volume <= 0 Then Volume = 0
     
     DirectShow_Audio(BufferNumber).Volume = (Volume * Music_MaxVolume) - 10000
-
-    Engine_Music_Volume = True
-    
-    Exit Function
     
 Error_Handler:
 
-    Engine_Music_Volume = False
+End Sub
 
-End Function
-
-Public Function Engine_Music_Balance(ByVal Balance As Long, ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Balance(ByVal Balance As Long, ByVal BufferNumber As Long)
 
 '************************************************************
 'Set the balance of the music in the specified buffer
@@ -8058,18 +8062,12 @@ Public Function Engine_Music_Balance(ByVal Balance As Long, ByVal BufferNumber A
     If Balance <= -Music_MaxBalance Then Balance = -Music_MaxBalance
     
     DirectShow_Audio(BufferNumber).Balance = Balance * Music_MaxBalance
-    
-    Engine_Music_Balance = True
-    
-    Exit Function
-    
+
 Error_Handler:
 
-    Engine_Music_Balance = False
+End Sub
 
-End Function
-
-Public Function Engine_Music_Speed(ByVal Speed As Single, ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_Speed(ByVal Speed As Single, ByVal BufferNumber As Long)
 
 '************************************************************
 'Set the speed of the music in the specified buffer
@@ -8083,17 +8081,11 @@ Public Function Engine_Music_Speed(ByVal Speed As Single, ByVal BufferNumber As 
 
     DirectShow_Position(BufferNumber).Rate = Speed / 100
 
-    Engine_Music_Speed = True
-    
-    Exit Function
-
 Error_Handler:
 
-    Engine_Music_Speed = False
+End Sub
 
-End Function
-
-Public Function Engine_Music_SetPosition(ByVal Hours As Long, ByVal Minutes As Long, ByVal Seconds As Long, Milliseconds As Single, ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_SetPosition(ByVal Hours As Long, ByVal Minutes As Long, ByVal Seconds As Long, Milliseconds As Single, ByVal BufferNumber As Long)
     
 '************************************************************
 'Set the speed of the music in the specified buffer
@@ -8136,18 +8128,12 @@ Public Function Engine_Music_SetPosition(ByVal Hours As Long, ByVal Minutes As L
     End If
     
     DirectShow_Position(BufferNumber).CurrentPosition = Position
-    
-    Engine_Music_SetPosition = True
-    
-    Exit Function
-    
+
 Error_Handler:
 
-    Engine_Music_SetPosition = False
+End Sub
 
-End Function
-
-Public Function Engine_Music_End(ByVal BufferNumber As Long) As Boolean
+Public Sub Engine_Music_End(ByVal BufferNumber As Long)
 
 '************************************************************
 'End the music in the specified buffer
@@ -8156,22 +8142,16 @@ Public Function Engine_Music_End(ByVal BufferNumber As Long) As Boolean
     On Error GoTo Error_Handler
     
     'Check if the buffer is looping
-    If Engine_Music_Loop(BufferNumber) = False Then
+    If Not Engine_Music_Loop(BufferNumber) Then
     
         'Check if the current position is past the stop time
         If DirectShow_Position(BufferNumber).CurrentPosition >= DirectShow_Position(BufferNumber).StopTime Then Engine_Music_Stop BufferNumber
     
     End If
-    
-    Engine_Music_End = True
-    
-    Exit Function
-    
+
 Error_Handler:
 
-    Engine_Music_End = False
-
-End Function
+End Sub
 
 Public Function Engine_Music_Loop(ByVal Media_Number As Long) As Boolean
 
@@ -8187,9 +8167,9 @@ Public Function Engine_Music_Loop(ByVal Media_Number As Long) As Boolean
     End If
     
     Engine_Music_Loop = True
-    
+
     Exit Function
-    
+
 Error_Handler:
 
     Engine_Music_Loop = False

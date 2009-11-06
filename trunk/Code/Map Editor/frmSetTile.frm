@@ -3,14 +3,14 @@ Begin VB.Form frmSetTile
    BackColor       =   &H00C0C0C0&
    BorderStyle     =   0  'None
    Caption         =   "Set Tile"
-   ClientHeight    =   7965
+   ClientHeight    =   9960
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   2670
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    MinButton       =   0   'False
-   ScaleHeight     =   531
+   ScaleHeight     =   664
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   178
    ShowInTaskbar   =   0   'False
@@ -25,7 +25,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   109
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   6270
+      Top             =   8310
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
@@ -39,7 +39,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   108
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   5190
+      Top             =   6870
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
@@ -53,7 +53,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   107
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   4110
+      Top             =   5430
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
@@ -67,7 +67,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   106
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   3030
+      Top             =   3990
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
@@ -81,7 +81,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   105
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   1935
+      Top             =   2535
       Width           =   615
    End
    Begin MapEditor.cForm cForm 
@@ -109,7 +109,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   103
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   6270
+      Top             =   8310
       Width           =   255
    End
    Begin VB.TextBox ShadowTxt 
@@ -123,7 +123,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   102
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   5190
+      Top             =   6870
       Width           =   255
    End
    Begin VB.TextBox ShadowTxt 
@@ -137,7 +137,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   101
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   4110
+      Top             =   5430
       Width           =   255
    End
    Begin VB.TextBox ShadowTxt 
@@ -151,7 +151,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   100
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   3030
+      Top             =   3990
       Width           =   255
    End
    Begin VB.TextBox ShadowTxt 
@@ -165,7 +165,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   99
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   1935
+      Top             =   2535
       Width           =   255
    End
    Begin VB.TextBox ShadowTxt 
@@ -179,7 +179,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   98
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
-      Top             =   870
+      Top             =   1110
       Width           =   255
    End
    Begin VB.CheckBox LightChk 
@@ -192,7 +192,7 @@ Begin VB.Form frmSetTile
       Left            =   840
       TabIndex        =   37
       ToolTipText     =   "Set light layer 6"
-      Top             =   5520
+      Top             =   7200
       Width           =   735
    End
    Begin VB.CheckBox LightChk 
@@ -205,7 +205,7 @@ Begin VB.Form frmSetTile
       Left            =   840
       TabIndex        =   30
       ToolTipText     =   "Set light layer 5"
-      Top             =   4440
+      Top             =   5760
       Width           =   735
    End
    Begin VB.CheckBox LightChk 
@@ -218,7 +218,7 @@ Begin VB.Form frmSetTile
       Left            =   840
       TabIndex        =   23
       ToolTipText     =   "Set light layer 4"
-      Top             =   3360
+      Top             =   4320
       Width           =   735
    End
    Begin VB.CheckBox LightChk 
@@ -231,7 +231,7 @@ Begin VB.Form frmSetTile
       Left            =   840
       TabIndex        =   16
       ToolTipText     =   "Set light layer 3"
-      Top             =   2280
+      Top             =   2880
       Width           =   735
    End
    Begin VB.CheckBox LightChk 
@@ -244,7 +244,7 @@ Begin VB.Form frmSetTile
       Left            =   840
       TabIndex        =   9
       ToolTipText     =   "Set light layer 2"
-      Top             =   1200
+      Top             =   1440
       Width           =   735
    End
    Begin VB.CheckBox LightChk 
@@ -270,7 +270,7 @@ Begin VB.Form frmSetTile
       Left            =   1560
       TabIndex        =   38
       ToolTipText     =   "Set layer 4"
-      Top             =   5520
+      Top             =   7200
       Width           =   975
    End
    Begin VB.CheckBox ShadowChk 
@@ -283,7 +283,7 @@ Begin VB.Form frmSetTile
       Left            =   1560
       TabIndex        =   31
       ToolTipText     =   "Set layer 4"
-      Top             =   4440
+      Top             =   5760
       Width           =   975
    End
    Begin VB.CheckBox ShadowChk 
@@ -296,7 +296,7 @@ Begin VB.Form frmSetTile
       Left            =   1560
       TabIndex        =   24
       ToolTipText     =   "Set layer 4"
-      Top             =   3360
+      Top             =   4320
       Width           =   975
    End
    Begin VB.CheckBox ShadowChk 
@@ -309,7 +309,7 @@ Begin VB.Form frmSetTile
       Left            =   1560
       TabIndex        =   17
       ToolTipText     =   "Set layer 4"
-      Top             =   2280
+      Top             =   2880
       Width           =   975
    End
    Begin VB.CheckBox ShadowChk 
@@ -322,7 +322,7 @@ Begin VB.Form frmSetTile
       Left            =   1560
       TabIndex        =   10
       ToolTipText     =   "Set layer 4"
-      Top             =   1200
+      Top             =   1440
       Width           =   975
    End
    Begin VB.CheckBox ShadowChk 
@@ -348,7 +348,7 @@ Begin VB.Form frmSetTile
       Left            =   240
       TabIndex        =   36
       ToolTipText     =   "Set graphic layer 6"
-      Top             =   5520
+      Top             =   7200
       Width           =   615
    End
    Begin VB.CheckBox LayerChk 
@@ -361,7 +361,7 @@ Begin VB.Form frmSetTile
       Left            =   240
       TabIndex        =   29
       ToolTipText     =   "Set graphic layer 5"
-      Top             =   4440
+      Top             =   5760
       Width           =   615
    End
    Begin VB.CheckBox LayerChk 
@@ -374,7 +374,7 @@ Begin VB.Form frmSetTile
       Left            =   240
       TabIndex        =   22
       ToolTipText     =   "Set graphic layer 4"
-      Top             =   3360
+      Top             =   4320
       Width           =   615
    End
    Begin VB.CheckBox LayerChk 
@@ -387,7 +387,7 @@ Begin VB.Form frmSetTile
       Left            =   240
       TabIndex        =   15
       ToolTipText     =   "Set graphic layer 3"
-      Top             =   2280
+      Top             =   2880
       Width           =   615
    End
    Begin VB.CheckBox LayerChk 
@@ -400,7 +400,7 @@ Begin VB.Form frmSetTile
       Left            =   240
       TabIndex        =   8
       ToolTipText     =   "Set graphic layer 2"
-      Top             =   1200
+      Top             =   1440
       Width           =   615
    End
    Begin VB.CheckBox LayerChk 
@@ -429,7 +429,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   61
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   870
+      Top             =   1110
       Width           =   255
    End
    Begin VB.PictureBox LightPic 
@@ -445,7 +445,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   60
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   1935
+      Top             =   2535
       Width           =   255
    End
    Begin VB.PictureBox LightPic 
@@ -461,7 +461,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   59
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   3030
+      Top             =   3990
       Width           =   255
    End
    Begin VB.PictureBox LightPic 
@@ -477,7 +477,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   58
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   4110
+      Top             =   5430
       Width           =   255
    End
    Begin VB.PictureBox LightPic 
@@ -493,7 +493,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   57
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   5190
+      Top             =   6870
       Width           =   255
    End
    Begin VB.PictureBox LightPic 
@@ -509,7 +509,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   15
       TabIndex        =   56
       ToolTipText     =   "Preview of the light for the layer"
-      Top             =   6270
+      Top             =   8310
       Width           =   255
    End
    Begin VB.TextBox LightTxt 
@@ -523,7 +523,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   39
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
-      Top             =   5760
+      Top             =   7560
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -537,7 +537,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   40
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Right corner"
-      Top             =   5760
+      Top             =   7560
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -551,7 +551,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   41
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   6000
+      Top             =   7920
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -565,7 +565,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   42
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   6000
+      Top             =   7920
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -579,7 +579,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   32
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
-      Top             =   4680
+      Top             =   6120
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -593,7 +593,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   33
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Right corner"
-      Top             =   4680
+      Top             =   6120
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -607,7 +607,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   34
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   4920
+      Top             =   6480
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -621,7 +621,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   35
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   4920
+      Top             =   6480
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -635,7 +635,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   25
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
-      Top             =   3600
+      Top             =   4680
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -649,7 +649,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   26
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Right corner"
-      Top             =   3600
+      Top             =   4680
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -663,7 +663,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   27
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   3840
+      Top             =   5040
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -677,7 +677,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   28
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   3840
+      Top             =   5040
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -691,7 +691,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   18
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
-      Top             =   2520
+      Top             =   3240
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -705,7 +705,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   19
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Right corner"
-      Top             =   2520
+      Top             =   3240
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -719,7 +719,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   20
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   2760
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -733,7 +733,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   21
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   2760
+      Top             =   3600
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -747,7 +747,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   11
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
-      Top             =   1440
+      Top             =   1800
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -761,7 +761,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   12
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Right corner"
-      Top             =   1440
+      Top             =   1800
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -775,7 +775,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   13
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   1680
+      Top             =   2160
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -789,7 +789,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   14
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   1680
+      Top             =   2160
       Width           =   975
    End
    Begin VB.PictureBox PreviewPic 
@@ -804,7 +804,7 @@ Begin VB.Form frmSetTile
       ScaleWidth      =   135
       TabIndex        =   45
       ToolTipText     =   "Preview of the tile, with all lights and graphic layers included"
-      Top             =   6600
+      Top             =   8640
       Width           =   2055
    End
    Begin VB.TextBox GrhTxt 
@@ -818,7 +818,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   7
       Text            =   "0"
       ToolTipText     =   "Graphic index of the layer"
-      Top             =   870
+      Top             =   1110
       Width           =   615
    End
    Begin VB.TextBox LightTxt 
@@ -832,7 +832,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   6
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Right corner"
-      Top             =   600
+      Top             =   720
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -846,7 +846,7 @@ Begin VB.Form frmSetTile
       TabIndex        =   5
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   600
+      Top             =   720
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -895,7 +895,7 @@ Begin VB.Form frmSetTile
       Index           =   17
       Left            =   1320
       TabIndex        =   97
-      Top             =   6270
+      Top             =   8310
       Width           =   540
    End
    Begin VB.Label MiscLbl 
@@ -916,7 +916,7 @@ Begin VB.Form frmSetTile
       Index           =   16
       Left            =   1320
       TabIndex        =   96
-      Top             =   5190
+      Top             =   6870
       Width           =   540
    End
    Begin VB.Label MiscLbl 
@@ -937,7 +937,7 @@ Begin VB.Form frmSetTile
       Index           =   15
       Left            =   1320
       TabIndex        =   95
-      Top             =   4110
+      Top             =   5430
       Width           =   540
    End
    Begin VB.Label MiscLbl 
@@ -958,7 +958,7 @@ Begin VB.Form frmSetTile
       Index           =   14
       Left            =   1320
       TabIndex        =   94
-      Top             =   3030
+      Top             =   3990
       Width           =   540
    End
    Begin VB.Label MiscLbl 
@@ -979,7 +979,7 @@ Begin VB.Form frmSetTile
       Index           =   13
       Left            =   1320
       TabIndex        =   93
-      Top             =   1935
+      Top             =   2535
       Width           =   540
    End
    Begin VB.Label MiscLbl 
@@ -1000,7 +1000,7 @@ Begin VB.Form frmSetTile
       Index           =   12
       Left            =   1320
       TabIndex        =   92
-      Top             =   870
+      Top             =   1110
       Width           =   540
    End
    Begin VB.Label GrhSelectLbl 
@@ -1021,7 +1021,7 @@ Begin VB.Form frmSetTile
       Index           =   6
       Left            =   1200
       TabIndex        =   91
-      Top             =   6270
+      Top             =   8310
       Width           =   90
    End
    Begin VB.Label GrhSelectLbl 
@@ -1042,7 +1042,7 @@ Begin VB.Form frmSetTile
       Index           =   5
       Left            =   1200
       TabIndex        =   90
-      Top             =   5190
+      Top             =   6870
       Width           =   90
    End
    Begin VB.Label GrhSelectLbl 
@@ -1063,7 +1063,7 @@ Begin VB.Form frmSetTile
       Index           =   4
       Left            =   1200
       TabIndex        =   89
-      Top             =   4110
+      Top             =   5430
       Width           =   90
    End
    Begin VB.Label GrhSelectLbl 
@@ -1084,7 +1084,7 @@ Begin VB.Form frmSetTile
       Index           =   3
       Left            =   1200
       TabIndex        =   88
-      Top             =   3030
+      Top             =   3990
       Width           =   90
    End
    Begin VB.Label GrhSelectLbl 
@@ -1105,7 +1105,7 @@ Begin VB.Form frmSetTile
       Index           =   2
       Left            =   1200
       TabIndex        =   87
-      Top             =   1935
+      Top             =   2535
       Width           =   90
    End
    Begin VB.Label GrhSelectLbl 
@@ -1126,7 +1126,7 @@ Begin VB.Form frmSetTile
       Index           =   1
       Left            =   1200
       TabIndex        =   86
-      Top             =   870
+      Top             =   1110
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1147,7 +1147,7 @@ Begin VB.Form frmSetTile
       Index           =   24
       Left            =   2280
       TabIndex        =   85
-      Top             =   6000
+      Top             =   7920
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1168,7 +1168,7 @@ Begin VB.Form frmSetTile
       Index           =   22
       Left            =   2280
       TabIndex        =   84
-      Top             =   5760
+      Top             =   7560
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1189,7 +1189,7 @@ Begin VB.Form frmSetTile
       Index           =   23
       Left            =   1200
       TabIndex        =   83
-      Top             =   6000
+      Top             =   7920
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1210,7 +1210,7 @@ Begin VB.Form frmSetTile
       Index           =   21
       Left            =   1200
       TabIndex        =   82
-      Top             =   5760
+      Top             =   7560
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1231,7 +1231,7 @@ Begin VB.Form frmSetTile
       Index           =   20
       Left            =   2280
       TabIndex        =   81
-      Top             =   4920
+      Top             =   6480
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1252,7 +1252,7 @@ Begin VB.Form frmSetTile
       Index           =   18
       Left            =   2280
       TabIndex        =   80
-      Top             =   4680
+      Top             =   6120
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1273,7 +1273,7 @@ Begin VB.Form frmSetTile
       Index           =   19
       Left            =   1200
       TabIndex        =   79
-      Top             =   4920
+      Top             =   6480
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1294,7 +1294,7 @@ Begin VB.Form frmSetTile
       Index           =   17
       Left            =   1200
       TabIndex        =   78
-      Top             =   4680
+      Top             =   6120
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1315,7 +1315,7 @@ Begin VB.Form frmSetTile
       Index           =   16
       Left            =   2280
       TabIndex        =   77
-      Top             =   3840
+      Top             =   5040
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1336,7 +1336,7 @@ Begin VB.Form frmSetTile
       Index           =   14
       Left            =   2280
       TabIndex        =   76
-      Top             =   3600
+      Top             =   4680
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1357,7 +1357,7 @@ Begin VB.Form frmSetTile
       Index           =   15
       Left            =   1200
       TabIndex        =   75
-      Top             =   3840
+      Top             =   5040
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1378,7 +1378,7 @@ Begin VB.Form frmSetTile
       Index           =   13
       Left            =   1200
       TabIndex        =   74
-      Top             =   3600
+      Top             =   4680
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1399,7 +1399,7 @@ Begin VB.Form frmSetTile
       Index           =   12
       Left            =   2280
       TabIndex        =   73
-      Top             =   2760
+      Top             =   3600
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1420,7 +1420,7 @@ Begin VB.Form frmSetTile
       Index           =   10
       Left            =   2280
       TabIndex        =   72
-      Top             =   2520
+      Top             =   3240
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1441,7 +1441,7 @@ Begin VB.Form frmSetTile
       Index           =   11
       Left            =   1200
       TabIndex        =   71
-      Top             =   2760
+      Top             =   3600
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1462,7 +1462,7 @@ Begin VB.Form frmSetTile
       Index           =   9
       Left            =   1200
       TabIndex        =   70
-      Top             =   2520
+      Top             =   3240
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1483,7 +1483,7 @@ Begin VB.Form frmSetTile
       Index           =   8
       Left            =   2280
       TabIndex        =   69
-      Top             =   1680
+      Top             =   2160
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1504,7 +1504,7 @@ Begin VB.Form frmSetTile
       Index           =   6
       Left            =   2280
       TabIndex        =   68
-      Top             =   1440
+      Top             =   1800
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1525,7 +1525,7 @@ Begin VB.Form frmSetTile
       Index           =   7
       Left            =   1200
       TabIndex        =   67
-      Top             =   1680
+      Top             =   2160
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1546,7 +1546,7 @@ Begin VB.Form frmSetTile
       Index           =   5
       Left            =   1200
       TabIndex        =   66
-      Top             =   1440
+      Top             =   1800
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1567,7 +1567,7 @@ Begin VB.Form frmSetTile
       Index           =   4
       Left            =   2280
       TabIndex        =   65
-      Top             =   600
+      Top             =   720
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1609,7 +1609,7 @@ Begin VB.Form frmSetTile
       Index           =   3
       Left            =   1200
       TabIndex        =   63
-      Top             =   600
+      Top             =   720
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -1651,7 +1651,7 @@ Begin VB.Form frmSetTile
       Index           =   11
       Left            =   0
       TabIndex        =   55
-      Top             =   5520
+      Top             =   7200
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -1672,7 +1672,7 @@ Begin VB.Form frmSetTile
       Index           =   10
       Left            =   120
       TabIndex        =   54
-      Top             =   6270
+      Top             =   8310
       Width           =   375
    End
    Begin VB.Label MiscLbl 
@@ -1693,7 +1693,7 @@ Begin VB.Form frmSetTile
       Index           =   9
       Left            =   0
       TabIndex        =   53
-      Top             =   4440
+      Top             =   5760
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -1714,7 +1714,7 @@ Begin VB.Form frmSetTile
       Index           =   8
       Left            =   120
       TabIndex        =   52
-      Top             =   5190
+      Top             =   6870
       Width           =   375
    End
    Begin VB.Label MiscLbl 
@@ -1735,7 +1735,7 @@ Begin VB.Form frmSetTile
       Index           =   7
       Left            =   0
       TabIndex        =   51
-      Top             =   3360
+      Top             =   4320
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -1756,7 +1756,7 @@ Begin VB.Form frmSetTile
       Index           =   6
       Left            =   120
       TabIndex        =   50
-      Top             =   4110
+      Top             =   5430
       Width           =   375
    End
    Begin VB.Label MiscLbl 
@@ -1777,7 +1777,7 @@ Begin VB.Form frmSetTile
       Index           =   5
       Left            =   0
       TabIndex        =   49
-      Top             =   2280
+      Top             =   2880
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -1798,7 +1798,7 @@ Begin VB.Form frmSetTile
       Index           =   4
       Left            =   120
       TabIndex        =   48
-      Top             =   3030
+      Top             =   3990
       Width           =   375
    End
    Begin VB.Label MiscLbl 
@@ -1819,7 +1819,7 @@ Begin VB.Form frmSetTile
       Index           =   3
       Left            =   0
       TabIndex        =   47
-      Top             =   1200
+      Top             =   1440
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -1840,7 +1840,7 @@ Begin VB.Form frmSetTile
       Index           =   2
       Left            =   120
       TabIndex        =   46
-      Top             =   1935
+      Top             =   2535
       Width           =   375
    End
    Begin VB.Label MiscLbl 
@@ -1861,7 +1861,7 @@ Begin VB.Form frmSetTile
       Index           =   1
       Left            =   120
       TabIndex        =   44
-      Top             =   870
+      Top             =   1110
       Width           =   375
    End
    Begin VB.Label MiscLbl 

@@ -112,6 +112,7 @@ Public Function Get_Byte() As Byte
     
     CopyMemory Get_Byte, ByteBuffer(GetBytePos), 1
     GetBytePos = GetBytePos + 1
+    On Error GoTo 0 '//\\LOGLINE//\\
 
 Exit Function '//\\LOGLINE//\\
 
@@ -131,7 +132,8 @@ Public Function Get_Integer() As Integer
 
     CopyMemory Get_Integer, ByteBuffer(GetBytePos), 2
     GetBytePos = GetBytePos + 2
-
+    On Error GoTo 0 '//\\LOGLINE//\\
+    
 Exit Function '//\\LOGLINE//\\
 
 ErrOut: '//\\LOGLINE//\\
@@ -150,6 +152,7 @@ Public Function Get_Long() As Long
 
     CopyMemory Get_Long, ByteBuffer(GetBytePos), 4
     GetBytePos = GetBytePos + 4
+    On Error GoTo 0 '//\\LOGLINE//\\
 
 Exit Function '//\\LOGLINE//\\
 
@@ -197,6 +200,8 @@ Dim ArraySize As Byte
     'Convert the byte array to Unicode
     Get_String = StrConv(tempB, vbUnicode)
     GetBytePos = GetBytePos + ArraySize
+    
+    On Error GoTo 0
 
 Exit Function '//\\LOGLINE//\\
 
@@ -228,6 +233,8 @@ Dim ArraySize As Integer
     'Convert the byte array to Unicode
     Get_StringEX = StrConv(tempB, vbUnicode)
     GetBytePos = GetBytePos + ArraySize
+    
+    On Error GoTo 0
 
 Exit Function '//\\LOGLINE//\\
 

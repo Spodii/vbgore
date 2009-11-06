@@ -3,6 +3,38 @@ Option Explicit
 Public PacketOutPos As Byte
 Public PacketInPos As Byte
 
+Sub InitSocket()
+
+'*****************************************************************
+'Init the sox socket
+'*****************************************************************
+
+    'Save the game ini
+    Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Name", UserName)
+    If frmConnect.SavePassChk.Value = 0 Then   'If the password wont be saved, clear it out
+        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", "")
+    Else
+        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
+    End If
+    
+    'Clean out the socket so we can make a fresh new connection
+    If GOREsock_Loaded Then GOREsock_Terminate
+
+    'Set up the socket
+    DoEvents
+    GOREsock_Initialize frmMain.hWnd
+    DoEvents
+    SoxID = GOREsock_Connect("127.0.0.1", 10200)
+    
+    'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
+    If SoxID = -1 Then
+        MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
+    Else
+        GOREsock_SetOption SoxID, soxSO_TCP_NODELAY, True
+    End If
+
+End Sub
+
 Sub Data_User_Bank_UpdateSlot(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -526,6 +558,9 @@ Sub Data_Server_Connect()
         frmMain.SetFocus
         DoEvents
         DIDevice.Acquire
+        
+        Unload frmNew
+        Unload frmConnect
     
     End If
     
@@ -589,46 +624,30 @@ Dim TempByte As Byte
 
 End Sub
 
-Sub Data_Map_DoneSwitching()
-
-'*********************************************
-'Done switching maps, load engine back up
-'<>
-'*********************************************
-
-    DownloadingMap = False
-    EngineRun = True
-
-End Sub
-
 Sub Data_Map_LoadMap(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Load the map the server told us to load
-'<MapNum(I)><ServerSideVersion(I)><Weather(B)>
+'<MapNum(I)><ServerSideVersion(I)>
 '*********************************************
-
+Dim FileNum As Byte
 Dim MapNumInt As Integer
 Dim SSV As Integer
 Dim Weather As Byte
 Dim TempInt As Integer
 
-    EngineRun = False
-    DownloadingMap = True
-    
     MapNumInt = rBuf.Get_Integer
     SSV = rBuf.Get_Integer
-    Weather = rBuf.Get_Byte
-    
+
     If Engine_FileExist(MapPath & MapNumInt & ".map", vbNormal) Then  'Get Version Num
-        Open MapPath & MapNumInt & ".map" For Binary As #1
-        Seek #1, 1
-        Get #1, , TempInt
-        Close #1
+        FileNum = FreeFile
+        Open MapPath & MapNumInt & ".map" For Binary As #FileNum
+            Seek #FileNum, 1
+            Get #FileNum, , TempInt
+        Close #FileNum
         If TempInt = SSV Then   'Correct Version
             Game_Map_Switch MapNumInt
             sndBuf.Put_Byte DataCode.Map_DoneLoadingMap 'Tell the server we are done loading map
-            MapInfo.Weather = Weather
         Else
             'Not correct version
             MsgBox "Error! Your map version is not up to date with the server's map! Please run the updater!", vbOKOnly Or vbCritical
@@ -652,7 +671,7 @@ Sub Data_Map_SendName(ByRef rBuf As DataBuffer)
 '*********************************************
 Dim Music As Byte
 
-    MapInfo.Name = rBuf.Get_String
+    MapInfo.name = rBuf.Get_String
     MapInfo.Weather = rBuf.Get_Byte
     
     'Change the music file if we need to
@@ -1180,7 +1199,7 @@ Dim CharIndex As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim Speed As Byte
-Dim Name As String
+Dim name As String
 Dim Weapon As Integer
 Dim Hair As Integer
 Dim Wings As Integer
@@ -1197,7 +1216,7 @@ Dim ChatID As Byte
     X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
     Speed = rBuf.Get_Byte
-    Name = rBuf.Get_String
+    name = rBuf.Get_String
     Weapon = rBuf.Get_Integer
     Hair = rBuf.Get_Integer
     Wings = rBuf.Get_Integer
@@ -1206,7 +1225,7 @@ Dim ChatID As Byte
     ChatID = rBuf.Get_Byte
     
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, Name, Weapon, Hair, Wings, ChatID, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, HP, MP
 
 End Sub
 
@@ -1398,14 +1417,19 @@ Dim Y As Byte
         
     End If
 
-    'Update the user's position
-    UserPos.X = X
-    UserPos.Y = Y
-    CharList(UserCharIndex).Pos = UserPos
+    'Check if the position is even different
+    If X <> UserPos.X Or Y <> UserPos.Y Then
     
-    'If there is a targeted char, check if the path is valid
-    If TargetCharIndex > 0 Then
-        ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
+        'Update the user's position
+        UserPos.X = X
+        UserPos.Y = Y
+        CharList(UserCharIndex).Pos = UserPos
+
+        'If there is a targeted char, check if the path is valid
+        If TargetCharIndex > 0 Then
+            ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)
+        End If
+        
     End If
 
 End Sub
@@ -2024,13 +2048,13 @@ Dim Slot As Byte
     
     'If the object index = 0, then we are deleting a slot, so the rest is null
     If UserInventory(Slot).ObjIndex = 0 Then
-        UserInventory(Slot).Name = "(None)"
+        UserInventory(Slot).name = "(None)"
         UserInventory(Slot).Amount = 0
         UserInventory(Slot).Equipped = 0
         UserInventory(Slot).GrhIndex = 0
     Else
         'Index <> 0, so we have to get the information
-        UserInventory(Slot).Name = rBuf.Get_String
+        UserInventory(Slot).name = rBuf.Get_String
         UserInventory(Slot).Amount = rBuf.Get_Long
         UserInventory(Slot).Equipped = rBuf.Get_Byte
         UserInventory(Slot).GrhIndex = rBuf.Get_Long
@@ -2114,7 +2138,7 @@ Dim Item As Integer
     NPCTradeItemArraySize = NumItems
     For Item = 1 To NumItems
         NPCTradeItems(Item).GrhIndex = rBuf.Get_Long
-        NPCTradeItems(Item).Name = rBuf.Get_String
+        NPCTradeItems(Item).name = rBuf.Get_String
         NPCTradeItems(Item).Price = rBuf.Get_Long
     Next Item
     ShowGameWindow(ShopWindow) = 1
@@ -2135,15 +2159,15 @@ Sub Data_Server_SendQuestInfo(ByRef rBuf As DataBuffer)
 '<QuestID(B)><Name(S)>(<Description(S-EX)>)
 '*********************************************
 Dim QuestID As Byte
-Dim Name As String
+Dim name As String
 Dim Desc As String
 Dim i As Long
 Dim Changed As Byte
 
     'Get the variables
     QuestID = rBuf.Get_Byte
-    Name = rBuf.Get_String
-    If LenB(Name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
+    name = rBuf.Get_String
+    If LenB(name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
 
     'Resize the questinfo array if needed
     If QuestID > QuestInfoUBound Then
@@ -2152,13 +2176,13 @@ Dim Changed As Byte
     End If
     
     'Store the information
-    QuestInfo(QuestID).Name = Name
+    QuestInfo(QuestID).name = name
     QuestInfo(QuestID).Desc = Desc
 
     'Loop through the quests, remove any unused slots on the end
     If QuestInfoUBound > 1 Then
         For i = QuestInfoUBound To 1 Step -1
-            If QuestInfo(i).Name = vbNullString Then
+            If QuestInfo(i).name = vbNullString Then
                 QuestInfoUBound = QuestInfoUBound - 1
                 Changed = 1
             Else
@@ -2174,7 +2198,7 @@ Dim Changed As Byte
             End If
         End If
     Else
-        If QuestInfo(1).Name = vbNullString Then
+        If QuestInfo(1).name = vbNullString Then
             Erase QuestInfo
             QuestInfoUBound = 0
         End If
@@ -2233,7 +2257,6 @@ Static X As Long
 
             Case .Comm_Talk: Data_Comm_Talk rBuf
 
-            Case .Map_DoneSwitching: Data_Map_DoneSwitching
             Case .Map_LoadMap: Data_Map_LoadMap rBuf
             Case .Map_SendName:  Data_Map_SendName rBuf
 
@@ -2307,7 +2330,7 @@ End Sub
 Sub GOREsock_Connecting(inSox As Long)
 
     If SocketOpen = 0 Then
-        
+
         PacketInPos = 0
         PacketOutPos = 0
         
@@ -2324,6 +2347,9 @@ Sub GOREsock_Connecting(inSox As Long)
             sndBuf.Put_Byte DataCode.User_NewLogin
             sndBuf.Put_String UserName
             sndBuf.Put_String UserPassword
+            sndBuf.Put_Integer UserHead
+            sndBuf.Put_Integer UserBody
+            sndBuf.Put_Byte UserClass
         End If
     
         'Save Game.ini

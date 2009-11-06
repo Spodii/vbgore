@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.0            ************
+'************            Official Release: Version 0.4.1            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -203,6 +203,7 @@ Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of slots
 Public Type udtObjData
     Name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
+    ClassReq As Byte                'Class requirement
     GrhIndex As Long                'Graphic index
     SpriteBody As Integer           'Index of the body sprite to change to
     SpriteWeapon As Integer         'Index of the weapon sprite to change to
@@ -329,7 +330,6 @@ Public Type QuestStatus 'Status of user's current quests
 End Type
 Type UserFlags  'Flags for a user
     UserLogged As Byte      'If the user is logged in
-    SwitchingMaps As Byte   'If the user is switching maps
     LastViewedMail As Byte  'The last mail index which the user viewed
     TradeWithNPC As Integer 'NPC the user is trading with
     TargetIndex As Integer  'Index of the NPC or Player targeted
@@ -382,6 +382,7 @@ Type User   'Holds data for a user
     Desc As String          'User's description
     Pos As WorldPos         'User's current position
     Gold As Long            'How much gold the user has
+    Class As Byte           'User's class
     ConnID As Long          'Connection ID
     SendBuffer() As Byte    'Buffer for sending data
     BufferSize As Long      'Size of the buffer

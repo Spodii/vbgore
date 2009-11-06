@@ -1,6 +1,6 @@
 [CHATWINDOW] 
 ScreenX= 0 
-ScreenY= 400 
+ScreenY= 401 
 
 [MENU]
 ScreenX= 340
@@ -19,7 +19,7 @@ ScreenX= 0
 ScreenY= 0
 
 [VIEWMESSAGE]
-ScreenX= 2
+ScreenX= 0
 ScreenY= 0
 
 [MAILBOX]
@@ -27,16 +27,16 @@ ScreenX= 0
 ScreenY= 0
 
 [SHOP]
-ScreenX= 38
-ScreenY= 10
+ScreenX= 0
+ScreenY= 0
 
 [INVENTORY]
-ScreenX= 463
-ScreenY= 92
+ScreenX= 0
+ScreenY= 0
 
 [QUICKBAR]
 ScreenX= 0
 ScreenY= 553
 [BANK]
-ScreenX= 53
-ScreenY= 21
+ScreenX= 0
+ScreenY= 0

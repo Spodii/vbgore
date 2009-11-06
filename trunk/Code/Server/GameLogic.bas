@@ -1,6 +1,25 @@
 Attribute VB_Name = "GameLogic"
 Option Explicit
 
+Public Function Obj_ValidObjForClass(ByVal Class As Byte, ByVal ObjIndex As Integer) As Byte
+
+'*****************************************************************
+'Checks if an object, by the object index, is useable by the passed class
+'*****************************************************************
+    
+    'Check if theres a defined class requirement
+    If ObjData.ClassReq(ObjIndex) > 0 Then
+        
+        'If Class AND ClassReq is true, then we meet the requirements
+        If Not Class And ObjData.ClassReq(ObjIndex) Then Exit Function
+        
+    End If
+    
+    'Requirements met
+    Obj_ValidObjForClass = 1
+
+End Function
+
 Public Sub Obj_Erase(ByVal Num As Integer, ByVal ObjSlot As Byte, ByVal Map As Byte, ByVal X As Integer, ByVal Y As Integer)
 
 '*****************************************************************
@@ -286,25 +305,27 @@ Dim i As Long
     
     'Learn skill reward
     If QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill > 0 Then
-        If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1 Then
-            'User already knew the skill
-            s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
-            ConBuf.PreAllocate 3 + Len(s)
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 5
-            ConBuf.Put_String s
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        Else
-            'User learns the new skill
-            s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
-            ConBuf.PreAllocate 3 + Len(s)
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 6
-            ConBuf.Put_String s
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            'Give the user the skill
-            UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1
-            User_SendKnownSkills UserIndex
+        If Skill_ValidSkillForClass(UserList(UserIndex).Class, QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) Then
+            If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1 Then
+                'User already knew the skill
+                s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
+                ConBuf.PreAllocate 3 + Len(s)
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 5
+                ConBuf.Put_String s
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            Else
+                'User learns the new skill
+                s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
+                ConBuf.PreAllocate 3 + Len(s)
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 6
+                ConBuf.Put_String s
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                'Give the user the skill
+                UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1
+                User_SendKnownSkills UserIndex
+            End If
         End If
     End If
 
@@ -988,9 +1009,11 @@ Dim MailData As MailData
 Dim NumObjs As Byte
 Dim TempSplit() As String
 Dim TempStr As String
+Dim ServerIndex As Byte
 Dim LoopC As Byte
 Dim LoopX As Byte
 Dim i As Long
+Dim j As Byte
 
     Log "Call Server_WriteMail(" & WriterIndex & "," & ReceiverName & "," & Subject & ",[" & Message & "],[Objs() = N/A])", CodeTracker '//\\LOGLINE//\\
 
@@ -1143,10 +1166,67 @@ Dim i As Long
             End If
         End If
     Next LoopC
+        
+    'Get the user's mail list and server from the database and store them
+    DB_RS.Open "SELECT mail,server FROM users WHERE `name`='" & ReceiverName & "'", DB_Conn, adOpenStatic, adLockOptimistic
+    ServerIndex = Val(DB_RS!server) 'Hold the server index
+    TempStr = DB_RS!mail        'Hold the mail string
+    TempSplit = Split(TempStr, vbNewLine)   'Hold the split up mail
+    
+    'Check if the user is on another server
+    If NumServers > 1 Then
+
+        'User is on another server, so send the message there
+        If ServerIndex > 0 Then
+        
+            'Check if the user has too much mail already
+            If UBound(TempSplit) >= MaxMailPerUser Then
+                Log "Server_WriteMail: User has too much mail alread - aborting", CodeTracker '//\\LOGLINE//\\
+                If WriterIndex <> -1 Then
+                    ConBuf.PreAllocate 3 + Len(ReceiverName)
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 16
+                    ConBuf.Put_String ReceiverName
+                    Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                End If
+                DB_RS.Close
+                Exit Function
+                
+            'Send the message to the other server
+            Else
+                DB_RS.Close
+                Server_ConnectToServer ServerIndex 'Confirm the connection
+                If frmMain.ServerSocket(ServerIndex).State = sckConnected Then
+                    ConBuf.PreAllocate 6 + Len(ReceiverName) + Len(MailData.Subject) + Len(MailData.Message) + (NumObjs * 4)
+                    ConBuf.Put_Byte DataCode.Server_MailCompose
+                    ConBuf.Put_String ReceiverName
+                    ConBuf.Put_String MailData.WriterName
+                    ConBuf.Put_String MailData.Subject
+                    ConBuf.Put_StringEX MailData.Message
+                    ConBuf.Put_Byte NumObjs
+                    For j = 1 To NumObjs
+                        ConBuf.Put_Integer MailData.Obj(j).ObjIndex
+                        ConBuf.Put_Integer MailData.Obj(j).Amount
+                    Next j
+                    frmMain.ServerSocket(ServerIndex).SendData ConBuf.Get_Buffer
+                    Save_Mail MailIndex, MailData
+                    Server_WriteMail = 1
+                    Exit Function
+                Else
+                    If WriterIndex <> -1 Then
+                        ConBuf.PreAllocate 3 + Len(ReceiverName)
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 16
+                        ConBuf.Put_String ReceiverName
+                        Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                    End If
+                    Exit Function
+                End If
+            End If
+        End If
+    End If
 
     'The user is not on, so load up his character data and impliment it into the character
-    DB_RS.Open "SELECT name,mail FROM users WHERE `name`='" & ReceiverName & "'", DB_Conn, adOpenStatic, adLockOptimistic
-    TempStr = DB_RS!mail
     TempSplit = Split(TempStr, vbNewLine)
     If UBound(TempSplit) >= MaxMailPerUser Then 'No room for the mail
         Log "Server_WriteMail: User has too much mail alread - aborting", CodeTracker '//\\LOGLINE//\\
@@ -1160,8 +1240,11 @@ Dim i As Long
         End If
         Exit Function
     Else    'Save the mail ID in the user
-        If TempStr <> "" Then TempStr = TempStr & vbNewLine
-        TempStr = TempStr & MailIndex
+        If LenB(TempStr) Then
+            TempStr = TempStr & vbNewLine & MailIndex
+        Else
+            TempStr = TempStr & MailIndex
+        End If
         DB_RS!mail = TempStr
         DB_RS.Update
         DB_RS.Close
@@ -1388,10 +1471,6 @@ Dim AttackPos As WorldPos
 
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "User_Attack: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
     If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) <= 0 Then
         Log "User_Attack: MinSTA <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -1551,7 +1630,7 @@ Dim Hit As Integer  'Hit damage
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
     
     'Update the hit rate
-    HitRate = UserList(UserIndex).Stats.ModStat(SID.Agi) + (UserList(UserIndex).Stats.ModStat(SID.str) * 0.25) + 50
+    HitRate = UserList(UserIndex).Stats.ModStat(SID.Agi) + (UserList(UserIndex).Stats.ModStat(SID.Str) * 0.25) + 50
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= (HitRate - NPCList(NPCIndex).ModStat(SID.Agi)) Then
@@ -1596,12 +1675,6 @@ Dim Hit As Integer
 
     Log "Call User_AttackUser(" & AttackerIndex & "," & VictimIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    'Don't allow if switchingmaps maps
-    If UserList(VictimIndex).flags.SwitchingMaps Then
-        Log "User_AttackUser: Victim switching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
-
     'Play the attack animation
     ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.User_Attack
@@ -1609,7 +1682,7 @@ Dim Hit As Integer
     Data_Send ToPCArea, AttackerIndex, ConBuf.Get_Buffer
     
     'Update the hit rate
-    HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.str) * 0.25) + 50
+    HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.Str) * 0.25) + 50
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= (HitRate - UserList(VictimIndex).Stats.ModStat(SID.Agi)) Then
@@ -1814,10 +1887,6 @@ Dim NewSlot As Byte
         Log "User_DropObj: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "User_DropObj: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
     If Slot <= 0 Then
         Log "User_DropObj: Slot <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -1898,6 +1967,9 @@ Public Sub User_EraseChar(ByVal UserIndex As Integer)
     End If
     On Error GoTo 0
     
+    'Confirm that the map is even loaded (if not, theres obviously no users on it)
+    If MapInfo(UserList(UserIndex).Pos.Map).DataLoaded = 0 Then Exit Sub
+    
     'Send erase command to clients
     ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.Server_EraseChar
@@ -1950,6 +2022,9 @@ Dim i As Long
 Dim j As Long
 
     Log "Call Obj_CleanMapTile(" & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Make sure the map is in memory
+    If MapInfo(Map).DataLoaded = 0 Then Exit Sub
 
     'Make sure we wern't given an empty map tile
     If MapInfo(Map).ObjTile(X, Y).NumObjs = 0 Then
@@ -2032,10 +2107,6 @@ Dim i As Long
 
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "User_GetObj: User switching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
     If Map <= 0 Then
         Log "User_GetObj: User map <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -2061,6 +2132,9 @@ Dim i As Long
         Exit Sub
     End If
     On Error GoTo 0
+    
+    'Make sure the map is in memory
+    If MapInfo(Map).DataLoaded = 0 Then Exit Sub
     
     'No objects exist on the tile
     If MapInfo(Map).ObjTile(X, Y).NumObjs = 0 Then
@@ -2383,10 +2457,9 @@ Dim MsgData As MailData
         Log "User_LookAtTile: Map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "User_LookAtTile: User witching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
+
+    'Make sure the map is in memory
+    If MapInfo(Map).DataLoaded = 0 Then Exit Sub
     
     'Make sure the clicked position is in range of the screen
     If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, X, Y, MaxServerDistanceX, MaxServerDistanceY) = 0 Then Exit Sub
@@ -2798,7 +2871,7 @@ Dim UserIndex As Integer
     Log "Call User_NameToIndex(" & strName & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for bad name
-    If Len(strName) = 0 Then
+    If LenB(strName) Then
         User_NameToIndex = 0
         Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
         Exit Function
@@ -3151,6 +3224,9 @@ Dim i As Long
     Log "Call User_UpdateMap(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     Map = UserList(UserIndex).Pos.Map
+    
+    'Make sure the map is in memory
+    If MapInfo(Map).DataLoaded = 0 Then Exit Sub
 
     'Send user char's pos
     Log "User_UpdateMap: For X = 1 to " & UBound(MapUsers(Map).Index()), CodeTracker '//\\LOGLINE//\\
@@ -3220,7 +3296,7 @@ Dim i As Integer
             Log "User_UpdateModStats: Updating effects of skill/spell WarCurse", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.Agi) = .ModStat(SID.Agi) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.DEF) = .ModStat(SID.DEF) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.str) = .ModStat(SID.str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.Str) = .ModStat(SID.Str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.Mag) = .ModStat(SID.Mag) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
@@ -3244,7 +3320,7 @@ Dim i As Integer
             Log "User_UpdateModStats: Updating effects of skill/spell Bless", CodeTracker '//\\LOGLINE//\\
             .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless * 0.5
-            .ModStat(SID.str) = .ModStat(SID.str) + UserList(UserIndex).Skills.Bless * 0.5
+            .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless * 0.5
             .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Bless * 0.25
             .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Bless * 0.25
             .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Bless * 0.25
@@ -3259,8 +3335,8 @@ Dim i As Integer
         End If
         
         'Min/max hit (damage) modification from strength and agility
-        .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .ModStat(SID.str) + (.ModStat(SID.Agi) * 0.25)
-        .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .ModStat(SID.str) + (.ModStat(SID.Agi) * 0.25)
+        .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) * 0.25)
+        .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) * 0.25)
 
     End With
     
@@ -3297,10 +3373,6 @@ Dim ObjIndex As Integer
         Log "User_UseInvItem: Slot <= 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "User_UseInvItem: SwitchingMaps = Yes - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
     If UserList(UserIndex).Object(Slot).ObjIndex < 0 Then
         Log "User_UseInvItem: ObjIndex < 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
@@ -3312,6 +3384,9 @@ Dim ObjIndex As Integer
     On Error GoTo 0
     
     ObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
+    
+    'Check if the user can use the item
+    If Obj_ValidObjForClass(UserList(UserIndex).Class, ObjIndex) = 0 Then Exit Sub
 
     'Apply the replenish values
     With UserList(UserIndex).Stats
@@ -3528,16 +3603,12 @@ Dim LoopC As Long
         
             'Check if it is a new map - if so, load the new map if needed
             If OldMap <> Map Then Load_Maps_Temp Map
-            
-            'Set switchingmap flag
-            UserList(UserIndex).flags.SwitchingMaps = 1
-    
+
             'Tell client to try switching maps
             ConBuf.PreAllocate 6
             ConBuf.Put_Byte DataCode.Map_LoadMap
             ConBuf.Put_Integer Map
             ConBuf.Put_Integer MapInfo(Map).MapVersion
-            ConBuf.Put_Byte MapInfo(Map).Weather
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     
             'Show Character to others
@@ -3555,9 +3626,24 @@ Dim LoopC As Long
         End If
             
     Else
-    
+        
+        'User didn't change maps, just move their position
         Log "User_WarpChar: Moving user, map is not changing", CodeTracker '//\\LOGLINE//\\
-        User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
+        
+        'Remove the user from the tile
+        MapInfo(Map).Data(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = 0
+        
+        'Update their position
+        UserList(UserIndex).Pos.X = X
+        UserList(UserIndex).Pos.Y = Y
+        
+        'Set them on the new tile
+        MapInfo(Map).Data(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = 0
+        
+        'Send the update packet to everyone on the map
+        User_MakeChar ToMap, UserIndex, UserIndex, Map, X, Y
+        
+        'Update the user's char index
         ConBuf.PreAllocate 3
         ConBuf.Put_Byte DataCode.Server_UserCharIndex
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex

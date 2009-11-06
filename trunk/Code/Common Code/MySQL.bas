@@ -38,6 +38,8 @@ Public Sub MySQL_Init()
     DB_Conn.CursorLocation = adUseClient
     DB_Conn.Open
     
+    On Error GoTo 0
+    
     Exit Sub
     
 ErrOut:

@@ -28,6 +28,25 @@ Private Const Warcry_Exhaust As Long = 1500
 Private Const Heal_Cost As Single = 0.5     'Magic * Heal_Cost
 Private Const Heal_Value As Single = 1.5    'Magic * Heal_Value = MinHP Raised
 Public Const Heal_Exhaust As Long = 1000
+Public Const Heal_ClassReq As Byte = 0      'Class requirements (0 or 255 for none)
+
+Public Function Skill_ValidSkillForClass(ByVal Class As Byte, ByVal SkillID As Byte) As Byte
+
+'*****************************************************************
+'Check if the SkillID can be used by the class
+'For skills with no defined requirements, theres no requirements
+'Heal only has a requirement as an example
+'*****************************************************************
+    
+    'Sort by skill id
+    Select Case SkillID
+        Case SkID.Heal: If Not Heal_ClassReq And Class Then Exit Function
+    End Select
+
+    'If we haven't aborted then it is valid
+    Skill_ValidSkillForClass = 1
+
+End Function
 
 Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
 
@@ -37,7 +56,6 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
@@ -379,7 +397,6 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
 
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
@@ -484,7 +501,6 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
 
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
@@ -590,8 +606,6 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
     If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
@@ -707,8 +721,6 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
     If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
@@ -824,8 +836,6 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     'Check for invalid values
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
     If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
@@ -939,10 +949,8 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
 
     'Check if the caster knows the skill
@@ -1068,7 +1076,6 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
 
@@ -1136,8 +1143,7 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
 
     'Check for invalid values
     If UserIndex = 0 Then Exit Function
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Function
-
+  
     'Check for the skill in the user posession
     If UserList(UserIndex).KnownSkills(SkID.IronSkin) = 0 Then
         Data_Send ToIndex, UserIndex, cMessage(37).Data

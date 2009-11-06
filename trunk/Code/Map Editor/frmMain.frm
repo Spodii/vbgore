@@ -647,30 +647,30 @@ Private Sub Form_Load()
     tsStart = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S"))
     
     'Set the toolbar
-    ToolbarPic.Picture = LoadPicture(GrhMapPath & "toolbar.bmp")
+    ToolbarPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\toolbar.*"))
     
     'Set the tools
     WeatherChkValue = 0
-    WeatherPic.Picture = LoadPicture(GrhMapPath & "weatherg.bmp")
+    WeatherPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\weatherg.*"))
     CharsChkValue = 1
-    CharsPic.Picture = LoadPicture(GrhMapPath & "shownpc.bmp")
+    CharsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\shownpc.*"))
     ObjChkValue = 1
-    ObjPic.Picture = LoadPicture(GrhMapPath & "showobj.bmp")
+    ObjPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\showobj.*"))
     BrightChkValue = 0
-    BrightPic.Picture = LoadPicture(GrhMapPath & "brightg.bmp")
+    BrightPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\brightg.*"))
     GridChkValue = 0
-    GridPic.Picture = LoadPicture(GrhMapPath & "gridg.bmp")
+    GridPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\gridg.*"))
     InfoChkValue = 1
-    InfoPic.Picture = LoadPicture(GrhMapPath & "info.bmp")
+    InfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\info.*"))
     SfxChkValue = 0
-    SetSfxPic.Picture = LoadPicture(GrhMapPath & "soundsg.bmp")
+    SetSfxPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\soundsg.*"))
     
-    OptimizePic.Picture = LoadPicture(GrhMapPath & "optimize.bmp")
-    LoadPic.Picture = LoadPicture(GrhMapPath & "load.bmp")
-    SavePic.Picture = LoadPicture(GrhMapPath & "save.bmp")
-    SaveAsPic.Picture = LoadPicture(GrhMapPath & "saveas.bmp")
-    ExitPic.Picture = LoadPicture(GrhMapPath & "exitbutton.bmp")
-    NewPic.Picture = LoadPicture(GrhMapPath & "newbutton.bmp")
+    OptimizePic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\optimize.*"))
+    LoadPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\load.*"))
+    SavePic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\save.*"))
+    SaveAsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\saveas.*"))
+    ExitPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\exitbutton.*"))
+    NewPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\newbutton.*"))
     
     'Set the layer checks
     L1ChkValue = 1
@@ -679,12 +679,12 @@ Private Sub Form_Load()
     L4ChkValue = 1
     L5ChkValue = 1
     L6ChkValue = 1
-    L1Pic.Picture = LoadPicture(GrhMapPath & "topbuttonselected.bmp")
-    L2Pic.Picture = LoadPicture(GrhMapPath & "bottombuttonselected.bmp")
-    L3Pic.Picture = LoadPicture(GrhMapPath & "topbuttonselected.bmp")
-    L4Pic.Picture = LoadPicture(GrhMapPath & "bottombuttonselected.bmp")
-    L5Pic.Picture = LoadPicture(GrhMapPath & "topbuttonselected.bmp")
-    L6Pic.Picture = LoadPicture(GrhMapPath & "bottombuttonselected.bmp")
+    L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
+    L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
+    L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
+    L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
+    L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
+    L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
     
     'Show/hide all the other forms
     HideFrmTile
@@ -710,10 +710,10 @@ Private Sub L1Pic_Click()
 
     If L1ChkValue = 1 Then
         L1ChkValue = 0
-        L1Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselectedg.bmp")
+        L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
     Else
         L1ChkValue = 1
-        L1Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselected.bmp")
+        L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
     End If
 
 End Sub
@@ -726,10 +726,10 @@ Private Sub L2Pic_Click()
 
     If L2ChkValue = 1 Then
         L2ChkValue = 0
-        L2Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselectedg.bmp")
+        L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
     Else
         L2ChkValue = 1
-        L2Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselected.bmp")
+        L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
     End If
     
 End Sub
@@ -742,10 +742,10 @@ Private Sub L3Pic_Click()
 
     If L3ChkValue = 1 Then
         L3ChkValue = 0
-        L3Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselectedg.bmp")
+        L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
     Else
         L3ChkValue = 1
-        L3Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselected.bmp")
+        L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
     End If
 
 End Sub
@@ -758,10 +758,10 @@ Private Sub L4Pic_Click()
 
     If L4ChkValue = 1 Then
         L4ChkValue = 0
-        L4Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselectedg.bmp")
+        L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
     Else
         L4ChkValue = 1
-        L4Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselected.bmp")
+        L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
     End If
     
 End Sub
@@ -774,10 +774,10 @@ Private Sub L5Pic_Click()
 
     If L5ChkValue = 1 Then
         L5ChkValue = 0
-        L5Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselectedg.bmp")
+        L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
     Else
         L5ChkValue = 1
-        L5Pic.Picture = LoadPicture(GrhMapPath & "\topbuttonselected.bmp")
+        L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
     End If
 
 End Sub
@@ -790,10 +790,10 @@ Private Sub L6Pic_Click()
 
     If L6ChkValue = 1 Then
         L6ChkValue = 0
-        L6Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselectedg.bmp")
+        L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
     Else
         L6ChkValue = 1
-        L6Pic.Picture = LoadPicture(GrhMapPath & "\bottombuttonselected.bmp")
+        L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
     End If
     
 End Sub
@@ -959,10 +959,10 @@ Dim i As Byte
 
     If BrightChkValue = 1 Then
         BrightChkValue = 0
-        BrightPic.Picture = LoadPicture(GrhMapPath & "brightg.bmp")
+        BrightPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\brightg.*"))
     Else
         BrightChkValue = 1
-        BrightPic.Picture = LoadPicture(GrhMapPath & "bright.bmp")
+        BrightPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bright.*"))
     End If
 
     'Turn on
@@ -993,10 +993,10 @@ Private Sub CharsPic_Click()
 
     If CharsChkValue = 1 Then
         CharsChkValue = 0
-        CharsPic.Picture = LoadPicture(GrhMapPath & "shownpcg.bmp")
+        CharsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\shownpcg.*"))
     Else
         CharsChkValue = 1
-        CharsPic.Picture = LoadPicture(GrhMapPath & "shownpc.bmp")
+        CharsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\shownpc.*"))
     End If
 
 End Sub
@@ -1020,10 +1020,10 @@ Private Sub GridPic_Click()
 
     If GridChkValue = 1 Then
         GridChkValue = 0
-        GridPic.Picture = LoadPicture(GrhMapPath & "gridg.bmp")
+        GridPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\gridg.*"))
     Else
         GridChkValue = 1
-        GridPic.Picture = LoadPicture(GrhMapPath & "grid.bmp")
+        GridPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\grid.*"))
     End If
 
 End Sub
@@ -1032,10 +1032,10 @@ Private Sub InfoPic_Click()
 
     If InfoChkValue = 1 Then
         InfoChkValue = 0
-        InfoPic.Picture = LoadPicture(GrhMapPath & "infog.bmp")
+        InfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\infog.*"))
     Else
         InfoChkValue = 1
-        InfoPic.Picture = LoadPicture(GrhMapPath & "info.bmp")
+        InfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\info.*"))
     End If
 
 End Sub
@@ -1144,10 +1144,10 @@ Private Sub WeatherPic_Click()
 
     If WeatherChkValue = 1 Then
         WeatherChkValue = 0
-        WeatherPic.Picture = LoadPicture(GrhMapPath & "weatherg.bmp")
+        WeatherPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\weatherg.*"))
     Else
         WeatherChkValue = 1
-        WeatherPic.Picture = LoadPicture(GrhMapPath & "weather.bmp")
+        WeatherPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\weather.*"))
     End If
 
 End Sub

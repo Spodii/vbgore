@@ -113,15 +113,22 @@ Dim Moved As Byte
                 End If
             End If
         
+            'Mouse wheel is scrolled
         Case DIMOFS_Z
-            If ShowGameWindow(ChatWindow) Then
-                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
-                    If DevData(LoopC).lData > 0 Then
-                        ChatBufferChunk = ChatBufferChunk + 0.25
-                    ElseIf DevData(LoopC).lData < 0 Then
-                        ChatBufferChunk = ChatBufferChunk - 0.25
-                    End If
-                    Engine_UpdateChatArray
+            If ShowGameWindow(ChatWindow) And Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
+                If DevData(LoopC).lData > 0 Then
+                    ChatBufferChunk = ChatBufferChunk + 0.25
+                ElseIf DevData(LoopC).lData < 0 Then
+                    ChatBufferChunk = ChatBufferChunk - 0.25
+                End If
+                Engine_UpdateChatArray
+            Else
+                If DevData(LoopC).lData > 0 Then
+                    ZoomLevel = ZoomLevel + (ElapsedTime * 0.001)
+                    If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
+                ElseIf DevData(LoopC).lData < 0 Then
+                    ZoomLevel = ZoomLevel - (ElapsedTime * 0.001)
+                    If ZoomLevel < 0 Then ZoomLevel = 0
                 End If
             End If
         End Select
@@ -142,16 +149,6 @@ Exit Sub
 
 ErrOut:
     NC = 1
-
-End Sub
-
-Private Sub Form_Click()
-
-    'Regain focus to Direct Input mouse
-    If NC Then
-        DIDevice.Acquire
-        NC = 0
-    End If
 
 End Sub
 
@@ -207,13 +204,15 @@ Dim j As Long
             'Check for a valid attacking distance
             If UserAttackRange > 1 Then
                 If TargetCharIndex > 0 Then
-                    If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
-                        LastAttackTime = timeGetTime
-                        sndBuf.Allocate 2
-                        sndBuf.Put_Byte DataCode.User_Attack
-                        sndBuf.Put_Byte CharList(UserCharIndex).Heading
-                    Else
-                        Engine_AddToChatTextBuffer Message(91), FontColor_Fight
+                    If TargetCharIndex <> UserCharIndex Then
+                        If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
+                            LastAttackTime = timeGetTime
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Attack
+                            sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                        Else
+                            Engine_AddToChatTextBuffer Message(91), FontColor_Fight
+                        End If
                     End If
                 End If
             Else
@@ -419,7 +418,7 @@ Dim j As Long
                         If s = vbNullString Then Exit Sub
                         TempS() = Split(s, " ", 2)
                         If UBound(TempS) < 1 Then Exit Sub
-                        If Not LenB(Trim$(TempS(0))) Then Exit Sub
+                        If LenB(Trim$(TempS(0))) = 0 Then Exit Sub
                         sndBuf.Put_Byte DataCode.Comm_Whisper
                         sndBuf.Put_String Trim$(TempS(0))
                         sndBuf.Put_String Trim$(TempS(1))
@@ -847,6 +846,18 @@ Dim i As Integer
     'Clear the key
     KeyCode = 0
 
+End Sub
+
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    'Regain focus to Direct Input mouse
+    If NC Then
+        DIDevice.Acquire
+        NC = 0
+        MousePos.X = X
+        MousePos.Y = Y
+    End If
+    
 End Sub
 
 Private Sub PTDTmr_Timer()

@@ -179,6 +179,11 @@ Dim BBorderSourceX As Long
 Dim BLBorderSourceX As Long
 Dim BRBorderSourceX As Long
 
+Dim AddFormWidth As Long
+Dim AddFormHeight As Long
+Dim AddControlX As Long
+Dim AddControlY As Long
+
 Dim ParentForm As Form
 
 Event Click()
@@ -192,7 +197,7 @@ Attribute MouseUp.VB_Description = "Occurs when the user releases the mouse butt
 
 Private Const SRCCOPY = &HCC0020
 Private Declare Function BitBlt Lib "gdi32" (ByVal hDestDC As Long, ByVal X As Long, ByVal Y As Long, ByVal nWidth As Long, ByVal nHeight As Long, ByVal hSrcDC As Long, ByVal xSrc As Long, ByVal ySrc As Long, ByVal dwRop As Long) As Long
-Private Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpDefault As String, ByVal lpReturnedString As String, ByVal nSize As Long, ByVal lpFileName As String) As Long
+Private Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 
 Public Sub LoadSkin(m_Form As Form)
 Dim v_iCenterImgFrequency As Integer
@@ -205,39 +210,55 @@ Dim s As String
     Set ParentForm = m_Form
     
     s = Space$(255)
-    GetPrivateProfileString "Form", "LBorderWidth", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "LBorderWidth", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     LBorderWidth = Val(s) * Screen.TwipsPerPixelX
      
     s = Space$(255)
-    GetPrivateProfileString "Form", "RBorderWidth", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "RBorderWidth", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     RBorderWidth = Val(s) * Screen.TwipsPerPixelX
     
     s = Space$(255)
-    GetPrivateProfileString "Form", "BBorderHeight", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "BBorderHeight", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     BBorderHeight = Val(s) * Screen.TwipsPerPixelY
     
     s = Space$(255)
-    GetPrivateProfileString "Form", "LBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "LBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     LBorderSourceX = Val(s)
 
     s = Space$(255)
-    GetPrivateProfileString "Form", "RBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "RBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     RBorderSourceX = Val(s)
 
     s = Space$(255)
-    GetPrivateProfileString "Form", "BBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "BBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     BBorderSourceX = Val(s)
 
     s = Space$(255)
-    GetPrivateProfileString "Form", "BLBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "BLBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     BLBorderSourceX = Val(s)
 
     s = Space$(255)
-    GetPrivateProfileString "Form", "BRBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    getprivateprofilestring "Form", "BRBorderSourceX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
     BRBorderSourceX = Val(s)
     
-    ParentForm.Height = ParentForm.Height + 145 + BBorderHeight
-    ParentForm.Width = ParentForm.Width + ((LBorderWidth + RBorderWidth) / 2) - 45
+    s = Space$(255)
+    getprivateprofilestring "Form", "AddFormWidth", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    AddFormWidth = Val(s)
+    
+    s = Space$(255)
+    getprivateprofilestring "Form", "AddFormHeight", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    AddFormHeight = Val(s)
+    
+    s = Space$(255)
+    getprivateprofilestring "Form", "AddControlX", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    AddControlX = Val(s)
+    
+    s = Space$(255)
+    getprivateprofilestring "Form", "AddControlY", vbNullString, s, Len(s), SkinPath & "\Settings.ini"
+    AddControlY = Val(s)
+    
+    ParentForm.Height = ParentForm.Height + AddFormHeight + 145 + BBorderHeight
+    ParentForm.Width = ParentForm.Width + AddFormWidth + ((LBorderWidth + RBorderWidth) / 2) - 40
 
     For Each c In ParentForm
         Select Case TypeName(c)
@@ -247,6 +268,9 @@ Dim s As String
             Case "Label"
                 c.ForeColor = pSkin.LabelColor
             Case "TextBox"
+                c.ForeColor = pSkin.TextColor
+                c.BackColor = pSkin.TextBackColor
+            Case "ListBox"
                 c.ForeColor = pSkin.TextColor
                 c.BackColor = pSkin.TextBackColor
             Case "CheckBox"
@@ -264,36 +288,34 @@ Dim s As String
         m_Form.BackColor = v_oBackColor
         m_Form.Caption = Caption
 
-        .pic_LeftCaption.Picture = LoadPicture(SkinPath & "\img_Caption_Left.bmp")
+        .pic_LeftCaption.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Caption_Left.*"))
         .pic_LeftCaption.Top = 0
 
-        .pic_RightCaption.Picture = LoadPicture(SkinPath & "\img_Caption_Right.bmp")
+        .pic_RightCaption.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Caption_Right.*"))
         .pic_RightCaption.Left = .Width - .pic_RightCaption.Width
         
-        .pic_CenterCaption.Picture = LoadPicture(SkinPath & "\img_Caption_Center.bmp")
+        .pic_CenterCaption.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Caption_Center.*"))
         .pic_CenterCaption.Left = .pic_LeftCaption.Width
-
-        .pic_CenterCaption.Height = 25 * Screen.TwipsPerPixelY
 
         .lbl_Caption.Width = .pic_CenterCaption.Width
                         
-        .img_CloseBtn.Picture = LoadPicture(SkinPath & "\img_Button_Close.gif")
+        .img_CloseBtn.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Button_Close.*"))
         .img_CloseBtn.Left = .pic_RightCaption.Width - .img_CloseBtn.Width - 75
         .img_CloseBtn.Top = 45
     
-        .img_RestoreBtn.Picture = LoadPicture(SkinPath & "\img_Button_Restore.gif")
+        .img_RestoreBtn.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Button_Restore.*"))
         .img_RestoreBtn.Left = .pic_RightCaption.Width - .img_RestoreBtn.Width - .img_CloseBtn.Width - 75
         .img_RestoreBtn.Top = 45
     
-        .img_MaximizeBtn.Picture = LoadPicture(SkinPath & "\img_Button_Maximize.gif")
+        .img_MaximizeBtn.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Button_Maximize.*"))
         .img_MaximizeBtn.Left = .pic_RightCaption.Width - .img_MaximizeBtn.Width - .img_CloseBtn.Width - 75
         .img_MaximizeBtn.Top = 45
     
-        .img_MinimizeBtn.Picture = LoadPicture(SkinPath & "\img_Button_Minimize.gif")
+        .img_MinimizeBtn.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Button_Minimize.*"))
         .img_MinimizeBtn.Left = .pic_RightCaption.Width - .img_MinimizeBtn.Width - .img_MaximizeBtn.Width - .img_CloseBtn.Width - 75
         .img_MinimizeBtn.Top = 45
     
-        .pic_Borders.Picture = LoadPicture(SkinPath & "\img_Borders.bmp")
+        .pic_Borders.Picture = LoadPicture(SkinPath & "\" & Dir$(SkinPath & "\img_Borders.*"))
 
         .lbl_Caption.Top = CaptionTop
         .lbl_Caption.ForeColor = CaptionColor
@@ -307,8 +329,8 @@ Dim s As String
             Case "CommonDialog"
             Case "Timer"
             Case Else
-                c.Top = c.Top + 13
-                c.Left = c.Left + 3
+                c.Top = c.Top + 13 + AddControlY
+                c.Left = c.Left + 3 + AddControlX
         End Select
     Next c
     Set c = Nothing
@@ -345,10 +367,9 @@ Dim v_lRtn As Long
         v_iCenterImgFrequency = Abs((.pic_CenterCaption.Width / Screen.TwipsPerPixelX) / 50)
         If v_iCenterImgFrequency > 0 Then
             For v_iLoop = 1 To v_iCenterImgFrequency
-                v_lRtn = BitBlt(.pic_CenterCaption.hDC, v_iLoop * 50, 0, 50, 25, .pic_CenterCaption.hDC, 0, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_CenterCaption.hdc, v_iLoop * 50, 0, 50, .pic_CenterCaption.Height / Screen.TwipsPerPixelY, .pic_CenterCaption.hdc, 0, 0, SRCCOPY)
             Next v_iLoop
         End If
-        .lbl_Caption.Width = .pic_CenterCaption.Width
 
         .img_CloseBtn.Left = .pic_RightCaption.Width - .img_CloseBtn.Width - 5
         .img_CloseBtn.Top = 5
@@ -374,8 +395,8 @@ Dim v_lRtn As Long
         v_iCenterImgFrequency = Abs(((ParentForm.Height - .pic_LeftCaption.Height) / Screen.TwipsPerPixelY) / 5)
         If v_iCenterImgFrequency > 0 Then
             For v_iLoop = 0 To v_iCenterImgFrequency - 1
-                BitBlt .pic_LeftBorder.hDC, 0, v_iLoop * 5, LBorderWidth, 5, .pic_Borders.hDC, LBorderSourceX, 0, SRCCOPY
-                BitBlt .pic_RightBorder.hDC, 0, v_iLoop * 5, RBorderWidth, 5, .pic_Borders.hDC, RBorderSourceX, 0, SRCCOPY
+                BitBlt .pic_LeftBorder.hdc, 0, v_iLoop * 5, LBorderWidth, 5, .pic_Borders.hdc, LBorderSourceX, 0, SRCCOPY
+                BitBlt .pic_RightBorder.hdc, 0, v_iLoop * 5, RBorderWidth, 5, .pic_Borders.hdc, RBorderSourceX, 0, SRCCOPY
             Next v_iLoop
         End If
         .pic_LeftBorder.Refresh
@@ -389,12 +410,12 @@ Dim v_lRtn As Long
 
         If v_iCenterImgFrequency > 0 Then
             For v_iLoop = 0 To v_iCenterImgFrequency
-                v_lRtn = BitBlt(.pic_DownBorder.hDC, v_iLoop * 4, 0, 4, 5, .pic_Borders.hDC, BBorderSourceX, 0, SRCCOPY)
+                v_lRtn = BitBlt(.pic_DownBorder.hdc, v_iLoop * 4, 0, 4, 5, .pic_Borders.hdc, BBorderSourceX, 0, SRCCOPY)
             Next v_iLoop
         End If
         
-        BitBlt .pic_DownBorder.hDC, 0, 0, 5, BBorderHeight, .pic_Borders.hDC, BLBorderSourceX, 0, SRCCOPY
-        BitBlt .pic_DownBorder.hDC, (ParentForm.Width / Screen.TwipsPerPixelX) - 5, 0, 5, BBorderHeight, .pic_Borders.hDC, BRBorderSourceX, 0, SRCCOPY
+        BitBlt .pic_DownBorder.hdc, 0, 0, 5, BBorderHeight, .pic_Borders.hdc, BLBorderSourceX, 0, SRCCOPY
+        BitBlt .pic_DownBorder.hdc, (ParentForm.Width / Screen.TwipsPerPixelX) - 5, 0, 5, BBorderHeight, .pic_Borders.hdc, BRBorderSourceX, 0, SRCCOPY
         .pic_DownBorder.Refresh
         
         .lbl_Caption.Top = CaptionTop
@@ -710,6 +731,13 @@ Private Sub pic_LeftBorder_MouseUp(Button As Integer, Shift As Integer, X As Sin
     
 End Sub
 
+Private Sub pic_LeftCaption_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    UserControl.MousePointer = 0
+    lbl_Caption_MouseMove Button, Shift, X, Y
+
+End Sub
+
 Private Sub pic_RightBorder_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
     
     If Button = 1 Then
@@ -739,6 +767,13 @@ Private Sub pic_RightBorder_MouseUp(Button As Integer, Shift As Integer, X As Si
 
     v_bResizing = False
     
+End Sub
+
+Private Sub pic_RightCaption_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    UserControl.MousePointer = 0
+    lbl_Caption_MouseMove Button, Shift, X, Y
+
 End Sub
 
 Private Sub UserControl_Click()

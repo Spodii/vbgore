@@ -97,6 +97,8 @@ Private Function Encryption_Misc_FileExist(FileName As String) As Boolean
 
     Call FileLen(FileName)
     Encryption_Misc_FileExist = True
+    
+    On Error GoTo 0
 
 NotExist:
 

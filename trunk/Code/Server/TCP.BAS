@@ -307,7 +307,6 @@ Dim Txt As String
     Txt = rBuf.Get_String
 
     'Check for invalid conditions
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If Txt = vbNullString Then
         Log "Data_Comm_Emote: txt = vbNullString", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -337,7 +336,7 @@ Sub Data_Comm_Shout_ServerToServer(ByRef rBuf As DataBuffer)
 
 '*****************************************************************
 'Another server told us someone shouted
-'<txt(S)>
+'<Name(S)><txt(S)>
 '*****************************************************************
 Dim Name As String
 Dim Txt As String
@@ -374,7 +373,6 @@ Dim i As Byte
     Txt = rBuf.Get_String
 
     'Check for invalid conditions
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If Txt = vbNullString Then
         Log "Data_Comm_Shout: txt = vbNullString", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -418,7 +416,7 @@ Dim i As Byte
                 Server_ConnectToServer i
                 
                 'Send the data
-                frmMain.ServerSocket(i).SendData ConBuf.Get_Buffer
+                If frmMain.ServerSocket(i).State = sckConnected Then frmMain.ServerSocket(i).SendData ConBuf.Get_Buffer
                 
             End If
         
@@ -442,7 +440,6 @@ Dim Txt As String
     Txt = rBuf.Get_String
 
     'Check for invalid conditions
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If Txt = vbNullString Then
         Log "Data_Comm_Talk: txt = vbNullString", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -518,9 +515,6 @@ Dim TempStr() As String
     Else
         UserList(UserIndex).Counters.DelayTimeTalk = timeGetTime + DelayTimeTalk
     End If
-    
-    'Check for invalid conditions
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
 
     'Check for valid tName
     If Not Server_LegalString(tName) Then Exit Sub
@@ -539,7 +533,7 @@ Dim TempStr() As String
     
         'Check what server the user is on
         DB_RS.Open "SELECT server FROM users WHERE `name`='" & tName & "'", DB_Conn, adOpenStatic, adLockOptimistic
-        ServerIndex = DB_RS!server
+        ServerIndex = Val(DB_RS!server)
         If DB_RS.EOF Or ServerIndex = 0 Then
             
             'User doesn't exist or is offline
@@ -668,7 +662,6 @@ Dim i As Long
     
     'Check for invalid values
     If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If NPCIndex <= 0 Then
         Log "Data_GM_Thrall: Invalid NPCIndex (" & NPCIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -896,9 +889,6 @@ Dim nPos As WorldPos
         Exit Sub
     End If
 
-    'Don't allow if switching maps
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Sub
-
     'Find closest legal position and warp there
     Server_ClosestLegalPos UserList(TargetIndex).Pos, nPos
     User_WarpChar UserIndex, nPos.Map, nPos.X, nPos.Y
@@ -911,9 +901,9 @@ Sub Data_GM_Kick(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 'GM kicked the user
 '<TargetName(S)>
 '*****************************************************************
-
 Dim TargetName As String
 Dim TargetIndex As Integer
+Dim i As Byte
 
     Log "Call Data_GM_Kick([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -937,6 +927,16 @@ Dim TargetIndex As Integer
     ConBuf.Put_String UserList(TargetIndex).Name
     Data_Send ToAll, 0, ConBuf.Get_Buffer, , PP_GlobalMessage
 
+    'For multiple servers, send to all the servers
+    If NumServers > 1 Then
+        For i = 1 To NumServers
+            If ServerID <> i Then
+                Server_ConnectToServer i
+                If frmMain.ServerSocket(i).State = sckConnected Then frmMain.ServerSocket(i).SendData ConBuf.Get_Buffer
+            End If
+        Next i
+    End If
+
     'Close the user
     Server_CloseSocket TargetIndex
 
@@ -954,7 +954,7 @@ Dim RaiseValue As Long
 
     Log "Call Data_GM_Raise([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-On Error GoTo RaiseErrOut
+    On Error GoTo RaiseErrOut
 
     TargetName = rBuf.Get_String
     RaiseValue = rBuf.Get_Long
@@ -971,6 +971,8 @@ On Error GoTo RaiseErrOut
 
     'Raise user's experience
     User_RaiseExp TargetIndex, RaiseValue
+    
+    On Error GoTo 0
 
     'Show raise message
     ConBuf.PreAllocate 6
@@ -1010,9 +1012,6 @@ Dim nPos As WorldPos
     TargetName = rBuf.Get_String
     TargetIndex = User_NameToIndex(TargetName)
 
-    'Check for invalid values
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
-
     'Check the user admin ID
     If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
 
@@ -1021,9 +1020,6 @@ Dim nPos As WorldPos
         Data_Send ToIndex, UserIndex, cMessage(51).Data, , PP_GMMessages
         Exit Sub
     End If
-
-    'Don't allow if switching maps
-    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Sub
 
     'Find closest legal position and warp there
     Server_ClosestLegalPos UserList(UserIndex).Pos, nPos
@@ -1058,15 +1054,12 @@ Sub Data_Map_DoneLoadingMap(ByVal UserIndex As Integer)
         Exit Sub
     End If
 
-    UserList(UserIndex).flags.SwitchingMaps = 0
-
     'Send the map name
-    ConBuf.PreAllocate 5 + Len(MapInfo(UserList(UserIndex).Pos.Map).Name)
+    ConBuf.PreAllocate 4 + Len(MapInfo(UserList(UserIndex).Pos.Map).Name)
     ConBuf.Put_Byte DataCode.Map_SendName
     ConBuf.Put_String MapInfo(UserList(UserIndex).Pos.Map).Name
     ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Weather
     ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Music
-    ConBuf.Put_Byte DataCode.Map_DoneSwitching
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
     'Fill in all the characters and objects
@@ -1326,6 +1319,33 @@ Dim LoopC As Byte
 
 End Sub
 
+Sub Data_Server_MailCompose_ServerToServer(ByRef rBuf As DataBuffer)
+
+'*****************************************************************
+'Compose a new message (from another server)
+'<ReceiverName(S)><WriterName(S)><Subject(S)><Message(B)> (<ObjIndex(I)><Amount(I)>)
+'*****************************************************************
+Dim ReceiverName As String
+Dim NumObjs As Byte
+Dim tMail As MailData
+Dim i As Byte
+
+    'Get the variables
+    ReceiverName = rBuf.Get_String
+    tMail.WriterName = rBuf.Get_String
+    tMail.Subject = rBuf.Get_String
+    tMail.Message = rBuf.Get_StringEX
+    NumObjs = rBuf.Get_Byte
+    For i = 1 To NumObjs
+        tMail.Obj(i).ObjIndex = rBuf.Get_Integer
+        tMail.Obj(i).Amount = rBuf.Get_Integer
+    Next i
+    
+    'Send the message to the mail handler
+    Server_WriteMail 0, ReceiverName, tMail.Subject, tMail.Message, tMail.Obj
+
+End Sub
+
 Sub Data_Server_MailCompose(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************
@@ -1401,15 +1421,13 @@ Dim Slots() As Byte
     Next i
 
     'Check for invalid values (most is handled in Server_WriteMail sub)
-    If UserList(UserIndex).flags.SwitchingMaps = 0 Then
-        If Server_ValidString(RecieverName) Then
-            If Server_ValidString(Subject) Then
-                If Server_ValidString(Message) Then
-            
-                    'Write the mail to the RecieverName
-                    If Not Server_WriteMail(UserIndex, RecieverName, Subject, Message, Objs) Then Exit Sub
-                    
-                End If
+    If Server_ValidString(RecieverName) Then
+        If Server_ValidString(Subject) Then
+            If Server_ValidString(Message) Then
+        
+                'Write the mail to the RecieverName
+                If Not Server_WriteMail(UserIndex, RecieverName, Subject, Message, Objs) Then Exit Sub
+                
             End If
         End If
     End If
@@ -1462,7 +1480,6 @@ Dim MsgData As MailData
         Log "Data_Server_MailDelete: Invalid mail index (" & MailIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).MailID(MailIndex) <= 0 Then
         Log "Data_Server_MailDelete: Invalid mail ID (" & UserList(UserIndex).MailID(MailIndex) & ") on mail index (" & MailIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -1519,7 +1536,6 @@ Dim Y As Long
 
     'Check for invalid values
     If UserList(UserIndex).flags.LastViewedMail <= 0 Then Exit Sub
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If ObjIndex > MaxMailObjs Then
         Log "Data_Server_MailItemTake: Invalid object index (" & ObjIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -1655,7 +1671,6 @@ Dim NumObjs As Byte
         Log "Data_Server_MailMessage: Invalid mail ID (" & UserList(UserIndex).MailID(MessageID) & ") on message ID (" & MessageID & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
 
     'Load the mail into a temporary mail buffer
     MsgData = Load_Mail(UserList(UserIndex).MailID(MessageID))
@@ -1850,6 +1865,9 @@ Dim i As Integer
         'Since PCs and NPCs are in different arrays, we have to pass which one the TargetIndex belongs to, too
         TargetType = CharList(TargetCharIndex).CharType
     End If
+    
+    'Check if the skill can be used by the user's class
+    If Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) = 0 Then Exit Sub
 
     'Call the skill by the SkillID
     Select Case SkillID
@@ -2099,9 +2117,7 @@ Sub Data_User_LookLeft(ByVal UserIndex As Integer)
 
     Log "Call Data_User_LookLeft(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-'Check for invalid values
-
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
+    'Check for invalid values
     If UserList(UserIndex).Char.HeadHeading = 0 Then Exit Sub
     If UserList(UserIndex).Char.HeadHeading = UserList(UserIndex).Char.Heading - 1 Then Exit Sub
 
@@ -2127,9 +2143,7 @@ Sub Data_User_LookRight(ByVal UserIndex As Integer)
 
     Log "Call Data_User_LookRight(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-'Check for invalid values
-
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
+    'Check for invalid values
     If UserList(UserIndex).Char.HeadHeading = UserList(UserIndex).Char.Heading + 1 Then Exit Sub
 
     'Turn the head
@@ -2145,22 +2159,45 @@ Sub Data_User_LookRight(ByVal UserIndex As Integer)
 
 End Sub
 
+Sub Data_Server_SetUserPosition(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User requests to make sure their position is correct
+'<X(B)<Y(B)>
+'*****************************************************************
+Dim nX As Byte
+Dim nY As Byte
+
+    'Get the client's position
+    nX = rBuf.Get_Byte
+    nY = rBuf.Get_Byte
+    
+    'Check the values against the values on the server
+    If nX <> UserList(UserIndex).Pos.X Or nY <> UserList(UserIndex).Pos.Y Then
+    
+        'The position the client holds is incorrect, send the correction
+        ConBuf.PreAllocate 3
+        ConBuf.Put_Byte DataCode.Server_SetUserPosition
+        ConBuf.Put_Byte UserList(UserIndex).Pos.X
+        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        
+    End If
+
+End Sub
+
 Sub Data_User_Move(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************
 'Move the user
-'<Direction(B)><X(B)><Y(B)>
+'<Direction(B)>
 '*****************************************************************
-Dim uX As Byte
-Dim uY As Byte
 Dim Dir As Byte
 Dim Running As Byte
 
     Log "Call Data_User_Move([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     Dir = rBuf.Get_Byte
-    uX = rBuf.Get_Byte
-    uY = rBuf.Get_Byte
     
     'Check the move counter
     If timeGetTime < UserList(UserIndex).Counters.MoveCounter Then
@@ -2181,15 +2218,6 @@ Dim Running As Byte
         Running = 1
         Dir = Dir Xor 128
     End If
-    
-    'Check if the user's X and Y co-ordinates are correct - if not, send them the right position they should be at
-    If uX <> UserList(UserIndex).Pos.X Or uY <> UserList(UserIndex).Pos.Y Then
-        ConBuf.PreAllocate 3
-        ConBuf.Put_Byte DataCode.Server_SetUserPosition
-        ConBuf.Put_Byte UserList(UserIndex).Pos.X
-        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-    End If
 
     'Invalid values handled by sub
     User_MoveChar UserIndex, Dir, Running
@@ -2200,19 +2228,25 @@ Sub Data_User_NewLogin(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************
 'Log on a new character
-'<Name(S)><Password(S)>
+'<Name(S)><Password(S)><Head(I)><Body(I)><Class(B)>
 '*****************************************************************
 
 Dim Name As String
 Dim Pass As String
+Dim Head As Integer
+Dim Body As Integer
+Dim Class As Byte
 
     Log "Call Data_User_NewLogin([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     Name = rBuf.Get_String
     Pass = rBuf.Get_String
+    Head = rBuf.Get_Integer
+    Body = rBuf.Get_Integer
+    Class = rBuf.Get_Byte
 
     'Invalid values handled by sub
-    User_ConnectNew UserIndex, Name, Pass, 1, 1
+    User_ConnectNew UserIndex, Name, Pass, Body, Head, Class
 
 End Sub
 
@@ -2359,28 +2393,34 @@ Dim s As String
             
             'Send the quest text to the client
             Quest_SendText UserIndex, i
-            
+
             'Starting reward skills
             If QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill > 0 Then
-                If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1 Then
-                    s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
-                    'User already knew the skill
-                    ConBuf.PreAllocate 3 + Len(s)
-                    ConBuf.Put_Byte DataCode.Server_Message
-                    ConBuf.Put_Byte 5
-                    ConBuf.Put_String s
-                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                Else
-                    s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
-                    'User learns the new skill
-                    ConBuf.PreAllocate 3 + Len(s)
-                    ConBuf.Put_Byte DataCode.Server_Message
-                    ConBuf.Put_Byte 6
-                    ConBuf.Put_String s
-                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                    'Give the user the skill
-                    UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1
-                    User_SendKnownSkills UserIndex
+            
+                'Check for skill requirements
+                If Skill_ValidSkillForClass(UserList(UserIndex).Class, QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) Then
+            
+                    If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1 Then
+                        s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
+                        'User already knew the skill
+                        ConBuf.PreAllocate 3 + Len(s)
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 5
+                        ConBuf.Put_String s
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    Else
+                        s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill)
+                        'User learns the new skill
+                        ConBuf.PreAllocate 3 + Len(s)
+                        ConBuf.Put_Byte DataCode.Server_Message
+                        ConBuf.Put_Byte 6
+                        ConBuf.Put_String s
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                        'Give the user the skill
+                        UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(i)).AcceptLearnSkill) = 1
+                        User_SendKnownSkills UserIndex
+                    End If
+                    
                 End If
             End If
 
@@ -2425,7 +2465,6 @@ Dim Slot As Byte
     If NPCList(NPCIndex).NumVendItems < 1 Then Exit Sub
     If Slot <= 0 Then Exit Sub
     If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).flags.TradeWithNPC <= 0 Then Exit Sub
     If Amount < 0 Then Exit Sub
     If Amount > UserList(UserIndex).Object(Slot).Amount Then Exit Sub
@@ -2495,7 +2534,6 @@ Dim Slot As Byte
     If NPCIndex > LastNPC Then Exit Sub
     If Slot > NPCList(NPCIndex).NumVendItems Then Exit Sub
     If Slot <= 0 Then Exit Sub
-    If UserList(UserIndex).flags.SwitchingMaps Then Exit Sub
     If UserList(UserIndex).flags.TradeWithNPC <= 0 Then Exit Sub
     If NPCList(NPCIndex).VendItems(Slot).ObjIndex <= 0 Then Exit Sub
     If NPCList(NPCIndex).VendItems(Slot).Amount = 0 Then Exit Sub
@@ -2655,6 +2693,7 @@ Sub User_Close(ByVal UserIndex As Integer)
 Dim LoopC As Long
 Dim Map As Integer
 Dim Name As String
+Dim i As Byte
 
     Log "Call User_Close(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -2722,7 +2761,67 @@ Dim Name As String
         ConBuf.Put_Byte 68
         ConBuf.Put_String Name
         Data_Send ToAll, 0, ConBuf.Get_Buffer
+        
+        'For multiple servers, send to all the servers
+        If NumServers > 1 Then
+            For i = 1 To NumServers
+                If ServerID <> i Then
+                    Server_ConnectToServer i
+                    If frmMain.ServerSocket(i).State = sckConnected Then frmMain.ServerSocket(i).SendData ConBuf.Get_Buffer
+                End If
+            Next i
+        End If
+        
     End If
+
+End Sub
+
+Sub Data_Server_Message_ServerToServer(ByRef rBuf As DataBuffer)
+
+'*****************************************************************
+'Sends a Server Message between servers
+'This has to be a little tricky since each message is handled differently
+'<MessageID(B)> (<?(?)>)
+'*****************************************************************
+Dim MessageID As Byte
+Dim Str1 As String
+Dim Str2 As String
+
+    MessageID = rBuf.Get_Byte
+    
+    'Handle based on the message ID
+    Select Case MessageID
+    
+        'Disconnect message
+        Case 68
+            Str1 = rBuf.Get_String
+            ConBuf.PreAllocate 3 + Len(Str1)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte MessageID
+            ConBuf.Put_String Str1
+            Data_Send ToAll, 0, ConBuf.Get_Buffer
+            
+        'Connect message
+        Case 72
+            Str1 = rBuf.Get_String
+            ConBuf.PreAllocate 3 + Len(Str1)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte MessageID
+            ConBuf.Put_String Str1
+            Data_Send ToAll, 0, ConBuf.Get_Buffer
+            
+        'Kick message
+        Case 77
+            Str1 = rBuf.Get_String
+            Str2 = rBuf.Get_String
+            ConBuf.PreAllocate 3 + Len(Str1)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte MessageID
+            ConBuf.Put_String Str1
+            ConBuf.Put_String Str2
+            Data_Send ToAll, 0, ConBuf.Get_Buffer
+            
+    End Select
 
 End Sub
 
@@ -2733,13 +2832,15 @@ Sub User_Connect(ByVal UserIndex As Integer, ByVal strName As String, ByVal Pass
 '*****************************************************************
 Dim TempPass As String
 Dim CharIndex As Integer
+Dim TempPos As WorldPos
 Dim TempConnID As Long
 Dim LoopC As Byte
 Dim Count As Byte
 Dim IPs() As String
 Dim CurrIP As String
 Dim s As String
-    
+Dim i As Byte
+
     Log "Call User_Connect(" & UserIndex & "," & strName & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
     'Make sure the user is not in use
@@ -2897,9 +2998,6 @@ Dim s As String
     UserList(UserIndex).Counters.IdleCount = timeGetTime
     UserList(UserIndex).Counters.LastPacket = timeGetTime
 
-    'Set switching map flag
-    UserList(UserIndex).flags.SwitchingMaps = 1
-
     'Update inventory
     User_UpdateInv True, UserIndex, 0
 
@@ -2910,7 +3008,7 @@ Dim s As String
     MapInfo(UserList(UserIndex).Pos.Map).NumUsers = MapInfo(UserList(UserIndex).Pos.Map).NumUsers + 1
 
     'Check if it's the first user on the map
-    If MapInfo(UserList(UserIndex).Pos.Map).NumUsers = 1 Then
+    If MapInfo(UserList(UserIndex).Pos.Map).DataLoaded = 0 Or MapInfo(UserList(UserIndex).Pos.Map).NumUsers = 1 Then
         Load_Maps_Temp UserList(UserIndex).Pos.Map
         ReDim MapUsers(UserList(UserIndex).Pos.Map).Index(1 To 1)
     Else
@@ -2919,8 +3017,8 @@ Dim s As String
     MapUsers(UserList(UserIndex).Pos.Map).Index(MapInfo(UserList(UserIndex).Pos.Map).NumUsers) = UserIndex
 
     'Get closest legal pos
-    Server_ClosestLegalPos UserList(UserIndex).Pos, UserList(UserIndex).Pos
-    If Server_LegalPos(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, 0) = False Then
+    Server_ClosestLegalPos UserList(UserIndex).Pos, TempPos
+    If Server_LegalPos(TempPos.Map, TempPos.X, TempPos.Y, 0) = False Then
 
         'Tell the client we're disconnecting
         Data_Send ToIndex, UserIndex, cMessage(83).Data
@@ -2929,6 +3027,7 @@ Dim s As String
         Exit Sub
         
     End If
+    UserList(UserIndex).Pos = TempPos
     
     'Tell the user they have successfully connected
     ConBuf.PreAllocate 7
@@ -2938,11 +3037,7 @@ Dim s As String
     ConBuf.Put_Byte DataCode.Map_LoadMap
     ConBuf.Put_Integer UserList(UserIndex).Pos.Map
     ConBuf.Put_Integer MapInfo(UserList(UserIndex).Pos.Map).MapVersion
-    ConBuf.Put_Byte MapInfo(UserList(UserIndex).Pos.Map).Weather
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
-
-    'Send data
-    Data_Send_Buffer UserIndex
 
     'Give user a charindex
     CharIndex = Server_NextOpenCharIndex
@@ -3004,10 +3099,20 @@ Dim s As String
     ConBuf.Put_Byte 72
     ConBuf.Put_String UserList(UserIndex).Name
     Data_Send ToAll, 0, ConBuf.Get_Buffer, , PP_Connect
+    
+    'For multiple servers, send to all the servers
+    If NumServers > 1 Then
+        For i = 1 To NumServers
+            If ServerID <> i Then
+                Server_ConnectToServer i
+                If frmMain.ServerSocket(i).State = sckConnected Then frmMain.ServerSocket(i).SendData ConBuf.Get_Buffer
+            End If
+        Next i
+    End If
 
 End Sub
 
-Sub User_ConnectNew(ByVal UserIndex As Integer, ByVal Name As String, ByVal Password As String, ByVal Body As Integer, ByVal Head As Integer)
+Sub User_ConnectNew(ByVal UserIndex As Integer, ByVal Name As String, ByVal Password As String, ByVal Body As Integer, ByVal Head As Integer, ByVal Class As Byte)
 
 '*****************************************************************
 'Opens a new user. Loads default vars, saves then calls connectuser
@@ -3016,7 +3121,7 @@ Dim TempConnID As Long
 Dim TempObjs(1 To 5) As Obj
 Dim i As Byte
 
-    Log "Call User_Connect(" & UserIndex & "," & Name & "," & Password & "," & Body & "," & Head & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call User_Connect(" & UserIndex & "," & Name & "," & Password & "," & Body & "," & Head & "," & Class & ")", CodeTracker '//\\LOGLINE//\\
 
     'Make sure the user is not in use
     If UserList(UserIndex).flags.UserLogged Then Exit Sub
@@ -3024,6 +3129,8 @@ Dim i As Byte
     'Check for a valid body and head
     If Head <> 1 Then Exit Sub
     If Body <> 1 Then Exit Sub
+    If Class < 1 Then Exit Sub
+    If Class > 3 Then Exit Sub
 
     'Check for valid name and password
     If Len(Name) > 10 Then
@@ -3079,6 +3186,7 @@ Dim i As Byte
 
     'Set the user's variables
     UserList(UserIndex).Name = Name
+    UserList(UserIndex).Class = Class
     UserList(UserIndex).Char.Heading = SOUTH
     UserList(UserIndex).Char.HeadHeading = SOUTH
     UserList(UserIndex).Char.Head = Head
@@ -3093,7 +3201,7 @@ Dim i As Byte
     'Set the user's starting stats
     UserList(UserIndex).Stats.BaseStat(SID.ELU) = 10
     UserList(UserIndex).Stats.BaseStat(SID.ELV) = 1
-    UserList(UserIndex).Stats.BaseStat(SID.str) = 1
+    UserList(UserIndex).Stats.BaseStat(SID.Str) = 1
     UserList(UserIndex).Stats.BaseStat(SID.Agi) = 1
     UserList(UserIndex).Stats.BaseStat(SID.Mag) = 1
     UserList(UserIndex).Stats.BaseStat(SID.Speed) = 5
@@ -3347,6 +3455,7 @@ Dim i As Byte
             Case .Server_MailItemTake: Data_Server_MailItemTake rBuf, Index
             Case .Server_MailMessage: Data_Server_MailMessage rBuf, Index
             Case .Server_PTD: Data_Server_PTD Index
+            Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf, Index
             Case .Server_Who: Data_Server_Who Index
 
             Case .User_Attack: Data_User_Attack rBuf, Index

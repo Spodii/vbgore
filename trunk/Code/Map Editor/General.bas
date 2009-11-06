@@ -9,84 +9,84 @@ Sub ShowFrmSetTile()
     frmSetTile.Visible = True
     frmSetTile.Show , frmMain
     SetTilesChkValue = 1
-    frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & "settile.bmp")
+    frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\settile.*"))
 End Sub
 
 Sub HideFrmSetTile()
     frmSetTile.Visible = False
     frmSetTile.Hide
     SetTilesChkValue = 0
-    frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & "settileg.bmp")
+    frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\settileg.*"))
 End Sub
 
 Sub ShowFrmTile()
     frmTile.Visible = True
     frmTile.Show , frmMain
     ViewTilesChkValue = 1
-    frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & "viewtiles.bmp")
+    frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\viewtiles.*"))
 End Sub
 
 Sub HideFrmTile()
     frmTile.Visible = False
     frmTile.Hide
     ViewTilesChkValue = 0
-    frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & "viewtilesg.bmp")
+    frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\viewtilesg.*"))
 End Sub
 
 Sub ShowFrmNPCs()
     frmNPCs.Visible = True
     frmNPCs.Show , frmMain
     ShowNPCsChkValue = 1
-    frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & "npc.bmp")
+    frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\npc.*"))
 End Sub
 
 Sub HideFrmNPCs()
     frmNPCs.Visible = False
     frmNPCs.Hide
     ShowNPCsChkValue = 0
-    frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & "npcg.bmp")
+    frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\npcg.*"))
 End Sub
 
 Sub ShowFrmMapInfo()
     frmMapInfo.Visible = True
     frmMapInfo.Show , frmMain
     ShowMapInfoChkValue = 1
-    frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & "mapinfo.bmp")
+    frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\mapinfo.*"))
 End Sub
 
 Sub HideFrmMapInfo()
     frmMapInfo.Visible = False
     frmMapInfo.Hide
     ShowMapInfoChkValue = 0
-    frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & "mapinfog.bmp")
+    frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\mapinfog.*"))
 End Sub
 
 Sub ShowFrmParticles()
     frmParticles.Visible = True
     frmParticles.Show , frmMain
     PartChkValue = 1
-    frmMain.PartPic.Picture = LoadPicture(GrhMapPath & "particles.bmp")
+    frmMain.PartPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\particles.*"))
 End Sub
 
 Sub HideFrmParticles()
     frmParticles.Visible = False
     frmParticles.Hide
     PartChkValue = 0
-    frmMain.PartPic.Picture = LoadPicture(GrhMapPath & "particlesg.bmp")
+    frmMain.PartPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\particlesg.*"))
 End Sub
 
 Sub ShowFrmFloods()
     frmFloods.Visible = True
     frmFloods.Show , frmMain
     FloodsChkValue = 1
-    frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & "floods.bmp")
+    frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\floods.*"))
 End Sub
 
 Sub HideFrmFloods()
     frmFloods.Visible = False
     frmFloods.Hide
     FloodsChkValue = 0
-    frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & "floodsg.bmp")
+    frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\floodsg.*"))
 End Sub
 
 Sub ShowFrmOptimizeStart()
@@ -113,42 +113,42 @@ Sub ShowFrmSfx()
     frmSfx.Visible = True
     frmSfx.Show , frmMain
     SfxChkValue = 1
-    frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & "sounds.bmp")
+    frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\sounds.*"))
 End Sub
 
 Sub HideFrmSfx()
     frmSfx.Visible = False
     frmSfx.Hide
     SfxChkValue = 0
-    frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & "soundsg.bmp")
+    frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\soundsg.*"))
 End Sub
 
 Sub ShowFrmExit()
     frmExit.Visible = True
     frmExit.Show , frmMain
     ExitsChkValue = 1
-    frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & "exits.bmp")
+    frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\exits.*"))
 End Sub
 
 Sub HideFrmExit()
     frmExit.Visible = False
     frmExit.Hide
     ExitsChkValue = 0
-    frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & "exitsg.bmp")
+    frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\exitsg.*"))
 End Sub
 
 Sub ShowFrmBlock()
     frmBlock.Visible = True
     frmBlock.Show , frmMain
     BlocksChkValue = 1
-    frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & "blocks.bmp")
+    frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\blocks.*"))
 End Sub
 
 Sub HideFrmBlock()
     frmBlock.Visible = False
     frmBlock.Hide
     BlocksChkValue = 0
-    frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & "blocksg.bmp")
+    frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\blocksg.*"))
 End Sub
 
 Sub ShowFrmARGB(ByRef tTxtBox As TextBox)

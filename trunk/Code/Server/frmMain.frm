@@ -4,10 +4,10 @@ Begin VB.Form frmMain
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
    Caption         =   "vbGORE Server"
-   ClientHeight    =   1365
+   ClientHeight    =   990
    ClientLeft      =   1950
    ClientTop       =   1830
-   ClientWidth     =   4890
+   ClientWidth     =   3765
    BeginProperty Font 
       Name            =   "Arial"
       Size            =   8.25
@@ -23,9 +23,9 @@ Begin VB.Form frmMain
    MaxButton       =   0   'False
    MinButton       =   0   'False
    PaletteMode     =   1  'UseZOrder
-   ScaleHeight     =   91
+   ScaleHeight     =   66
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   326
+   ScaleWidth      =   251
    StartUpPosition =   2  'CenterScreen
    Begin MSWinsockLib.Winsock ServerSocket 
       Index           =   0
@@ -98,6 +98,7 @@ Private Declare Function GetCurrentProcess Lib "kernel32" () As Long
 Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 
 Private Sub Form_Load()
+Dim TempSplit() As String
 
     'Show the form
     Me.Caption = "Creating server..."
@@ -105,7 +106,39 @@ Private Sub Form_Load()
     Me.Width = 5000
     Me.Show
     DoEvents
+
+    'Set the server priority
+    If RunHighPriority Then
+        SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
+        SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
+    End If
     
+    'Set the timer accuracy
+    timeBeginPeriod 1
+
+    'Set the file paths
+    InitFilePaths
+
+    'Get the ID of this server
+    'Check first if an ID is specified in the ID (ie 1.exe overwrites to ID = 1)
+    TempSplit = Split(App.EXEName, ".")
+    If IsNumeric(TempSplit(0)) Then
+        If Val(TempSplit(0)) > 0 Then ServerID = Val(TempSplit(0))
+    End If
+    'No server ID defined in the EXE name, get it from the file
+    If ServerID = 0 Then ServerID = Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "ServerID", 1))
+    
+    'Kill old log files (only if one server, multiple servers will cause access errors)                                         '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then                                                                                                    '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\CodeTracker.log", vbNormal)) Then Kill LogPath & ServerID & "\CodeTracker.log"      '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\CriticalError.log", vbNormal)) Then Kill LogPath & ServerID & "\CriticalError.log"  '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\PacketIn.log", vbNormal)) Then Kill LogPath & ServerID & "\PacketIn.log"            '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\PacketOut.log", vbNormal)) Then Kill LogPath & ServerID & "\PacketOut.log"          '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\packetsin.txt", vbNormal)) Then Kill LogPath & ServerID & "\packetsin.txt"          '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\packetsout.txt", vbNormal)) Then Kill LogPath & ServerID & "\packetsout.txt"        '//\\LOGLINE//\\
+        If LenB(Dir$(LogPath & ServerID & "\serverfps.txt", vbNormal)) Then Kill LogPath & ServerID & "\serverfps.txt"          '//\\LOGLINE//\\
+    End If                                                                                                                      '//\\LOGLINE//\\
+
     'Modify the menu
     If Not DEBUG_UseLogging Then            '//\\LOGLINE//\\
         mnugeneral.Enabled = False
@@ -121,19 +154,7 @@ Private Sub Form_Load()
     
     'Create conversion buffer
     Set ConBuf = New DataBuffer
-    
-    'Set the timer accuracy
-    timeBeginPeriod 1
-    
-    'Set the file paths
-    InitFilePaths
-    
-    'Set the server priority
-    If RunHighPriority Then
-        SetThreadPriority GetCurrentThread, 2       'Reccomended you dont touch these values
-        SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
-    End If
-    
+
     'Load MySQL variables
     Me.Caption = "Connecting to MySQL..."
     Me.Refresh
@@ -141,7 +162,7 @@ Private Sub Form_Load()
     
     'Generate the packet keys
     GenerateEncryptionKeys
-    
+
     'Start the server
     StartServer
 
@@ -280,7 +301,7 @@ Dim i As Long
     ConBuf.Clear
     For LoopC = 1 To i
         ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "Help.ini", "INIT", str$(LoopC)))
+        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "Help.ini", "INIT", Str$(LoopC)))
         ConBuf.Put_Byte DataCode.Comm_FontType_Info
     Next LoopC
     HelpBuffer = ConBuf.Get_Buffer
@@ -294,7 +315,7 @@ Dim i As Long
     ConBuf.Clear
     For LoopC = 1 To i
         ConBuf.Put_Byte DataCode.Comm_Talk
-        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "MOTD.ini", "INIT", str$(LoopC)))
+        ConBuf.Put_String Trim$(Var_Get(ServerDataPath & "MOTD.ini", "INIT", Str$(LoopC)))
         ConBuf.Put_Byte DataCode.Comm_FontType_Info
     Next LoopC
     MOTDBuffer = ConBuf.Get_Buffer
@@ -372,7 +393,7 @@ Dim i As Long
         Next i
 
     End If
-    
+
     '*** Misc ***
 
     'Check for a valid connection
@@ -444,6 +465,7 @@ Dim BufUBound As Long
             Select Case CommandID
                 Case .Comm_Shout: Data_Comm_Shout_ServerToServer rBuf
                 Case .Comm_Whisper: Data_Comm_Whisper_ServerToServer rBuf
+                Case .Server_Message: Data_Server_Message_ServerToServer rBuf
             End Select
         End With
         

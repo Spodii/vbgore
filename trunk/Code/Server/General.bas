@@ -18,6 +18,7 @@ Private Const UpdateRate_NPCCounters As Long = 200      'Updating NPC counters
 Private Const UpdateRate_Maps As Long = 30000           'Updating map ground objects (to remove them) / unloading maps from memory
 Private Const UpdateRate_Bandwidth As Long = 1000       'Updating bandwidth in/out information
 Private Const UpdateRate_UnloadObjs As Long = 120000    'Unloading objects from memory
+Private Const UpdateRate_KeepAlive As Long = 600000     'Sends a misc query to the database to keep the connection alive since connection dies after a while
 
 Private LastUpdate_UserStats As Long
 Private LastUpdate_UserRecover As Long
@@ -29,6 +30,7 @@ Private LastUpdate_Maps As Long
 Private LastUpdate_Bandwidth As Long
 Private LastUpdate_ServerFPS As Long    'For DEBUG_MapFPS
 Private LastUpdate_UnloadObjs As Long
+Private LastUpdate_KeepAlive As Long
 
 'To save excessive looping, flags are set to go with the next loop instead of a loop in their own
 Private UpdateUserStats As Byte     'If the user stats will update
@@ -137,6 +139,16 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
         If LastUpdate_Maps + UpdateRate_Maps < LoopStartTime Then
             Server_Update_Maps
             LastUpdate_Maps = LoopStartTime
+            
+            'Check if to send the "Keep-Alive" (nested IF to prevent extra IF processing every loop)
+            If LastUpdate_KeepAlive + UpdateRate_KeepAlive < LoopStartTime Then
+                LastUpdate_KeepAlive = LoopStartTime
+                
+                'Do the dummy query to keep the connection alive
+                DB_RS.Open "SELECT * FROM mail_lastid WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
+                DB_RS.Close
+            End If
+            
         End If
         
         'Bandwidth report updating
@@ -239,58 +251,63 @@ Dim NPCIndex As Integer
 
                 'Only update npcs in user populated maps
                 If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
-                
-                    'Check to update mod stats
-                    If NPCList(NPCIndex).flags.UpdateStats Then
-                        NPCList(NPCIndex).flags.UpdateStats = 0
-                        NPC_UpdateModStats NPCIndex
-                    End If
                     
-                    '*** Update counters ***
-                    If UpdateNPCCounters Then   'Update aggressive-face timer
-                        If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
-                            If NPCList(NPCIndex).Counters.AggressiveCounter < timeGetTime Then
-                                NPCList(NPCIndex).Counters.AggressiveCounter = 0
-                                ConBuf.PreAllocate 4
-                                ConBuf.Put_Byte DataCode.User_AggressiveFace
-                                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                ConBuf.Put_Byte 0
-                                Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                            End If
-                        End If                  'Update warcurse time
-                        If NPCList(NPCIndex).Skills.WarCurse > 0 Then
-                            If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
-                                NPCList(NPCIndex).Counters.WarCurseCounter = 0
-                                NPCList(NPCIndex).Skills.WarCurse = 0
-                                ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
-                                ConBuf.Put_Byte DataCode.Server_Message
-                                ConBuf.Put_Byte 1
-                                ConBuf.Put_String NPCList(NPCIndex).Name
-                                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-                                ConBuf.PreAllocate 4
-                                ConBuf.Put_Byte DataCode.Server_IconWarCursed
-                                ConBuf.Put_Byte 0
-                                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                            End If
-                        End If                  'Update spell exhaustion
-                        If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
-                            If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
-                                NPCList(NPCIndex).Counters.SpellExhaustion = 0
-                                ConBuf.PreAllocate 4
-                                ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
-                                ConBuf.Put_Byte 0
-                                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                    'Confirm the map is loaded in memory
+                    If MapInfo(NPCList(NPCIndex).Pos.Map).DataLoaded = 1 Then
+                    
+                        'Check to update mod stats
+                        If NPCList(NPCIndex).flags.UpdateStats Then
+                            NPCList(NPCIndex).flags.UpdateStats = 0
+                            NPC_UpdateModStats NPCIndex
+                        End If
+                        
+                        '*** Update counters ***
+                        If UpdateNPCCounters Then   'Update aggressive-face timer
+                            If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
+                                If NPCList(NPCIndex).Counters.AggressiveCounter < timeGetTime Then
+                                    NPCList(NPCIndex).Counters.AggressiveCounter = 0
+                                    ConBuf.PreAllocate 4
+                                    ConBuf.Put_Byte DataCode.User_AggressiveFace
+                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                    ConBuf.Put_Byte 0
+                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                                End If
+                            End If                  'Update warcurse time
+                            If NPCList(NPCIndex).Skills.WarCurse > 0 Then
+                                If NPCList(NPCIndex).Counters.WarCurseCounter < timeGetTime Then
+                                    NPCList(NPCIndex).Counters.WarCurseCounter = 0
+                                    NPCList(NPCIndex).Skills.WarCurse = 0
+                                    ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
+                                    ConBuf.Put_Byte DataCode.Server_Message
+                                    ConBuf.Put_Byte 1
+                                    ConBuf.Put_String NPCList(NPCIndex).Name
+                                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+                                    ConBuf.PreAllocate 4
+                                    ConBuf.Put_Byte DataCode.Server_IconWarCursed
+                                    ConBuf.Put_Byte 0
+                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                                End If
+                            End If                  'Update spell exhaustion
+                            If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
+                                If NPCList(NPCIndex).Counters.SpellExhaustion < timeGetTime Then
+                                    NPCList(NPCIndex).Counters.SpellExhaustion = 0
+                                    ConBuf.PreAllocate 4
+                                    ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+                                    ConBuf.Put_Byte 0
+                                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                                End If
                             End If
                         End If
+    
+                        '*** NPC AI ***
+                        If UpdateNPCAI Then
+                            If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then NPC_AI NPCIndex
+                        End If
+    
                     End If
-
-                    '*** NPC AI ***
-                    If UpdateNPCAI Then
-                        If NPCList(NPCIndex).Counters.ActionDelay < timeGetTime Then NPC_AI NPCIndex
-                    End If
-
+                    
                 End If
 
             Else
@@ -343,7 +360,7 @@ Dim UserIndex As Integer
             If RecoverUserStats Then    'HP
                 With UserList(UserIndex).Stats
                     If .BaseStat(SID.MinHP) < .ModStat(SID.MaxHP) Then
-                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.str) * 0.5)
+                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.Str) * 0.5)
                     End If                  'SP
                     If .BaseStat(SID.MinSTA) < .ModStat(SID.MaxSTA) Then
                         .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) * 0.5)
@@ -465,27 +482,32 @@ Dim Y As Byte
         
         'Make sure the map is in use before checking
         If MapInfo(MapIndex).NumUsers > 0 Then
+        
+            'Make sure the map is in memory
+            If MapInfo(MapIndex).DataLoaded = 1 Then
                 
-            'The map has users on it, so check through the tiles in-bounds
-            For X = MinXBorder To MaxXBorder
-                For Y = MinYBorder To MaxYBorder
-                    
-                    '*** Removing old objects ***
-                    'Check if an object exists on the tile - loop through all on there
-                    If MapInfo(MapIndex).ObjTile(X, Y).NumObjs > 0 Then
-                        For ObjIndex = 1 To MapInfo(MapIndex).ObjTile(X, Y).NumObjs
-                            
-                            'Check if it is time to remove the object
-                            If MapInfo(MapIndex).ObjTile(X, Y).ObjLife(ObjIndex) < timeGetTime - GroundObjLife Then
-                                Obj_Erase MapInfo(MapIndex).ObjTile(X, Y).ObjInfo(ObjIndex).Amount, ObjIndex, MapIndex, X, Y
-                            End If
-                            
-                        Next ObjIndex
-                    End If
-                    
-                Next Y
-            Next X
-            
+                'The map has users on it, so check through the tiles in-bounds
+                For X = MinXBorder To MaxXBorder
+                    For Y = MinYBorder To MaxYBorder
+                        
+                        '*** Removing old objects ***
+                        'Check if an object exists on the tile - loop through all on there
+                        If MapInfo(MapIndex).ObjTile(X, Y).NumObjs > 0 Then
+                            For ObjIndex = 1 To MapInfo(MapIndex).ObjTile(X, Y).NumObjs
+                                
+                                'Check if it is time to remove the object
+                                If MapInfo(MapIndex).ObjTile(X, Y).ObjLife(ObjIndex) < timeGetTime - GroundObjLife Then
+                                    Obj_Erase MapInfo(MapIndex).ObjTile(X, Y).ObjInfo(ObjIndex).Amount, ObjIndex, MapIndex, X, Y
+                                End If
+                                
+                            Next ObjIndex
+                        End If
+                        
+                    Next Y
+                Next X
+                
+            End If
+                
         Else
             
             '*** Unloading maps from memory ***
@@ -556,6 +578,9 @@ Public Function Engine_ClearPath(ByVal Map As Integer, ByVal CharX As Long, ByVa
 '***************************************************
 Dim X As Long
 Dim Y As Long
+
+    'Make sure the map is in memory
+    If MapInfo(Map).DataLoaded = 0 Then Exit Function
 
     '****************************************
     '***** Target is on top of the user *****
@@ -852,14 +877,20 @@ Public Function ByteArrayToStr(ByRef ByteArray() As Byte) As String
 'Take a byte array and print it out in a readable string
 'Example output: 084[T] 086[V] 088[X] 090[Z] 092[\] 094[^]
 '*****************************************************************
-
-On Error GoTo ErrOut
-
 Dim Char As String
 Dim i As Long
+Dim l As Integer
+Dim u As Integer
+
+    'Get the dimensions (it'll error and exit if invalid array)
+    On Error GoTo Out
+    l = LBound(ByteArray)
+    u = UBound(ByteArray)
+
+    On Error GoTo ErrOut
     
-    Log "ByteArrayToStr: ByteArray LBound() = " & LBound(ByteArray) & " UBound() = " & UBound(ByteArray), CodeTracker '//\\LOGLINE//\\
-    For i = LBound(ByteArray) To UBound(ByteArray)
+    Log "ByteArrayToStr: ByteArray LBound() = " & l & " UBound() = " & u, CodeTracker '//\\LOGLINE//\\
+    For i = l To u
         If ByteArray(i) > 32 Then Char = Chr$(ByteArray(i)) Else Char = " "
         If ByteArray(i) >= 100 Then
             ByteArrayToStr = ByteArrayToStr & ByteArray(i) & "[" & Char & "] "
@@ -875,6 +906,11 @@ Dim i As Long
 ErrOut:
 
     Log "ByteArrayToStr: Unknown error in routine!", CriticalError '//\\LOGLINE//\\
+    
+    Exit Function
+    
+'Invalid array dimensions
+Out:
     
 End Function
 
@@ -947,6 +983,8 @@ Dim i As Long
         Exit Function
     End If
     
+    On Error GoTo 0
+    
     'Copy the string to a byte array
     b() = StrConv(CheckString, vbFromUnicode)
 
@@ -999,6 +1037,8 @@ Dim i As Long
         Log "Rtrn Server_ValidString = " & Server_ValidString, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
+    
+    On Error GoTo 0
     
     'Copy the string to a byte array
     b() = StrConv(CheckString, vbFromUnicode)
@@ -1137,13 +1177,16 @@ Public Function Server_FileExist(File As String, FileType As VbFileAttribute) As
 '*****************************************************************
 'Checks to see if a file exists
 '*****************************************************************
-On Error GoTo ErrOut
+
+    On Error GoTo ErrOut
     
     Log "Call Server_FileExist(" & File & "," & FileType & ")", CodeTracker '//\\LOGLINE//\\
 
     If Dir$(File, FileType) <> "" Then Server_FileExist = True
     
     Log "Rtrn Server_FileExist = " & Server_FileExist, CodeTracker '//\\LOGLINE//\\
+    
+    On Error GoTo 0
 
 Exit Function
 

@@ -329,22 +329,24 @@ Dim X As Byte
     LastOffsetX = 0
     LastOffsetY = 0
 
+    'Reset the user's position (it won't be drawn at 0,0 since it is an invalid position anyways)
+    UserPos.X = 0
+    UserPos.Y = 0
+
+    'Clear the map
+    ZeroMemory MapData(1, 1), CLng(Len(MapData(1, 1))) * CLng(XMaxMapSize) * CLng(YMaxMapSize)  'Width * Height * Size
+
     'Erase characters
-    For i = 1 To LastChar
-        If CharList(i).Active Then Engine_Char_Erase i
-    Next i
+    LastChar = 0
+    Erase CharList
 
     'Erase objects
-    For i = 1 To LastObj
-        OBJList(i).Grh.GrhIndex = 0
-    Next i
+    LastObj = 0
+    Erase OBJList
     
-    'Erase map-bound particle effects
-    For i = 1 To NumEffects
-        If Effect(i).Used Then
-            If Effect(i).BoundToMap Then Effect_Kill i
-        End If
-    Next i
+    'Erase particle effects
+    LastEffect = 0
+    ReDim Effect(1 To NumEffects)
 
     'Open map file
     MapNum = FreeFile

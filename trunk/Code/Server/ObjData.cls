@@ -299,6 +299,15 @@ Public Property Get UseSfx(ByVal Index As Integer) As Byte
     End If
 End Property
 
+Public Property Get ClassReq(ByVal Index As Integer) As Byte
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            ClassReq = cData(ObjIndexToDataIndex(Index)).ClassReq
+        End If
+    End If
+End Property
+
 Public Property Get AddStat(ByVal Index As Integer, ByVal StatIndex As Integer) As Long
     If Index > 0 Then
         If Index <= MaxDatas Then

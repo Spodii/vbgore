@@ -112,38 +112,6 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub InitSocket()
-
-'*****************************************************************
-'Init the sox socket
-'*****************************************************************
-
-    'Save the game ini
-    Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Name", UserName)
-    If SavePassChk.Value = 0 Then   'If the password wont be saved, clear it out
-        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", "")
-    Else
-        Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
-    End If
-    
-    'Clean out the socket so we can make a fresh new connection
-    If GOREsock_Loaded Then GOREsock_Terminate
-
-    'Set up the socket
-    DoEvents
-    GOREsock_Initialize frmMain.hWnd
-    DoEvents
-    SoxID = GOREsock_Connect("127.0.0.1", 10200)
-    
-    'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
-    If SoxID = -1 Then
-        MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
-    Else
-        GOREsock_SetOption SoxID, soxSO_TCP_NODELAY, True
-    End If
-
-End Sub
-
 Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 '*****************************************************************
@@ -152,12 +120,9 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     
     'New
     If Engine_Collision_Rect(X, Y, 1, 1, 29, 85, 141, 36) Then
-        UserName = NameTxt.Text
-        UserPassword = PasswordTxt.Text
-        If Game_CheckUserData Then
-            SendNewChar = True
-            InitSocket
-        End If
+        frmNew.Visible = True
+        frmNew.Show
+        Me.Visible = False
     End If
     
     'Connect
@@ -172,6 +137,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     
     'Exit
     If Engine_Collision_Rect(X, Y, 1, 1, 29, 174, 141, 36) Then
+    
         'Save the game ini
         Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then

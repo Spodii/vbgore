@@ -557,12 +557,6 @@ Dim Hit As Integer
         Log "NPC_AttackUser: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-
-    'Don't allow if switching maps
-    If UserList(UserIndex).flags.SwitchingMaps Then
-        Log "NPC_AttackUser: NPC switching maps - aborting", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
     
     'Don't allow if not logged in completely
     If UserList(UserIndex).flags.UserLogged = 0 Then
