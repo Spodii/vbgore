@@ -1119,8 +1119,13 @@ Dim i As Long
     WMSelCon = 0
 
     'Start with the last clicked window, then move in order of importance
+    If LastClickedWindow > 0 Then
+        If Input_Mouse_LeftClick_Window(LastClickedWindow) = 1 Then Exit Sub
+    End If
     For i = 1 To NumGameWindows
-        If Input_Mouse_LeftClick_Window(i) = 1 Then Exit Sub
+        If LastClickedWindow <> i Then
+            If Input_Mouse_LeftClick_Window(i) = 1 Then Exit Sub
+        End If
     Next i
 
     'No windows clicked, so a tile click will take place
@@ -2049,7 +2054,7 @@ Dim i As Byte
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                         For i = 1 To 9
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Trade1(i).X + .Screen.X, .Trade1(i).Y + .Screen.Y, 32, 32) Then
-                                
+
                                 If UserInventory(DragItemSlot).Amount = 1 Then
                                     sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
                                     sndBuf.Put_Byte DragItemSlot

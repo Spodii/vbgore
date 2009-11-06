@@ -1452,7 +1452,7 @@ Dim nPos As WorldPos
     Server_HeadToPos nHeading, nPos
 
     'Move if legal pos
-    If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading) Then
+    If Server_LegalPos(NPCList(NPCIndex).Pos.Map, nPos.X, nPos.Y, nHeading, True) Then
 
         'Set the move delay (we set the lag buffer to 0 since NPCs don't lag)
         NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed))

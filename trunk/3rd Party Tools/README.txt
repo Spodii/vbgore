@@ -57,3 +57,35 @@ Grh Crafter is a replacement for Grh3RawMaker, created by the staff of Drasil. I
 to help you create your Grh1.raw file even easier then the Grh3RawMaker, along with is much
 newer so is more likely to work with the later versions. Use whichever you like more, though,
 as Grh Crater and Grh3RawMaker are both good tools.
+
+=============
+== OptiPNG ==
+=============
+Created by:
+Spodi
+
+OptiPNG website:
+http://optipng.sourceforge.net/
+
+Description:
+The OptiPNG project is a wrapper for the OptiPNG compression library that is designed to optimize the
+file format of PNG files, the main format used by vbGORE, to a smaller size. The library works by restructuring 
+the data in the file to be more effecient. Although it is a lossy compression in a technical sense, the lost 
+data is not a part of the visual display. Only unused information that does not affect the visual aspect 
+of the PNG files is changed.
+
+=========
+== UPX ==
+=========
+Created by:
+Spodi
+
+UPX website:
+http://upx.sourceforge.net/
+
+Description:
+The UPX project is a quick wrapper made for UPX, "the Ultimate Packer for eXecuteables". UPX compresses
+EXE files into a smaller size without corrupting them or losing any data. The cost is a bit slower of a runtime,
+but nothing you should notice or worry about. The UPX wrapper runs with the parameter --brute which forces the
+best compression ratio possible. This project is mostly just a copy-and-paste of the OptiPNG project, but with
+minor changes to support using UPX on EXE files instead of OptiPNG on PNG files.

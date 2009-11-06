@@ -1742,7 +1742,7 @@ Public Function Server_InMapBounds(ByVal Map As Long, ByVal X As Integer, ByVal 
     
 End Function
 
-Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, ByVal Heading As Byte) As Boolean
+Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, ByVal Heading As Byte, Optional ByVal CheckWarps As Boolean = False) As Boolean
 
 '*****************************************************************
 'Checks to see if a tile position is legal
@@ -1789,6 +1789,14 @@ Dim tmpBlocked As Byte
         If .NPCIndex > 0 Then
             Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
             Exit Function
+        End If
+        
+        'Check for a warp
+        If CheckWarps Then
+            If .TileExitMap > 0 Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
         
         'Set the temp blocked variable
@@ -2100,6 +2108,7 @@ Dim j As Byte
                     End If
                 End If
                 
+                Server_WriteMail = 1
                 Exit Function
 
             End If

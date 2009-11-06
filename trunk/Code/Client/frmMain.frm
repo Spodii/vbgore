@@ -63,7 +63,7 @@ Implements DirectXEvent8
 Private NC As Byte
 Private Declare Function GetCursorPos Lib "user32.dll" (ByRef lpPoint As POINTAPI) As Long
 
-Private Sub DirectXEvent8_DXCallback(ByVal eventid As Long)
+Private Sub DirectXEvent8_DXCallback(ByVal EventID As Long)
 Dim DevData(1 To 50) As DIDEVICEOBJECTDATA
 Dim NumEvents As Long
 Dim LoopC As Long
@@ -73,7 +73,8 @@ Dim OldMousePos As POINTAPI
     On Error GoTo ErrOut
 
     'Check if message is for us
-    If eventid <> MouseEvent Then Exit Sub
+    If EventID <> MouseEvent Then Exit Sub
+    If GetActiveWindow = 0 Then Exit Sub
 
     'Retrieve data
     NumEvents = DIDevice.GetDeviceData(DevData, DIGDD_DEFAULT)
@@ -230,13 +231,14 @@ Private Sub PTDTmr_Timer()
 End Sub
 
 Private Sub ShutdownTimer_Timer()
+Static FailedUnloads As Long
 
     On Error Resume Next    'Who cares about an error if we are closing down
 
     'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
     
     'Close down the socket
-    If frmMain.GOREsock.ShutDown <> soxERROR Then
+    If FailedUnloads > 5 Or frmMain.GOREsock.ShutDown <> soxERROR Then
         frmMain.GOREsock.UnHook
 
         'Unload the engine
@@ -248,7 +250,13 @@ Private Sub ShutdownTimer_Timer()
         'Unload everything else
         End
 
+    Else
+        
+        'If the socket is making an error on the shutdown sequence for more than a second, just unload anyways
+        FailedUnloads = FailedUnloads + 1
+        
     End If
+            
 
 End Sub
 
@@ -357,13 +365,10 @@ Static X As Long
             Case .User_SetInventorySlot: Data_User_SetInventorySlot rBuf
             Case .User_SetWeaponRange: Data_User_SetWeaponRange rBuf
             Case .User_Target: Data_User_Target rBuf
-            '-----------------------------------------------------------
+            Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
             Case .User_Trade_Trade: Data_User_Trade_Trade rBuf
             Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf
-            '-----------------------------------------------------------
-            
-            Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
-            
+
             Case .Combo_ProjectileSoundRotateDamage: Data_Combo_ProjectileSoundRotateDamage rBuf
             Case .Combo_SlashSoundRotateDamage: Data_Combo_SlashSoundRotateDamage rBuf
             Case .Combo_SoundRotateDamage: Data_Combo_SoundRotateDamage rBuf

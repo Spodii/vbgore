@@ -1055,7 +1055,6 @@ RaiseErrOut:
 
 End Sub
 
-'--------------------------------------------
 Sub Data_User_Trade_Trade(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************

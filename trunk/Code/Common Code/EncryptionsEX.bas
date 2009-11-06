@@ -2977,7 +2977,7 @@ Dim lRow As Long
 Dim lColumn As Long
 Dim TheByte(0) As Byte
 Dim TheBin(0 To 7) As Byte
-Dim a As Byte, b As Byte, C As Byte, D As Byte, e As Byte, F As Byte
+Dim a As Byte, b As Byte, C As Byte, D As Byte, e As Byte, f As Byte
 
     'Create an optimized version of the s-boxes
     'this is not in the standard but much faster
@@ -2988,12 +2988,12 @@ Dim a As Byte, b As Byte, C As Byte, D As Byte, e As Byte, F As Byte
                 For C = 0 To 1
                     For D = 0 To 1
                         For e = 0 To 1
-                            For F = 0 To 1
-                                lRow = a * 2 + F
+                            For f = 0 To 1
+                                lRow = a * 2 + f
                                 lColumn = b * 8 + C * 4 + D * 2 + e
                                 TheByte(0) = vSbox(lBox)(lRow * 16 + lColumn)
                                 Call Encryption_DES_Byte2Bin(TheByte(), 1, TheBin())
-                                Call CopyMem(m_sBoxDES(lBox, a, b, C, D, e, F), TheBin(4), 4)
+                                Call CopyMem(m_sBoxDES(lBox, a, b, C, D, e, f), TheBin(4), 4)
                             Next
                         Next
                     Next
@@ -3381,7 +3381,7 @@ Dim a As Long
 Dim b As Long
 Dim C As Long
 Dim LeftWord As Long
-Dim S(0 To 7) As Variant
+Dim s(0 To 7) As Variant
 
 'We need to check if we are running in compiled
 '(EXE) mode or in the IDE, this will allow us to
@@ -3393,19 +3393,19 @@ Dim S(0 To 7) As Variant
         m_RunningCompiled = ((2147483647 + 1) < 0)
 
         'Initialize s-boxes
-        S(0) = Array(6, 5, 1, 7, 14, 0, 4, 10, 11, 9, 3, 13, 8, 12, 2, 15)
-        S(1) = Array(14, 13, 9, 0, 8, 10, 12, 4, 7, 15, 6, 11, 3, 1, 5, 2)
-        S(2) = Array(6, 5, 1, 7, 2, 4, 10, 0, 11, 13, 14, 3, 8, 12, 15, 9)
-        S(3) = Array(8, 7, 3, 9, 6, 4, 14, 5, 2, 13, 0, 12, 1, 11, 10, 15)
-        S(4) = Array(10, 9, 6, 11, 5, 1, 8, 4, 0, 13, 7, 2, 14, 3, 15, 12)
-        S(5) = Array(5, 3, 0, 6, 11, 13, 4, 14, 10, 7, 1, 12, 2, 8, 15, 9)
-        S(6) = Array(2, 1, 12, 3, 11, 13, 15, 7, 10, 6, 9, 14, 0, 8, 4, 5)
-        S(7) = Array(6, 5, 1, 7, 8, 9, 4, 2, 15, 3, 13, 12, 10, 14, 11, 0)
+        s(0) = Array(6, 5, 1, 7, 14, 0, 4, 10, 11, 9, 3, 13, 8, 12, 2, 15)
+        s(1) = Array(14, 13, 9, 0, 8, 10, 12, 4, 7, 15, 6, 11, 3, 1, 5, 2)
+        s(2) = Array(6, 5, 1, 7, 2, 4, 10, 0, 11, 13, 14, 3, 8, 12, 15, 9)
+        s(3) = Array(8, 7, 3, 9, 6, 4, 14, 5, 2, 13, 0, 12, 1, 11, 10, 15)
+        s(4) = Array(10, 9, 6, 11, 5, 1, 8, 4, 0, 13, 7, 2, 14, 3, 15, 12)
+        s(5) = Array(5, 3, 0, 6, 11, 13, 4, 14, 10, 7, 1, 12, 2, 8, 15, 9)
+        s(6) = Array(2, 1, 12, 3, 11, 13, 15, 7, 10, 6, 9, 14, 0, 8, 4, 5)
+        s(7) = Array(6, 5, 1, 7, 8, 9, 4, 2, 15, 3, 13, 12, 10, 14, 11, 0)
 
         'Convert the variants to a 2-dimensional array
         For a = 0 To 15
             For b = 0 To 7
-                sBox(b, a) = S(b)(a)
+                sBox(b, a) = s(b)(a)
             Next
         Next
 
@@ -5237,8 +5237,10 @@ Dim a As Long
 Dim ByteLen As Long
 Dim ByteArray() As Byte
 
-'Convert the source string into a byte array
+    'Check for valid text
+    If LenB(Text) = 0 Then Exit Function
 
+    'Convert the source string into a byte array
     ByteArray() = StrConv(Text, vbFromUnicode)
 
     'Encrypt the byte array
@@ -5307,13 +5309,14 @@ Dim ByteArray() As Byte
 End Sub
 
 Public Function Encryption_XOR_EncryptString(Text As String, Optional Key As String) As String
-
 Dim a As Long
 Dim ByteLen As Long
 Dim ByteArray() As Byte
 
-'Convert the source string into a byte array
+    'Check for valid text
+    If LenB(Text) = 0 Then Exit Function
 
+    'Convert the source string into a byte array
     ByteArray() = StrConv(Text, vbFromUnicode)
 
     'Encrypt the byte array

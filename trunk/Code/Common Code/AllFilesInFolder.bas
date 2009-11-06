@@ -61,7 +61,9 @@ Dim i As Integer, j As Integer
     ReDim sFilelist(0) As String, sSubFolderList(0) As String, sToProcessFolderList(0) As String
     sDirIn = sFolderPath
     If Not (Right$(sDirIn, 1) = "\") Then sDirIn = sDirIn & "\"
+    
     On Error Resume Next
+    
         sTemp = Dir$(sDirIn & "*.*")
         Do While sTemp <> ""
             AddItem2Array1D sFilelist(), sDirIn & sTemp

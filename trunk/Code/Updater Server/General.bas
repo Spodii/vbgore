@@ -115,12 +115,14 @@ Dim b() As Byte
         If i < NumFiles Then s = s & Chr$(254)
     Next i
     b = StrConv(s, vbFromUnicode)
-    Compression_Compress_LZW b()
-    ReDim ServerFileList(0 To Len(s) + 7)
+    Compression_Compress_LZMA b()
+    ReDim ServerFileList(0 To UBound(b) + 9)
     CopyMemory ServerFileList(8), b(0), UBound(b) + 1
+    Erase b
     b = StrConv("***FL***", vbFromUnicode)
     CopyMemory ServerFileList(0), b(0), 8
-
+    Erase b
+    
     'Create compressed files
     For i = 0 To NumFiles
     
@@ -141,7 +143,7 @@ Dim b() As Byte
             DoEvents
             If Engine_FileExist(App.Path & "\_Compressed" & FileListShortName(i), vbNormal) Then Kill App.Path & "\_Compressed" & FileListShortName(i)
             MakeSureDirectoryPathExists App.Path & "\_Compressed" & FileListShortName(i)
-            Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), LZW
+            Compression_Compress FileList(i), App.Path & "\_Compressed" & FileListShortName(i), LZMA
             
             'Since the hash didn't match, we have to store the hash we have now
             Open App.Path & "\_Compressed" & FileListShortName(i) & ".md5" For Binary Access Write As #FileNum

@@ -4,11 +4,17 @@ Option Explicit
 Public Enum CompressMethods
     RLE = 1
     RLE_Loop = 2
-    LZW = 3
+    LZMA = 3
+    PAQ8l = 4
+    Deflate64 = 5
 End Enum
 #If False Then
-Private RLE, RLE_Loop, LZW
+Private RLE, RLE_Loop, LZMA, PAQ8l, Deflate64
 #End If
+
+'Value between 0 and 9, higher requiring more RAM/CPU but better compression
+'Keep in mind decompressing requires a lot of RAM, too, so don't go higher than 7
+Private Const PAQ8l_Level As Byte = 6
 
 Private CompressArray() As Byte
 Private PosStream() As Byte
@@ -34,7 +40,100 @@ Private NowBitLength As Integer
 Private UsedDicts As Integer
 Private Const DictionarySize As Long = 3
 
+Private Type STARTUPINFO
+    cb As Long
+    lpReserved As String
+    lpDesktop As String
+    lpTitle As String
+    dwX As Long
+    dwY As Long
+    dwXSize As Long
+    dwYSize As Long
+    dwXCountChars As Long
+    dwYCountChars As Long
+    dwFillAttribute As Long
+    dwFlags As Long
+    wShowWindow As Integer
+    cbReserved2 As Integer
+    lpReserved2 As Long
+    hStdInput As Long
+    hStdOutput As Long
+    hStdError As Long
+End Type
+
+Private Type PROCESS_INFORMATION
+    hProcess As Long
+    hThread As Long
+    dwProcessID As Long
+    dwThreadID As Long
+End Type
+
+Private Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationname As Long, ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVal lpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO, lpProcessInformation As PROCESS_INFORMATION) As Long
+Private Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long, ByVal dwMilliseconds As Long) As Long
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
+
+Private Sub CommandLine(ByVal CommandLineString As String)
+Dim Start As STARTUPINFO
+Dim Proc As PROCESS_INFORMATION
+
+    Start.dwFlags = &H1
+    Start.wShowWindow = 0
+    CreateProcessA 0&, CommandLineString, 0&, 0&, 1&, &H20&, 0&, 0&, Start, Proc
+    Do While WaitForSingleObject(Proc.hProcess, 0) = 258
+        DoEvents
+        Sleep 1
+    Loop
+
+End Sub
+
+Private Sub SaveBytes(ByRef Bytes() As Byte, ByVal File As String)
+Dim FileNum As Byte
+
+    If Dir$(File, vbNormal) <> vbNullString Then Kill File
+    FileNum = FreeFile
+    Open File For Binary Access Write As #FileNum
+        Put #FileNum, , Bytes()
+    Close #FileNum
+
+End Sub
+
+Private Sub LoadBytes(ByRef Bytes() As Byte, ByVal File As String)
+Dim FileNum As Byte
+
+    FileNum = FreeFile
+    Open File For Binary Access Read As #FileNum
+        If LOF(FileNum) > 0 Then
+            ReDim Bytes(0 To LOF(FileNum) - 1)
+            Get #FileNum, , Bytes()
+        End If
+    Close #FileNum
+
+End Sub
+
+Public Sub Compression_Compress_PAQ8l(ByteArray() As Byte)
+
+    SaveBytes ByteArray(), App.Path & "\contemp.bin"
+    CommandLine DataPath & "paq8l.exe -" & PAQ8l_Level & " " & Chr$(34) & App.Path & "\contemp.bin" & Chr$(34)
+    If Dir$(App.Path & "\contemp.bin.paq8l") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin.paq8l"
+        Kill App.Path & "\contemp.bin.paq8l"
+    End If
+    Kill App.Path & "\contemp.bin"
+
+End Sub
+
+Public Sub Compression_DeCompress_PAQ8l(ByteArray() As Byte)
+
+    SaveBytes ByteArray(), App.Path & "\contemp.bin.paq8l"
+    CommandLine DataPath & "paq8l.exe -d " & Chr$(34) & App.Path & "\contemp.bin.paq8l" & Chr$(34)
+    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin"
+        Kill App.Path & "\contemp.bin"
+    End If
+    Kill App.Path & "\contemp.bin.paq8l"
+
+End Sub
 
 Private Sub Compression_Add_ASCtoArray(WhichArray() As Byte, ToPos As Long, ByVal Text As String)
 
@@ -101,117 +200,58 @@ Private Sub Compression_Add_CharToDict4(Char As String)
 End Sub
 
 Public Sub Compression_Compress(SrcFile As String, DestFile As String, Compression As CompressMethods)
-
 Dim Dummy As Boolean
 
     If Compression_File_Load(SrcFile) = 0 Then Exit Sub
     Select Case Compression
-    Case RLE
-        Compression_Compress_RLE CompressArray(), Dummy
-    Case RLE_Loop
-        Compression_Compress_RLELoop CompressArray()
-    Case LZW
-        Compression_Compress_LZW CompressArray()
+        Case RLE
+            Compression_Compress_RLE CompressArray(), Dummy
+        Case RLE_Loop
+            Compression_Compress_RLELoop CompressArray()
+        Case LZMA
+            Compression_Compress_LZMA CompressArray()
+        Case PAQ8l
+            Compression_Compress_PAQ8l CompressArray()
+        Case Deflate64
+            Compression_Compress_Deflate64 CompressArray()
     End Select
     Compression_File_Save DestFile
 
 End Sub
 
-Public Sub Compression_Compress_LZW(ByteArray() As Byte)
+Public Sub Compression_Compress_LZMA(ByteArray() As Byte)
 
-Dim ByteValue As Byte
-Dim DictStr As String
-Dim NewStr As String
-Dim FilePos As Long
-Dim FileLenght As Long
-Dim Temp As Long
-Dim Dictionary As Integer
-Dim DictionaryPos As Integer
-Dim OldDict As Integer
-Dim OldPos As Integer
-Dim X As Integer
-
-    Temp = (CLng(1024) * DictionarySize) / 256 - 1
-    
-    For X = 0 To 16
-        If 2 ^ X > Temp Then
-            MaxDictBitPos = X
-            Exit For
-        End If
-    Next X
-    
-    Compression_MultiDictionary4_Init
-    FileLenght = UBound(ByteArray)
-    ReDim PosStream(FileLenght / 3)
-    ReDim DistStream(FileLenght / 3)
-    ReDim LengthStream(FileLenght / 3)
-    ReDim ContStream(FileLenght / 15)
-    DictStr = vbNullString
-    
-    Do Until FilePos > FileLenght
-        ByteValue = ByteArray(FilePos)
-        FilePos = FilePos + 1
-        NewStr = DictStr & Chr$(ByteValue)
-        Compression_MultiDictionary4_Search NewStr, Dictionary, DictionaryPos
-        If Dictionary <> UsedDicts + 1 Then
-            DictStr = NewStr
-            OldDict = Dictionary
-            OldPos = DictionaryPos
-        Else
-            Do While OldDict > (2 ^ NowBitLength) - 1
-                Compression_Add_BitsToContStream 1, NowBitLength
-                Compression_Add_ASCtoArray DistStream, DistPos, Chr$(255)
-                NowBitLength = NowBitLength + 1
-            Loop
-            Call Compression_Add_BitsToContStream(CLng(OldDict), NowBitLength)
-            If OldDict > 0 Then
-                Compression_Add_ASCtoArray DistStream, DistPos, Chr$(OldPos)
-                Compression_Add_ASCtoArray LengthStream, LengthPos, Chr$(Len(DictStr) - 2)
-                OldDict = 0
-            Else
-                Compression_Add_ASCtoArray PosStream, PosPos, Chr$(OldPos)
-            End If
-            Compression_Add_CharToDict4 DictStr
-            OldPos = ByteValue
-            DictStr = Chr$(ByteValue)
-        End If
-    Loop
-    Do While OldDict > (2 ^ NowBitLength) - 1
-        Compression_Add_BitsToContStream 1, NowBitLength
-        Compression_Add_ASCtoArray DistStream, DistPos, Chr$(255)
-        NowBitLength = NowBitLength + 1
-    Loop
-    Call Compression_Add_BitsToContStream(CLng(OldDict), NowBitLength)
-    If OldDict > 0 Then
-        Compression_Add_ASCtoArray DistStream, DistPos, Chr$(OldPos)
-        Compression_Add_ASCtoArray LengthStream, LengthPos, Chr$(Len(DictStr) - 2)
-    Else
-        Compression_Add_ASCtoArray PosStream, PosPos, Chr$(OldPos)
+    SaveBytes ByteArray(), App.Path & "\contemp.bin"
+    CommandLine DataPath & "7za.exe a -t7z " & Chr$(34) & App.Path & "\contemp.bin.7z" & Chr$(34) & " -aoa " & Chr$(34) & App.Path & "\contemp.bin" & Chr$(34) & " -mx9 -m0=LZMA:d80m:fb273:lc5:pb1:mc10000"
+    If Dir$(App.Path & "\contemp.bin.7z") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin.7z"
+        Kill App.Path & "\contemp.bin.7z"
     End If
-    Compression_Add_BitsToContStream 1, NowBitLength
-    Compression_Add_ASCtoArray DistStream, DistPos, vbNullChar
-    Do While CntBitCount > 0
-        Compression_Add_BitsToContStream 0, 1
-    Loop
-    ReDim Preserve PosStream(PosPos - 1)
-    ReDim Preserve ContStream(CntPos - 1)
-    ReDim Preserve LengthStream(LengthPos - 1)
-    ReDim Preserve DistStream(DistPos - 1)
-    ReDim ByteArray(UBound(ContStream) + UBound(LengthStream) + UBound(DistStream) + UBound(PosStream) + 13)
-    ByteArray(0) = MaxDictBitPos
-    ByteArray(1) = Int(UBound(ContStream) / &H10000) And &HFF
-    ByteArray(2) = Int(UBound(ContStream) / &H100) And &HFF
-    ByteArray(3) = UBound(ContStream) And &HFF
-    ByteArray(4) = Int(UBound(LengthStream) / &H10000) And &HFF
-    ByteArray(5) = Int(UBound(LengthStream) / &H100) And &HFF
-    ByteArray(6) = UBound(LengthStream) And &HFF
-    ByteArray(7) = Int(UBound(DistStream) / &H10000) And &HFF
-    ByteArray(8) = Int(UBound(DistStream) / &H100) And &HFF
-    ByteArray(9) = UBound(DistStream) And &HFF
-    CopyMem ByteArray(10), ContStream(0), UBound(ContStream) + 1
-    CopyMem ByteArray(10 + UBound(ContStream) + 1), LengthStream(0), UBound(LengthStream) + 1
-    CopyMem ByteArray(10 + UBound(ContStream) + UBound(LengthStream) + 2), DistStream(0), UBound(DistStream) + 1
-    CopyMem ByteArray(10 + UBound(ContStream) + UBound(LengthStream) + UBound(DistStream) + 3), PosStream(0), UBound(PosStream) + 1
+    Kill App.Path & "\contemp.bin"
+
+End Sub
+
+Public Sub Compression_Compress_Deflate64(ByteArray() As Byte)
+
+    SaveBytes ByteArray(), App.Path & "\contemp.bin"
+    CommandLine DataPath & "7za.exe a -tzip " & Chr$(34) & App.Path & "\contemp.bin.7z" & Chr$(34) & " -aoa " & Chr$(34) & App.Path & "\contemp.bin" & Chr$(34) & " -mx9 -mm=Deflate64 -mfb=257 -mpass=15 -mmc=1000"
+    If Dir$(App.Path & "\contemp.bin.7z") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin.7z"
+        Kill App.Path & "\contemp.bin.7z"
+    End If
+    Kill App.Path & "\contemp.bin"
+
+End Sub
+
+Public Sub Compression_DeCompress_Deflate64(ByteArray() As Byte)
+
+    SaveBytes ByteArray(), App.Path & "\contemp.bin.7z"
+    CommandLine DataPath & "7za.exe e " & Chr$(34) & App.Path & "\contemp.bin.7z" & Chr$(34)
+    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin"
+        Kill App.Path & "\contemp.bin"
+    End If
+    Kill App.Path & "\contemp.bin.7z"
 
 End Sub
 
@@ -229,6 +269,8 @@ Dim IsRun As Boolean
 Dim ZeroCount As Integer
 Dim LengthPos As Long
 Dim NoLength As Boolean
+
+    If UBound(ByteArray) = 0 Then Exit Sub
 
     ReDim ContStream(200)
     ReDim LengthStream(200)
@@ -324,59 +366,30 @@ Public Sub Compression_DeCompress(SrcFile As String, DestFile As String, Compres
 
     If Compression_File_Load(SrcFile) = 0 Then Exit Sub
     Select Case Compression
-    Case RLE
-        Compression_DeCompress_RLE CompressArray()
-    Case RLE_Loop
-        Compression_DeCompress_RLELoop CompressArray()
-    Case LZW
-        Compression_DeCompress_LZW CompressArray()
+        Case RLE
+            Compression_DeCompress_RLE CompressArray()
+        Case RLE_Loop
+            Compression_DeCompress_RLELoop CompressArray()
+        Case LZMA
+            Compression_DeCompress_LZMA CompressArray()
+        Case PAQ8l
+            Compression_DeCompress_PAQ8l CompressArray()
+        Case Deflate64
+            Compression_DeCompress_Deflate64 CompressArray()
     End Select
     Compression_File_Save DestFile
 
 End Sub
 
-Public Sub Compression_DeCompress_LZW(ByteArray() As Byte)
-Dim Dictionary As Integer
-Dim DictPos As Integer
-Dim DictLen As Integer
-Dim DistencePos As Long
-Dim Temp As Long
+Public Sub Compression_DeCompress_LZMA(ByteArray() As Byte)
 
-    MaxDictBitPos = ByteArray(0)
-    Compression_MultiDictionary4_Init
-    CntPos = 10
-    Temp = (CLng(ByteArray(1)) * 256) + ByteArray(2)
-    Temp = CLng(Temp) * 256 + ByteArray(3)
-    LengthPos = CntPos + Temp + 1
-    Temp = (CLng(ByteArray(4)) * 256) + ByteArray(5)
-    Temp = CLng(Temp) * 256 + ByteArray(6)
-    DistencePos = LengthPos + Temp + 1
-    Temp = (CLng(ByteArray(7)) * 256) + ByteArray(8)
-    Temp = CLng(Temp) * 256 + ByteArray(9)
-    PosPos = DistencePos + Temp + 1
-    ReDim DistStream(500)
-    
-    Do
-        Dictionary = Compression_ReadFromArray_Bits(ByteArray, CntPos, NowBitLength)
-        If Dictionary = 0 Then
-            DictPos = Compression_ReadFromArray_ASC(ByteArray, PosPos)
-            Compression_Add_ASCtoArray DistStream, DistPos, Chr$(DictPos)
-            Compression_Add_CharToDict4 Chr$(DictPos)
-        Else
-            DictPos = Compression_ReadFromArray_ASC(ByteArray, DistencePos)
-            If DictPos = 0 Then Exit Do
-            If DictPos = 255 And Dictionary = 1 Then
-                NowBitLength = NowBitLength + 1
-            Else
-                DictLen = Compression_ReadFromArray_ASC(ByteArray, LengthPos) + 2
-                Compression_Add_ASCtoArray DistStream, DistPos, Mid$(Dict(Dictionary), DictPos, DictLen)
-                Compression_Add_CharToDict4 Mid$(Dict(Dictionary), DictPos, DictLen)
-            End If
-        End If
-    Loop
-    DistPos = DistPos - 1
-    ReDim ByteArray(DistPos) As Byte
-    CopyMem ByteArray(0), DistStream(0), DistPos + 1
+    SaveBytes ByteArray(), App.Path & "\contemp.bin.7z"
+    CommandLine DataPath & "7za.exe e " & Chr$(34) & App.Path & "\contemp.bin.7z" & Chr$(34)
+    If Dir$(App.Path & "\contemp.bin") <> vbNullString Then
+        LoadBytes ByteArray(), App.Path & "\contemp.bin"
+        Kill App.Path & "\contemp.bin"
+    End If
+    Kill App.Path & "\contemp.bin.7z"
 
 End Sub
 

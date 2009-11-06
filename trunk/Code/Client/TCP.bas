@@ -33,7 +33,7 @@ Sub InitSocket()
     End If
 
 End Sub
-'-----------------------------------------------------------
+
 Sub Data_User_Trade_Trade(ByRef rBuf As DataBuffer)
 '*********************************************
 'Begins the trading sequence
@@ -45,9 +45,9 @@ Sub Data_User_Trade_Trade(ByRef rBuf As DataBuffer)
     TradeTable.User2Name = rBuf.Get_String
     TradeTable.MyIndex = rBuf.Get_Byte
     ShowGameWindow(TradeWindow) = 1
-    
+    LastClickedWindow = TradeWindow
+
 End Sub
-'-----------------------------------------------------------
 
 Sub Data_User_Trade_UpdateTrade(ByRef rBuf As DataBuffer)
 '*********************************************
@@ -62,7 +62,7 @@ Dim GrhIndex As Long
     UserTableIndex = rBuf.Get_Byte
     TableSlot = rBuf.Get_Byte
     Amount = rBuf.Get_Long
-    
+
     'Update the gold
     If TableSlot = 0 Then
         If TradeTable.MyIndex = UserTableIndex Then

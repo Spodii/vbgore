@@ -88,8 +88,8 @@ Dim i As Long
                     End If
                 Else
                     If TradeTable(TradeTableIndex).Objs2(i).UserInvSlot = InvSlot Then
-                        TradeTable(TradeTableIndex).Objs1(i).Amount = 0
-                        TradeTable(TradeTableIndex).Objs1(i).UserInvSlot = 0
+                        TradeTable(TradeTableIndex).Objs2(i).Amount = 0
+                        TradeTable(TradeTableIndex).Objs2(i).UserInvSlot = 0
                         TradeTable_SendSlotPacket TradeTableIndex, i, 2
                         Exit Sub
                     End If
@@ -117,7 +117,7 @@ Dim i As Long
                 PutTableSlot = PutTableSlot + 1
                 If PutTableSlot > 9 Then Exit Sub   'No more room :(
             Loop While TradeTable(TradeTableIndex).Objs1(PutTableSlot).UserInvSlot > 0
-        Else
+        ElseIf UserTableIndex = 2 Then
             Do
                 PutTableSlot = PutTableSlot + 1
                 If PutTableSlot > 9 Then Exit Sub   'No more room :(
@@ -129,14 +129,14 @@ Dim i As Long
             TradeTable(TradeTableIndex).Objs1(PutTableSlot).UserInvSlot = InvSlot
             TradeTable(TradeTableIndex).Objs1(PutTableSlot).Amount = Amount
             TradeTable_SendSlotPacket TradeTableIndex, PutTableSlot, 1
-        Else
+        ElseIf UserTableIndex = 2 Then
             TradeTable(TradeTableIndex).Objs2(PutTableSlot).UserInvSlot = InvSlot
             TradeTable(TradeTableIndex).Objs2(PutTableSlot).Amount = Amount
             TradeTable_SendSlotPacket TradeTableIndex, PutTableSlot, 2
         End If
-        
-    End If
 
+    End If
+    
 End Sub
 
 Private Sub TradeTable_SendSlotPacket(ByVal TradeTableIndex As Byte, ByVal TableSlot As Byte, ByVal UserTableIndex As Byte)
@@ -151,11 +151,19 @@ Dim GrhIndex As Long
     'If the tableslot > 0, then we need the object information
     If TableSlot > 0 Then
         If UserTableIndex = 1 Then
-            ObjIndex = UserList(TradeTable(TradeTableIndex).User1).Object(TradeTable(TradeTableIndex).Objs1(TableSlot).UserInvSlot).ObjIndex
+            If TradeTable(TradeTableIndex).Objs1(TableSlot).UserInvSlot = 0 Then
+                ObjIndex = 0
+            Else
+                ObjIndex = UserList(TradeTable(TradeTableIndex).User1).Object(TradeTable(TradeTableIndex).Objs1(TableSlot).UserInvSlot).ObjIndex
+            End If
             If ObjIndex > 0 Then GrhIndex = ObjData.GrhIndex(ObjIndex) Else GrhIndex = 0
             Amount = TradeTable(TradeTableIndex).Objs1(TableSlot).Amount
         Else
-            ObjIndex = UserList(TradeTable(TradeTableIndex).User2).Object(TradeTable(TradeTableIndex).Objs2(TableSlot).UserInvSlot).ObjIndex
+            If TradeTable(TradeTableIndex).Objs2(TableSlot).UserInvSlot = 0 Then
+                ObjIndex = 0
+            Else
+                ObjIndex = UserList(TradeTable(TradeTableIndex).User2).Object(TradeTable(TradeTableIndex).Objs2(TableSlot).UserInvSlot).ObjIndex
+            End If
             If ObjIndex > 0 Then GrhIndex = ObjData.GrhIndex(ObjIndex) Else GrhIndex = 0
             Amount = TradeTable(TradeTableIndex).Objs2(TableSlot).Amount
         End If
@@ -225,6 +233,7 @@ Public Sub TradeTable_Create(ByVal UserIndex1 As Integer, ByVal UserIndex2 As In
 'Creates a trade table for two users
 '*****************************************************************
 Dim TableIndex As Byte
+Dim PacketSize As Long
 
     'Get the table index
     TableIndex = TradeTable_NextOpen
@@ -241,15 +250,18 @@ Dim TableIndex As Byte
     UserList(UserIndex1).flags.TradeTable = TableIndex
     UserList(UserIndex2).flags.TradeTable = TableIndex
     
+    'Get the size of the packet
+    PacketSize = 4 + Len(UserList(UserIndex2).Name) + Len(UserList(UserIndex1).Name)
+    
     'Send the packet to the users to show the tables
-    ConBuf.PreAllocate 2
+    ConBuf.PreAllocate PacketSize
     ConBuf.Put_Byte DataCode.User_Trade_Trade
     ConBuf.Put_String UserList(UserIndex2).Name
     ConBuf.Put_String UserList(UserIndex1).Name
     ConBuf.Put_Byte 2
     Data_Send ToIndex, UserIndex2, ConBuf.Get_Buffer
     
-    ConBuf.PreAllocate 2
+    ConBuf.PreAllocate PacketSize
     ConBuf.Put_Byte DataCode.User_Trade_Trade
     ConBuf.Put_String UserList(UserIndex1).Name
     ConBuf.Put_String UserList(UserIndex2).Name

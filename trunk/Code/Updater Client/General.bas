@@ -72,7 +72,7 @@ Dim FileNum As Byte
         'Get our data and decompress it
         Data = Right$(Data, Len(Data) - 8)
         b() = StrConv(Data, vbFromUnicode)
-        Compression_DeCompress_LZW b()
+        Compression_DeCompress_LZMA b()
         Data = StrConv(b(), vbUnicode)
         
         'Split up the files
@@ -107,7 +107,7 @@ Dim FileNum As Byte
         'Get our data, decompress it and save it to the file
         Data = Left$(Data, Len(Data) - 9)
         b() = StrConv(Data, vbFromUnicode)
-        If Len(Data) > 0 Then Compression_DeCompress_LZW b()
+        If Len(Data) > 0 Then Compression_DeCompress_LZMA b()
         FileNum = FreeFile
         MakeSureDirectoryPathExists ServerFile(FileIndex).Path
         Open ServerFile(FileIndex).Path For Binary Access Write As #FileNum

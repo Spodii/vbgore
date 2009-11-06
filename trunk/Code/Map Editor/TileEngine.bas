@@ -38,27 +38,27 @@ Public FlashTimer As Single         'How long until the flash goes away (being >
 
 'Holds a position on a 2d grid
 Public Type Position
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
 End Type
 
 'Holds a position on a 2d grid in floating variables (singles)
 Public Type FloatPos
-    x As Single
-    y As Single
+    X As Single
+    Y As Single
 End Type
 
 'Holds a world position
 Public Type WorldPos
-    x As Byte
-    y As Byte
+    X As Byte
+    Y As Byte
 End Type
 
 'Holds a world position
 Private Type WorldPosEX
     Map As Integer
-    x As Byte
-    y As Byte
+    X As Byte
+    Y As Byte
 End Type
 
 'Holds data about where a png can be found,
@@ -312,8 +312,8 @@ Private MainFontDesc As IFont
 Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE Or D3DFVF_SPECULAR
 
 Public Type TLVERTEX
-    x As Single
-    y As Single
+    X As Single
+    Y As Single
     Z As Single
     Rhw As Single
     Color As Long
@@ -395,15 +395,15 @@ Public OffsetCounterY As Single
 
 'Point API
 Public Type POINTAPI
-    x As Long
-    y As Long
+    X As Long
+    Y As Long
 End Type
 
 'Mini-map tiles
 Public NumMiniMapTiles As Integer   'UBound of the MiniMapTile array
 Public Type MiniMapTile
-    x As Byte
-    y As Byte
+    X As Byte
+    Y As Byte
     Color As Long
     Caption As String
 End Type
@@ -529,16 +529,16 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 '*****************************************************************
 
     'Check for valid position
-    If CharList(CharIndex).Pos.x < 1 Then Exit Sub
-    If CharList(CharIndex).Pos.x > MapInfo.Width Then Exit Sub
-    If CharList(CharIndex).Pos.y < 1 Then Exit Sub
-    If CharList(CharIndex).Pos.y > MapInfo.Height Then Exit Sub
+    If CharList(CharIndex).Pos.X < 1 Then Exit Sub
+    If CharList(CharIndex).Pos.X > MapInfo.Width Then Exit Sub
+    If CharList(CharIndex).Pos.Y < 1 Then Exit Sub
+    If CharList(CharIndex).Pos.Y > MapInfo.Height Then Exit Sub
 
     'Make inactive
     CharList(CharIndex).Active = 0
     
     'Erase from map
-    MapData(CharList(CharIndex).Pos.x, CharList(CharIndex).Pos.y).NPCIndex = 0
+    MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y).NPCIndex = 0
 
     'Update LastChar
     If CharIndex = LastChar Then
@@ -554,7 +554,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal x As Integer, ByVal y As Integer, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal NPCNumber As Integer)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal NPCNumber As Integer)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -583,13 +583,13 @@ Dim EmptyChar As Char
 
     'Reset moving stats
     CharList(CharIndex).Moving = 0
-    CharList(CharIndex).MoveOffset.x = 0
-    CharList(CharIndex).MoveOffset.y = 0
+    CharList(CharIndex).MoveOffset.X = 0
+    CharList(CharIndex).MoveOffset.Y = 0
 
     'Update position
-    CharList(CharIndex).Pos.x = x
-    CharList(CharIndex).Pos.y = y
-    MapData(x, y).NPCIndex = CharIndex
+    CharList(CharIndex).Pos.X = X
+    CharList(CharIndex).Pos.Y = Y
+    MapData(X, Y).NPCIndex = CharIndex
 
     'Make active
     CharList(CharIndex).Active = 1
@@ -609,8 +609,8 @@ Sub Engine_Char_Move_ByHead(ByVal CharIndex As Integer, ByVal nHeading As Byte)
 
 Dim AddX As Integer
 Dim AddY As Integer
-Dim x As Integer
-Dim y As Integer
+Dim X As Integer
+Dim Y As Integer
 Dim nX As Integer
 Dim nY As Integer
 
@@ -618,8 +618,8 @@ Dim nY As Integer
 
     If CharIndex <= 0 Then Exit Sub
 
-    x = CharList(CharIndex).Pos.x
-    y = CharList(CharIndex).Pos.y
+    X = CharList(CharIndex).Pos.X
+    Y = CharList(CharIndex).Pos.Y
 
     'Figure out which way to move
     Select Case nHeading
@@ -646,12 +646,12 @@ Dim nY As Integer
     End Select
 
     'Update the character position and settings
-    nX = x + AddX
-    nY = y + AddY
-    CharList(CharIndex).Pos.x = nX
-    CharList(CharIndex).Pos.y = nY
-    CharList(CharIndex).MoveOffset.x = -(TilePixelWidth * AddX)
-    CharList(CharIndex).MoveOffset.y = -(TilePixelHeight * AddY)
+    nX = X + AddX
+    nY = Y + AddY
+    CharList(CharIndex).Pos.X = nX
+    CharList(CharIndex).Pos.Y = nY
+    CharList(CharIndex).MoveOffset.X = -(TilePixelWidth * AddX)
+    CharList(CharIndex).MoveOffset.Y = -(TilePixelHeight * AddY)
     CharList(CharIndex).Moving = 1
     CharList(CharIndex).Heading = nHeading
     CharList(CharIndex).HeadHeading = nHeading
@@ -667,16 +667,16 @@ Sub Engine_Char_Move_ByPos(ByVal CharIndex As Integer, ByVal nX As Integer, ByVa
 'Starts the movement of a character to nX,nY
 '*****************************************************************
 
-Dim x As Integer
-Dim y As Integer
+Dim X As Integer
+Dim Y As Integer
 Dim AddX As Integer
 Dim AddY As Integer
 Dim nHeading As Byte
 
-    x = CharList(CharIndex).Pos.x
-    y = CharList(CharIndex).Pos.y
-    AddX = nX - x
-    AddY = nY - y
+    X = CharList(CharIndex).Pos.X
+    Y = CharList(CharIndex).Pos.Y
+    AddX = nX - X
+    AddY = nY - Y
 
     'Figure out the direction the character is going
     If Sgn(AddX) = 1 Then nHeading = EAST
@@ -697,10 +697,10 @@ Dim nHeading As Byte
     End If
 
     'Update the character position and settings
-    CharList(CharIndex).Pos.x = nX
-    CharList(CharIndex).Pos.y = nY
-    CharList(CharIndex).MoveOffset.x = -1 * (TilePixelWidth * AddX)
-    CharList(CharIndex).MoveOffset.y = -1 * (TilePixelHeight * AddY)
+    CharList(CharIndex).Pos.X = nX
+    CharList(CharIndex).Pos.Y = nY
+    CharList(CharIndex).MoveOffset.X = -1 * (TilePixelWidth * AddX)
+    CharList(CharIndex).MoveOffset.Y = -1 * (TilePixelHeight * AddY)
     CharList(CharIndex).Moving = 1
     CharList(CharIndex).Heading = nHeading
     CharList(CharIndex).HeadHeading = nHeading
@@ -717,23 +717,23 @@ Sub Engine_ClearMapArray()
 '*****************************************************************
 
 Dim i As Integer
-Dim y As Byte
-Dim x As Byte
+Dim Y As Byte
+Dim X As Byte
 
-    For y = 1 To MapInfo.Height
-        For x = 1 To MapInfo.Width
+    For Y = 1 To MapInfo.Height
+        For X = 1 To MapInfo.Width
 
             'Change blockes status
-            MapData(x, y).Blocked = 0
+            MapData(X, Y).Blocked = 0
 
             'Erase layer 1 and 4
-            MapData(x, y).Graphic(1).GrhIndex = 0
-            MapData(x, y).Graphic(2).GrhIndex = 0
-            MapData(x, y).Graphic(3).GrhIndex = 0
-            MapData(x, y).Graphic(4).GrhIndex = 0
+            MapData(X, Y).Graphic(1).GrhIndex = 0
+            MapData(X, Y).Graphic(2).GrhIndex = 0
+            MapData(X, Y).Graphic(3).GrhIndex = 0
+            MapData(X, Y).Graphic(4).GrhIndex = 0
 
-        Next x
-    Next y
+        Next X
+    Next Y
 
     'Erase characters
     For i = 1 To LastChar
@@ -757,8 +757,8 @@ Sub Engine_ConvertCPtoTP(ByVal StartPixelLeft As Integer, ByVal StartPixelTop As
     If TilePixelWidth = 0 Then Exit Sub
     If TilePixelHeight = 0 Then Exit Sub
 
-    tX = UserPos.x + (cx - StartPixelLeft) \ TilePixelWidth - WindowTileWidth \ 2
-    tY = UserPos.y + (cy - StartPixelTop) \ TilePixelHeight - WindowTileHeight \ 2
+    tX = UserPos.X + (cx - StartPixelLeft) \ TilePixelWidth - WindowTileWidth \ 2
+    tY = UserPos.Y + (cy - StartPixelTop) \ TilePixelHeight - WindowTileHeight \ 2
 
 End Sub
 
@@ -783,13 +783,13 @@ Dim Start_Time As Long
 
 End Function
 
-Function Engine_FileExist(file As String, FileType As VbFileAttribute) As Boolean
+Function Engine_FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
 '*****************************************************************
 'Checks to see if a file exists
 '*****************************************************************
 
-    Engine_FileExist = (Dir$(file, FileType) <> "")
+    Engine_FileExist = (Dir$(File, FileType) <> "")
 
 End Function
 
@@ -895,8 +895,8 @@ Dim j As Long
             Engine_Init_Grh BodyData(LoopC).Walk(j), CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), Str$(j))), 0
             Engine_Init_Grh BodyData(LoopC).Attack(j), CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "a" & j)), 1
         Next j
-        BodyData(LoopC).HeadOffset.x = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetX"))
-        BodyData(LoopC).HeadOffset.y = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetY"))
+        BodyData(LoopC).HeadOffset.X = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetX"))
+        BodyData(LoopC).HeadOffset.Y = CLng(Var_Get(DataPath & "Body.dat", Str$(LoopC), "HeadOffsetY"))
     Next LoopC
 
 End Sub
@@ -1276,8 +1276,8 @@ Dim FilePath As String
         Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
 
         'Set the size
-        SurfaceSize(TextureNum).x = TexInfo.Width
-        SurfaceSize(TextureNum).y = TexInfo.Height
+        SurfaceSize(TextureNum).X = TexInfo.Width
+        SurfaceSize(TextureNum).Y = TexInfo.Height
 
         'Set the texture timer
         SurfaceTimer(TextureNum) = SurfaceTimerMax
@@ -1300,7 +1300,7 @@ Dim s As String
     For i = 0 To 255
         s = s & Chr$(i)
     Next i
-    lngTextHeight = Engine_GetTextSize(s).y
+    lngTextHeight = Engine_GetTextSize(s).Y
     SfxPath = Var_Get(DataPath & "Game.ini", "INIT", "SoundPath")
 
     'Fill startup variables
@@ -1313,8 +1313,8 @@ Dim s As String
     EngineBaseSpeed = Engine_Speed
 
     'Set intial user position
-    UserPos.x = MinXBorder
-    UserPos.y = MinYBorder
+    UserPos.X = MinXBorder
+    UserPos.Y = MinYBorder
 
     'Set scroll pixels per frame
     ScrollPixelsPerFrameX = 36
@@ -1377,8 +1377,8 @@ Dim s As String
     Engine_Init_TileEngine = True
     EngineRun = True
 
-    UserPos.x = 13
-    UserPos.y = 10
+    UserPos.X = 13
+    UserPos.Y = 10
 
 End Function
 
@@ -1454,8 +1454,8 @@ Sub Engine_Init_Weather()
 'Initializes the weather effects
 '*****************************************************************
 Dim TempGrh As Grh
-Dim x As Byte
-Dim y As Byte
+Dim X As Byte
+Dim Y As Byte
 Dim i As Byte
 
     Select Case MapInfo.Weather
@@ -1499,13 +1499,13 @@ Dim i As Byte
             If FlashTimer <= 0 Then
             
                 'Change the light of all the tiles back
-                For x = 1 To MapInfo.Width
-                    For y = 1 To MapInfo.Height
+                For X = 1 To MapInfo.Width
+                    For Y = 1 To MapInfo.Height
                         For i = 1 To 4
-                            MapData(x, y).Light(i) = SaveLightBuffer(x, y).Light(i)
+                            MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
                         Next i
-                    Next y
-                Next x
+                    Next Y
+                Next X
             
             End If
             
@@ -1519,13 +1519,13 @@ Dim i As Byte
                 FlashTimer = 250    'How long the flash is (miliseconds)
 
                 'Change the light of all the tiles to white
-                For x = 1 To MapInfo.Width
-                    For y = 1 To MapInfo.Height
+                For X = 1 To MapInfo.Width
+                    For Y = 1 To MapInfo.Height
                         For i = 1 To 4
-                            MapData(x, y).Light(i) = -1
+                            MapData(X, Y).Light(i) = -1
                         Next i
-                    Next y
-                Next x
+                    Next Y
+                Next X
                 
             End If
             
@@ -1535,7 +1535,7 @@ Dim i As Byte
 
 End Sub
 
-Function Engine_LegalPos(ByVal x As Integer, ByVal y As Integer) As Boolean
+Function Engine_LegalPos(ByVal X As Integer, ByVal Y As Integer) As Boolean
 
 '*****************************************************************
 'Checks to see if a tile position is legal
@@ -1545,19 +1545,19 @@ Dim i As Integer
 
 'Check to see if its out of bounds
 
-    If x < MinXBorder Then Exit Function
-    If x > MaxXBorder Then Exit Function
-    If y < MinYBorder Then Exit Function
-    If y > MaxYBorder Then Exit Function
+    If X < MinXBorder Then Exit Function
+    If X > MaxXBorder Then Exit Function
+    If Y < MinYBorder Then Exit Function
+    If Y > MaxYBorder Then Exit Function
 
     'Check to see if its blocked
-    If MapData(x, y).Blocked = 1 Then Exit Function
+    If MapData(X, Y).Blocked = 1 Then Exit Function
 
     'Check for character
     For i = 1 To LastChar
         If CharList(i).Active Then
-            If CharList(i).Pos.x = x Then
-                If CharList(i).Pos.y = y Then Exit Function
+            If CharList(i).Pos.X = X Then
+                If CharList(i).Pos.Y = Y Then Exit Function
             End If
         End If
     Next i
@@ -1666,46 +1666,46 @@ Sub Engine_MoveScreen(ByVal Heading As Byte)
 'Starts the screen moving in a direction
 '******************************************
 
-Dim x As Integer
-Dim y As Integer
+Dim X As Integer
+Dim Y As Integer
 Dim tX As Integer
 Dim tY As Integer
 
     'Figure out which way to move
     Select Case Heading
         Case NORTH
-            y = -1
+            Y = -1
         Case EAST
-            x = 1
+            X = 1
         Case SOUTH
-            y = 1
+            Y = 1
         Case WEST
-            x = -1
+            X = -1
         Case NORTHEAST
-            y = -1
-            x = 1
+            Y = -1
+            X = 1
         Case SOUTHEAST
-            y = 1
-            x = 1
+            Y = 1
+            X = 1
         Case SOUTHWEST
-            y = 1
-            x = -1
+            Y = 1
+            X = -1
         Case NORTHWEST
-            y = -1
-            x = -1
+            Y = -1
+            X = -1
     End Select
     
-    If x = -1 And x + UserPos.x < MinXBorder Then Exit Sub
-    If x = 1 And x + UserPos.x > MaxXBorder Then Exit Sub
-    If y = -1 And y + UserPos.y < MinYBorder Then Exit Sub
-    If y = 1 And y + UserPos.y > MaxYBorder Then Exit Sub
+    If X = -1 And X + UserPos.X < MinXBorder Then Exit Sub
+    If X = 1 And X + UserPos.X > MaxXBorder Then Exit Sub
+    If Y = -1 And Y + UserPos.Y < MinYBorder Then Exit Sub
+    If Y = 1 And Y + UserPos.Y > MaxYBorder Then Exit Sub
     
-    AddtoUserPos.x = x
-    AddtoUserPos.y = y
+    AddtoUserPos.X = X
+    AddtoUserPos.Y = Y
     
     'Fill temp pos
-    tX = UserPos.x + x
-    tY = UserPos.y + y
+    tX = UserPos.X + X
+    tY = UserPos.Y + Y
 
     If tX < MinXBorder Then tX = MinXBorder
     If tX > MaxXBorder Then tX = MaxXBorder
@@ -1713,8 +1713,8 @@ Dim tY As Integer
     If tY > MaxYBorder Then tY = MaxYBorder
 
     'Start moving... MainLoop does the rest
-    UserPos.x = tX
-    UserPos.y = tY
+    UserPos.X = tX
+    UserPos.Y = tY
     UserMoving = True
 
 End Sub
@@ -1761,7 +1761,7 @@ Dim aY As Integer
 
 End Sub
 
-Sub Engine_OBJ_Create(ByVal GrhIndex As Long, ByVal x As Byte, ByVal y As Byte)
+Sub Engine_OBJ_Create(ByVal GrhIndex As Long, ByVal X As Byte, ByVal Y As Byte)
 
 '*****************************************************************
 'Create an object on the map and update LastOBJ value
@@ -1784,8 +1784,8 @@ Dim ObjIndex As Integer
     Loop While OBJList(ObjIndex).Grh.GrhIndex > 0
 
     'Set the object position
-    OBJList(ObjIndex).Pos.x = x
-    OBJList(ObjIndex).Pos.y = y
+    OBJList(ObjIndex).Pos.X = X
+    OBJList(ObjIndex).Pos.Y = Y
 
     'Create the object
     Engine_Init_Grh OBJList(ObjIndex).Grh, GrhIndex
@@ -1807,8 +1807,8 @@ Dim j As Integer
 
     'Erase the object
     OBJList(ObjIndex).Grh.GrhIndex = 0
-    OBJList(ObjIndex).Pos.x = 0
-    OBJList(ObjIndex).Pos.y = 0
+    OBJList(ObjIndex).Pos.X = 0
+    OBJList(ObjIndex).Pos.Y = 0
 
     'Update LastOBJ
     If j = LastObj Then
@@ -1829,23 +1829,23 @@ Dim j As Integer
 
 End Sub
 
-Function Engine_PixelPosX(ByVal x As Integer) As Integer
+Function Engine_PixelPosX(ByVal X As Integer) As Integer
 
 '*****************************************************************
 'Converts a tile position to a screen position
 '*****************************************************************
 
-    Engine_PixelPosX = (x - 1) * TilePixelWidth
+    Engine_PixelPosX = (X - 1) * TilePixelWidth
 
 End Function
 
-Function Engine_PixelPosY(ByVal y As Integer) As Integer
+Function Engine_PixelPosY(ByVal Y As Integer) As Integer
 
 '*****************************************************************
 'Converts a tile position to a screen position
 '*****************************************************************
 
-    Engine_PixelPosY = (y - 1) * TilePixelHeight
+    Engine_PixelPosY = (Y - 1) * TilePixelHeight
 
 End Function
 
@@ -1985,8 +1985,8 @@ Public Sub Engine_Render_TileSelection()
 Dim dest As RECT
 Dim src As RECT
 Dim i As Long
-Dim x As Long
-Dim y As Long
+Dim X As Long
+Dim Y As Long
 Dim j As Integer
 
     'Check for valid values
@@ -1998,8 +1998,8 @@ Dim j As Integer
     src.bottom = tsTileHeight
 
     'Loop through the array
-    x = 0
-    y = 0
+    X = 0
+    Y = 0
     
     For i = 1 To UBound(PreviewGrhList)
     
@@ -2007,14 +2007,14 @@ Dim j As Integer
         If PreviewGrhList(i).GrhIndex = 0 Then Exit For
         
         'Update the position to render
-        y = y + 1
-        If y = tsHeight Then
-            y = 0
-            x = x + 1                       '                                                                 *cling*
-            If x = tsWidth Then Exit For    'We've run out of space, omg!! congratz, yer dun rendurin!! (>^_^)>[][]<(^_^<)
+        Y = Y + 1
+        If Y = tsHeight Then
+            Y = 0
+            X = X + 1                       '                                                                 *cling*
+            If X = tsWidth Then Exit For    'We've run out of space, omg!! congratz, yer dun rendurin!! (>^_^)>[][]<(^_^<)
         End If
-        dest.Top = y * tsTileHeight
-        dest.Left = x * tsTileWidth
+        dest.Top = Y * tsTileHeight
+        dest.Left = X * tsTileWidth
         dest.Right = dest.Left + tsTileWidth
         dest.bottom = dest.Top + tsTileHeight
 
@@ -2080,8 +2080,8 @@ Dim WingsGrh As Grh
 
 'Set the map block the char is on to the TempBlock, and the block above the user as TempBlock2
 
-    TempBlock = MapData(CharList(CharIndex).Pos.x, CharList(CharIndex).Pos.y)
-    If CharList(CharIndex).Pos.y > 1 Then TempBlock2 = MapData(CharList(CharIndex).Pos.x, CharList(CharIndex).Pos.y - 1)
+    TempBlock = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y)
+    If CharList(CharIndex).Pos.Y > 1 Then TempBlock2 = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y - 1)
 
     RenderColor(1) = TempBlock2.Light(1)
     RenderColor(2) = TempBlock2.Light(2)
@@ -2092,7 +2092,7 @@ Dim WingsGrh As Grh
 
         'If needed, move left and right
         If CharList(CharIndex).ScrollDirectionX <> 0 Then
-            CharList(CharIndex).MoveOffset.x = CharList(CharIndex).MoveOffset.x + ScrollPixelsPerFrameX * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
+            CharList(CharIndex).MoveOffset.X = CharList(CharIndex).MoveOffset.X + ScrollPixelsPerFrameX * Sgn(CharList(CharIndex).ScrollDirectionX) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -2101,8 +2101,8 @@ Dim WingsGrh As Grh
             Moved = True
 
             'Check if we already got there
-            If (Sgn(CharList(CharIndex).ScrollDirectionX) = 1 And CharList(CharIndex).MoveOffset.x >= 0) Or (Sgn(CharList(CharIndex).ScrollDirectionX) = -1 And CharList(CharIndex).MoveOffset.x <= 0) Then
-                CharList(CharIndex).MoveOffset.x = 0
+            If (Sgn(CharList(CharIndex).ScrollDirectionX) = 1 And CharList(CharIndex).MoveOffset.X >= 0) Or (Sgn(CharList(CharIndex).ScrollDirectionX) = -1 And CharList(CharIndex).MoveOffset.X <= 0) Then
+                CharList(CharIndex).MoveOffset.X = 0
                 CharList(CharIndex).ScrollDirectionX = 0
             End If
 
@@ -2110,7 +2110,7 @@ Dim WingsGrh As Grh
 
         'If needed, move up and down
         If CharList(CharIndex).ScrollDirectionY <> 0 Then
-            CharList(CharIndex).MoveOffset.y = CharList(CharIndex).MoveOffset.y + ScrollPixelsPerFrameY * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
+            CharList(CharIndex).MoveOffset.Y = CharList(CharIndex).MoveOffset.Y + ScrollPixelsPerFrameY * Sgn(CharList(CharIndex).ScrollDirectionY) * TickPerFrame
 
             'Start animation
             CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading).Started = 1
@@ -2119,8 +2119,8 @@ Dim WingsGrh As Grh
             Moved = True
 
             'Check if we already got there
-            If (Sgn(CharList(CharIndex).ScrollDirectionY) = 1 And CharList(CharIndex).MoveOffset.y >= 0) Or (Sgn(CharList(CharIndex).ScrollDirectionY) = -1 And CharList(CharIndex).MoveOffset.y <= 0) Then
-                CharList(CharIndex).MoveOffset.y = 0
+            If (Sgn(CharList(CharIndex).ScrollDirectionY) = 1 And CharList(CharIndex).MoveOffset.Y >= 0) Or (Sgn(CharList(CharIndex).ScrollDirectionY) = -1 And CharList(CharIndex).MoveOffset.Y <= 0) Then
+                CharList(CharIndex).MoveOffset.Y = 0
                 CharList(CharIndex).ScrollDirectionY = 0
             End If
 
@@ -2145,12 +2145,12 @@ Dim WingsGrh As Grh
     End If
 
     'Set the pixel offset
-    PixelOffsetX = PixelOffsetX + CharList(CharIndex).MoveOffset.x
-    PixelOffsetY = PixelOffsetY + CharList(CharIndex).MoveOffset.y
+    PixelOffsetX = PixelOffsetX + CharList(CharIndex).MoveOffset.X
+    PixelOffsetY = PixelOffsetY + CharList(CharIndex).MoveOffset.Y
 
     'Save the values in the realpos variable
-    CharList(CharIndex).RealPos.x = PixelOffsetX
-    CharList(CharIndex).RealPos.y = PixelOffsetY
+    CharList(CharIndex).RealPos.X = PixelOffsetX
+    CharList(CharIndex).RealPos.Y = PixelOffsetY
 
     '***** Render Shadows *****
 
@@ -2182,25 +2182,25 @@ Dim WingsGrh As Grh
         If CharList(CharIndex).BlinkTimer > 0 Then
             CharList(CharIndex).BlinkTimer = CharList(CharIndex).BlinkTimer - ElapsedTime
             'Blinking
-            Engine_Render_Grh CharList(CharIndex).Head.AgrBlink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+            Engine_Render_Grh CharList(CharIndex).Head.AgrBlink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
         Else
             'Normal
-            Engine_Render_Grh CharList(CharIndex).Head.AgrHead(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+            Engine_Render_Grh CharList(CharIndex).Head.AgrHead(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
         End If
     Else
         'Not Aggressive
         If CharList(CharIndex).BlinkTimer > 0 Then
             CharList(CharIndex).BlinkTimer = CharList(CharIndex).BlinkTimer - ElapsedTime
             'Blinking
-            Engine_Render_Grh CharList(CharIndex).Head.Blink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+            Engine_Render_Grh CharList(CharIndex).Head.Blink(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
         Else
             'Normal
-            Engine_Render_Grh CharList(CharIndex).Head.Head(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+            Engine_Render_Grh CharList(CharIndex).Head.Head(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
         End If
     End If
 
     'Hair
-    Engine_Render_Grh CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+    Engine_Render_Grh CharList(CharIndex).Hair.Hair(CharList(CharIndex).HeadHeading), PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, True, False, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
 
     '***** Render Character *****
     '***** (When updating this, make sure you copy it to the NPCEditor and MapEditor, too!) *****
@@ -2235,15 +2235,15 @@ Dim WingsGrh As Grh
     If CharList(CharIndex).Heading = NORTH Or CharList(CharIndex).Heading = NORTHEAST Then
         Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
     '*** EAST / SOUTHEAST *** (1.Body 2.Head 3.Hair 4.Wings 5.Weapon)
     ElseIf CharList(CharIndex).Heading = EAST Or CharList(CharIndex).Heading = SOUTHEAST Then
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
@@ -2251,16 +2251,16 @@ Dim WingsGrh As Grh
     ElseIf CharList(CharIndex).Heading = SOUTH Or CharList(CharIndex).Heading = SOUTHWEST Then
         Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
     '*** WEST / NORTHWEST *** (1.Weapon 1.Body 2.Head 3.Hair 4.Wings)
     ElseIf CharList(CharIndex).Heading = WEST Or CharList(CharIndex).Heading = NORTHWEST Then
         Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.x, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
     End If
@@ -2319,7 +2319,7 @@ Private Function Engine_UpdateGrh(ByRef Grh As Grh, Optional ByVal LoopAnim As B
     
 End Function
 
-Sub Engine_Render_Grh(ByRef Grh As Grh, ByVal x As Integer, ByVal y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal Angle As Single = 0)
+Sub Engine_Render_Grh(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal Angle As Single = 0)
 
 '*****************************************************************
 'Draws a GRH transparently to a X and Y position
@@ -2336,10 +2336,10 @@ Dim FileNum As Integer
     CurrGrhIndex = GrhData(Grh.GrhIndex).Frames(Int(Grh.FrameCounter))
 
     'Check for in-bounds
-    If x + GrhData(CurrGrhIndex).pixelWidth > 0 Then
-        If y + GrhData(CurrGrhIndex).pixelHeight > 0 Then
-            If x < frmMain.ScaleWidth Then
-                If y < frmMain.ScaleHeight Then
+    If X + GrhData(CurrGrhIndex).pixelWidth > 0 Then
+        If Y + GrhData(CurrGrhIndex).pixelHeight > 0 Then
+            If X < frmMain.ScaleWidth Then
+                If Y < frmMain.ScaleHeight Then
                 
                     'Update the animation frame
                     If Animate Then
@@ -2352,10 +2352,10 @@ Dim FileNum As Integer
                     'Center Grh over X,Y pos
                     If Center Then
                         If GrhData(CurrGrhIndex).TileWidth > 1 Then
-                            x = x - GrhData(CurrGrhIndex).TileWidth * TilePixelWidth \ 2 + TilePixelWidth \ 2
+                            X = X - GrhData(CurrGrhIndex).TileWidth * TilePixelWidth \ 2 + TilePixelWidth \ 2
                         End If
                         If GrhData(CurrGrhIndex).TileHeight > 1 Then
-                            y = y - GrhData(CurrGrhIndex).TileHeight * TilePixelHeight + TilePixelHeight
+                            Y = Y - GrhData(CurrGrhIndex).TileHeight * TilePixelHeight + TilePixelHeight
                         End If
                     End If
                 
@@ -2363,7 +2363,7 @@ Dim FileNum As Integer
                     'If AlternateRender = 0 Then
                     
                         'Render the texture with 2 triangles on a triangle strip
-                        Engine_Render_Rectangle x, y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
+                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
                             GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow
                         
                     'Else
@@ -2413,16 +2413,16 @@ Dim SrcBitmapHeight As Long
     End If
 
     'Set the bitmap dimensions if needed
-    SrcBitmapWidth = SurfaceSize(TextureNum).x
-    SrcBitmapHeight = SurfaceSize(TextureNum).y
+    SrcBitmapWidth = SurfaceSize(TextureNum).X
+    SrcBitmapHeight = SurfaceSize(TextureNum).Y
     
     'Set the top-left corner
     With VertexArray(0)
         .Color = -1
         .Tu = 0
         .Tv = 0
-        .x = 0
-        .y = 0
+        .X = 0
+        .Y = 0
     End With
 
     'Set the top-right corner
@@ -2430,14 +2430,14 @@ Dim SrcBitmapHeight As Long
         .Color = -1
         .Tu = 1
         .Tv = 0
-        .x = SrcBitmapWidth
-        .y = 0
+        .X = SrcBitmapWidth
+        .Y = 0
     End With
 
     'Set the bottom-left corner
     With VertexArray(2)
-        .x = 0
-        .y = SrcBitmapHeight
+        .X = 0
+        .Y = SrcBitmapHeight
         .Color = -1
         .Tu = 0
         .Tv = 1
@@ -2445,8 +2445,8 @@ Dim SrcBitmapHeight As Long
 
     'Set the bottom-right corner
     With VertexArray(3)
-        .x = SrcBitmapWidth
-        .y = SrcBitmapHeight
+        .X = SrcBitmapWidth
+        .Y = SrcBitmapHeight
         .Color = -1
         .Tu = 1
         .Tv = 1
@@ -2457,7 +2457,7 @@ Dim SrcBitmapHeight As Long
 
 End Sub
 
-Sub Engine_Render_Rectangle(ByVal x As Single, ByVal y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0)
+Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal SrcWidth As Single, ByVal SrcHeight As Single, Optional ByVal SrcBitmapWidth As Long = -1, Optional ByVal SrcBitmapHeight As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal TextureNum As Long, Optional ByVal Color0 As Long = -1, Optional ByVal Color1 As Long = -1, Optional ByVal Color2 As Long = -1, Optional ByVal Color3 As Long = -1, Optional ByVal Shadow As Byte = 0)
 
 '************************************************************
 'Render a square/rectangle based on the specified values then rotate it if needed
@@ -2490,29 +2490,29 @@ Dim ShadowAdd As Byte
     End If
 
     'Set the bitmap dimensions if needed
-    If SrcBitmapWidth = -1 Then SrcBitmapWidth = SurfaceSize(TextureNum).x
-    If SrcBitmapHeight = -1 Then SrcBitmapHeight = SurfaceSize(TextureNum).y
+    If SrcBitmapWidth = -1 Then SrcBitmapWidth = SurfaceSize(TextureNum).X
+    If SrcBitmapHeight = -1 Then SrcBitmapHeight = SurfaceSize(TextureNum).Y
 
     'Set shadowed settings - shadows only change on the top 2 points
     If Shadow Then
 
         'Set the top-left corner
-        VertexArray(0).x = x + (Width * 0.5)
-        VertexArray(0).y = y - (Height * 0.5)
+        VertexArray(0).X = X + (Width * 0.5)
+        VertexArray(0).Y = Y - (Height * 0.5)
 
         'Set the top-right corner
-        VertexArray(1).x = x + Width + (Width * 0.5)
-        VertexArray(1).y = y - (Height * 0.5)
+        VertexArray(1).X = X + Width + (Width * 0.5)
+        VertexArray(1).Y = Y - (Height * 0.5)
 
     Else
     
         'Set the top-left corner
-        VertexArray(0).x = x
-        VertexArray(0).y = y
+        VertexArray(0).X = X
+        VertexArray(0).Y = Y
 
         'Set the top-right corner
-        VertexArray(1).x = x + Width
-        VertexArray(1).y = y
+        VertexArray(1).X = X + Width
+        VertexArray(1).Y = Y
 
         ShadowAdd = 1
 
@@ -2520,11 +2520,11 @@ Dim ShadowAdd As Byte
 
     VertexArray(0).Color = Color0
     VertexArray(1).Color = Color1
-    VertexArray(2).x = x
-    VertexArray(2).y = y + Height
+    VertexArray(2).X = X
+    VertexArray(2).Y = Y + Height
     VertexArray(2).Color = Color2
-    VertexArray(3).x = x + Width
-    VertexArray(3).y = y + Height
+    VertexArray(3).X = X + Width
+    VertexArray(3).Y = Y + Height
     VertexArray(3).Color = Color3
 
     VertexArray(0).Tu = (SrcX / SrcBitmapWidth)
@@ -2546,8 +2546,8 @@ Dim ShadowAdd As Byte
         RadAngle = Degrees * DegreeToRadian
 
         'Set the CenterX and CenterY values
-        CenterX = x + (Width * 0.5)
-        CenterY = y + (Height * 0.5)
+        CenterX = X + (Width * 0.5)
+        CenterY = Y + (Height * 0.5)
 
         'Pre-calculate the cosine and sine of the radiant
         SinRad = Sin(RadAngle)
@@ -2557,12 +2557,12 @@ Dim ShadowAdd As Byte
         For Index = 0 To 3
 
             'Calculates the new X and Y co-ordinates of the vertices for the given angle around the center co-ordinates
-            NewX = CenterX + (VertexArray(Index).x - CenterX) * CosRad - (VertexArray(Index).y - CenterY) * SinRad
-            NewY = CenterY + (VertexArray(Index).y - CenterY) * CosRad + (VertexArray(Index).x - CenterX) * SinRad
+            NewX = CenterX + (VertexArray(Index).X - CenterX) * CosRad - (VertexArray(Index).Y - CenterY) * SinRad
+            NewY = CenterY + (VertexArray(Index).Y - CenterY) * CosRad + (VertexArray(Index).X - CenterX) * SinRad
 
             'Applies the new co-ordinates to the buffer
-            VertexArray(Index).x = NewX
-            VertexArray(Index).y = NewY
+            VertexArray(Index).X = NewX
+            VertexArray(Index).Y = NewY
 
         Next Index
 
@@ -2583,8 +2583,8 @@ Const UseOption As Byte = 2 'Change to the type of map you want
 Dim MMC_Blocked As Long
 Dim MMC_Exit As Long
 Dim MMC_Sign As Long
-Dim x As Byte
-Dim y As Byte
+Dim X As Byte
+Dim Y As Byte
 Dim j As Byte
 
     'Create the colors (character colors are defined in Engine_RenderScreen when it is rendered)
@@ -2601,69 +2601,69 @@ Dim j As Byte
         '***** Option 1 *****
         Case 1
 
-            For y = 1 To MapInfo.Height
-                For x = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
+                For X = 1 To MapInfo.Width
                     
                     'Check for signs
-                    If MapData(x, y).Sign > 1 Then
+                    If MapData(X, Y).Sign > 1 Then
                         NumMiniMapTiles = NumMiniMapTiles + 1
-                        MiniMapTile(NumMiniMapTiles).x = x
-                        MiniMapTile(NumMiniMapTiles).y = y
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
                         MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
                     Else
                     
                         'Check for exits
-                        If MapData(x, y).TileExit.Map > 0 Then
+                        If MapData(X, Y).TileExit.Map > 0 Then
                             NumMiniMapTiles = NumMiniMapTiles + 1
-                            MiniMapTile(NumMiniMapTiles).x = x
-                            MiniMapTile(NumMiniMapTiles).y = y
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
                             MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
                         Else
                             
                             'Check for blocked tiles
-                            If MapData(x, y).Blocked = 0 Then
+                            If MapData(X, Y).Blocked = 0 Then
                                 NumMiniMapTiles = NumMiniMapTiles + 1
-                                MiniMapTile(NumMiniMapTiles).x = x
-                                MiniMapTile(NumMiniMapTiles).y = y
+                                MiniMapTile(NumMiniMapTiles).X = X
+                                MiniMapTile(NumMiniMapTiles).Y = Y
                                 MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                             End If
                         End If
                     End If
                     
-                Next x
-            Next y
+                Next X
+            Next Y
                 
         '***** Option 2 *****
         Case 2
 
-            For y = 1 To MapInfo.Height
+            For Y = 1 To MapInfo.Height
                 j = 0   'Clear the row settings
-                For x = 1 To MapInfo.Width
+                For X = 1 To MapInfo.Width
                     
                     'Check if there is a sign
-                    If MapData(x, y).Sign > 1 Then
+                    If MapData(X, Y).Sign > 1 Then
                         NumMiniMapTiles = NumMiniMapTiles + 1
-                        MiniMapTile(NumMiniMapTiles).x = x
-                        MiniMapTile(NumMiniMapTiles).y = y
+                        MiniMapTile(NumMiniMapTiles).X = X
+                        MiniMapTile(NumMiniMapTiles).Y = Y
                         MiniMapTile(NumMiniMapTiles).Color = MMC_Sign
                     Else
                     
                         'Check if there is an exit
-                        If MapData(x, y).TileExit.Map > 0 Then
+                        If MapData(X, Y).TileExit.Map > 0 Then
                             NumMiniMapTiles = NumMiniMapTiles + 1
-                            MiniMapTile(NumMiniMapTiles).x = x
-                            MiniMapTile(NumMiniMapTiles).y = y
+                            MiniMapTile(NumMiniMapTiles).X = X
+                            MiniMapTile(NumMiniMapTiles).Y = Y
                             MiniMapTile(NumMiniMapTiles).Color = MMC_Exit
                         Else
                             
                             'Only check blocked tiles
-                            If MapData(x, y).Blocked > 0 Then
+                            If MapData(X, Y).Blocked > 0 Then
         
                                 'If the row is set to draw, just keep drawing
                                 If j = 1 Then
                                     NumMiniMapTiles = NumMiniMapTiles + 1
-                                    MiniMapTile(NumMiniMapTiles).x = x
-                                    MiniMapTile(NumMiniMapTiles).y = y
+                                    MiniMapTile(NumMiniMapTiles).X = X
+                                    MiniMapTile(NumMiniMapTiles).Y = Y
                                     MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                                     
                                 'The row isn't drawing, check if it is time to draw it
@@ -2671,11 +2671,11 @@ Dim j As Byte
         
                                     'If the next tile is not blocked, this one will be (to draw an outline)
                                     If j = 0 Then
-                                        If x + 1 <= MapInfo.Width Then
-                                            If MapData(x + 1, y).Blocked = 0 Then
+                                        If X + 1 <= MapInfo.Width Then
+                                            If MapData(X + 1, Y).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
-                                                MiniMapTile(NumMiniMapTiles).x = x
-                                                MiniMapTile(NumMiniMapTiles).y = y
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
                                                 MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                                                 j = 1
                                             End If
@@ -2684,22 +2684,22 @@ Dim j As Byte
                                     
                                     'If the tile above or below is blocked, draw the tile
                                     If j = 0 Then
-                                        If y > 1 Then
-                                            If MapData(x, y - 1).Blocked = 0 Then
+                                        If Y > 1 Then
+                                            If MapData(X, Y - 1).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
-                                                MiniMapTile(NumMiniMapTiles).x = x
-                                                MiniMapTile(NumMiniMapTiles).y = y
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
                                                 MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                                                 j = 1
                                             End If
                                         End If
                                     End If
                                     If j = 0 Then
-                                        If y < MapInfo.Height Then
-                                            If MapData(x, y + 1).Blocked = 0 Then
+                                        If Y < MapInfo.Height Then
+                                            If MapData(X, Y + 1).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
-                                                MiniMapTile(NumMiniMapTiles).x = x
-                                                MiniMapTile(NumMiniMapTiles).y = y
+                                                MiniMapTile(NumMiniMapTiles).X = X
+                                                MiniMapTile(NumMiniMapTiles).Y = Y
                                                 MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                                                 j = 1
                                             End If
@@ -2708,14 +2708,14 @@ Dim j As Byte
                                     
                                     'If we STILL haven't drawn the tile, check to the diagonals (this makes corners smoothed)
                                     If j = 0 Then
-                                        If y > 1 Then
-                                            If y < MapInfo.Height Then
-                                                If x > 1 Then
-                                                    If x < MapInfo.Width Then
-                                                        If MapData(x - 1, y - 1).Blocked = 0 Or MapData(x - 1, y + 1).Blocked = 0 Or MapData(x + 1, y - 1).Blocked = 0 Or MapData(x + 1, y + 1).Blocked = 0 Then
+                                        If Y > 1 Then
+                                            If Y < MapInfo.Height Then
+                                                If X > 1 Then
+                                                    If X < MapInfo.Width Then
+                                                        If MapData(X - 1, Y - 1).Blocked = 0 Or MapData(X - 1, Y + 1).Blocked = 0 Or MapData(X + 1, Y - 1).Blocked = 0 Or MapData(X + 1, Y + 1).Blocked = 0 Then
                                                             NumMiniMapTiles = NumMiniMapTiles + 1
-                                                            MiniMapTile(NumMiniMapTiles).x = x
-                                                            MiniMapTile(NumMiniMapTiles).y = y
+                                                            MiniMapTile(NumMiniMapTiles).X = X
+                                                            MiniMapTile(NumMiniMapTiles).Y = Y
                                                             MiniMapTile(NumMiniMapTiles).Color = MMC_Blocked
                                                             j = 1
                                                         End If
@@ -2729,16 +2729,16 @@ Dim j As Byte
                                 
                                 'If the next tile isn't blocked, we remove the row drawing
                                 If j = 1 Then
-                                    If x < MapInfo.Width Then
-                                        If MapData(x + 1, y).Blocked > 0 Then j = 0
+                                    If X < MapInfo.Width Then
+                                        If MapData(X + 1, Y).Blocked > 0 Then j = 0
                                     End If
                                 End If
                                 
                             End If
                         End If
                     End If
-                Next x
-            Next y
+                Next X
+            Next Y
 
     End Select
     
@@ -2775,8 +2775,8 @@ Dim i As Byte
         For j = 1 To NumGrhFiles
             Set SurfaceDB(j) = Nothing
             SurfaceTimer(j) = 0
-            SurfaceSize(j).x = 0
-            SurfaceSize(j).y = 0
+            SurfaceSize(j).X = 0
+            SurfaceSize(j).Y = 0
         Next j
 
         D3D.GetAdapterDisplayMode D3DADAPTER_DEFAULT, DispMode
@@ -2818,8 +2818,8 @@ Dim ChrY() As Integer
 Dim Grh As Grh
 Dim x2 As Long
 Dim y2 As Long
-Dim y As Long    'Keeps track of where on map we are
-Dim x As Long
+Dim Y As Long    'Keeps track of where on map we are
+Dim X As Long
 Dim j As Long
 Dim Layer As Byte
 
@@ -2886,9 +2886,9 @@ Dim Layer As Byte
                 Grh.GrhIndex = Val(frmSetTile.GrhTxt.Text)
                 j = D3DColorARGB(200, 255, 255, 255)
                 If frmSetTile.ShadowChk.Value = 1 Then
-                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 0, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
                 End If
-                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, 0
+                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 0, 0, False, j, j, j, j, 0
             End If
         End If
         
@@ -2924,7 +2924,7 @@ Dim Layer As Byte
         
             'Fill the array
             For j = 1 To LastChar
-                ChrY(j) = CharList(j).Pos.y
+                ChrY(j) = CharList(j).Pos.Y
                 ChrID(j) = j
             Next j
         
@@ -2934,13 +2934,13 @@ Dim Layer As Byte
             'Loop through the sorted characters
             For j = 1 To LastChar
                 If CharList(ChrID(j)).Active Then
-                    x = Engine_PixelPosX(minXOffset + (CharList(ChrID(j)).Pos.x - minX)) + PixelOffsetX + ((10 - TileBufferSize) * 32)
-                    y = Engine_PixelPosY(minYOffset + (CharList(ChrID(j)).Pos.y - minY)) + PixelOffsetY + ((10 - TileBufferSize) * 32)
-                    If y >= -32 Then
-                        If y <= 632 Then
-                            If x >= -32 Then
-                                If x <= 832 Then
-                                    Engine_Render_Char ChrID(j), x, y
+                    X = Engine_PixelPosX(minXOffset + (CharList(ChrID(j)).Pos.X - minX)) + PixelOffsetX + ((10 - TileBufferSize) * 32)
+                    Y = Engine_PixelPosY(minYOffset + (CharList(ChrID(j)).Pos.Y - minY)) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+                    If Y >= -32 Then
+                        If Y <= 632 Then
+                            If X >= -32 Then
+                                If X <= 832 Then
+                                    Engine_Render_Char ChrID(j), X, Y
                                 End If
                             End If
                         End If
@@ -2970,9 +2970,9 @@ Dim Layer As Byte
                 Grh.GrhIndex = Val(frmSetTile.GrhTxt.Text)
                 j = D3DColorARGB(200, 255, 255, 255)
                 If frmSetTile.ShadowChk.Value = 1 Then
-                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                    If Val(frmSetTile.ShadowTxt.Text) = 1 Then Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 0, 0, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
                 End If
-                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 1, 0, False, j, j, j, j, 0
+                Engine_Render_Grh Grh, Engine_PixelPosX(minXOffset + (HovertX - minX)) + (32 * (10 - TileBufferSize)) + PixelOffsetX, Engine_PixelPosY(minYOffset + (HovertY - minY)) + (32 * (10 - TileBufferSize)) + PixelOffsetY, 0, 0, False, j, j, j, j, 0
             End If
         End If
         
@@ -2980,13 +2980,13 @@ Dim Layer As Byte
     
     '************** Info **************
     If InfoChkValue = 1 Then
-        For x = 1 To InfoLayer.NumTiles
-            For y = 1 To InfoLayer.Tile(x).NumGrhs
-                With InfoLayer.Tile(x).Grh(y)
+        For X = 1 To InfoLayer.NumTiles
+            For Y = 1 To InfoLayer.Tile(X).NumGrhs
+                With InfoLayer.Tile(X).Grh(Y)
                     Engine_Render_Grh .Grh, .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, False
                 End With
-            Next y
-        Next x
+            Next Y
+        Next X
     End If
     
     '************** Grid **************
@@ -2996,14 +2996,14 @@ Dim Layer As Byte
         Grh.FrameCounter = 1
         Grh.Started = 0
         ScreenY = minYOffset
-        For y = minY To maxY
+        For Y = minY To maxY
             ScreenX = minXOffset
-            For x = minX To maxX
+            For X = minX To maxX
                 Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX + ((10 - TileBufferSize) * 32), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((10 - TileBufferSize) * 32), 0, 0, , j, j, j, j
                 ScreenX = ScreenX + 1
-            Next x
+            Next X
             ScreenY = ScreenY + 1
-        Next y
+        Next Y
     End If
 
     '************** Update weather **************
@@ -3030,13 +3030,13 @@ Dim Layer As Byte
         
         'Change the light of all the tiles back
         If FlashTimer > 0 Then
-            For x = 1 To MapInfo.Width
-                For y = 1 To MapInfo.Height
+            For X = 1 To MapInfo.Width
+                For Y = 1 To MapInfo.Height
                     For x2 = 1 To 4
-                        MapData(x, y).Light(x2) = SaveLightBuffer(x, y).Light(x2)
+                        MapData(X, Y).Light(x2) = SaveLightBuffer(X, Y).Light(x2)
                     Next x2
-                Next y
-            Next x
+                Next Y
+            Next X
             FlashTimer = 0
         End If
         
@@ -3057,19 +3057,19 @@ Dim Layer As Byte
     If ShowMiniMap Then
     
         'Draw the map outline
-        For x = 1 To NumMiniMapTiles
-            Engine_Render_Rectangle MiniMapTile(x).x * tS, MiniMapTile(x).y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, MiniMapTile(x).Color, MiniMapTile(x).Color, MiniMapTile(x).Color, MiniMapTile(x).Color
-        Next x
+        For X = 1 To NumMiniMapTiles
+            Engine_Render_Rectangle MiniMapTile(X).X * tS, MiniMapTile(X).Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, MiniMapTile(X).Color, MiniMapTile(X).Color, MiniMapTile(X).Color, MiniMapTile(X).Color
+        Next X
         
         'Draw the characters
         j = D3DColorARGB(200, 0, 255, 255)
-        For x = 1 To LastChar
-            Engine_Render_Rectangle CharList(x).Pos.x * tS, CharList(x).Pos.y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
-        Next x
+        For X = 1 To LastChar
+            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+        Next X
         
         'Draw the position indicator
         j = D3DColorARGB(200, 0, 255, 0)
-        Engine_Render_Rectangle UserPos.x * tS, UserPos.y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+        Engine_Render_Rectangle UserPos.X * tS, UserPos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
         
     End If
     
@@ -3094,8 +3094,8 @@ Dim ScreenY As Byte
 Dim tBuf As Integer
 Dim pX As Integer
 Dim pY As Integer
-Dim x As Long
-Dim y As Long
+Dim X As Long
+Dim Y As Long
 Dim j As Long
 
     'Raise the buffer up + 1 to prevent graphical errors
@@ -3112,25 +3112,25 @@ Dim j As Long
         
         'Loop through all the tiles within the buffer's range
         ScreenY = (10 - tBuf)
-        For y = minY To maxY
+        For Y = minY To maxY
             ScreenX = (10 - tBuf)
-            For x = minX To maxX
+            For X = minX To maxX
             
                 'Check that the tile is in the range of the map
-                If x >= 1 Then
-                    If y >= 1 Then
-                        If x <= MapInfo.Width Then
-                            If y <= MapInfo.Height Then
+                If X >= 1 Then
+                    If Y >= 1 Then
+                        If X <= MapInfo.Width Then
+                            If Y <= MapInfo.Height Then
                         
                                 'Check if the tile even has a graphic on it
-                                If MapData(x, y).Graphic(Layer).GrhIndex Then
+                                If MapData(X, Y).Graphic(Layer).GrhIndex Then
                                 
                                     'Calculate the pixel values
                                     pX = Engine_PixelPosX(ScreenX) - 288
                                     pY = Engine_PixelPosY(ScreenY) - 288
                                     
                                     'Check that the tile is in the screen
-                                    With GrhData(MapData(x, y).Graphic(Layer).GrhIndex)
+                                    With GrhData(MapData(X, Y).Graphic(Layer).GrhIndex)
                                         If pX >= -.pixelWidth Then
                                             If pX <= ScreenWidth + .pixelWidth Then
                                                 If pY >= -.pixelHeight Then
@@ -3140,8 +3140,8 @@ Dim j As Long
                                                         TileLayer(Layer).NumTiles = TileLayer(Layer).NumTiles + 1
                                                         
                                                         'Store the needed information
-                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileX = x
-                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileY = y
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileX = X
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileY = Y
                                                         TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).PixelPosX = pX + 288
                                                         TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).PixelPosY = pY + 288
     
@@ -3158,9 +3158,9 @@ Dim j As Long
                     End If
                 End If
                 ScreenX = ScreenX + 1
-            Next x
+            Next X
             ScreenY = ScreenY + 1
-        Next y
+        Next Y
     
         'We got all the information we need, now resize the array as small as possible to save RAM, then do the same for every other layer :o
         If TileLayer(Layer).NumTiles > 0 Then
@@ -3177,14 +3177,14 @@ Dim j As Long
     ReDim InfoLayer.Tile(1 To ((maxY - minY + 1) * (maxX - minX + 1)))
     
     ScreenY = (10 - tBuf)
-    For y = minY To maxY
+    For Y = minY To maxY
         ScreenX = (10 - tBuf)
-        For x = minX To maxX
+        For X = minX To maxX
         
-            If x >= 1 Then
-                If y >= 1 Then
-                    If x <= MapInfo.Width Then
-                        If y <= MapInfo.Height Then
+            If X >= 1 Then
+                If Y >= 1 Then
+                    If X <= MapInfo.Width Then
+                        If Y <= MapInfo.Height Then
 
                             pX = Engine_PixelPosX(ScreenX)
                             pY = Engine_PixelPosY(ScreenY)
@@ -3195,28 +3195,28 @@ Dim j As Long
                                         If pY - 288 < ScreenHeight + 32 Then
                 
                                             'Blocked tiles
-                                            If MapData(x, y).Blocked And 1 Then 'North
+                                            If MapData(X, Y).Blocked And 1 Then 'North
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 650
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosX = pX
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosY = pY
                                             End If
-                                            If MapData(x, y).Blocked And 2 Then 'East
+                                            If MapData(X, Y).Blocked And 2 Then 'East
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 651
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosX = pX
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosY = pY
                                             End If
-                                            If MapData(x, y).Blocked And 4 Then 'South
+                                            If MapData(X, Y).Blocked And 4 Then 'South
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 652
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosX = pX
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).PixelPosY = pY
                                             End If
-                                            If MapData(x, y).Blocked And 8 Then 'West
+                                            If MapData(X, Y).Blocked And 8 Then 'West
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 653
@@ -3225,8 +3225,8 @@ Dim j As Long
                                             End If
                                             
                                             'No-attack tiles
-                                            If Not (x < MinXBorder Or x > MaxXBorder Or y < MinYBorder Or y > MaxYBorder) Then
-                                                If MapData(x, y).BlockedAttack Then
+                                            If Not (X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder) Then
+                                                If MapData(X, Y).BlockedAttack Then
                                                     InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                     ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                     InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 10
@@ -3236,7 +3236,7 @@ Dim j As Long
                                             End If
                                             
                                             'Warp Tiles
-                                            If MapData(x, y).TileExit.x <> 0 Then
+                                            If MapData(X, Y).TileExit.X <> 0 Then
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 65
@@ -3245,7 +3245,7 @@ Dim j As Long
                                             End If
                                             
                                             'Mailbox Tiles
-                                            If MapData(x, y).Mailbox > 0 Then
+                                            If MapData(X, Y).Mailbox > 0 Then
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 66
@@ -3254,7 +3254,7 @@ Dim j As Long
                                             End If
                                             
                                             'Sfx Tiles
-                                            If MapData(x, y).Sfx > 0 Then
+                                            If MapData(X, Y).Sfx > 0 Then
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 655
@@ -3263,7 +3263,7 @@ Dim j As Long
                                             End If
                                             
                                             'Sign tiles
-                                            If MapData(x, y).Sign > 0 Then
+                                            If MapData(X, Y).Sign > 0 Then
                                                 InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs = InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs + 1
                                                 ReDim Preserve InfoLayer.Tile(InfoLayer.NumTiles).Grh(1 To InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs)
                                                 InfoLayer.Tile(InfoLayer.NumTiles).Grh(InfoLayer.Tile(InfoLayer.NumTiles).NumGrhs).Grh.GrhIndex = 13
@@ -3295,9 +3295,9 @@ Dim j As Long
             End If
             
             ScreenX = ScreenX + 1
-        Next x
+        Next X
         ScreenY = ScreenY + 1
-    Next y
+    Next Y
     
     If InfoLayer.NumTiles > 0 Then
         ReDim Preserve InfoLayer.Tile(1 To InfoLayer.NumTiles)
@@ -3307,7 +3307,7 @@ Dim j As Long
 
 End Sub
 
-Public Sub Engine_Render_Text(ByVal Text As String, ByVal x As Integer, ByVal y As Integer, ByVal Width As Integer, ByVal Color As Long, Optional ByVal Format As Long = DT_LEFT Or DT_TOP)
+Public Sub Engine_Render_Text(ByVal Text As String, ByVal X As Integer, ByVal Y As Integer, ByVal Width As Integer, ByVal Color As Long, Optional ByVal Format As Long = DT_LEFT Or DT_TOP)
 
 '************************************************************
 'Draw text on D3DDevice
@@ -3322,8 +3322,8 @@ Dim i As Long
     If Text = "" Then Exit Sub
 
     'Set up the text rectangle
-    TxtRect.Left = x
-    TxtRect.Right = x + Width
+    TxtRect.Left = X
+    TxtRect.Right = X + Width
 
     'Get the text into arrays (split by vbCrLf)
     Tempstr = Split(Text, vbCrLf)
@@ -3353,7 +3353,7 @@ Dim i As Long
 
     'Draw the text
     For i = 0 To UBound(Tempstr)
-        TxtRect.Top = y + (i * lngTextHeight)
+        TxtRect.Top = Y + (i * lngTextHeight)
         TxtRect.bottom = TxtRect.Top + lngTextHeight
         D3DX.DrawText MainFont, Color, Tempstr(i), TxtRect, Format
     Next i
@@ -3373,27 +3373,27 @@ Sub Engine_ShowNextFrame()
     If EngineRun Then
         If UserMoving Then
             '****** Move screen Left and Right if needed ******
-            If AddtoUserPos.x <> 0 Then
-                OffsetCounterX = OffsetCounterX - ScrollPixelsPerFrameX * AddtoUserPos.x * TickPerFrame * (1 + -(GetAsyncKeyState(vbKeyShift) <> 0) * 2)
-                If Abs(OffsetCounterX) >= Abs(TilePixelWidth * AddtoUserPos.x) Then
+            If AddtoUserPos.X <> 0 Then
+                OffsetCounterX = OffsetCounterX - ScrollPixelsPerFrameX * AddtoUserPos.X * TickPerFrame * (1 + -(GetAsyncKeyState(vbKeyShift) <> 0) * 2)
+                If Abs(OffsetCounterX) >= Abs(TilePixelWidth * AddtoUserPos.X) Then
                     OffsetCounterX = 0
-                    AddtoUserPos.x = 0
+                    AddtoUserPos.X = 0
                     UserMoving = False
                 End If
             End If
             '****** Move screen Up and Down if needed ******
-            If AddtoUserPos.y <> 0 Then
-                OffsetCounterY = OffsetCounterY - ScrollPixelsPerFrameY * AddtoUserPos.y * TickPerFrame * (1 + -(GetAsyncKeyState(vbKeyShift) <> 0) * 2)
-                If Abs(OffsetCounterY) >= Abs(TilePixelHeight * AddtoUserPos.y) Then
+            If AddtoUserPos.Y <> 0 Then
+                OffsetCounterY = OffsetCounterY - ScrollPixelsPerFrameY * AddtoUserPos.Y * TickPerFrame * (1 + -(GetAsyncKeyState(vbKeyShift) <> 0) * 2)
+                If Abs(OffsetCounterY) >= Abs(TilePixelHeight * AddtoUserPos.Y) Then
                     OffsetCounterY = 0
-                    AddtoUserPos.y = 0
+                    AddtoUserPos.Y = 0
                     UserMoving = False
                 End If
             End If
         End If
 
         '****** Update screen ******
-        Call Engine_Render_Screen(UserPos.x - AddtoUserPos.x, UserPos.y - AddtoUserPos.y, OffsetCounterX - 288, OffsetCounterY - 288)
+        Call Engine_Render_Screen(UserPos.X - AddtoUserPos.X, UserPos.Y - AddtoUserPos.Y, OffsetCounterX - 288, OffsetCounterY - 288)
 
         'Get timing info
         ElapsedTime = Engine_ElapsedTime()
@@ -3472,33 +3472,26 @@ Dim frm As Form
 
 End Sub
 
-Function Var_Get(file As String, Main As String, Var As String) As String
+Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
 
 '*****************************************************************
 'Gets a Var from a text file
 '*****************************************************************
+Dim sSpaces As String
 
-Dim sSpaces As String ' This will hold the input that the program will retrieve
-Dim szReturn As String ' This will be the defaul value if the string is not found
-
-    szReturn = ""
-
-    sSpaces = Space$(5000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), file
-    Var_Get = RTrim$(sSpaces)
+    sSpaces = Space$(500)
+    getprivateprofilestring Main, Var, vbNullString, sSpaces, Len(sSpaces), File
+    Var_Get = Trim$(sSpaces)
     Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
 
 End Function
 
-Sub Var_Write(file As String, Main As String, Var As String, Value As String)
+Sub Var_Write(File As String, Main As String, Var As String, Value As String)
 
 '*****************************************************************
 'Writes a var to a text file
 '*****************************************************************
 
-    writeprivateprofilestring Main, Var, Value, file
+    writeprivateprofilestring Main, Var, Value, File
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:35)  Decl: 562  Code: 4465  Total: 5027 Lines
-':) CommentOnly: 753 (15%)  Commented: 113 (2.2%)  Empty: 709 (14.1%)  Max Logic Depth: 12

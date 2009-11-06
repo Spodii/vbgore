@@ -4824,8 +4824,6 @@ Dim j As Long
     TempGrh2.FrameCounter = 1
 
     Select Case WindowIndex
-    '-----------------------------------------------------------
-    'render the trade window
         Case TradeWindow
             With GameWindow.Trade
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
@@ -4834,14 +4832,9 @@ Dim j As Long
                 
                 For j = 1 To 9
                 
-                    If TradeTable.MyIndex = 1 Then
-                        TempGrh.GrhIndex = TradeTable.Trade1(j).Grh
-                        TempGrh2.GrhIndex = TradeTable.Trade2(j).Grh
-                    Else
-                        TempGrh.GrhIndex = TradeTable.Trade2(j).Grh
-                        TempGrh2.GrhIndex = TradeTable.Trade1(j).Grh
-                    End If
-                    
+                    TempGrh.GrhIndex = TradeTable.Trade1(j).Grh
+                    TempGrh2.GrhIndex = TradeTable.Trade2(j).Grh
+                
                     Engine_Render_Grh TempGrh, .Screen.X + .Trade1(j).X, .Screen.Y + .Trade1(j).Y, 1, 0, False
                     Engine_Render_Grh TempGrh2, .Screen.X + .Trade2(j).X, .Screen.Y + .Trade2(j).Y, 1, 0, False
                     
@@ -4851,7 +4844,7 @@ Dim j As Long
                 Next j
                         
             End With
-      '-----------------------------------------------------------
+        
         Case NPCChatWindow
             With GameWindow.NPCChat
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
