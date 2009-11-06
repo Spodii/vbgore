@@ -274,7 +274,7 @@ Dim i As Long
     
     'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
     Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
-                                "51,57,60,61,64,69,70,79,81,82,83,84,85"
+                                "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102"
     
     'Split up the messages
     s = Split(cMessages, ",")

@@ -8,7 +8,7 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
     With NPCList(NPCIndex)
     
         'Copy the base stats to the mod stats (we can use copymemory since we dont have to give item bonuses)
-        CopyMemory .ModStat(1), .BaseStat(1), NumStats * 4  '* 4 since we are using longs (4 bytes)
+        CopyMemory .ModStat(FirstModStat), .BaseStat(FirstModStat), ((NumStats - FirstModStat) + 1) * 4 '* 4 since we are using longs (4 bytes)
             
         'War curse
         If .Skills.WarCurse > 0 Then
@@ -567,7 +567,7 @@ Dim Hit As Integer
     
     'Don't allow if not logged in completely
     If UserList(UserIndex).flags.UserLogged = 0 Then
-        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
+        Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
 
@@ -635,10 +635,10 @@ Dim Hit As Integer
         Log "NPC_AttackUser: NPC's attack killed user", CodeTracker '//\\LOGLINE//\\
     
         'Kill user
-        ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
+        ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 73
-        ConBuf.Put_String NPCList(NPCIndex).name
+        ConBuf.Put_String NPCList(NPCIndex).Name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         User_Kill UserIndex
         
@@ -904,10 +904,10 @@ Dim i As Integer
             UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
 
             'Display kill message to the user
-            ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
+            ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 75
-            ConBuf.Put_String NPCList(NPCIndex).name
+            ConBuf.Put_String NPCList(NPCIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             
             'Drop items
@@ -1023,7 +1023,7 @@ Dim SndMP As Byte
     ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
 
     'Send make character command to clients
-    ConBuf.PreAllocate 21 + Len(NPCList(NPCIndex).name)
+    ConBuf.PreAllocate 21 + Len(NPCList(NPCIndex).Name)
     ConBuf.Put_Byte DataCode.Server_MakeChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
@@ -1032,7 +1032,7 @@ Dim SndMP As Byte
     ConBuf.Put_Byte X
     ConBuf.Put_Byte Y
     ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
-    ConBuf.Put_String NPCList(NPCIndex).name                ' yet, along with theres nothing to mod the stat
+    ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings

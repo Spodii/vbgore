@@ -21,9 +21,9 @@ Public LastSpeed As Long        'Value of the speed since last check (we do not 
 Public Update As Byte           'States if we need to update the modstats
 
 Private BaseStats(1 To NumStats) As Long
-Private ModStats(1 To NumStats) As Long
+Private ModStats(FirstModStat To NumStats) As Long
 Private UpdateBaseStats(1 To NumStats) As Byte
-Private UpdateModStats(1 To NumStats) As Byte
+Private UpdateModStats(FirstModStat To NumStats) As Byte
 
 Public Sub ForceFullUpdate()
 Dim i As Long
@@ -35,7 +35,7 @@ Dim i As Long
     LastMPPercent = 255
     For i = 1 To NumStats
         UpdateBaseStats(i) = 1
-        UpdateModStats(i) = 1
+        If i >= FirstModStat Then UpdateModStats(i) = 1
     Next i
 
 End Sub
@@ -59,23 +59,7 @@ Public Property Let BaseStat(ByVal StatID As Byte, ByVal Value As Long)
     UpdateBaseStats(StatID) = 1
     
     'Force update of mod stats if the base stat is a stat that has a mod stat
-    If StatID <> SID.MinHP Then
-        If StatID <> SID.MinMAN Then
-            If StatID <> SID.MinSTA Then
-                If StatID <> SID.Gold Then
-                    If StatID <> SID.Points Then
-                        If StatID <> SID.EXP Then
-                            If StatID <> SID.ELU Then
-                                If StatID <> SID.ELV Then
-                                    Update = 1
-                                End If
-                            End If
-                        End If
-                    End If
-                End If
-            End If
-        End If
-    End If
+    If StatID >= FirstModStat Then Update = 1
     
     'Apply limit on HP/Mana/Stamina
     If BaseStat(SID.MinHP) > ModStat(SID.MaxHP) Then BaseStat(SID.MinHP) = ModStat(SID.MaxHP)
@@ -98,7 +82,7 @@ Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
     Log "Let ModStat(" & StatID & "," & Value & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for a reference to a stat that can not be modded
-    If StatID = SID.MinHP Or StatID = SID.MinMAN Or StatID = SID.MinSTA Or StatID = SID.Gold Or StatID = SID.Points Or StatID = SID.EXP Or StatID = SID.ELU Or StatID = SID.ELV Then
+    If StatID < FirstModStat Then
         Log "ModStat(Let): Invalid stat ID (" & StatID & ") was referenced for ModStat. This stat does not use a mod value.", CriticalError '//\\LOGLINE//\\
         Exit Property
     End If
@@ -139,7 +123,9 @@ Dim i As Long
     'Figure out the send size
     For i = 1 To NumStats
         If UpdateBaseStats(i) Then SendSize = SendSize + 6
-        If UpdateModStats(i) Then SendSize = SendSize + 6
+        If i >= FirstModStat Then
+            If UpdateModStats(i) Then SendSize = SendSize + 6
+        End If
     Next i
 
     'Don't even check if we need to send anything if SendSize = 0
@@ -150,7 +136,7 @@ Dim i As Long
     
         'Send updated user stats
         For i = 1 To NumStats
-    
+            
             'Update base stats
             If UpdateBaseStats(i) Then
                 ConBuf.Put_Byte DataCode.User_BaseStat
@@ -158,13 +144,15 @@ Dim i As Long
                 ConBuf.Put_Long BaseStat(i)
                 UpdateBaseStats(i) = 0
             End If
-    
+        
             'Update mod stats
-            If UpdateModStats(i) Then
-                ConBuf.Put_Byte DataCode.User_ModStat
-                ConBuf.Put_Byte i
-                ConBuf.Put_Long ModStat(i)
-                UpdateModStats(i) = 0
+            If i >= FirstModStat Then
+                If UpdateModStats(i) Then
+                    ConBuf.Put_Byte DataCode.User_ModStat
+                    ConBuf.Put_Byte i
+                    ConBuf.Put_Long ModStat(i)
+                    UpdateModStats(i) = 0
+                End If
             End If
     
         Next i
@@ -175,23 +163,27 @@ Dim i As Long
     End If
 
     'Check the HP Percent
-    If LastHPPercent <> CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
-        LastHPPercent = CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
-        ConBuf.PreAllocate 4
-        ConBuf.Put_Byte DataCode.Server_CharHP
-        ConBuf.Put_Byte LastHPPercent
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
+    If ModStat(SID.MaxHP) > 0 Then  'Check against division by 0
+        If LastHPPercent <> CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
+            LastHPPercent = CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
+            ConBuf.PreAllocate 4
+            ConBuf.Put_Byte DataCode.Server_CharHP
+            ConBuf.Put_Byte LastHPPercent
+            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+            Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
+        End If
     End If
-
+    
     'Check the MP Percent
-    If LastMPPercent <> CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100) Then
-        LastMPPercent = CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100)
-        ConBuf.PreAllocate 4
-        ConBuf.Put_Byte DataCode.Server_CharMP
-        ConBuf.Put_Byte LastMPPercent
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
+    If ModStat(SID.MaxMAN) > 0 Then  'Check against division by 0
+        If LastMPPercent <> CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100) Then
+            LastMPPercent = CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100)
+            ConBuf.PreAllocate 4
+            ConBuf.Put_Byte DataCode.Server_CharMP
+            ConBuf.Put_Byte LastMPPercent
+            ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+            Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatPercent
+        End If
     End If
     
     'Check the speed
@@ -203,8 +195,5 @@ Dim i As Long
         ConBuf.Put_Long ModStats(SID.Speed)
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
     End If
-
+    
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:46)  Decl: 11  Code: 146  Total: 157 Lines
-':) CommentOnly: 17 (10.8%)  Commented: 5 (3.2%)  Empty: 43 (27.4%)  Max Logic Depth: 3

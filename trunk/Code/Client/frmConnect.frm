@@ -112,7 +112,7 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub InitSoxSocket()
+Private Sub InitSocket()
 
 '*****************************************************************
 'Init the sox socket
@@ -156,7 +156,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
             SendNewChar = True
-            InitSoxSocket
+            InitSocket
         End If
     End If
     
@@ -166,7 +166,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
             SendNewChar = False
-            InitSoxSocket
+            InitSocket
         End If
     End If
     

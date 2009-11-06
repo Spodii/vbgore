@@ -598,17 +598,11 @@ Dim b() As Byte
 
 End Sub
 
-Public Function GOREsock_SendData(inSox As Long, inData() As Byte) As Long
+Public Sub GOREsock_SendData(inSox As Long, inData() As Byte)
 
-    If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
-        Let GOREsock_SendData = soxERROR
-    Else
-        If Not (Sockets(inSox).GOREsock_State = soxIdle Or Sockets(inSox).GOREsock_State = soxSend Or Sockets(inSox).GOREsock_State = soxRecv) Then ' If we have initiated a GOREsock_ShutDown, the state would change to Closing
-            Let GOREsock_SendData = soxERROR
-        Else
-            If UBound(inData) = soxERROR Then ' A value of -1 is returned from UBound if there was no data
-                Let GOREsock_SendData = soxERROR
-            Else
+    If inSox > -1 Then
+        If inSox <= Portal.Sockets Then ' Detect out of Range of our Array ...
+            If Sockets(inSox).GOREsock_State = soxIdle Or Sockets(inSox).GOREsock_State = soxSend Or Sockets(inSox).GOREsock_State = soxRecv Then ' If we have initiated a GOREsock_ShutDown, the state would change to Closing
                 ReDim Preserve Send(inSox).buffer(Send(inSox).Size + UBound(inData) + 1) As Byte    'UBound + 1 = DataLength
                 Call apiCopyMemory(Send(inSox).buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1) 'Copy the data
                 Let Send(inSox).Size = Send(inSox).Size + UBound(inData) + 1    'Increase according to the data
@@ -617,7 +611,7 @@ Public Function GOREsock_SendData(inSox As Long, inData() As Byte) As Long
         End If
     End If
 
-End Function
+End Sub
 
 Public Function GOREsock_SetOption(inSox As Long, inOption As enmSoxOptions, inValue As Long) As Long
 

@@ -16,6 +16,7 @@ Private Const UpdateRate_NPCAI As Long = 50             'Updating NPC AI
 Private Const UpdateRate_NPCCounters As Long = 200      'Updating NPC counters
 Private Const UpdateRate_Maps As Long = 30000           'Updating map ground objects / unloading maps from memory
 Private Const UpdateRate_Bandwidth As Long = 1000       'Updating bandwidth in/out information
+Private Const UpdateRate_UnloadObjs As Long = 120000    'Unloading objects from memory
 
 Private LastUpdate_UserStats As Long
 Private LastUpdate_UserRecover As Long
@@ -26,6 +27,7 @@ Private LastUpdate_NPCCounters As Long
 Private LastUpdate_Maps As Long
 Private LastUpdate_Bandwidth As Long
 Private LastUpdate_ServerFPS As Long    'For DEBUG_MapFPS
+Private LastUpdate_UnloadObjs As Long
 
 'To save excessive looping, flags are set to go with the next loop instead of a loop in their own
 Private UpdateUserStats As Byte     'If the user stats will update
@@ -102,6 +104,12 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
             UpdateNPCs = 1
         End If
         
+        'Object unloading
+        If LastUpdate_UnloadObjs + UpdateRate_UnloadObjs < LoopStartTime Then
+            LastUpdate_UnloadObjs = LoopStartTime
+            ObjData.CheckObjUnloading
+        End If
+        
         '*** Check for actual updating routines ***
         
         'Update users if one of the flags have gone off
@@ -153,12 +161,26 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
             FPS = FPS + 1
             If LastUpdate_ServerFPS + 1000 < timeGetTime Then
                 FPSIndex = FPSIndex + 1
-                ReDim Preserve ServerFPS(1 To FPSIndex) As ServerFPS
-                ServerFPS(FPSIndex).FPS = Round(FPS * (1000 / (timeGetTime - LastUpdate_ServerFPS)))    'This basically adjusts it if hte time is not exactly 1000ms
+                
+                'Check to make the array larger
+                If ServerFPSUbound < FPSIndex Then
+                    ServerFPSUbound = FPSIndex + 60 'Allocate a minute at a time
+                    ReDim Preserve ServerFPS(1 To ServerFPSUbound) As ServerFPS
+                End If
+                
+                'This basically adjusts it if the time is not exactly 1000ms
+                ServerFPS(FPSIndex).FPS = Round(FPS * (1000 / (timeGetTime - LastUpdate_ServerFPS)))
+                
+                'Store the users and NPC values
                 ServerFPS(FPSIndex).Users = NumUsers
                 ServerFPS(FPSIndex).NPCs = NumNPCs
+                
+                'Clear the FPS
                 FPS = 0
+                
+                'Set the last time the FPS was updated to now
                 LastUpdate_ServerFPS = timeGetTime
+                
             End If
         End If
         
@@ -233,10 +255,10 @@ Dim NPCIndex As Integer
                             If NPCList(NPCIndex).Counters.WarCurseCounter < CurrentTime Then
                                 NPCList(NPCIndex).Counters.WarCurseCounter = 0
                                 NPCList(NPCIndex).Skills.WarCurse = 0
-                                ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
+                                ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
                                 ConBuf.Put_Byte DataCode.Server_Message
                                 ConBuf.Put_Byte 1
-                                ConBuf.Put_String NPCList(NPCIndex).name
+                                ConBuf.Put_String NPCList(NPCIndex).Name
                                 Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
                                 ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.Server_IconWarCursed
@@ -1183,9 +1205,9 @@ Dim LoopC As Long
     CurrConnections = 0
     Log "Server_RefreshUserListBox: Updating " & LastUser & " users", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To LastUser
-        If LenB(UserList(LoopC).name) Then
+        If LenB(UserList(LoopC).Name) Then
             If LenB(Server_BuildUserList) Then Server_BuildUserList = Server_BuildUserList & vbNewLine
-            Server_BuildUserList = Server_BuildUserList & UserList(LoopC).name
+            Server_BuildUserList = Server_BuildUserList & UserList(LoopC).Name
             CurrConnections = CurrConnections + 1
         End If
     Next LoopC
@@ -1209,6 +1231,26 @@ Public Function CurrentTime() As Long
     'Set the time check
     LastTimeGetTime = CurrentTime
     
+End Function
+
+Public Function Server_IPisBanned(ByVal IP As String, ByRef ReturnReason As String) As Boolean
+
+'*****************************************************************
+'Returns whether an IP is banned or not
+'*****************************************************************
+
+    'Make the database query
+    DB_RS.Open "SELECT * FROM banned_ips WHERE `ip`='" & IP & "'", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Get the value
+    Server_IPisBanned = Not DB_RS.EOF
+    
+    'Return the reason
+    If Server_IPisBanned Then ReturnReason = DB_RS!Reason
+
+    'Close the database recordset
+    DB_RS.Close
+
 End Function
 
 Public Sub Server_Unload()
@@ -1265,7 +1307,6 @@ Dim s As String
         Erase NPCList
         Erase MapInfo
         Erase CharList
-        Erase ObjData
         Erase NPCName
         Erase QuestData
         Erase HelpLine
@@ -1276,6 +1317,7 @@ Dim s As String
             Erase MapUsers(LoopC).Index
         Next LoopC
         Erase MapUsers
+        Set ObjData = Nothing
         
         'Unload the form
         Unload frmMain

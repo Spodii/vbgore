@@ -458,6 +458,37 @@ Dim Byt1 As Byte
             Int1 = rBuf.Get_Integer
             TempStr = Replace$(Message(86), "<name>", Str1)
             Engine_AddToChatTextBuffer Replace$(TempStr, "<amount>", Int1), FontColor_Info
+        'Case 87 to 93 - these are only used by the client
+        Case 94
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(94), "<name>", Str1), FontColor_Info
+        Case 95
+            Int1 = rBuf.Get_Integer
+            Engine_AddToChatTextBuffer Replace$(Message(95), "<index>", Int1), FontColor_Info
+        Case 96
+            Int1 = rBuf.Get_Integer
+            Str1 = rBuf.Get_String
+            Lng1 = rBuf.Get_Long
+            TempStr = Replace$(Message(96), "<amount>", Int1)
+            TempStr = Replace$(TempStr, "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<cost>", Lng1), FontColor_Info
+        Case 97
+            Engine_AddToChatTextBuffer Message(97), FontColor_Info
+        Case 98
+            Engine_AddToChatTextBuffer Message(98), FontColor_Info
+        Case 99
+            Engine_AddToChatTextBuffer Message(99), FontColor_Info
+        Case 100
+            Str1 = rBuf.Get_String
+            TempStr = Replace$(Message(100), "<linebreak>", vbCrLf)
+            MsgBox Replace$(TempStr, "<reason>", Str1), vbOKOnly Or vbCritical
+            IsUnloading = 1
+            Unload frmConnect
+            Unload frmMain
+        Case 101
+            Engine_AddToChatTextBuffer Message(101), FontColor_Info
+        Case 102
+            Engine_AddToChatTextBuffer Message(102), FontColor_Info
     End Select
 
 End Sub
@@ -2058,6 +2089,60 @@ Sub GOREsock_Close(inSox As Long)
 
 End Sub
 
+Sub Data_Server_SendQuestInfo(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Server sent the information on a quest
+'<QuestID(B)><Name(S)>(<Description(S-EX)>)
+'*********************************************
+Dim QuestID As Byte
+Dim name As String
+Dim Desc As String
+Dim i As Long
+Dim Changed As Byte
+
+    'Get the variables
+    QuestID = rBuf.Get_Byte
+    name = rBuf.Get_String
+    If LenB(name) Then Desc = rBuf.Get_StringEX    'Only get the desc if the name exists
+
+    'Resize the questinfo array if needed
+    If QuestID > QuestInfoUBound Then
+        QuestInfoUBound = QuestID
+        ReDim Preserve QuestInfo(1 To QuestInfoUBound)
+    End If
+    
+    'Store the information
+    QuestInfo(QuestID).name = name
+    QuestInfo(QuestID).Desc = Desc
+
+    'Loop through the quests, remove any unused slots on the end
+    If QuestInfoUBound > 1 Then
+        For i = QuestInfoUBound To 1 Step -1
+            If QuestInfo(i).name = vbNullString Then
+                QuestInfoUBound = QuestInfoUBound - 1
+                Changed = 1
+            Else
+                'Exit on the first section of information
+                Exit For
+            End If
+        Next i
+        If Changed Then
+            If QuestInfoUBound > 0 Then
+                ReDim Preserve QuestInfo(1 To QuestInfoUBound)
+            Else
+                Erase QuestInfo
+            End If
+        End If
+    Else
+        If QuestInfo(1).name = vbNullString Then
+            Erase QuestInfo
+            QuestInfoUBound = 0
+        End If
+    End If
+    
+End Sub
+
 Sub GOREsock_DataArrival(inSox As Long, inData() As Byte)
 
 '*********************************************
@@ -2141,6 +2226,7 @@ Static X As Long
             Case .Server_PTD: Data_Server_PTD
             Case .Server_PlaySound: Data_Server_PlaySound rBuf
             Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
+            Case .Server_SendQuestInfo: Data_Server_SendQuestInfo rBuf
             Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
             Case .Server_SetCharSpeed: Data_Server_SetCharSpeed rBuf
             Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf

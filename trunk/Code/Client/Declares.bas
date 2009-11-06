@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.2            ************
+'************            Official Release: Version 0.3.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -165,7 +165,7 @@ End Type
 
 '********** Other stuff ************
 Public BaseStats(1 To NumStats) As Long
-Public ModStats(1 To NumStats) As Long
+Public ModStats(FirstModStat To NumStats) As Long
 
 'Delay timers for packet-related actions (so to not spam the server)
 Public Const AttackDelay As Long = 200  'These constants are client-side only
@@ -195,6 +195,14 @@ Type Inventory
     Amount As Integer
     Equipped As Boolean
 End Type
+
+'Quest information
+Type QuestInfo
+    name As String
+    Desc As String
+End Type
+Public QuestInfo() As QuestInfo
+Public QuestInfoUBound As Byte
 
 'Messages
 Public NumMessages As Byte

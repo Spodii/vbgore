@@ -287,9 +287,6 @@ Dim i As Long
 
     'Cache the UBound
     i = Len(Value) - 1
-
-    'Convert the string to a byte array
-    tempB = StrConv(Value, vbFromUnicode)
     
     'Store a byte-long value that represents the size of the string
     If i > 254 Then
@@ -297,6 +294,9 @@ Dim i As Long
         Exit Sub
     End If
     Put_Byte i + 1
+    
+    'Convert the string to a byte array
+    tempB = StrConv(Value, vbFromUnicode)
 
     'Resize the array to fit the string
     If ByteBufferUbound < PutBytePos + i Then
@@ -324,9 +324,6 @@ Dim i As Long
     
     'Cache the UBound
     i = Len(Value) - 1
-    
-    'Convert the string to a byte array
-    tempB = StrConv(Value, vbFromUnicode)
 
     'Store a byte-long value that represents the size of the string
     If i > 32760 Then
@@ -334,6 +331,9 @@ Dim i As Long
         Exit Sub
     End If
     Put_Integer i + 1
+    
+    'Convert the string to a byte array
+    tempB = StrConv(Value, vbFromUnicode)
  
     'Resize the array to fit the string
     If ByteBufferUbound < PutBytePos + i Then

@@ -66,6 +66,7 @@ Public Type DataCode
     Server_MailObjUpdate As Byte
     Server_MakeEffect As Byte
     Server_PTD As Byte
+    Server_SendQuestInfo As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_DoneSwitching As Byte
@@ -112,23 +113,28 @@ Public Type DataCode
     GM_SetGMLevel As Byte
     GM_Thrall As Byte
     GM_DeThrall As Byte
+    GM_BanIP As Byte
+    GM_UnBanIP As Byte
 End Type
 Public DataCode As DataCode
 
 '********** Character Stats/Skills ************
 Public Const NumStats As Byte = 19
 Public Const NumSkills As Byte = 7
+Public Const FirstModStat As Byte = 9   'The lowest number of the first stat that can be modded
 Public Type StatOrder
-    Gold As Byte
-    EXP As Byte
-    ELV As Byte
-    ELU As Byte
-    MaxHIT As Byte
-    MinHIT As Byte
+    'These can NOT be modded (theres no ModStat())
     MinMAN As Byte
     MinHP As Byte
     MinSTA As Byte
+    Gold As Byte
     Points As Byte
+    EXP As Byte
+    ELU As Byte
+    ELV As Byte
+    'These CAN be modded (ModStat() is used)
+    MaxHIT As Byte
+    MinHIT As Byte
     DEF As Byte
     MaxHP As Byte
     MaxSTA As Byte
@@ -153,8 +159,8 @@ Public SkID As SkillID  'Skill IDs
 
 Public Sub InitDataCommands()
 
-'Load the values for the data commands
-
+    'Load the values for the data commands
+    
     With EmoID
         .Dots = 1
         .Exclimation = 2
@@ -179,20 +185,22 @@ Public Sub InitDataCommands()
     End With
 
     With SID
-        .MaxHIT = 1
-        .MaxHP = 2
-        .MaxMAN = 3
-        .MaxSTA = 4
-        .MinHIT = 5
-        .MinHP = 6
-        .MinMAN = 7
-        .MinSTA = 8
-        .DEF = 9
-        .ELU = 10
-        .ELV = 11
-        .EXP = 12
-        .Gold = 13
-        .Points = 14
+        'These can NOT be modded
+        .MinHP = 1
+        .MinMAN = 2
+        .MinSTA = 3
+        .Gold = 4
+        .Points = 5
+        .EXP = 6
+        .ELU = 7
+        .ELV = 8
+        'These CAN be modded
+        .MaxHIT = 9
+        .MaxHP = 10
+        .MaxMAN = 11
+        .MaxSTA = 12
+        .MinHIT = 13
+        .DEF = 14
         .WeaponSkill = 15
         .Agi = 16
         .Mag = 17
@@ -291,6 +299,9 @@ Public Sub InitDataCommands()
         .User_Bank_PutItem = 88
         .User_Bank_TakeItem = 89
         .User_Bank_UpdateSlot = 90
+        .GM_BanIP = 91
+        .GM_UnBanIP = 92
+        .Server_SendQuestInfo = 93
         
         'Value 128 can be used over again since this does not count as an ID in itself - just ignore this variable! ;)
         .Comm_UseBubble = 128

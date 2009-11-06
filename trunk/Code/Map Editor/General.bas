@@ -1,6 +1,10 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Sub Server_Unload()
+    'Dummy sub
+End Sub
+
 Sub ShowFrmSetTile()
     frmSetTile.Visible = True
     frmSetTile.Show , frmMain

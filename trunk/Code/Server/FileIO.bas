@@ -563,7 +563,7 @@ Dim Map As Long
 
         'Other Room Data
         With MapInfo(Map)
-            .name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+            .Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
             .Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
             .Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
         End With
@@ -615,7 +615,7 @@ Dim j As Byte
     
         With NPCList(1)
             Log "Save_NPCs_Temp: Filling in values for NPC " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .name = Trim$(DB_RS!name)
+            .Name = Trim$(DB_RS!Name)
             .Desc = Trim$(DB_RS!Descr)
             .AttackGrh = Val(DB_RS!AttackGrh)
             .AttackRange = Val(DB_RS!AttackRange)
@@ -852,6 +852,8 @@ Dim b As Byte
 End Function
 
 Public Sub Load_OBJs()
+Dim TempObjData As udtObjData
+Dim FileNum As Byte
 
     Log "Call Load_OBJs", CodeTracker '//\\LOGLINE//\\
     
@@ -859,20 +861,18 @@ Public Sub Load_OBJs()
     DB_RS.Open "SELECT id FROM objects ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
     NumObjDatas = DB_RS(0)
     DB_RS.Close
-    
-    Log "Load_OBJs: Resizing ObjData() array by NumObjDatas (" & NumObjDatas & ")", CodeTracker '//\\LOGLINE//\\
-    
+
     'Resize the objects array
-    ReDim ObjData(1 To NumObjDatas)
+    ObjData.SetDataUBound NumObjDatas
     
     'Retrieve the objects from the database
     DB_RS.Open "SELECT * FROM objects", DB_Conn, adOpenStatic, adLockOptimistic
-    
+
     'Fill the object list
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
-        With ObjData(DB_RS!id)
+        With TempObjData
             Log "Load_OBJs: Filling ObjData for object ID " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .name = Trim$(DB_RS!name)
+            .Name = Trim$(DB_RS!Name)
             .Price = Val(DB_RS!Price)
             .ObjType = Val(DB_RS!ObjType)
             .WeaponType = Val(DB_RS!WeaponType)
@@ -901,11 +901,17 @@ Public Sub Load_OBJs()
             .AddStat(SID.MaxHP) = Val(DB_RS!stat_hp)
             .AddStat(SID.MaxMAN) = Val(DB_RS!stat_mp)
             .AddStat(SID.MaxSTA) = Val(DB_RS!stat_sp)
-            .AddStat(SID.EXP) = Val(DB_RS!stat_exp)
-            .AddStat(SID.Points) = Val(DB_RS!stat_points)
-            .AddStat(SID.Gold) = Val(DB_RS!stat_gold)
         End With
+        
+        'Save the file
+        FileNum = FreeFile
+        Open ServerTempPath & "o" & DB_RS!id & ".temp" For Binary Access Write As #FileNum
+            Put #FileNum, , TempObjData
+        Close #FileNum
+        
+        'Move to the next object
         DB_RS.MoveNext
+        
     Loop
 
     'Close the recordset
@@ -934,7 +940,7 @@ Public Sub Load_Quests()
     Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
         With QuestData(DB_RS!id)
             Log "Load_Quests: Filling QuestData for quest " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
-            .name = Trim$(DB_RS!name)
+            .Name = Trim$(DB_RS!Name)
             .Redoable = Val(DB_RS!Redoable)
             .StartTxt = Trim$(DB_RS!text_start)
             .AcceptTxt = Trim$(DB_RS!text_accept)
@@ -1005,6 +1011,7 @@ Dim MailStr As String
 Dim BankStr As String
 Dim KSStr As String
 Dim CurQStr As String
+Dim CompQStr As String
 Dim i As Long
 
     Log "Call Load_User(N/A," & UserName & ")", CodeTracker '//\\LOGLINE//\\
@@ -1026,7 +1033,7 @@ Dim i As Long
         MailStr = !mail
         BankStr = !Bank
         KSStr = !KnownSkills
-        UserChar.CompletedQuests = Trim$(!CompletedQuests)
+        CompQStr = Trim$(!CompletedQuests)
         CurQStr = Trim$(!currentquest)
         UserChar.Pos.X = Val(!pos_x)
         UserChar.Pos.Y = Val(!pos_y)
@@ -1135,6 +1142,16 @@ Dim i As Long
         Next i
     End If
     
+    'Completed quests string
+    If LenB(CompQStr) Then
+        TempStr = Split(CompQStr, ",")
+        UserChar.NumCompletedQuests = UBound(TempStr) + 1
+        ReDim UserChar.CompletedQuests(1 To UserChar.NumCompletedQuests)
+        For i = 0 To UserChar.NumCompletedQuests - 1
+            UserChar.CompletedQuests(i + 1) = Int(TempStr(i))
+        Next i
+    End If
+    
     'Current quest string
     If LenB(CurQStr) Then
         TempStr = Split(CurQStr, vbNewLine)    'Split up the quests
@@ -1158,7 +1175,7 @@ Dim i As Long
     UserChar.Stats.ForceFullUpdate
 
     'Misc values
-    UserChar.name = UserName
+    UserChar.Name = UserName
     
 End Sub
 
@@ -1217,6 +1234,7 @@ Dim InvStr As String
 Dim MailStr As String
 Dim KSStr As String
 Dim CurQStr As String
+Dim CompQStr As String
 Dim i As Long
 
     Log "Call Save_User(N/A," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
@@ -1224,12 +1242,12 @@ Dim i As Long
     With UserChar
     
         'Make sure we are trying to save a valid user by testing a few variables first
-        If Len(.name) < 3 Then
-            Log "Save_User: Specified name was invalid (" & .name & ")", CriticalError '//\\LOGLINE//\\
+        If Len(.Name) < 3 Then
+            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If
-        If Len(.name) > 10 Then
-            Log "Save_User: Specified name was invalid (" & .name & ")", CriticalError '//\\LOGLINE//\\
+        If Len(.Name) > 10 Then
+            Log "Save_User: Specified name was invalid (" & .Name & ")", CriticalError '//\\LOGLINE//\\
             Exit Sub
         End If
 
@@ -1260,6 +1278,16 @@ Dim i As Long
         Next i
         Log "Save_User: Built known skills string (" & KSStr & ")", CodeTracker '//\\LOGLINE//\\
         
+        'Build completed quest string
+        For i = 1 To .NumCompletedQuests
+            If i < .NumCompletedQuests Then
+                CompQStr = CompQStr & .CompletedQuests(i) & ","
+            Else
+                CompQStr = CompQStr & .CompletedQuests(i)
+            End If
+        Next i
+        Log "Save_User: Built completed quests string (" & CompQStr & ")", CodeTracker '//\\LOGLINE//\\
+        
         'Build current quest string
         For i = 1 To MaxQuests
             If .Quest(i) > 0 Then
@@ -1288,7 +1316,7 @@ Dim i As Long
         Else
         
             'Open the old record and update it
-            DB_RS.Open "SELECT * FROM users WHERE `name`='" & .name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS.Open "SELECT * FROM users WHERE `name`='" & .Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
             
         End If
         
@@ -1296,8 +1324,8 @@ Dim i As Long
         If LenB(Password) Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
         If NewUser Then
             DB_RS!date_create = Date$
-            DB_RS!name = .name
-            DB_RS!ip = GOREsock_Address(UserChar.ConnID)
+            DB_RS!Name = .Name
+            DB_RS!IP = GOREsock_Address(UserChar.ConnID)
         End If
         DB_RS!date_lastlogin = Date$
         DB_RS!gm = .flags.GMLevel
@@ -1306,7 +1334,7 @@ Dim i As Long
         DB_RS!mail = MailStr
         DB_RS!KnownSkills = KSStr
         DB_RS!Bank = BankStr
-        DB_RS!CompletedQuests = .CompletedQuests
+        DB_RS!CompletedQuests = CompQStr
         DB_RS!currentquest = CurQStr
         DB_RS!pos_x = .Pos.X
         DB_RS!pos_y = .Pos.Y

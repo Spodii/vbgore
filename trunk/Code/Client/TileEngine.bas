@@ -478,7 +478,6 @@ End Type
 Private Type ChatWindow         'Chat buffer/input window
     Screen As Rectangle
     Text As Rectangle
-    Title As Rectangle
     SkinGrh As Grh
 End Type
 
@@ -722,7 +721,7 @@ Dim j As Long
             End If
             
             'Check for too large of a size
-            If Size > GameWindow.ChatWindow.Screen.Width - 24 Then
+            If Size > GameWindow.ChatWindow.Text.Width Then
                 
                 'Check if the last space was too far back
                 If i - LastSpace > 10 Then
@@ -730,6 +729,7 @@ Dim j As Long
                     'Too far away to the last space, so break at the last character
                     Engine_AddToChatTextBuffer2 Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)), Color
                     b = i - 1
+                    Size = 0
                 
                 Else
                 
@@ -737,10 +737,10 @@ Dim j As Long
                     Engine_AddToChatTextBuffer2 Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)), Color
                     b = LastSpace + 1
                     
+                    'Count all the words we ignored (the ones that weren't printed, but are before "i")
+                    Size = Engine_GetTextWidth(Mid$(TempSplit(TSLoop), LastSpace, i - LastSpace))
+ 
                 End If
-                
-                'Clear the size
-                Size = 0
                 
             End If
             
@@ -816,8 +816,8 @@ Dim TempColor As Long
     ReDim ChatArray(Size * 4)   'Size our array to fix the 4 verticies of each character
 
     'Set the base position
-    X = GameWindow.ChatWindow.Screen.X + 12
-    Y = (GameWindow.ChatWindow.Screen.Y + 125) - 120
+    X = GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X
+    Y = GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.X 'We assume the border is the same size on all sides
 
     'Loop through each buffer string
     For LoopC = (Chunk * ChatBufferChunk) - 11 To Chunk * ChatBufferChunk
@@ -1702,11 +1702,11 @@ Dim s As String
     Engine_Init_Messages = Language
 
     'Get the number of messages
-    NumMessages = CByte(Engine_Var_Get(MessagePath & Language & ".ini", "MAIN", "NumMessages"))
+    NumMessages = CByte(Engine_Var_Get(MessagePath & "_nummessages.ini", "MAIN", "NumMessages"))
     
     'Check for a valid number of messages
     If NumMessages = 0 Then
-        MsgBox "Error loading messages from file:" & vbCrLf & MessagePath & Language & ".ini", vbOKOnly
+        MsgBox "Error loading message count!", vbOKOnly
         Exit Function
     End If
     
@@ -1716,6 +1716,14 @@ Dim s As String
     'Loop through every message and find the message string
     For LoopC = 1 To NumMessages
         Message(LoopC) = Engine_Var_Get(MessagePath & Language & ".ini", "MAIN", CStr(LoopC))
+        
+        'If the message wasn't found, resort to the primary language, English, since that should hold all messages
+        If LCase$(Language) <> "english" Then   'Make sure we're not already using English
+            If LenB(Trim$(Message(LoopC))) = 0 Then
+                Message(LoopC) = Engine_Var_Get(MessagePath & "english.ini", "MAIN", CStr(LoopC))
+            End If
+        End If
+        
     Next LoopC
     
     'Load the NPC chat messages
@@ -1930,7 +1938,7 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 '************************************************************
 Dim SX As Integer
 Dim SY As Integer
-
+ 
     'Make sure we have the UserCharIndex, or else we cant play the sound! :o
     If UserCharIndex = 0 Then Exit Sub
 
@@ -5203,7 +5211,7 @@ Dim WingsGrh As Grh
 
 End Sub
 
-Private Sub Engine_Render_ChatTextBuffer(X As Integer, Y As Integer)
+Private Sub Engine_Render_ChatTextBuffer()
 
 '************************************************************
 'Update and render the chat text buffer
@@ -5745,7 +5753,7 @@ Dim j As Long
         End With
         
         'Render the chat text
-        Engine_Render_ChatTextBuffer GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + 125
+        Engine_Render_ChatTextBuffer
         
     Case MenuWindow
         With GameWindow.Menu
@@ -6572,13 +6580,13 @@ Dim Angle As Single
     'Draw entered text
     If EnterText = True Then
         If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-        If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
+        If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
         If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
             TempGrh.GrhIndex = 39
             TempGrh.FrameCounter = 1
             TempGrh.Started = 1
             TempGrh.SpeedCounter = 0
-            Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + 12 + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
+            Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
         End If
     End If
 
@@ -7579,17 +7587,18 @@ Dim j As Long
                     'Too far away to the last space, so break at the last character
                     Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
                     b = i - 1
-
+                    Size = 0
+                    
                 Else
                 
                     'Break at the last space to preserve the word
                     Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)) & vbNewLine
                     b = LastSpace + 1
                     
+                    'Count all the words we ignored (the ones that weren't printed, but are before "i")
+                    Size = Engine_GetTextWidth(Mid$(TempSplit(TSLoop), LastSpace, i - LastSpace))
+                    
                 End If
-                
-                'Clear the size
-                Size = 0
                 
             End If
             

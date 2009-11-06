@@ -148,6 +148,7 @@ Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)
 
 Dim TempS() As String
 Dim s As String
+Dim s2 As String
 Dim i As Byte
 Dim j As Long
 
@@ -197,7 +198,7 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.User_Attack
                         sndBuf.Put_Byte CharList(UserCharIndex).Heading
                     Else
-                        Engine_AddToChatTextBuffer "You are too far away to attack!", FontColor_Fight
+                        Engine_AddToChatTextBuffer Message(91), FontColor_Fight
                     End If
                 End If
             Else
@@ -377,29 +378,37 @@ Dim j As Long
         '***********************
         Else
             If EnterText = True Then
-                EnterText = False
                 If EnterTextBuffer <> "" Then
+                
                     '***** Check for commands *****
                     If UCase$(Left$(EnterTextBuffer, 4)) = "/BLI" Then
                         sndBuf.Put_Byte DataCode.User_Blink
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/LOOKL" Then
                         sndBuf.Put_Byte DataCode.User_LookLeft
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/LOOKR" Then
                         sndBuf.Put_Byte DataCode.User_LookRight
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/WHO" Then
                         sndBuf.Put_Byte DataCode.Server_Who
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/SH" Then
                         sndBuf.Put_Byte DataCode.Comm_Shout
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/TELL" Then
                         sndBuf.Put_Byte DataCode.Comm_Whisper
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/ME" Then
                         sndBuf.Put_Byte DataCode.Comm_Emote
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/EM" Then
                         sndBuf.Put_Byte DataCode.Comm_Emote
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
                         s = LCase$(SplitCommandFromString(EnterTextBuffer))
                         If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
@@ -407,10 +416,11 @@ Dim j As Long
                             s = Left$(s, Len(s) - 4)
                             Engine_Init_Messages s
                             Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", s
-                            Engine_AddToChatTextBuffer "Language changed to " & s, FontColor_Info
+                            Engine_AddToChatTextBuffer Replace$(Message(90), "<lang>", s), FontColor_Info
                         Else
-                            Engine_AddToChatTextBuffer "Specified language does not exist!", FontColor_Info
+                            Engine_AddToChatTextBuffer Message(87), FontColor_Info
                         End If
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/SKIN" Then
                         s = LCase$(SplitCommandFromString(EnterTextBuffer))
                         If s = "" Then
@@ -421,11 +431,31 @@ Dim j As Long
                                 CurrentSkin = Left$(s, Len(s) - 4)
                                 Engine_Init_GUI 0
                                 Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
-                                Engine_AddToChatTextBuffer "Skin changed to " & CurrentSkin, FontColor_Info
+                                Engine_AddToChatTextBuffer Replace$(Message(89), "<skin>", CurrentSkin), FontColor_Info
                             Else
-                                Engine_AddToChatTextBuffer "Specified skin does not exist!", FontColor_Info
+                                Engine_AddToChatTextBuffer Message(88), FontColor_Info
                             End If
                         End If
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/QUEST" Then
+                        If QuestInfoUBound = 0 Then
+                            'No quests in place
+                            Engine_AddToChatTextBuffer Message(103), FontColor_Quest
+                        Else
+                            j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
+                            If j < 1 Or j > QuestInfoUBound Then
+                                'No valid number specified, give the list
+                                Engine_AddToChatTextBuffer Message(104), FontColor_Quest
+                                For i = 1 To QuestInfoUBound
+                                    Engine_AddToChatTextBuffer "  " & i & ". " & QuestInfo(i).name, FontColor_Quest
+                                Next i
+                            Else
+                                'Give the info on the specific quest
+                                Engine_AddToChatTextBuffer QuestInfo(j).name & ":", FontColor_Quest
+                                Engine_AddToChatTextBuffer QuestInfo(j).Desc, FontColor_Quest
+                            End If
+                        End If
+                                
                     ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/THR" Then
                         TempS = Split(EnterTextBuffer)
                         If UBound(TempS) <> 0 Then
@@ -442,23 +472,31 @@ Dim j As Long
                                 End If
                             End If
                         End If
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/DETHR" Then
                         sndBuf.Put_Byte DataCode.GM_DeThrall
+                        
                     ElseIf UCase$(EnterTextBuffer) = "/QUIT" Then
                         IsUnloading = 1
+                        
                     ElseIf UCase$(EnterTextBuffer) = "/ACCEPT" Then
                         sndBuf.Put_Byte DataCode.User_StartQuest
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/DESC" Then
                         sndBuf.Put_Byte DataCode.User_Desc
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(EnterTextBuffer) = "/HELP" Then
                         sndBuf.Put_Byte DataCode.Server_Help
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/APPR" Then
                         sndBuf.Put_Byte DataCode.GM_Approach
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/SUM" Then
                         sndBuf.Put_Byte DataCode.GM_Summon
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/SETGM" Then
                         TempS = Split(SplitCommandFromString(EnterTextBuffer), " ")
                         If UBound(TempS) > 0 Then
@@ -469,9 +507,62 @@ Dim j As Long
                                 sndBuf.Put_Byte CByte(TempS(1))
                             End If
                         End If
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/BANIP" Then
+                        s = SplitCommandFromString(EnterTextBuffer) 'Remove the command
+                        If LenB(s) < 4 Then 'Not enough information entered
+                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                            Exit Sub
+                        End If
+                        TempS = Split(s, " ", 2)    'Split up the IP and reason
+                        If UBound(TempS) = 0 Then
+                            Engine_AddToChatTextBuffer Message(93), FontColor_Info
+                            Exit Sub
+                        Else
+                            s = TempS(0)
+                            s2 = TempS(1)
+                        End If
+                        TempS = Split(s, ".")
+                        If UBound(TempS) <> 3 Then
+                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                            Exit Sub
+                        End If
+                        For j = 0 To 3
+                            If Val(TempS(j)) < 0 Or Val(TempS(j)) > 255 Then
+                                Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                                Exit Sub
+                            End If
+                        Next j
+                        sndBuf.Put_Byte DataCode.GM_BanIP
+                        sndBuf.Put_String Trim$(s)
+                        sndBuf.Put_String Trim$(s2)
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 8)) = "/UNBANIP" Then
+                        s = SplitCommandFromString(EnterTextBuffer) 'Remove the command
+                        If LenB(s) < 4 Then 'Not enough information entered
+                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                            Exit Sub
+                        End If
+                        TempS = Split(s, ".")
+                        If UBound(TempS) <> 3 Then
+                            Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                            Exit Sub
+                        End If
+                        For j = 0 To 3
+                            If TempS(j) <> "*" Then
+                                If Val(TempS(j)) < 0 Or Val(TempS(j)) > 255 Then
+                                    Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                                    Exit Sub
+                                End If
+                            End If
+                        Next j
+                        sndBuf.Put_Byte DataCode.GM_UnBanIP
+                        sndBuf.Put_String Trim$(s)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/KICK" Then
                         sndBuf.Put_Byte DataCode.GM_Kick
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/RAISE" Then
                         TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
                         If UBound(TempS) > 0 Then
@@ -482,6 +573,7 @@ Dim j As Long
                                 sndBuf.Put_Long CLng(TempS(1))
                             End If
                         End If
+                        
                     Else
                         '*** No commands sent, send as text ***
                         sndBuf.Allocate 2 + Len(EnterTextBuffer)
@@ -495,6 +587,8 @@ Dim j As Long
                     EnterTextBufferWidth = 10
                     ShownText = vbNullString
                 End If
+                
+                EnterText = False
             Else
                 EnterText = True
             End If

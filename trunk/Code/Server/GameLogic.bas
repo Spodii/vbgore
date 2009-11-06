@@ -130,7 +130,7 @@ Sub Obj_Make(Obj As Obj, ByVal ObjSlot As Byte, ByVal Map As Integer, ByVal X As
         Log "Obj_Make: Updating object information with packet Server_MakeObject", CodeTracker '//\\LOGLINE//\\
         ConBuf.PreAllocate 7
         ConBuf.Put_Byte DataCode.Server_MakeObject
-        ConBuf.Put_Long ObjData(Obj.ObjIndex).GrhIndex
+        ConBuf.Put_Long ObjData.GrhIndex(Obj.ObjIndex)
         ConBuf.Put_Byte X
         ConBuf.Put_Byte Y
         Data_Send ToMap, 0, ConBuf.Get_Buffer, Map
@@ -182,20 +182,20 @@ Dim TempNPCName As String
             ConBuf.Put_String TempNPCName
         Case 10
             'Object only
-            ConBuf.PreAllocate 5 + Len(ObjData(QuestData(QuestID).FinishReqObj).name)
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(QuestData(QuestID).FinishReqObj))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte MessageID
             ConBuf.Put_Integer QuestData(QuestID).FinishReqObjAmount
-            ConBuf.Put_String ObjData(QuestData(QuestID).FinishReqObj).name
+            ConBuf.Put_String ObjData.Name(QuestData(QuestID).FinishReqObj)
         Case 11
             'NPC and object
-            ConBuf.PreAllocate 8 + Len(QuestData(QuestID).FinishReqNPCAmount) + Len(ObjData(QuestData(QuestID).FinishReqObj).name)
+            ConBuf.PreAllocate 8 + Len(QuestData(QuestID).FinishReqNPCAmount) + Len(ObjData.Name(QuestData(QuestID).FinishReqObj))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte MessageID
             ConBuf.Put_Integer QuestData(QuestID).FinishReqNPCAmount
             ConBuf.Put_String TempNPCName
             ConBuf.Put_Integer QuestData(QuestID).FinishReqObjAmount
-            ConBuf.Put_String ObjData(QuestData(QuestID).FinishReqObj).name
+            ConBuf.Put_String ObjData.Name(QuestData(QuestID).FinishReqObj)
     End Select
     
     'Send the data to the user
@@ -211,6 +211,7 @@ Private Sub Quest_CheckIfComplete(ByVal UserIndex As Integer, ByVal NPCIndex As 
 '*****************************************************************
 Dim Slot As Byte
 Dim s As String
+Dim i As Long
 
     Log "Call Quest_CheckIfComplete(" & UserIndex & "," & NPCIndex & "," & UserQuestSlot & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -251,9 +252,9 @@ Dim s As String
     End If
 
     'Say the finishing text
-    ConBuf.PreAllocate 5 + Len(NPCList(NPCIndex).name) + Len(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt)
+    ConBuf.PreAllocate 5 + Len(NPCList(NPCIndex).Name) + Len(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt)
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String NPCList(NPCIndex).name & ": " & QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt
+    ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk
     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
 
@@ -312,20 +313,46 @@ Dim s As String
 
         'Only add a redoable quest in the list once
         Log "Quest_CheckIfComplete: Using InStr() operation", CodeTracker '//\\LOGLINE//\\
-        If Not InStr(1, UserList(UserIndex).CompletedQuests & "-", "-" & UserList(UserIndex).Quest(UserQuestSlot) & "-") Then
-            UserList(UserIndex).CompletedQuests = UserList(UserIndex).CompletedQuests & "-" & UserList(UserIndex).Quest(UserQuestSlot)
+        If UserList(UserIndex).NumCompletedQuests > 0 Then
+            For i = 1 To UserList(UserIndex).NumCompletedQuests
+                
+                'If we find the quest in here, leave and don't add it to the list
+                If UserList(UserIndex).CompletedQuests(i) = UserList(UserIndex).Quest(UserQuestSlot) Then Exit For
+                
+                'We hit the end of the loop and no match found, set the add to list flag and leave
+                If i = UserList(UserIndex).NumCompletedQuests Then
+                    i = -1
+                    Exit For
+                End If
+                
+            Next i
+        Else
+            
+            'The user has never completed a quest before, so we have to add this one
+            i = -1
+        
         End If
 
     Else
 
-        'Add to the list
-        UserList(UserIndex).CompletedQuests = UserList(UserIndex).CompletedQuests & "-" & UserList(UserIndex).Quest(UserQuestSlot)
+        'Set the flag to add to the list
+        i = -1
 
     End If
 
+    'Add to the list if needed
+    If i = -1 Then
+        UserList(UserIndex).NumCompletedQuests = UserList(UserIndex).NumCompletedQuests + 1
+        ReDim Preserve UserList(UserIndex).CompletedQuests(1 To UserList(UserIndex).NumCompletedQuests)
+        UserList(UserIndex).CompletedQuests(UserList(UserIndex).NumCompletedQuests) = UserList(UserIndex).Quest(UserQuestSlot)
+    End If
+    
     'Clear the quest slot so it can be used again
     UserList(UserIndex).QuestStatus(UserQuestSlot).NPCKills = 0
     UserList(UserIndex).Quest(UserQuestSlot) = 0
+    
+    'Update the quest text
+    Quest_SendText UserIndex, UserQuestSlot
 
 End Sub
 
@@ -359,24 +386,26 @@ Dim i As Integer
     Next i
 
     'The user is not involved in this quest currently - check if they have already completed it
-    Log "Quest_General: Using InStr() operation", CodeTracker '//\\LOGLINE//\\
-    If InStr(1, UserList(UserIndex).CompletedQuests & "-", "-" & NPCList(NPCIndex).Quest & "-") Then
-
-        'The user has completed this quest before, so check if it is redoable
-        If QuestData(NPCList(NPCIndex).Quest).Redoable = 0 Then
-
-            'The quest is not redoable, so sorry dude, no quest fo' j00
-            Data_Send ToIndex, UserIndex, cMessage(7).Data
-            Exit Sub
-
+    Log "Quest_General: Checking if quest was already completed", CodeTracker '//\\LOGLINE//\\
+    For i = 1 To UserList(UserIndex).NumCompletedQuests
+        If UserList(UserIndex).CompletedQuests(i) = NPCList(NPCIndex).Quest Then
+            
+            'The user has completed this quest before, so check if it is redoable
+            If QuestData(NPCList(NPCIndex).Quest).Redoable = 0 Then
+                
+                'The quest is not redoable, so sorry dude, no quest fo' j00
+                Data_Send ToIndex, UserIndex, cMessage(7).Data
+                Exit Sub
+    
+            End If
+        
         End If
-
-    End If
+    Next i
 
     'The user has never done this quest before, so we make the NPC say whats up
-    ConBuf.PreAllocate 7 + Len(NPCList(NPCIndex).name) + Len(QuestData(NPCList(NPCIndex).Quest).StartTxt)
+    ConBuf.PreAllocate 7 + Len(NPCList(NPCIndex).Name) + Len(QuestData(NPCList(NPCIndex).Quest).StartTxt)
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String NPCList(NPCIndex).name & ": " & QuestData(NPCList(NPCIndex).Quest).StartTxt
+    ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(NPCList(NPCIndex).Quest).StartTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk Or DataCode.Comm_UseBubble
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
@@ -400,9 +429,9 @@ Private Sub Quest_SayIncomplete(ByVal UserIndex As Integer, ByVal NPCIndex As In
     Log "Call Quest_SayIncomplete(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Incomplete text
-    ConBuf.PreAllocate 7 + Len(NPCList(NPCIndex).name) + Len(QuestData(NPCList(NPCIndex).Quest).IncompleteTxt)
+    ConBuf.PreAllocate 7 + Len(NPCList(NPCIndex).Name) + Len(QuestData(NPCList(NPCIndex).Quest).IncompleteTxt)
     ConBuf.Put_Byte DataCode.Comm_Talk
-    ConBuf.Put_String NPCList(NPCIndex).name & ": " & QuestData(NPCList(NPCIndex).Quest).IncompleteTxt
+    ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(NPCList(NPCIndex).Quest).IncompleteTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk Or DataCode.Comm_UseBubble
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
@@ -424,7 +453,7 @@ Dim LoopC As Long
 
     For LoopC = 1 To LastUser
         If UserList(LoopC).flags.UserLogged = 1 Then
-            If UCase$(UserList(LoopC).name) = UCase$(sName) Then
+            If UCase$(UserList(LoopC).Name) = UCase$(sName) Then
                 If UserIndex <> LoopC Then
                     Server_CheckForSameName = True
                     Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
@@ -963,7 +992,7 @@ Dim i As Long
     If WriterIndex > 0 Then
         If UserList(WriterIndex).Counters.DelayTimeMail > CurrentTime Then
             'Not enough time has passed by - goodbye! :)
-            Log "Server_WriteMail: Not enough time elapsed since last mail write for user " & WriterIndex & " (" & UserList(WriterIndex).name & ")", CodeTracker '//\\LOGLINE//\\
+            Log "Server_WriteMail: Not enough time elapsed since last mail write for user " & WriterIndex & " (" & UserList(WriterIndex).Name & ")", CodeTracker '//\\LOGLINE//\\
             Exit Function
         Else
             'Set the delay
@@ -989,7 +1018,7 @@ Dim i As Long
             If UserList(WriterIndex).Stats.BaseStat(SID.Gold) < MailCost Then
             
                 'Not enough money
-                Log "Server_WriteMail: User " & WriterIndex & " (" & UserList(WriterIndex).name & ") has not enough money to write mail (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
+                Log "Server_WriteMail: User " & WriterIndex & " (" & UserList(WriterIndex).Name & ") has not enough money to write mail (Gold: " & UserList(WriterIndex).Stats.BaseStat(SID.Gold) & ")", CodeTracker '//\\LOGLINE//\\
                 ConBuf.PreAllocate 6
                 ConBuf.Put_Byte DataCode.Server_Message
                 ConBuf.Put_Byte 14
@@ -1014,7 +1043,7 @@ Dim i As Long
     MailData.Message = Message
     MailData.RecieveDate = Date
     MailData.Subject = Subject
-    If WriterIndex <> -1 Then MailData.WriterName = UserList(WriterIndex).name Else MailData.WriterName = "Game Admin"
+    If WriterIndex <> -1 Then MailData.WriterName = UserList(WriterIndex).Name Else MailData.WriterName = "Game Admin"
 
     'Get the number of objects
     On Error Resume Next
@@ -1032,7 +1061,7 @@ Dim i As Long
     'Check if the reciever is on
     For LoopC = 1 To LastUser
         If UserList(LoopC).flags.UserLogged Then
-            If UCase$(UserList(LoopC).name) = UCase$(ReceiverName) Then
+            If UCase$(UserList(LoopC).Name) = UCase$(ReceiverName) Then
 
                 'Get the user's next open MailID slot
                 LoopX = 0
@@ -1041,10 +1070,10 @@ Dim i As Long
                     If LoopX > MaxMailPerUser Then
                         If WriterIndex <> -1 Then
                             'Message to the receiver
-                            ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).name)
+                            ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).Name)
                             ConBuf.Put_Byte DataCode.Server_Message
                             ConBuf.Put_Byte 15
-                            ConBuf.Put_String UserList(WriterIndex).name
+                            ConBuf.Put_String UserList(WriterIndex).Name
                             Data_Send ToIndex, LoopC, ConBuf.Get_Buffer
                             'Message to the sender
                             ConBuf.PreAllocate 3 + Len(ReceiverName)
@@ -1076,10 +1105,10 @@ Dim i As Long
                     ConBuf.Put_String ReceiverName
                     Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
                     'Send message to receiver
-                    ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).name)
+                    ConBuf.PreAllocate 3 + Len(UserList(WriterIndex).Name)
                     ConBuf.Put_Byte DataCode.Server_Message
                     ConBuf.Put_Byte 18
-                    ConBuf.Put_String UserList(WriterIndex).name
+                    ConBuf.Put_String UserList(WriterIndex).Name
                     Data_Send ToIndex, LoopC, ConBuf.Get_Buffer, , PP_NewMail
                 Else
                     'Send message to receiver that it was from the game admin
@@ -1261,7 +1290,7 @@ Dim TargetIndex As Integer
     End Select
     
     'Check for a valid distance
-    If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) > ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange Then Exit Sub
+    If Server_Distance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) > ObjData.WeaponRange(UserList(UserIndex).WeaponEqpObjIndex) Then Exit Sub
     
     'Check for a valid target
     If Engine_ClearPath(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, TargetPos.X, TargetPos.Y) Then
@@ -1285,13 +1314,13 @@ Dim TargetIndex As Integer
             Case 1
 
                 'Send the data
-                If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+                If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
                     ConBuf.PreAllocate 14   'All variables are used
                     ConBuf.Put_Byte DataCode.Server_MakeProjectile
                     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-                    ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
-                    ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).ProjectileRotateSpeed
+                    ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+                    ConBuf.Put_Byte ObjData.ProjectileRotateSpeed(UserList(UserIndex).WeaponEqpObjIndex)
                 Else
                     ConBuf.PreAllocate 4    'Only the 3 variables below are used
                 End If
@@ -1303,13 +1332,13 @@ Dim TargetIndex As Integer
             
             'Attacking NPC
             Case 2
-                If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+                If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
                     ConBuf.PreAllocate 14
                     ConBuf.Put_Byte DataCode.Server_MakeProjectile
                     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-                    ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
-                    ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).ProjectileRotateSpeed
+                    ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+                    ConBuf.Put_Byte ObjData.ProjectileRotateSpeed(UserList(UserIndex).WeaponEqpObjIndex)
                 Else
                     ConBuf.PreAllocate 4
                 End If
@@ -1358,7 +1387,7 @@ Dim AttackPos As WorldPos
 
     'Check for ranged attack
     If UserList(UserIndex).WeaponEqpObjIndex > 0 Then
-        If ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange > 1 Then
+        If ObjData.WeaponRange(UserList(UserIndex).WeaponEqpObjIndex) > 1 Then
             If UserList(UserIndex).flags.TargetIndex = 0 Then Exit Sub
             User_Attack_Ranged UserIndex
             Exit Sub
@@ -1390,7 +1419,7 @@ Dim AttackPos As WorldPos
         Log "User_Attack: Found a user to attack", CodeTracker '//\\LOGLINE//\\
 
         'Play attack sound
-        If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+        If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
             ConBuf.PreAllocate 11
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
             ConBuf.Put_Byte SOUND_SWING
@@ -1398,7 +1427,7 @@ Dim AttackPos As WorldPos
             ConBuf.Put_Byte UserList(UserIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeSlash
             ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-            ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+            ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
         Else
             ConBuf.PreAllocate 4
             ConBuf.Put_Byte DataCode.Server_PlaySound3D
@@ -1429,7 +1458,7 @@ Dim AttackPos As WorldPos
                 Exit Sub
             End If
 
-            If ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh Then
+            If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
                 'Play attack sound and create the graphic
                 ConBuf.PreAllocate 11
                 ConBuf.Put_Byte DataCode.Server_PlaySound3D
@@ -1438,7 +1467,7 @@ Dim AttackPos As WorldPos
                 ConBuf.Put_Byte UserList(UserIndex).Pos.Y
                 ConBuf.Put_Byte DataCode.Server_MakeSlash
                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                ConBuf.Put_Long ObjData(UserList(UserIndex).WeaponEqpObjIndex).UseGrh
+                ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
             Else
                 'Play sound only
                 ConBuf.PreAllocate 4
@@ -1554,16 +1583,16 @@ Dim Hit As Integer
         Log "User_AttackUser: Killed the user", CodeTracker '//\\LOGLINE//\\
 
         'Kill user
-        ConBuf.PreAllocate 3 + Len(UserList(VictimIndex).name)
+        ConBuf.PreAllocate 3 + Len(UserList(VictimIndex).Name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 22
-        ConBuf.Put_String UserList(VictimIndex).name
+        ConBuf.Put_String UserList(VictimIndex).Name
         Data_Send ToIndex, AttackerIndex, ConBuf.Get_Buffer
 
-        ConBuf.PreAllocate 3 + Len(UserList(AttackerIndex).name)
+        ConBuf.PreAllocate 3 + Len(UserList(AttackerIndex).Name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 23
-        ConBuf.Put_String UserList(AttackerIndex).name
+        ConBuf.Put_String UserList(AttackerIndex).Name
         Data_Send ToIndex, VictimIndex, ConBuf.Get_Buffer
 
         User_Kill VictimIndex
@@ -1665,14 +1694,14 @@ Private Sub User_ChangeInv(ByVal UserIndex As Integer, ByVal Slot As Byte, Objec
     'If the object has an index, then send the related information of the object
     'If index = 0, then we assume we are deleting it
     If Object.ObjIndex Then
-        ConBuf.PreAllocate 16 + Len(ObjData(Object.ObjIndex).name)
+        ConBuf.PreAllocate 16 + Len(ObjData.Name(Object.ObjIndex))
         ConBuf.Put_Byte DataCode.User_SetInventorySlot
         ConBuf.Put_Byte Slot
         ConBuf.Put_Long Object.ObjIndex
-        ConBuf.Put_String ObjData(Object.ObjIndex).name
+        ConBuf.Put_String ObjData.Name(Object.ObjIndex)
         ConBuf.Put_Long Object.Amount
         ConBuf.Put_Byte Object.Equipped
-        ConBuf.Put_Long ObjData(Object.ObjIndex).GrhIndex
+        ConBuf.Put_Long ObjData.GrhIndex(Object.ObjIndex)
     Else
         ConBuf.PreAllocate 6
         ConBuf.Put_Byte DataCode.User_SetInventorySlot
@@ -2023,11 +2052,11 @@ Dim i As Long
     If UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount <= MAX_INVENTORY_OBJS Then
 
         'Tell the user they recieved the items
-        ConBuf.PreAllocate 5 + Len(ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex).name)
+        ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex))
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 27
         ConBuf.Put_Integer MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount
-        ConBuf.Put_String ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex).name
+        ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex)
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
         'User takes all the items
@@ -2039,20 +2068,20 @@ Dim i As Long
         'Over MAX_INV_OBJS
         If MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount < UserList(UserIndex).Object(Slot).Amount Then
             'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex).name)
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
             ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
-            ConBuf.Put_String ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex).name
+            ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
         Else
             'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex).name)
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
             ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
-            ConBuf.Put_String ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex).name
+            ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
         End If
@@ -2120,11 +2149,11 @@ Dim Slot As Byte
     If UserList(UserIndex).Object(Slot).Amount + Amount <= MAX_INVENTORY_OBJS Then
 
         'Tell the user they recieved the items
-        ConBuf.PreAllocate 5 + Len(ObjData(ObjIndex).name)
+        ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 28
         ConBuf.Put_Integer Amount
-        ConBuf.Put_String ObjData(ObjIndex).name
+        ConBuf.Put_String ObjData.Name(ObjIndex)
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
         'User takes all the items
@@ -2135,19 +2164,19 @@ Dim Slot As Byte
         'Over MAX_INV_OBJS
         If Amount < UserList(UserIndex).Object(Slot).Amount Then
             'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData(ObjIndex).name)
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
             ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + Amount))
-            ConBuf.Put_String ObjData(ObjIndex).name
+            ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Else
             'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData(ObjIndex).name)
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
             ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - Amount)
-            ConBuf.Put_String ObjData(ObjIndex).name
+            ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         End If
         UserList(UserIndex).Object(Slot).Amount = MAX_INVENTORY_OBJS
@@ -2330,17 +2359,17 @@ Dim MsgData As MailData
         'React to character
         If FoundChar = 1 Then
             If Len(UserList(TempIndex).Desc) > 1 Then
-                ConBuf.PreAllocate 4 + Len(UserList(TempIndex).name) + Len(UserList(TempIndex).Desc)
+                ConBuf.PreAllocate 4 + Len(UserList(TempIndex).Name) + Len(UserList(TempIndex).Desc)
                 ConBuf.Put_Byte DataCode.Server_Message
                 ConBuf.Put_Byte 30
-                ConBuf.Put_String UserList(TempIndex).name
+                ConBuf.Put_String UserList(TempIndex).Name
                 ConBuf.Put_String UserList(TempIndex).Desc
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             Else
-                ConBuf.PreAllocate 3 + Len(UserList(TempIndex).name)
+                ConBuf.PreAllocate 3 + Len(UserList(TempIndex).Name)
                 ConBuf.Put_Byte DataCode.Server_Message
                 ConBuf.Put_Byte 31
-                ConBuf.Put_String UserList(TempIndex).name
+                ConBuf.Put_String UserList(TempIndex).Name
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             End If
             FoundSomething = 1
@@ -2354,7 +2383,7 @@ Dim MsgData As MailData
                 For LoopC = 1 To MAX_INVENTORY_SLOTS
                     If UserList(UserIndex).Bank(LoopC).ObjIndex > 0 Then
                         ConBuf.Put_Byte LoopC
-                        ConBuf.Put_Long ObjData(UserList(UserIndex).Bank(LoopC).ObjIndex).GrhIndex
+                        ConBuf.Put_Long ObjData.GrhIndex(UserList(UserIndex).Bank(LoopC).ObjIndex)
                         ConBuf.Put_Integer UserList(UserIndex).Bank(LoopC).Amount
                     End If
                 Next LoopC
@@ -2367,18 +2396,18 @@ Dim MsgData As MailData
                     FoundSomething = 1
                 Else
                     '*** NPC not a vendor, give description ***
-                    If Len(NPCList(TempIndex).name) > 1 Then
-                        ConBuf.PreAllocate 4 + Len(NPCList(TempIndex).name) + Len(NPCList(TempIndex).Desc)
+                    If Len(NPCList(TempIndex).Name) > 1 Then
+                        ConBuf.PreAllocate 4 + Len(NPCList(TempIndex).Name) + Len(NPCList(TempIndex).Desc)
                         ConBuf.Put_Byte DataCode.Server_Message
                         ConBuf.Put_Byte 30
-                        ConBuf.Put_String NPCList(TempIndex).name
+                        ConBuf.Put_String NPCList(TempIndex).Name
                         ConBuf.Put_String NPCList(TempIndex).Desc
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     Else
-                        ConBuf.PreAllocate 3 + Len(NPCList(TempIndex).name)
+                        ConBuf.PreAllocate 3 + Len(NPCList(TempIndex).Name)
                         ConBuf.Put_Byte DataCode.Server_Message
                         ConBuf.Put_Byte 31
-                        ConBuf.Put_String NPCList(TempIndex).name
+                        ConBuf.Put_String NPCList(TempIndex).Name
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     End If
                     '*** Quest NPC ***
@@ -2393,16 +2422,16 @@ Dim MsgData As MailData
                 If MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex > 0 Then
                     'Check whether to use the singular or plural message
                     If MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).Amount = 1 Then
-                        ConBuf.PreAllocate 3 + Len(ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex).name)
+                        ConBuf.PreAllocate 3 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex))
                         ConBuf.Put_Byte DataCode.Server_Message
                         ConBuf.Put_Byte 32
-                        ConBuf.Put_String ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex).name
+                        ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex)
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     Else
-                        ConBuf.PreAllocate 5 + Len(ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex).name)
+                        ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex))
                         ConBuf.Put_Byte DataCode.Server_Message
                         ConBuf.Put_Byte 86
-                        ConBuf.Put_String ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex).name
+                        ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).ObjIndex)
                         ConBuf.Put_Integer MapInfo(Map).ObjTile(X, Y).ObjInfo(LoopC).Amount
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                     End If
@@ -2526,7 +2555,7 @@ Dim CharIndex As Integer
     End If
 
     'Send make character command to clients
-    ConBuf.PreAllocate 41 + Len(UserList(UserIndex).name)   '21 for below, 20 for icons
+    ConBuf.PreAllocate 41 + Len(UserList(UserIndex).Name)   '21 for below, 20 for icons
     ConBuf.Put_Byte DataCode.Server_MakeChar
     ConBuf.Put_Integer UserList(UserIndex).Char.Body
     ConBuf.Put_Integer UserList(UserIndex).Char.Head
@@ -2535,7 +2564,7 @@ Dim CharIndex As Integer
     ConBuf.Put_Byte X
     ConBuf.Put_Byte Y
     ConBuf.Put_Byte UserList(UserIndex).Stats.ModStat(SID.Speed)
-    ConBuf.Put_String UserList(UserIndex).name
+    ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_Integer UserList(UserIndex).Char.Weapon
     ConBuf.Put_Integer UserList(UserIndex).Char.Hair
     ConBuf.Put_Integer UserList(UserIndex).Char.Wings
@@ -2679,7 +2708,7 @@ Dim UserIndex As Integer
     
     'Find the user
     UserIndex = 1
-    Do Until UCase$(UserList(UserIndex).name) = UCase$(strName)
+    Do Until UCase$(UserList(UserIndex).Name) = UCase$(strName)
         UserIndex = UserIndex + 1
         If UserIndex > LastUser Then
             Log "User_NameToIndex: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
@@ -2756,7 +2785,7 @@ Dim Levels As Integer
 
     'Loop as many times as needed to get every level gained in
     Do While UserList(UserIndex).Stats.BaseStat(SID.EXP) >= UserList(UserIndex).Stats.BaseStat(SID.ELU)
-        Log "User_RaiseExp: User by index " & UserIndex & " (" & UserList(UserIndex).name & ") leveled up", CodeTracker '//\\LOGLINE//\\
+        Log "User_RaiseExp: User by index " & UserIndex & " (" & UserList(UserIndex).Name & ") leveled up", CodeTracker '//\\LOGLINE//\\
         
         'Set the number of levels gained
         Levels = Levels + 1
@@ -2804,59 +2833,53 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
 'Unequip a inventory item
 '*****************************************************************
 
-Dim Obj As ObjData
-
     Log "Call User_RemoveInvItem(" & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
 
-'Set the object
-
-    Obj = ObjData(UserList(UserIndex).Object(Slot).ObjIndex)
-
     'Get the object type
-    Select Case Obj.ObjType
-
-        'Check for weapon
-    Case OBJTYPE_WEAPON
-        Log "User_RemoveInvItem: Object type OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
-        
-        'Update the weapon distance on the client
-        ConBuf.PreAllocate 2
-        ConBuf.Put_Byte DataCode.User_SetWeaponRange
-        ConBuf.Put_Byte 0
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        
-        'Set the equipted variables
-        UserList(UserIndex).Object(Slot).Equipped = 0
-        UserList(UserIndex).WeaponEqpObjIndex = 0
-        UserList(UserIndex).WeaponEqpSlot = 0
-        UserList(UserIndex).Char.Weapon = 0
-        UserList(UserIndex).WeaponType = Hand
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-        'Check for armor
-    Case OBJTYPE_ARMOR
-        Log "User_RemoveInvItem: Object type OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
-
-        'Set the equipted variables
-        UserList(UserIndex).Object(Slot).Equipped = 0
-        UserList(UserIndex).ArmorEqpObjIndex = 0
-        UserList(UserIndex).ArmorEqpSlot = 0
-        UserList(UserIndex).Char.Body = 1
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-        'Check for wings
-    Case OBJTYPE_WINGS
-        Log "User_RemoveInvItem: Object type OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
+    Select Case ObjData.ObjType(UserList(UserIndex).Object(Slot).ObjIndex)
     
-        'Set the equipted variables
-        UserList(UserIndex).Object(Slot).Equipped = 0
-        UserList(UserIndex).WingsEqpObjIndex = 0
-        UserList(UserIndex).WingsEqpSlot = 0
-        UserList(UserIndex).Char.Wings = 0
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-    Case Else   '//\\LOGLINE//\\
-        Log "User_RemoveInvItem: Unknown object type! Object type: " & Obj.ObjType, CriticalError '//\\LOGLINE//\\
+            'Check for weapon
+        Case OBJTYPE_WEAPON
+            Log "User_RemoveInvItem: Object type OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
+            
+            'Update the weapon distance on the client
+            ConBuf.PreAllocate 2
+            ConBuf.Put_Byte DataCode.User_SetWeaponRange
+            ConBuf.Put_Byte 0
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            
+            'Set the equipted variables
+            UserList(UserIndex).Object(Slot).Equipped = 0
+            UserList(UserIndex).WeaponEqpObjIndex = 0
+            UserList(UserIndex).WeaponEqpSlot = 0
+            UserList(UserIndex).Char.Weapon = 0
+            UserList(UserIndex).WeaponType = Hand
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+            'Check for armor
+        Case OBJTYPE_ARMOR
+            Log "User_RemoveInvItem: Object type OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
+    
+            'Set the equipted variables
+            UserList(UserIndex).Object(Slot).Equipped = 0
+            UserList(UserIndex).ArmorEqpObjIndex = 0
+            UserList(UserIndex).ArmorEqpSlot = 0
+            UserList(UserIndex).Char.Body = 1
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+            'Check for wings
+        Case OBJTYPE_WINGS
+            Log "User_RemoveInvItem: Object type OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
+        
+            'Set the equipted variables
+            UserList(UserIndex).Object(Slot).Equipped = 0
+            UserList(UserIndex).WingsEqpObjIndex = 0
+            UserList(UserIndex).WingsEqpSlot = 0
+            UserList(UserIndex).Char.Wings = 0
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+        Case Else   '//\\LOGLINE//\\
+            Log "User_RemoveInvItem: Unknown object type! Object type: " & ObjData.ObjType(UserList(UserIndex).Object(Slot).ObjIndex), CriticalError '//\\LOGLINE//\\
 
     End Select
     
@@ -2940,14 +2963,14 @@ Dim LoopC As Integer
         End If
 
         Log "User_TradeWithNPC: Building vending items list", CodeTracker '//\\LOGLINE//\\
-        ConBuf.PreAllocate 4 + Len(NPCList(NPCIndex).name) + (NPCList(NPCIndex).NumVendItems * 9)   'We can't allocate the Obj names, so just allocate the byte for the string : /
+        ConBuf.PreAllocate 4 + Len(NPCList(NPCIndex).Name) + (NPCList(NPCIndex).NumVendItems * 9)   'We can't allocate the Obj names, so just allocate the byte for the string : /
         ConBuf.Put_Byte DataCode.User_Trade_StartNPCTrade
-        ConBuf.Put_String NPCList(NPCIndex).name
+        ConBuf.Put_String NPCList(NPCIndex).Name
         ConBuf.Put_Integer NPCList(NPCIndex).NumVendItems
         For LoopC = 1 To NPCList(NPCIndex).NumVendItems
-            ConBuf.Put_Long ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).GrhIndex
-            ConBuf.Put_String ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).name
-            ConBuf.Put_Long ObjData(NPCList(NPCIndex).VendItems(LoopC).ObjIndex).Price
+            ConBuf.Put_Long ObjData.GrhIndex(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
+            ConBuf.Put_String ObjData.Name(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
+            ConBuf.Put_Long ObjData.Price(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
         Next LoopC
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         UserList(UserIndex).flags.TradeWithNPC = NPCIndex
@@ -2975,7 +2998,7 @@ Public Sub User_UpdateBank(ByVal UserIndex As Integer, ByVal Slot As Byte)
         ConBuf.PreAllocate 8
         ConBuf.Put_Byte DataCode.User_Bank_UpdateSlot
         ConBuf.Put_Byte Slot
-        ConBuf.Put_Long ObjData(UserList(UserIndex).Bank(Slot).ObjIndex).GrhIndex
+        ConBuf.Put_Long ObjData.GrhIndex(UserList(UserIndex).Bank(Slot).ObjIndex)
         ConBuf.Put_Integer UserList(UserIndex).Bank(Slot).Amount
     End If
     
@@ -3050,7 +3073,7 @@ Dim i As Long
                     If MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex Then
                         ConBuf.PreAllocate 7
                         ConBuf.Put_Byte DataCode.Server_MakeObject
-                        ConBuf.Put_Long ObjData(MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex).GrhIndex
+                        ConBuf.Put_Long ObjData.GrhIndex(MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex)
                         ConBuf.Put_Byte X
                         ConBuf.Put_Byte Y
                         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map
@@ -3069,9 +3092,9 @@ Public Sub User_UpdateModStats(ByVal UserIndex As Integer)
 'Set the user's mod stats based on base stats and equipted items
 '*****************************************************************
 
-Dim WeaponObj As ObjData
-Dim ArmorObj As ObjData
-Dim WingsObj As ObjData
+Dim WeaponObj As Integer
+Dim ArmorObj As Integer
+Dim WingsObj As Integer
 Dim i As Integer
 
     Log "Call User_UpdateModStats(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
@@ -3082,32 +3105,16 @@ Dim i As Integer
     End If
 
     'Set the equipted items
-    If UserList(UserIndex).WeaponEqpObjIndex > 0 Then WeaponObj = ObjData(UserList(UserIndex).WeaponEqpObjIndex)
-    If UserList(UserIndex).ArmorEqpObjIndex > 0 Then ArmorObj = ObjData(UserList(UserIndex).ArmorEqpObjIndex)
-    If UserList(UserIndex).WingsEqpObjIndex > 0 Then WingsObj = ObjData(UserList(UserIndex).WingsEqpObjIndex)
+    If UserList(UserIndex).WeaponEqpObjIndex > 0 Then WeaponObj = UserList(UserIndex).WeaponEqpObjIndex
+    If UserList(UserIndex).ArmorEqpObjIndex > 0 Then ArmorObj = UserList(UserIndex).ArmorEqpObjIndex
+    If UserList(UserIndex).WingsEqpObjIndex > 0 Then WingsObj = UserList(UserIndex).WingsEqpObjIndex
 
     With UserList(UserIndex).Stats
 
         'Equipted items
-        For i = 1 To NumStats
-            If i <> SID.MinHP Then
-                If i <> SID.MinMAN Then
-                    If i <> SID.MinSTA Then
-                        If i <> SID.Gold Then
-                            If i <> SID.Points Then
-                                If i <> SID.EXP Then
-                                    If i <> SID.ELU Then
-                                        If i <> SID.ELV Then
-                                            Log "User_UpdateModStats: Updating ModStat ID " & i, CodeTracker '//\\LOGLINE//\\
-                                            .ModStat(i) = .BaseStat(i) + WeaponObj.AddStat(i) + ArmorObj.AddStat(i) + WingsObj.AddStat(i)
-                                        End If
-                                    End If
-                                End If
-                            End If
-                        End If
-                    End If
-                End If
-            End If
+        For i = FirstModStat To NumStats
+            Log "User_UpdateModStats: Updating ModStat ID " & i, CodeTracker '//\\LOGLINE//\\
+            .ModStat(i) = .BaseStat(i) + ObjData.AddStat(WeaponObj, i) + ObjData.AddStat(ArmorObj, i) + ObjData.AddStat(WingsObj, i)
         Next i
         
         'War curse
@@ -3163,8 +3170,7 @@ Public Sub User_UseInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte)
 '*****************************************************************
 'Use/Equip a inventory item
 '*****************************************************************
-
-Dim Obj As ObjData
+Dim ObjIndex As Integer
 
     Log "Call User_UseInvItem(" & UserIndex & "," & Slot & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -3204,121 +3210,121 @@ Dim Obj As ObjData
     End If
     On Error GoTo 0
     
-    Obj = ObjData(UserList(UserIndex).Object(Slot).ObjIndex)
+    ObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
 
     'Apply the replenish values
     With UserList(UserIndex).Stats
-        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + (.ModStat(SID.MaxHP) * Obj.RepHPP) + Obj.RepHP
-        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + (.ModStat(SID.MaxMAN) * Obj.RepMPP) + Obj.RepMP
-        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + (.ModStat(SID.MaxSTA) * Obj.RepSPP) + Obj.RepSP
+        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + (.ModStat(SID.MaxHP) * ObjData.RepHPP(ObjIndex)) + ObjData.RepHP(ObjIndex)
+        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + (.ModStat(SID.MaxMAN) * ObjData.RepMPP(ObjIndex)) + ObjData.RepMP(ObjIndex)
+        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + (.ModStat(SID.MaxSTA) * ObjData.RepSPP(ObjIndex)) + ObjData.RepSP(ObjIndex)
     End With
 
-    Select Case Obj.ObjType
+    Select Case ObjData.ObjType(ObjIndex)
+        
+        Case OBJTYPE_USEONCE
+            Log "User_UseInvItem: ObjType = OBJTYPE_USEONCE", CodeTracker '//\\LOGLINE//\\
     
-    Case OBJTYPE_USEONCE
-        Log "User_UseInvItem: ObjType = OBJTYPE_USEONCE", CodeTracker '//\\LOGLINE//\\
-
-        'Remove from inventory
-        UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
-        If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
-        
-        'Set the paper-doll
-        If Obj.SpriteHair <> -1 Then UserList(UserIndex).Char.Hair = Obj.SpriteHair
-        If Obj.SpriteBody <> -1 Then UserList(UserIndex).Char.Body = Obj.SpriteBody
-        If Obj.SpriteHead <> -1 Then UserList(UserIndex).Char.Head = Obj.SpriteHead
-        If Obj.SpriteWeapon <> -1 Then UserList(UserIndex).Char.Weapon = Obj.SpriteWeapon
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-        
-        'Create the use-once effect
-        If Obj.UseGrh > 0 Then
-            ConBuf.PreAllocate 7
-            ConBuf.Put_Byte DataCode.Server_MakeEffect
-            ConBuf.Put_Byte UserList(UserIndex).Pos.X
-            ConBuf.Put_Byte UserList(UserIndex).Pos.Y
-            ConBuf.Put_Long Obj.UseGrh
-            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
-        End If
-        
-    Case OBJTYPE_WEAPON
-        Log "User_UseInvItem: ObjType = OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
-
-        'If currently equipped remove instead
-        If UserList(UserIndex).Object(Slot).Equipped Then
-            User_RemoveInvItem UserIndex, Slot
-            Exit Sub
-        End If
-
-        'Remove old item if exists
-        If UserList(UserIndex).WeaponEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).WeaponEqpSlot
-
-        'Equip
-        UserList(UserIndex).Object(Slot).Equipped = 1
-        UserList(UserIndex).WeaponEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
-        UserList(UserIndex).WeaponEqpSlot = Slot
-        UserList(UserIndex).WeaponType = Obj.WeaponType
-        
-        'Update the weapon distance on the client
-        ConBuf.PreAllocate 2
-        ConBuf.Put_Byte DataCode.User_SetWeaponRange
-        ConBuf.Put_Byte ObjData(UserList(UserIndex).WeaponEqpObjIndex).WeaponRange
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'Set the paper-doll
-        If Obj.SpriteHair <> -1 Then UserList(UserIndex).Char.Hair = Obj.SpriteHair
-        If Obj.SpriteBody <> -1 Then UserList(UserIndex).Char.Body = Obj.SpriteBody
-        If Obj.SpriteHead <> -1 Then UserList(UserIndex).Char.Head = Obj.SpriteHead
-        If Obj.SpriteWeapon <> -1 Then UserList(UserIndex).Char.Weapon = Obj.SpriteWeapon
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-    Case OBJTYPE_ARMOR
-        Log "User_UseInvItem: ObjType = OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
-
-        'If currently equipped remove instead
-        If UserList(UserIndex).Object(Slot).Equipped Then
-            User_RemoveInvItem UserIndex, Slot
-            Exit Sub
-        End If
-
-        'Remove old item if exists
-        If UserList(UserIndex).ArmorEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).ArmorEqpSlot
-
-        'Equip
-        UserList(UserIndex).Object(Slot).Equipped = 1
-        UserList(UserIndex).ArmorEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
-        UserList(UserIndex).ArmorEqpSlot = Slot
-
-        'Set the paper-doll
-        If Obj.SpriteHair <> -1 Then UserList(UserIndex).Char.Hair = Obj.SpriteHair
-        If Obj.SpriteBody <> -1 Then UserList(UserIndex).Char.Body = Obj.SpriteBody
-        If Obj.SpriteHead <> -1 Then UserList(UserIndex).Char.Head = Obj.SpriteHead
-        If Obj.SpriteWeapon <> -1 Then UserList(UserIndex).Char.Weapon = Obj.SpriteWeapon
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-    Case OBJTYPE_WINGS
-        Log "User_UseInvItem: ObjType = OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
+            'Remove from inventory
+            UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
+            If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
+            
+            'Set the paper-doll
+            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
+            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
+            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
+            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            
+            'Create the use-once effect
+            If ObjData.UseGrh(ObjIndex) > 0 Then
+                ConBuf.PreAllocate 7
+                ConBuf.Put_Byte DataCode.Server_MakeEffect
+                ConBuf.Put_Byte UserList(UserIndex).Pos.X
+                ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+                ConBuf.Put_Long ObjData.UseGrh(ObjIndex)
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+            End If
+            
+        Case OBJTYPE_WEAPON
+            Log "User_UseInvItem: ObjType = OBJTYPE_WEAPON", CodeTracker '//\\LOGLINE//\\
     
-        'If currently equipped remove instead
-        If UserList(UserIndex).Object(Slot).Equipped Then
-            User_RemoveInvItem UserIndex, Slot
-            Exit Sub
-        End If
-
-        'Remove old item if exists
-        If UserList(UserIndex).WingsEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).WingsEqpSlot
-
-        'Equip
-        UserList(UserIndex).Object(Slot).Equipped = 1
-        UserList(UserIndex).WingsEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
-        UserList(UserIndex).WingsEqpSlot = Slot
-
-        'Set the paper-doll
-        If Obj.SpriteWings <> -1 Then UserList(UserIndex).Char.Wings = Obj.SpriteWings
-        User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-
-    Case Else
+            'If currently equipped remove instead
+            If UserList(UserIndex).Object(Slot).Equipped Then
+                User_RemoveInvItem UserIndex, Slot
+                Exit Sub
+            End If
     
-        'We have no idea what type of object it is! OMG!!!
-        Log "User_UseInvItem: Unknown object type used! Object type: " & Obj.ObjType, CriticalError '//\\LOGLINE//\\
+            'Remove old item if exists
+            If UserList(UserIndex).WeaponEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).WeaponEqpSlot
+    
+            'Equip
+            UserList(UserIndex).Object(Slot).Equipped = 1
+            UserList(UserIndex).WeaponEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
+            UserList(UserIndex).WeaponEqpSlot = Slot
+            UserList(UserIndex).WeaponType = ObjData.WeaponType(ObjIndex)
+            
+            'Update the weapon distance on the client
+            ConBuf.PreAllocate 2
+            ConBuf.Put_Byte DataCode.User_SetWeaponRange
+            ConBuf.Put_Byte ObjData.WeaponRange(UserList(UserIndex).WeaponEqpObjIndex)
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+            'Set the paper-doll
+            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
+            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
+            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
+            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+        Case OBJTYPE_ARMOR
+            Log "User_UseInvItem: ObjType = OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
+    
+            'If currently equipped remove instead
+            If UserList(UserIndex).Object(Slot).Equipped Then
+                User_RemoveInvItem UserIndex, Slot
+                Exit Sub
+            End If
+    
+            'Remove old item if exists
+            If UserList(UserIndex).ArmorEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).ArmorEqpSlot
+    
+            'Equip
+            UserList(UserIndex).Object(Slot).Equipped = 1
+            UserList(UserIndex).ArmorEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
+            UserList(UserIndex).ArmorEqpSlot = Slot
+    
+            'Set the paper-doll
+            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
+            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
+            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
+            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+        Case OBJTYPE_WINGS
+            Log "User_UseInvItem: ObjType = OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
+        
+            'If currently equipped remove instead
+            If UserList(UserIndex).Object(Slot).Equipped Then
+                User_RemoveInvItem UserIndex, Slot
+                Exit Sub
+            End If
+    
+            'Remove old item if exists
+            If UserList(UserIndex).WingsEqpObjIndex > 0 Then User_RemoveInvItem UserIndex, UserList(UserIndex).WingsEqpSlot
+    
+            'Equip
+            UserList(UserIndex).Object(Slot).Equipped = 1
+            UserList(UserIndex).WingsEqpObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
+            UserList(UserIndex).WingsEqpSlot = Slot
+    
+            'Set the paper-doll
+            If ObjData.SpriteWings(ObjIndex) <> -1 Then UserList(UserIndex).Char.Wings = ObjData.SpriteWings(ObjIndex)
+            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+    
+        Case Else
+        
+            'We have no idea what type of object it is! OMG!!!
+            Log "User_UseInvItem: Unknown object type used! Object type: " & ObjData.ObjType(ObjIndex), CriticalError '//\\LOGLINE//\\
 
     End Select
     
@@ -3412,7 +3418,7 @@ Dim LoopC As Long
         'Check to update the database
         If MySQLUpdate_UserMap Then
             Log "User_WarpChar: Updating database with new map", CodeTracker '//\\LOGLINE//\\
-            DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).name & "'", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserList(UserIndex).Name & "'", DB_Conn, adOpenStatic, adLockOptimistic
             DB_RS!pos_map = Map
             DB_RS.Update
             DB_RS.Close
@@ -3429,5 +3435,52 @@ Dim LoopC As Long
 
 End Sub
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 1  Code: 2408  Total: 2409 Lines
-':) CommentOnly: 361 (15%)  Commented: 5 (0.2%)  Empty: 499 (20.7%)  Max Logic Depth: 7
+Public Sub Quest_SendText(ByVal UserIndex As Integer, Optional ByVal QuestIndex As Byte = 0)
+
+'*****************************************************************
+'Sends the active quest information to the user
+'*****************************************************************
+Dim i As Byte
+
+    'No index specified, update them all
+    If QuestIndex = 0 Then
+        ConBuf.Clear
+        For i = 1 To MaxQuests
+            If UserList(UserIndex).Quest(i) > 0 Then
+                DB_RS.Open "SELECT text_info FROM quests WHERE `id`='" & UserList(UserIndex).Quest(i) & "'"
+                ConBuf.Allocate 3
+                ConBuf.Put_Byte DataCode.Server_SendQuestInfo
+                ConBuf.Put_Byte i
+                ConBuf.Put_String QuestData(UserList(UserIndex).Quest(i)).Name
+                ConBuf.Put_StringEX DB_RS(0)
+                DB_RS.Close
+            Else
+                ConBuf.Allocate 3
+                ConBuf.Put_Byte DataCode.Server_SendQuestInfo
+                ConBuf.Put_Byte i
+                ConBuf.Put_String vbNullString
+            End If
+        Next i
+    
+    'Index specified, update only that index
+    Else
+        If UserList(UserIndex).Quest(QuestIndex) > 0 Then
+            DB_RS.Open "SELECT text_info FROM quests WHERE `id`='" & QuestIndex & "'"
+            ConBuf.PreAllocate 3
+            ConBuf.Put_Byte DataCode.Server_SendQuestInfo
+            ConBuf.Put_Byte QuestIndex
+            ConBuf.Put_String QuestData(QuestIndex).Name
+            ConBuf.Put_StringEX DB_RS(0)
+            DB_RS.Close
+        Else
+            ConBuf.PreAllocate 3
+            ConBuf.Put_Byte DataCode.Server_SendQuestInfo
+            ConBuf.Put_Byte QuestIndex
+            ConBuf.Put_String vbNullString
+        End If
+    End If
+    
+    'If we put information in the buffer, send it
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+End Sub

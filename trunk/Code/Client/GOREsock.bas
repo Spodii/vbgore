@@ -535,7 +535,6 @@ Dim b() As Byte
                         
                         'Add the length (this is so we can handle packets that get combined in the network)
                         i = UBound(Send(inSox).Buffer) + 1
-                        Debug.Print PacketOutPos
                         ReDim b(0 To i + 2)
                         apiCopyMemory b(2), Send(inSox).Buffer(0), i
                         apiCopyMemory b(0), i, 2
@@ -593,14 +592,10 @@ Public Function GOREsock_SendData(inSox As Long, inData() As Byte) As Long
         If Not (Sockets(inSox).GOREsock_State = soxIdle Or Sockets(inSox).GOREsock_State = soxSend Or Sockets(inSox).GOREsock_State = soxRecv) Then ' If we have initiated a GOREsock_ShutDown, the state would change to Closing
             Let GOREsock_SendData = soxERROR
         Else
-            If UBound(inData) = soxERROR Then ' A value of -1 is returned from UBound if there was no data
-                Let GOREsock_SendData = soxERROR
-            Else
-                ReDim Preserve Send(inSox).Buffer(Send(inSox).Size + UBound(inData) + 1) As Byte    'UBound + 1 = DataLength
-                Call apiCopyMemory(Send(inSox).Buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1) 'Copy the data
-                Let Send(inSox).Size = Send(inSox).Size + UBound(inData) + 1    'Increase according to the data
-                apiWSAAsyncSelect Sockets(inSox).Socket, WindowhWnd, ByVal Sockets(inSox).GOREsock_uMsg, ByVal FD_CLOSEREADWRITE
-            End If
+            ReDim Preserve Send(inSox).Buffer(Send(inSox).Size + UBound(inData) + 1) As Byte    'UBound + 1 = DataLength
+            Call apiCopyMemory(Send(inSox).Buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1) 'Copy the data
+            Let Send(inSox).Size = Send(inSox).Size + UBound(inData) + 1    'Increase according to the data
+            apiWSAAsyncSelect Sockets(inSox).Socket, WindowhWnd, ByVal Sockets(inSox).GOREsock_uMsg, ByVal FD_CLOSEREADWRITE
         End If
     End If
 

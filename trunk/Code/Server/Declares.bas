@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.2            ************
+'************            Official Release: Version 0.3.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -105,6 +105,9 @@ Public Const RunHighPriority As Byte = 1
 'How long objects can be on the ground (in miliseconds) before being removed
 Public Const GroundObjLife As Long = 300000 '5 minutes
 
+'How long an object can remain in memory unused
+Public Const ObjMemoryLife As Long = 600000 '10 minutes
+
 'How long the maps last in memory when no users are on it
 Public Const EmptyMapLife As Long = 1800    '3 minutes
 
@@ -132,7 +135,7 @@ Public Const AGGRESSIVEFACETIME = 4000
 Public Const CalcTraffic As Boolean = True
 
 'Message of the day
-Public Const MOTD1 As String = "Welcome to vbGORE Version 0.3.2!"
+Public Const MOTD1 As String = "Welcome to vbGORE Version 0.3.3!"
 Public Const MOTD2 As String = "For help, please type |/help|"
 Public Const MOTD3 As String = "|Ctrl+W| for inventory, |Ctrl+S| for stats."
 Public Const MOTD4 As String = "Please visit our site at www.vbgore.com"
@@ -147,7 +150,7 @@ Public Const SOUND_WARP As Byte = 1
 Public Const STAT_ATTACKWAIT As Long = 1000 'How many ms a user has to wait till he can attack again
 
 'How many quests a user can accept at once
-Public Const MaxQuests As Byte = 20
+Public Const MaxQuests As Byte = 5
 
 'Time that must elapse for NPC to make another action (in miliseconds) after attacking
 Public Const NPCDelayFight As Long = 1000
@@ -177,7 +180,7 @@ End Type
 '************ Object types ************
 Public Const MAX_INVENTORY_OBJS As Integer = 9999   'Maximum number of objects per slot (same obj)
 Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of slots
-Public Type ObjData
+Public Type udtObjData
     name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
     GrhIndex As Long                'Graphic index
@@ -197,9 +200,10 @@ Public Type ObjData
     RepHPP As Integer               'Percentage of HP to replenish
     RepMPP As Integer               'Percentage of MP to replenish
     RepSPP As Integer               'Percentage of SP to replenish
-    AddStat(1 To NumStats) As Long  'How much to add to the stat by the SID
+    AddStat(FirstModStat To NumStats) As Long   'How much to add to the stat by the SID
+    Pointer As Integer
 End Type
-Public ObjData() As ObjData
+Public ObjData As New ObjData
 Public Type Obj 'Holds info about a object
     ObjIndex As Integer     'Index of the object
     Amount As Integer       'Amount of the object
@@ -352,11 +356,11 @@ Type KnownSkills    'Known skills by the user
     Spike As Byte
 End Type
 Type User   'Holds data for a user
-    name As String      'Name of the user
-    Char As Char        'Defines users looks
-    Desc As String      'User's description
-    Pos As WorldPos     'User's current position
-    Gold As Long        'How much gold the user has
+    name As String          'Name of the user
+    Char As Char            'Defines users looks
+    Desc As String          'User's description
+    Pos As WorldPos         'User's current position
+    Gold As Long            'How much gold the user has
     ConnID As Long          'Connection ID
     SendBuffer() As Byte    'Buffer for sending data
     BufferSize As Long      'Size of the buffer
@@ -374,12 +378,13 @@ Type User   'Holds data for a user
     ArmorEqpSlot As Byte            'Slot of the equipted armorn
     WingsEqpObjIndex As Integer     'The index of the equipted Wings
     WingsEqpSlot As Byte            'Slot of the equipted Wings
-    Counters As UserCounters    'Declares the user counters
-    Stats As UserStats          'Declares the user stats
-    flags As UserFlags          'Declares the user flags
-    Skills As Skills            'Declares the skills casted on the user
-    KnownSkills(1 To NumSkills) As Byte 'Declares the skills known by the user
-    CompletedQuests As String   'The string contains the indexes of all completed quests in order
+    Counters As UserCounters        'Declares the user counters
+    Stats As UserStats              'Declares the user stats
+    flags As UserFlags              'Declares the user Flags
+    Skills As Skills                'Declares the skills casted on the user
+    KnownSkills(1 To NumSkills) As Byte         'Declares the skills known by the user
+    NumCompletedQuests As Integer               'The total number of quests that were completed by the user (Ubound of CompletedQuests)
+    CompletedQuests() As Integer                'Each index of the byte contains the ID of a quest completed
     Quest(1 To MaxQuests) As Integer            'The quest index of the current quests if any
     QuestStatus(1 To MaxQuests) As QuestStatus  'Counts certain parts of quests that require being counted (ie NPC kills)
     MailID(1 To MaxMailPerUser) As Long         'ID of the user's mail
@@ -421,12 +426,12 @@ Type NPC    'Holds all the NPC variables
     AttackGrh As Long       'Grh used when the NPC attacks
     ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
-    flags As NPCFlags               'Declares the NPC's flags
+    flags As NPCFlags               'Declares the NPC's Flags
     Counters As NPCCounters         'Declares the NPC's counters
     NumVendItems As Byte            'Number of items the NPC is vending
     NumDropItems As Byte            'Number of items the NPC is dropping
     BaseStat(1 To NumStats) As Long 'Declares the NPC's stats
-    ModStat(1 To NumStats) As Long  'Declares the NPC's stats
+    ModStat(FirstModStat To NumStats) As Long   'Declares the NPC's stats
     
     'THESE ARRAYS MUST STAY DOWN HERE AT THE BOTTOM OF THE UDT!
     VendItems() As Obj              'Information on the item the NPC is vending
@@ -542,6 +547,7 @@ Public Type ServerFPS
     Users As Integer    'Number of users
     NPCs As Integer     'Number of NPCs
 End Type
+Public ServerFPSUbound As Long
 Public ServerFPS() As ServerFPS
 Public FPSIndex As Long
 

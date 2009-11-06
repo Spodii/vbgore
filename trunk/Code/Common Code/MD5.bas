@@ -4,7 +4,7 @@ Option Explicit
 Private Type MD5_CONTEXT
     State(3) As Long
     Count(1) As Long
-    buffer(63) As Byte
+    Buffer(63) As Byte
 End Type
 
 Private Declare Sub MD5Init Lib "md5.dll" (lpContext As MD5_CONTEXT)
