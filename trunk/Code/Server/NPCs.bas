@@ -114,7 +114,7 @@ Dim X As Long
 
                 'Check for a valid path
                 If Engine_ClearPath(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y) Then
-
+                    
                     'Get the damage
                     Damage = NPC_AttackUser(NPCIndex, X)
 
@@ -208,7 +208,7 @@ Dim X As Long
                 If Engine_ClearPath(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NPCList(X).Pos.X, NPCList(X).Pos.Y) Then
     
                     'Get the damage
-                    Damage = NPC_AttackUser(NPCIndex, X)
+                    Damage = NPC_AttackNPC(NPCIndex, X)
 
                     'Face the NPC to the target
                     ConBuf.PreAllocate 13
@@ -1398,8 +1398,7 @@ Dim SndMP As Byte
 
     Log "Call NPC_MakeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
-'Place character on map
-
+    'Place character on map
     MapInfo(Map).Data(X, Y).NPCIndex = NPCIndex
 
     'Set alive flag

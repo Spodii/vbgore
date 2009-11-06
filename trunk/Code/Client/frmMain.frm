@@ -77,7 +77,7 @@ Dim OldMousePos As POINTAPI
     For LoopC = 1 To NumEvents
         Select Case DevData(LoopC).lOfs
 
-            'Move on X axis
+        'Move on X axis
         Case DIMOFS_X
             If Windowed Then
                 OldMousePos = MousePos
@@ -94,7 +94,7 @@ Dim OldMousePos As POINTAPI
             End If
             Moved = 1
 
-            'Move on Y axis
+        'Move on Y axis
         Case DIMOFS_Y
             If Windowed Then
                 OldMousePos = MousePos
@@ -110,32 +110,8 @@ Dim OldMousePos As POINTAPI
                 If MousePos.Y > ScreenHeight Then MousePos.Y = ScreenHeight
             End If
             Moved = 1
-
-            'Left button pressed
-        Case DIMOFS_BUTTON0
-            If DevData(LoopC).lData = 0 Then
-                MouseLeftDown = 0
-                SelGameWindow = 0
-            Else
-                If MouseLeftDown = 0 Then   'Clicked down
-                    MouseLeftDown = 1
-                    Input_Mouse_LeftClick
-                End If
-            End If
-
-            'Right button pressed
-        Case DIMOFS_BUTTON1
-            If DevData(LoopC).lData = 0 Then
-                MouseRightDown = 0
-                Input_Mouse_RightRelease
-            Else
-                If MouseRightDown = 0 Then  'Clicked down
-                    MouseRightDown = 1
-                    Input_Mouse_RightClick
-                End If
-            End If
-        
-            'Mouse wheel is scrolled
+            
+        'Mouse wheel is scrolled
         Case DIMOFS_Z
             If ShowGameWindow(ChatWindow) And Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, GameWindow.ChatWindow.Screen.X, GameWindow.ChatWindow.Screen.Y, GameWindow.ChatWindow.Screen.Width, GameWindow.ChatWindow.Screen.Height) Then
                 If DevData(LoopC).lData > 0 Then
@@ -153,6 +129,31 @@ Dim OldMousePos As POINTAPI
                     If ZoomLevel < 0 Then ZoomLevel = 0
                 End If
             End If
+
+        'Left button pressed
+        Case DIMOFS_BUTTON0
+            If DevData(LoopC).lData = 0 Then
+                MouseLeftDown = 0
+                SelGameWindow = 0
+            Else
+                If MouseLeftDown = 0 Then   'Clicked down
+                    MouseLeftDown = 1
+                    Input_Mouse_LeftClick
+                End If
+            End If
+
+        'Right button pressed
+        Case DIMOFS_BUTTON1
+            If DevData(LoopC).lData = 0 Then
+                MouseRightDown = 0
+                Input_Mouse_RightRelease
+            Else
+                If MouseRightDown = 0 Then  'Clicked down
+                    MouseRightDown = 1
+                    Input_Mouse_RightClick
+                End If
+            End If
+
         End Select
 
         'Update movement
@@ -200,20 +201,30 @@ End Sub
 Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     'Regain focus to Direct Input mouse
-    If NC Then
-        DIDevice.Acquire
-        NC = 0
-        MousePos.X = X
-        MousePos.Y = Y
-    End If
+    On Error Resume Next
+        If NC Then
+            DIDevice.Acquire
+            NC = 0
+            MousePos.X = X
+            MousePos.Y = Y
+        End If
+    On Error GoTo 0
     
 End Sub
 
 Private Sub Form_Resize()
 
-    If Not DIDevice Is Nothing Then
-        If Windowed = False Then DIDevice.Acquire
-    End If
+    'Regain focus to Direct Input mouse
+    On Error Resume Next
+        If Not DIDevice Is Nothing Then
+            If Windowed = False Then
+                If NC Then
+                    DIDevice.Acquire
+                    NC = 0
+                End If
+            End If
+        End If
+    On Error GoTo 0
     
 End Sub
 

@@ -280,9 +280,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
 
-            'Random clear
-            If Int(Rnd * 10000 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-
             'Check if the particle is ready to die
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
 
@@ -569,9 +566,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
 
-            'Random clear
-            If Int(Rnd * 100 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-
             'Check if the particle is ready to die
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
 
@@ -772,9 +766,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
             'Update The Particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
-
-            'Random clear
-            If Int(Rnd * 10000 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Check if the particle is ready to die
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
@@ -1067,9 +1058,6 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
 
             'Update the particle
             Effect(EffectIndex).Particles(LoopC).UpdateParticle ElapsedTime
-
-            'Random clear
-            If Int(Rnd * 10000 * ElapsedTime) = 0 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Check if the particle is ready to die
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then
@@ -1364,10 +1352,7 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
     
                 'Update The Particle
                 .UpdateParticle ElapsedTime
-    
-                'Random clear
-                'If Int(Rnd * 200 * (10 - ElapsedTime)) = 0 Then .sngA = 0
-                
+
                 'Check if the particle is ready to die
                 If (.sngY > Effect(EffectIndex).Y + 140) Or (.sngA = 0) Then
     

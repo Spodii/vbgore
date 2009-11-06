@@ -123,7 +123,7 @@ Dim i As Byte
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Reduce the user's mana
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
@@ -210,7 +210,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -224,7 +224,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).Name)
@@ -239,7 +239,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -247,7 +247,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Byte Bless_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
@@ -294,7 +294,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -308,7 +308,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Display the effect
     ConBuf.PreAllocate 10
@@ -316,7 +316,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -324,7 +324,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte Pro_Sfx
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.X
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.Y
-    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     If CasterIndex <> TargetIndex Then
@@ -373,7 +373,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -387,7 +387,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Display the effect on the map
     ConBuf.PreAllocate 6
@@ -395,7 +395,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -403,7 +403,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Byte Str_Sfx
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.X
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.Y
-    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     If CasterIndex <> TargetIndex Then
@@ -452,7 +452,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -466,7 +466,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Display the effect
     ConBuf.PreAllocate 6
@@ -474,7 +474,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -482,7 +482,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     ConBuf.Put_Byte Bless_Sfx
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.X
     ConBuf.Put_Byte NPCList(CasterIndex).Pos.Y
-    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     If CasterIndex <> TargetIndex Then
@@ -551,7 +551,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -565,7 +565,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).Name)
@@ -580,7 +580,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -588,7 +588,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte Str_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
@@ -655,7 +655,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -669,7 +669,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).Name)
@@ -684,7 +684,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -692,7 +692,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte Pro_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
@@ -760,7 +760,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -774,7 +774,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
@@ -809,7 +809,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -817,7 +817,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte Bless_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Successfully casted
     Skill_Bless_PCtoPC = 1
@@ -875,7 +875,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -889,7 +889,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
@@ -924,7 +924,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -932,7 +932,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte Str_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Successfully casted
     Skill_Strengthen_PCtoPC = 1
@@ -990,7 +990,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     End If
     
     'Apply the spell's effects
@@ -1004,7 +1004,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
@@ -1039,7 +1039,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Play sound effect
     ConBuf.PreAllocate 4
@@ -1047,7 +1047,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte Pro_Sfx
     ConBuf.Put_Byte UserList(CasterIndex).Pos.X
     ConBuf.Put_Byte UserList(CasterIndex).Pos.Y
-    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToPCArea, CasterIndex, ConBuf.Get_Buffer, , PP_Sound
     
     'Successfully casted
     Skill_Protection_PCtoPC = 1
@@ -1087,7 +1087,7 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Create casting effect
     ConBuf.PreAllocate 6
@@ -1095,7 +1095,7 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Cast on the target
     UserList(TargetIndex).Stats.BaseStat(SID.MinHP) = UserList(TargetIndex).Stats.BaseStat(SID.MinHP) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Value)
@@ -1152,7 +1152,7 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Create casting effect
     ConBuf.PreAllocate 6
@@ -1160,7 +1160,7 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Cast on the target
     NPC_Heal TargetIndex, (NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Value)
@@ -1213,7 +1213,7 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Create casting effect
     ConBuf.PreAllocate 6
@@ -1221,7 +1221,7 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Cast on the target
     NPC_Heal TargetIndex, (UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Value)
@@ -1269,7 +1269,7 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
 
     'Remove the Iron Skin
     If UserList(UserIndex).Skills.IronSkin = 1 Then
@@ -1277,7 +1277,7 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 0
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
 
     Else 'Enable the Iron Skin
         UserList(UserIndex).Skills.IronSkin = 1
@@ -1286,13 +1286,13 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
         ConBuf.Put_Byte SkID.IronSkin
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_DisplaySpell
 
         ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
     End If
     
     UserList(UserIndex).Stats.Update = 1
@@ -1313,6 +1313,12 @@ Public Function Skill_SpikeField(ByVal CasterIndex As Integer) As Byte
 '  |4|3|U|3|4|
 '    |3|4|3|
 '*****************************************************************
+
+'-------------------------------------------------------------------------------------------
+'-------------------------------------------------------------------------------------------
+'--- WARNING! THIS SKILL IS CODED POORLY AND I DO NOT RECOMMEND YOU USE IT IN YOUR GAME! ---
+'-------------------------------------------------------------------------------------------
+'-------------------------------------------------------------------------------------------
 
 Dim aMap As Integer
 Dim aX As Integer
@@ -1341,7 +1347,7 @@ Dim Damage As Long
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_StatusIcons
 
     'Set the values to shorter variables
     Damage = UserList(CasterIndex).Stats.BaseStat(SID.Mag) + 5
@@ -1474,7 +1480,7 @@ Dim Damage As Long
     ConBuf.Put_Byte SkID.SpikeField
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
     'Successfully casted
     Skill_SpikeField = 1
@@ -1512,7 +1518,7 @@ Dim WarCursePower As Integer
     ConBuf.Put_Byte SkID.Warcry
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
-    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Cast on all attackable hostile NPCs in the PC area
     Data_Send ToIndex, CasterIndex, cMessage(49).Data
@@ -1541,7 +1547,7 @@ Dim WarCursePower As Integer
                                         ConBuf.Put_Byte DataCode.Server_IconWarCursed
                                         ConBuf.Put_Byte 1
                                         ConBuf.Put_Integer NPCList(LoopC).Char.CharIndex
-                                        Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map
+                                        Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map, PP_StatusIcons
                                     End If
                                     NPCList(LoopC).Skills.WarCurse = WarCursePower
                                     NPCList(LoopC).Counters.WarCurseCounter = timeGetTime + Warcry_Length

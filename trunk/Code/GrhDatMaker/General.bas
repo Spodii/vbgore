@@ -1,10 +1,9 @@
 Attribute VB_Name = "General"
 Option Explicit
 
-Private Declare Function writeprivateprofilestring Lib "Kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
-Private Declare Function getprivateprofilestring Lib "Kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Private Declare Function WritePrivateProfileString Lib "Kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 
-Function FileExist(File As String, FileType As VbFileAttribute) As Boolean
+Private Function FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
 '*****************************************************************
 'Checks to see if a file exists
@@ -14,25 +13,18 @@ Function FileExist(File As String, FileType As VbFileAttribute) As Boolean
 
 End Function
 
-Private Function GetVar(File As String, Main As String, Var As String) As String
+Private Function IsPowerof2(ByVal Number As Long) As Boolean
+Dim i As Long
+Dim j As Long
 
-'*****************************************************************
-'Get a variable from a a text file
-'*****************************************************************
-
-Dim l As Integer
-Dim Char As String
-Dim sSpaces As String ' This will hold the input that the program will retrieve
-Dim szReturn As String ' This will be the defaul value if the string is not found
-
-    szReturn = ""
-
-    sSpaces = Space$(150) ' This tells the computer how long the longest string can be
-
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
-
-    GetVar = RTrim$(sSpaces)
-    GetVar = Left$(GetVar, Len(GetVar) - 1)
+    For i = 1 To 12
+        j = (2 ^ i)
+        If Number = j Then
+            IsPowerof2 = True
+        Else
+            If j > Number Then Exit Function
+        End If
+    Next i
 
 End Function
 
@@ -41,9 +33,10 @@ Private Sub Main()
 '*****************************************************************
 'Loads GrhRaw.txt, parses and outputs Grh.dat
 '*****************************************************************
-
+Dim ImageSize As CImageInfo
+Dim FileList() As String
 Dim GrhBuffer() As Long  'Holds all the entered Grh values
-
+Dim TempSplit() As String
 Dim sX As Integer
 Dim sY As Integer
 Dim PixelWidth As Integer
@@ -62,6 +55,29 @@ Dim LastFile As Long
 Dim Lines As Long
 
     InitFilePaths
+    
+    'Check for valid file sizes
+    Set ImageSize = New CImageInfo
+    FileList() = AllFilesInFolders(GrhPath, False)
+    For FileNum = 0 To UBound(FileList)
+        If Right$(FileList(FileNum), 4) = ".png" Then
+            ImageSize.ReadImageInfo FileList(FileNum)
+            If IsPowerof2(ImageSize.Width) = False Or IsPowerof2(ImageSize.Height) = False Then
+                TempSplit = Split(FileList(FileNum))
+                TempLine = TempLine & TempSplit(UBound(TempSplit))
+            End If
+        End If
+    Next FileNum
+    If TempLine <> vbNullString Then
+        MsgBox "The following image files were found to not have sizes by powers of 2!" & vbNewLine & _
+            "Leaving images not in powers of 2 will cause lots of graphical errors!" & vbNewLine & vbNewLine & TempLine & _
+            vbNewLine & vbNewLine & "Grh.dat will still be made, but graphics may not appear correctly in-game.", vbOKOnly Or vbCritical
+    End If
+    Set ImageSize = Nothing
+    TempLine = vbNullString
+    FileNum = 0
+    sX = 0
+    sY = 0
 
     'Delete any old file
     If FileExist(DataPath & "grh.dat", vbNormal) = True Then Kill DataPath & "grh.dat"
@@ -71,9 +87,6 @@ Dim Lines As Long
     Seek #1, 1
 
     Open Data2Path & "GrhRaw.txt" For Input As #2
-
-    'Set the buffer's initial size
-    ReDim GrhBuffer(1 To 20000000)
 
     'Do a loop to check for repeat numbers
     While Not EOF(2)
@@ -128,10 +141,13 @@ Dim Lines As Long
             
             ln = Right$(TempLine, Len(TempLine) - Len(CStr(Grh)) - 1)
 
-            If ln <> "" Then
+            If ln <> vbNullString Then
+            
+                'Split the string
+                TempSplit() = Split(ln, "-")
             
                 'Get number of frames and check
-                NumFrames = Val(ReadField(1, ln, "-"))
+                NumFrames = Val(TempSplit(0))
                 If NumFrames <= 0 Then GoTo ErrorHandler
 
                 'Put grh number
@@ -147,38 +163,38 @@ Dim Lines As Long
                     For Frame = 1 To NumFrames
                     
                         'Check and put each frame
-                        Frames(Frame) = Val(ReadField(Frame + 1, ln, "-"))
+                        Frames(Frame) = Val(TempSplit(Frame))
                         If Frames(Frame) <= 0 Or Frames(Frame) > LastGrh Then GoTo ErrorHandler
                         Put #1, , Frames(Frame)
             
                     Next Frame
                     
                     'Check and put speed
-                    Speed = CSng(ReadField(NumFrames + 2, ln, "-"))
+                    Speed = CSng(TempSplit(NumFrames + 1))
                     If Speed = 0 Then GoTo ErrorHandler
                     Put #1, , Speed
                     
                 Else
                     'check and put normal GRH data
-                    FileNum = Val(ReadField(2, ln, "-"))
+                    FileNum = Val(TempSplit(1))
                     If FileNum <= 0 Then GoTo ErrorHandler
                     If FileNum > LastFile Then LastFile = FileNum
 
                     Put #1, , FileNum
 
-                    sX = Val(ReadField(3, ln, "-"))
+                    sX = Val(TempSplit(2))
                     If sX < 0 Then GoTo ErrorHandler
                     Put #1, , sX
 
-                    sY = Val(ReadField(4, ln, "-"))
+                    sY = Val(TempSplit(3))
                     If sY < 0 Then GoTo ErrorHandler
                     Put #1, , sY
 
-                    PixelWidth = Val(ReadField(5, ln, "-"))
+                    PixelWidth = Val(TempSplit(4))
                     If PixelWidth <= 0 Then GoTo ErrorHandler
                     Put #1, , PixelWidth
 
-                    PixelHeight = Val(ReadField(6, ln, "-"))
+                    PixelHeight = Val(TempSplit(5))
                     If PixelHeight <= 0 Then GoTo ErrorHandler
                     Put #1, , PixelHeight
                 End If
@@ -208,41 +224,13 @@ ErrorHandler:
 
 End Sub
 
-Private Function ReadField(ByVal field_pos As Long, ByVal text As String, ByVal delimiter As String) As String
-
-'*****************************************************************
-'Gets a field from a delimited string
-'*****************************************************************
-
-Dim i As Long
-Dim LastPos As Long
-Dim CurrentPos As Long
-
-    LastPos = 0
-    CurrentPos = 0
-
-    For i = 1 To field_pos
-        LastPos = CurrentPos
-        CurrentPos = InStr(LastPos + 1, text, delimiter, vbBinaryCompare)
-    Next i
-
-    If CurrentPos = 0 Then
-        ReadField = Mid$(text, LastPos + 1, Len(text) - LastPos)
-    Else
-        ReadField = Mid$(text, LastPos + 1, CurrentPos - LastPos - 1)
-    End If
-
-End Function
-
 Private Sub WriteVar(File As String, Main As String, Var As String, value As String)
 
 '*****************************************************************
 'Writes a var to a text file
 '*****************************************************************
 
-    writeprivateprofilestring Main, Var, value, File
+    WritePrivateProfileString Main, Var, value, File
 
 End Sub
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:56)  Decl: 62  Code: 250  Total: 312 Lines
-':) CommentOnly: 88 (28.2%)  Commented: 4 (1.3%)  Empty: 67 (21.5%)  Max Logic Depth: 7

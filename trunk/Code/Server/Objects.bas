@@ -135,7 +135,7 @@ Public Sub Obj_Erase(ByVal Num As Integer, ByVal ObjSlot As Byte, ByVal Map As B
         ConBuf.Put_Byte DataCode.Server_EraseObject
         ConBuf.Put_Byte CByte(X)
         ConBuf.Put_Byte CByte(Y)
-        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map
+        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map, PP_GroundObjects
     End If
 
 End Sub
@@ -234,7 +234,7 @@ Sub Obj_Make(Obj As Obj, ByVal ObjSlot As Byte, ByVal Map As Integer, ByVal X As
         ConBuf.Put_Long ObjData.GrhIndex(Obj.ObjIndex)
         ConBuf.Put_Byte X
         ConBuf.Put_Byte Y
-        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map
+        Data_Send ToMap, 0, ConBuf.Get_Buffer, Map, PP_GroundObjects
     End If
     
 End Sub

@@ -6,6 +6,7 @@ Private Sub Quest_CheckIfComplete(ByVal UserIndex As Integer, ByVal NPCIndex As 
 '*****************************************************************
 'Checks if a quest is ready to be completed
 '*****************************************************************
+Dim ReqObjSlot As Byte
 Dim Slot As Byte
 Dim s As String
 Dim i As Long
@@ -26,6 +27,9 @@ Dim i As Long
         'Check through the user's slots looking for the object of the same index
         For Slot = 1 To MAX_INVENTORY_SLOTS
             If UserList(UserIndex).Object(Slot).ObjIndex = QuestData(NPCList(NPCIndex).Quest).FinishReqObj Then
+                
+                'Cache the required object slot (we will be using it later if the quest is complete)
+                ReqObjSlot = Slot
 
                 'Check the amount the user has
                 If UserList(UserIndex).Object(Slot).Amount < QuestData(NPCList(NPCIndex).Quest).FinishReqObjAmount Then
@@ -47,6 +51,8 @@ Dim i As Long
         Next Slot
 
     End If
+
+    '*** Quest was completed! ***
 
     'Say the finishing text
     ConBuf.PreAllocate 5 + Len(NPCList(NPCIndex).Name) + Len(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt)
@@ -76,7 +82,12 @@ Dim i As Long
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     End If
     
-    'Object reward
+    'Remove the quest object
+    If ReqObjSlot > 0 Then
+        User_RemoveObj UserIndex, ReqObjSlot, QuestData(NPCList(NPCIndex).Quest).FinishReqObjAmount
+    End If
+    
+    'Give the object reward
     If QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishRewObj > 0 Then
         User_GiveObj UserIndex, QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishRewObj, QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishRewObjAmount
     End If

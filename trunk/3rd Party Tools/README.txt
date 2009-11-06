@@ -67,12 +67,23 @@ Spodi
 OptiPNG website:
 http://optipng.sourceforge.net/
 
+PNGRewrite website:
+http://entropymine.com/jason/pngrewrite/
+
+PNGOut website:
+http://advsys.net/ken/utils.htm#pngout
+
+ADVPng website:
+http://advancemame.sourceforge.net/comp-readme.html
+
 Description:
 The OptiPNG project is a wrapper for the OptiPNG compression library that is designed to optimize the
 file format of PNG files, the main format used by vbGORE, to a smaller size. The library works by restructuring 
 the data in the file to be more effecient. Although it is a lossy compression in a technical sense, the lost 
 data is not a part of the visual display. Only unused information that does not affect the visual aspect 
 of the PNG files is changed.
+OptiPNG now also offers compression with pngout, advpng and pngrewrite. The compression takes at least twice 
+as long now, but it is definitely worth it. It goes in the order of pngrewrite -> OptiPNG -> pngout -> advpng.
 
 =========
 == UPX ==

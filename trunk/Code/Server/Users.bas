@@ -754,12 +754,12 @@ ErrOut:
 
 End Sub
 
-
 Public Sub User_GetObj(ByVal UserIndex As Integer)
 
 '*****************************************************************
 'Puts a object in a User's slot from the current User's position
 '*****************************************************************
+Dim AmountTaken As Integer
 Dim ObjSlot As Byte
 Dim Slot As Byte
 Dim Map As Integer
@@ -831,76 +831,14 @@ Dim i As Long
         Exit Sub
     End If
     
-    'Check to see if User already has the object type
-    Slot = 1
-    If ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) > 1 Then
-        Do Until UserList(UserIndex).Object(Slot).ObjIndex = MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex
-            Slot = Slot + 1
-            If Slot > MAX_INVENTORY_SLOTS Then
-                Log "User_GetObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
-                Exit Do
-            End If
-        Loop
-    Else
-        Slot = MAX_INVENTORY_SLOTS + 1  'Override to force to check the next slot
-    End If
-
-    'Else check if there is a empty slot
-    If Slot > MAX_INVENTORY_SLOTS Then
-        Slot = 1
-        Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
-            Slot = Slot + 1
-
-            If Slot > MAX_INVENTORY_SLOTS Then
-                Data_Send ToIndex, UserIndex, cMessage(26).Data
-                Exit Sub
-            End If
-        Loop
-    End If
-
-    'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount <= ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) Then
-
-        'Tell the user they recieved the items
-        ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex))
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 27
-        ConBuf.Put_Integer MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount
-        ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex)
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'User takes all the items
-        UserList(UserIndex).Object(Slot).ObjIndex = MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex
-        UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount
-        Obj_Erase MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount, ObjSlot, Map, X, Y
-
-    Else
-        'Over MAX_INV_OBJS
-        If MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount < UserList(UserIndex).Object(Slot).Amount Then
-            'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex))
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs(ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
-            ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs(ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
-        Else
-            'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex))
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs((ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
-            ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs((ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
-        End If
-        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex)
-    End If
-
-    'Update the user's inventory
-    User_UpdateInv False, UserIndex, Slot
-
+    'Give the user the object
+    AmountTaken = User_GiveObj(UserIndex, MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex, MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount)
+    If AmountTaken = 0 Then Exit Sub
+    
+    'Remove the amount from the ground
+    Obj_Erase AmountTaken, i, Map, X, Y
+    Obj_CleanMapTile Map, X, Y
+    
 ErrOut:
 
 End Sub
@@ -943,114 +881,202 @@ Public Function User_CorrectServer(ByVal UserName As String, ByVal UserIndex As 
 
 End Function
 
-Public Sub User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer, Optional ByVal UpdateInv As Boolean = True)
+Public Sub User_RemoveObj(ByVal UserIndex As Integer, ByVal Slot As Byte, ByVal Amount As Integer, Optional ByVal UpdateInv As Boolean = True)
 
 '*****************************************************************
-'Give the user an object
+'Remove an object away from the user
 '*****************************************************************
 
-Dim Slot As Byte
-
-    Log "Call User_GiveObj(" & UserIndex & "," & ObjIndex & "," & Amount & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call User_TakeObj(" & UserIndex & "," & Slot & "," & Amount & "," & UpdateInv & ")", CodeTracker  '//\\LOGLINE//\\
 
     'Check for invalid values
     If UserIndex <= 0 Then
         Log "User_GiveObj: UserIndex <= 0", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If ObjIndex <= 0 Then
-        Log "User_GiveObj: ObjIndex <= 0", CodeTracker '//\\LOGLINE//\\
+    If Slot <= 0 Then
+        Log "User_GiveObj: Slot <= 0", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
     If UserIndex > LastUser Then
         Log "User_GiveObj: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If ObjIndex > NumObjDatas Then
-        Log "User_GiveObj: ObjIndex > NumObjDatas", CodeTracker '//\\LOGLINE//\\
-        Exit Sub
-    End If
 
-    'Check to see if User already has this object
-    Slot = 1
-    If ObjData.Stacking(ObjIndex) > 1 Then
-        Do Until UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
-            Slot = Slot + 1
-            If Slot > MAX_INVENTORY_SLOTS Then Exit Do
-        Loop
-    ElseIf ObjData.Stacking(ObjIndex) = 1 Then
-        Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
-            Slot = Slot + 1
-            If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
-        Loop
-    Else
-        'Error :x
-        Exit Sub
-    End If
-
-    'Else check if there is a empty slot
-    If Slot > MAX_INVENTORY_SLOTS Then
-        Slot = 1
-        Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
-            Log "User_GiveObj: Checking slot " & Slot, CodeTracker '//\\LOGLINE//\\
-            Slot = Slot + 1
-
-            If Slot > MAX_INVENTORY_SLOTS Then
-                Log "User_GiveObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
-                Data_Send ToIndex, UserIndex, cMessage(26).Data
-                Exit Sub
-            End If
-        Loop
-    End If
-
-    'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + Amount <= ObjData.Stacking(ObjIndex) Then
-
-        'Tell the user they recieved the items
-        ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 28
-        ConBuf.Put_Integer Amount
-        ConBuf.Put_String ObjData.Name(ObjIndex)
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-        'User takes all the items
-        UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
-        UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + Amount
-
-    Else
+    'Check that the user has an object in the slot
+    If UserList(UserIndex).Object(Slot).ObjIndex > 0 Then
     
-        'Over MAX_INV_OBJS
-        If Amount < UserList(UserIndex).Object(Slot).Amount Then
+        'The user has an object, so check how much will be removed
+        If UserList(UserIndex).Object(Slot).Amount <= Amount Then
         
-            'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
-            ConBuf.Put_Byte DataCode.Server_Message
-            ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs(ObjData.Stacking(ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + Amount))
-            ConBuf.Put_String ObjData.Name(ObjIndex)
-            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            'All of the object will need to be removed
+            User_RemoveInvItem UserIndex, Slot, False
+            UserList(UserIndex).Object(Slot).Amount = 0
+            UserList(UserIndex).Object(Slot).ObjIndex = 0
+            UserList(UserIndex).Object(Slot).Equipped = 0
+            
         Else
         
+            'Remove just a certain amount of the object
+            UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - Amount
+            
+        End If
+        
+        'Update the inventory on the client
+        If UpdateInv Then User_UpdateInv False, UserIndex, Slot
+        
+    End If
+
+End Sub
+
+Public Function User_GiveObj(ByVal UserIndex As Integer, ByVal ObjIndex As Integer, ByVal Amount As Integer, Optional ByVal UpdateInv As Boolean = True) As Integer
+
+'*****************************************************************
+'Give the user an object
+'Returns the amount of the object taken
+'*****************************************************************
+Dim StartAmount As Integer
+Dim Slot As Byte
+
+    Log "Call User_GiveObj(" & UserIndex & "," & ObjIndex & "," & Amount & "," & UpdateInv & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for invalid values
+    If UserIndex <= 0 Then
+        Log "User_GiveObj: UserIndex <= 0", CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If ObjIndex <= 0 Then
+        Log "User_GiveObj: ObjIndex <= 0", CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If UserIndex > LastUser Then
+        Log "User_GiveObj: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    If ObjIndex > NumObjDatas Then
+        Log "User_GiveObj: ObjIndex > NumObjDatas", CodeTracker '//\\LOGLINE//\\
+        Exit Function
+    End If
+    
+    'Set the starting amount
+    StartAmount = Amount
+    
+    'This loop will go until either:
+    ' - the user runs out of inventory room
+    ' - the user has been given all of the objects
+    Do
+    
+        'Check to see if User already has this object
+        Slot = 1
+        If ObjData.Stacking(ObjIndex) > 1 Then
+            Do
+                
+                'Loop until we find a slot that we can place at least some of the object in
+                If UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex Then
+                    If UserList(UserIndex).Object(Slot).ObjIndex < ObjData.Stacking(ObjIndex) Then Exit Do
+                End If
+                
+                'If no free slots are found, we will force an overflow that will check for an empty slot
+                Slot = Slot + 1
+                If Slot > MAX_INVENTORY_SLOTS Then Exit Do
+                
+            Loop
+        ElseIf ObjData.Stacking(ObjIndex) = 1 Then
+        
+            'If the item can't be stacked, we will just find the next free slot by forcing an overflow
+            Slot = MAX_INVENTORY_SLOTS + 1
+            
+        Else
+            'Error :x
+            Exit Function
+        End If
+    
+        'If there was an overflow, check if there is a empty slot
+        If Slot > MAX_INVENTORY_SLOTS Then
+            
+            'Start with the first slot
+            Slot = 1
+            
+            'Loop until we find a slot without an object
+            Do Until UserList(UserIndex).Object(Slot).ObjIndex = 0
+                Log "User_GiveObj: Checking slot " & Slot, CodeTracker '//\\LOGLINE//\\
+                Slot = Slot + 1
+                
+                'If we pass the limit, theres nothing else we can do
+                If Slot > MAX_INVENTORY_SLOTS Then
+                    Log "User_GiveObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
+                    Data_Send ToIndex, UserIndex, cMessage(26).Data
+                    Exit Function
+                End If
+                
+            Loop
+            
+        End If
+    
+        'Fill object slot
+        If UserList(UserIndex).Object(Slot).Amount + Amount <= ObjData.Stacking(ObjIndex) Then
+    
             'Tell the user they recieved the items
             ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs((ObjData.Stacking(ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - Amount)
+            ConBuf.Put_Integer Amount
             ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+            'User takes all the items
+            UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
+            UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount + Amount
+            
+            'Update the amount values
+            User_GiveObj = StartAmount
+            Amount = 0
+    
+        Else
         
+            'Over MAX_INV_OBJS
+            If Amount < UserList(UserIndex).Object(Slot).Amount Then
+            
+                'Tell the user they recieved the items
+                ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 28
+                ConBuf.Put_Integer Abs(ObjData.Stacking(ObjIndex) - (UserList(UserIndex).Object(Slot).Amount))
+                ConBuf.Put_String ObjData.Name(ObjIndex)
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                
+                'Update the amount values
+                Amount = Amount - Abs(ObjData.Stacking(ObjIndex) - (UserList(UserIndex).Object(Slot).Amount))
+                User_GiveObj = StartAmount - (StartAmount - Amount)
+                
+            Else
+            
+                'Tell the user they recieved the items
+                ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 28
+                ConBuf.Put_Integer Abs((ObjData.Stacking(ObjIndex) + UserList(UserIndex).Object(Slot).Amount))
+                ConBuf.Put_String ObjData.Name(ObjIndex)
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                
+                'Update the amount values
+                Amount = Amount - Abs((ObjData.Stacking(ObjIndex) + UserList(UserIndex).Object(Slot).Amount))
+                User_GiveObj = StartAmount - (StartAmount - Amount)
+            
+            End If
+            
+            'Set the user's amount to the stacking max
+            UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex
+            UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(ObjIndex)
+            
         End If
+    
+        'Update the user's inventory
+        If UpdateInv Then User_UpdateInv False, UserIndex, Slot
         
-        'Set the user's amount to the stacking max
-        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(ObjIndex)
-        
-    End If
+    Loop While Amount > 0
 
-    'Update the user's inventory
-    If UpdateInv Then User_UpdateInv False, UserIndex, Slot
-
-End Sub
+End Function
 
 Public Sub User_Kill(ByVal UserIndex As Integer)
 
@@ -1162,7 +1188,7 @@ Dim MsgData As MailData
                         End If
                     Next LoopC
                     ConBuf.Put_Byte 255 'The byte of value 255 states that we have reached the end, while 0 or 1 means it is a new message (states the "New" flag)
-                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
                     Exit Sub
                 End If
             End If
@@ -1228,7 +1254,7 @@ Dim MsgData As MailData
                     End If
                 Next LoopC
                 ConBuf.Put_Byte 255 'Terminator byte - tells the client the list has ended
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Banking
             Else
                 '*** Check for NPC vendor ***
                 If NPCList(TempIndex).NumVendItems > 0 Then
@@ -1807,7 +1833,7 @@ Dim LoopC As Integer
             ConBuf.Put_String ObjData.Name(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
             ConBuf.Put_Long ObjData.Value(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
         Next LoopC
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Trading
         UserList(UserIndex).flags.TradeWithNPC = NPCIndex
     End If
 
@@ -1838,7 +1864,7 @@ Public Sub User_UpdateBank(ByVal UserIndex As Integer, ByVal Slot As Byte)
     End If
     
     'Send the data
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Banking
 
 End Sub
 
@@ -1920,7 +1946,7 @@ Dim i As Long
                         ConBuf.Put_Long ObjData.GrhIndex(MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex)
                         ConBuf.Put_Byte X
                         ConBuf.Put_Byte Y
-                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map
+                        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map, PP_GroundObjects
                     End If
                 Next i
             End If
@@ -2164,7 +2190,7 @@ Dim ObjIndex As Integer
                 ConBuf.Put_Byte UserList(UserIndex).Pos.X
                 ConBuf.Put_Byte UserList(UserIndex).Pos.Y
                 ConBuf.Put_Byte ObjData.UseSfx(ObjIndex)
-                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer, , PP_Sound
             End If
             
         Case OBJTYPE_WEAPON

@@ -22,6 +22,7 @@ Begin VB.Form frmMain
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
       TabIndex        =   61
+      TabStop         =   0   'False
       Text            =   "frmMain.frx":17D2A
       Top             =   5280
       Width           =   8535
@@ -30,7 +31,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   9
       Left            =   1080
-      TabIndex        =   60
+      TabIndex        =   47
       Top             =   4320
       Width           =   1215
    End
@@ -38,7 +39,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   8
       Left            =   1080
-      TabIndex        =   59
+      TabIndex        =   42
       Top             =   3960
       Width           =   1215
    End
@@ -46,7 +47,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   7
       Left            =   1080
-      TabIndex        =   58
+      TabIndex        =   37
       Top             =   3600
       Width           =   1215
    End
@@ -54,7 +55,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   6
       Left            =   1080
-      TabIndex        =   57
+      TabIndex        =   32
       Top             =   3240
       Width           =   1215
    End
@@ -62,7 +63,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   5
       Left            =   1080
-      TabIndex        =   56
+      TabIndex        =   27
       Top             =   2880
       Width           =   1215
    End
@@ -70,7 +71,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   4
       Left            =   1080
-      TabIndex        =   55
+      TabIndex        =   22
       Top             =   2520
       Width           =   1215
    End
@@ -78,7 +79,7 @@ Begin VB.Form frmMain
       Height          =   285
       Index           =   3
       Left            =   1080
-      TabIndex        =   54
+      TabIndex        =   17
       Top             =   2160
       Width           =   1215
    End
@@ -86,14 +87,14 @@ Begin VB.Form frmMain
       Caption         =   "Encryption / Compression"
       Height          =   5055
       Left            =   120
-      TabIndex        =   0
+      TabIndex        =   52
       Top             =   120
       Width           =   8535
       Begin VB.TextBox SubTxt 
          Height          =   285
          Index           =   2
          Left            =   960
-         TabIndex        =   53
+         TabIndex        =   12
          Top             =   1680
          Width           =   1215
       End
@@ -101,7 +102,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   1
          Left            =   960
-         TabIndex        =   52
+         TabIndex        =   7
          Top             =   1320
          Width           =   1215
       End
@@ -109,7 +110,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   0
          Left            =   960
-         TabIndex        =   51
+         TabIndex        =   2
          Top             =   960
          Width           =   1215
       End
@@ -117,7 +118,7 @@ Begin VB.Form frmMain
          Caption         =   "Delete Source"
          Height          =   195
          Left            =   7080
-         TabIndex        =   49
+         TabIndex        =   51
          ToolTipText     =   "Checking this box will delete a file after compressing or encrypting it, leaving only the compressed / encrypted copy"
          Top             =   4680
          Width           =   1335
@@ -126,7 +127,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   9
          Left            =   7680
-         TabIndex        =   47
+         TabIndex        =   50
          Top             =   4200
          Width           =   735
       End
@@ -142,7 +143,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   9
          Left            =   2280
-         TabIndex        =   45
+         TabIndex        =   48
          Top             =   4200
          Width           =   2175
       End
@@ -150,7 +151,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   9
          Left            =   4560
-         TabIndex        =   44
+         TabIndex        =   49
          Top             =   4200
          Width           =   3015
       End
@@ -158,7 +159,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   8
          Left            =   7680
-         TabIndex        =   43
+         TabIndex        =   45
          Top             =   3840
          Width           =   735
       End
@@ -166,7 +167,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   8
          Left            =   120
-         TabIndex        =   42
+         TabIndex        =   41
          Top             =   3840
          Width           =   735
       End
@@ -174,7 +175,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   8
          Left            =   2280
-         TabIndex        =   41
+         TabIndex        =   43
          Top             =   3840
          Width           =   2175
       End
@@ -182,7 +183,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   8
          Left            =   4560
-         TabIndex        =   40
+         TabIndex        =   44
          Top             =   3840
          Width           =   3015
       End
@@ -190,7 +191,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   7
          Left            =   7680
-         TabIndex        =   39
+         TabIndex        =   40
          Top             =   3480
          Width           =   735
       End
@@ -198,7 +199,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   7
          Left            =   120
-         TabIndex        =   38
+         TabIndex        =   36
          Top             =   3480
          Width           =   735
       End
@@ -206,7 +207,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   7
          Left            =   2280
-         TabIndex        =   37
+         TabIndex        =   38
          Top             =   3480
          Width           =   2175
       End
@@ -214,7 +215,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   7
          Left            =   4560
-         TabIndex        =   36
+         TabIndex        =   39
          Top             =   3480
          Width           =   3015
       End
@@ -222,7 +223,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   0
          Left            =   7680
-         TabIndex        =   34
+         TabIndex        =   5
          Top             =   960
          Width           =   735
       End
@@ -230,7 +231,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   1
          Left            =   7680
-         TabIndex        =   33
+         TabIndex        =   10
          Top             =   1320
          Width           =   735
       End
@@ -238,7 +239,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   2
          Left            =   7680
-         TabIndex        =   32
+         TabIndex        =   15
          Top             =   1680
          Width           =   735
       End
@@ -246,103 +247,103 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   3
          Left            =   7680
-         TabIndex        =   31
+         TabIndex        =   20
          Top             =   2040
          Width           =   735
       End
       Begin VB.TextBox AExTxt 
          Height          =   285
          Index           =   4
+         Left            =   7680
+         TabIndex        =   25
+         Top             =   2400
+         Width           =   735
+      End
+      Begin VB.TextBox AExTxt 
+         Height          =   285
+         Index           =   5
          Left            =   7680
          TabIndex        =   30
-         Top             =   2400
+         Top             =   2760
          Width           =   735
       End
       Begin VB.TextBox AExTxt 
          Height          =   285
-         Index           =   5
+         Index           =   6
          Left            =   7680
+         TabIndex        =   35
+         Top             =   3120
+         Width           =   735
+      End
+      Begin VB.TextBox KeyTxt 
+         Height          =   285
+         Index           =   6
+         Left            =   4560
+         TabIndex        =   34
+         Top             =   3120
+         Width           =   3015
+      End
+      Begin VB.ComboBox AlgCmb 
+         Height          =   315
+         Index           =   6
+         Left            =   2280
+         TabIndex        =   33
+         Top             =   3120
+         Width           =   2175
+      End
+      Begin VB.TextBox ExTxt 
+         Height          =   285
+         Index           =   6
+         Left            =   120
+         TabIndex        =   31
+         Top             =   3120
+         Width           =   735
+      End
+      Begin VB.TextBox KeyTxt 
+         Height          =   285
+         Index           =   5
+         Left            =   4560
          TabIndex        =   29
          Top             =   2760
-         Width           =   735
-      End
-      Begin VB.TextBox AExTxt 
-         Height          =   285
-         Index           =   6
-         Left            =   7680
-         TabIndex        =   28
-         Top             =   3120
-         Width           =   735
-      End
-      Begin VB.TextBox KeyTxt 
-         Height          =   285
-         Index           =   6
-         Left            =   4560
-         TabIndex        =   27
-         Top             =   3120
          Width           =   3015
       End
       Begin VB.ComboBox AlgCmb 
          Height          =   315
-         Index           =   6
+         Index           =   5
          Left            =   2280
-         TabIndex        =   26
-         Top             =   3120
+         TabIndex        =   28
+         Top             =   2760
          Width           =   2175
       End
       Begin VB.TextBox ExTxt 
          Height          =   285
-         Index           =   6
+         Index           =   5
          Left            =   120
-         TabIndex        =   25
-         Top             =   3120
+         TabIndex        =   26
+         Top             =   2760
          Width           =   735
       End
       Begin VB.TextBox KeyTxt 
          Height          =   285
-         Index           =   5
+         Index           =   4
          Left            =   4560
          TabIndex        =   24
-         Top             =   2760
+         Top             =   2400
          Width           =   3015
       End
       Begin VB.ComboBox AlgCmb 
          Height          =   315
-         Index           =   5
+         Index           =   4
          Left            =   2280
          TabIndex        =   23
-         Top             =   2760
+         Top             =   2400
          Width           =   2175
       End
       Begin VB.TextBox ExTxt 
          Height          =   285
-         Index           =   5
-         Left            =   120
-         TabIndex        =   22
-         Top             =   2760
-         Width           =   735
-      End
-      Begin VB.TextBox KeyTxt 
-         Height          =   285
          Index           =   4
-         Left            =   4560
+         Left            =   120
          TabIndex        =   21
-         Top             =   2400
-         Width           =   3015
-      End
-      Begin VB.ComboBox AlgCmb 
-         Height          =   315
-         Index           =   4
-         Left            =   2280
-         TabIndex        =   20
-         Top             =   2400
-         Width           =   2175
-      End
-      Begin VB.TextBox ExTxt 
-         Height          =   285
-         Index           =   4
-         Left            =   120
-         TabIndex        =   19
          Top             =   2400
          Width           =   735
       End
@@ -350,7 +351,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   3
          Left            =   4560
-         TabIndex        =   18
+         TabIndex        =   19
          Top             =   2040
          Width           =   3015
       End
@@ -358,7 +359,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   3
          Left            =   2280
-         TabIndex        =   17
+         TabIndex        =   18
          Top             =   2040
          Width           =   2175
       End
@@ -374,23 +375,23 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   2
          Left            =   4560
-         TabIndex        =   15
-         Top             =   1680
-         Width           =   3015
-      End
-      Begin VB.ComboBox AlgCmb 
-         Height          =   315
-         Index           =   2
-         Left            =   2280
          TabIndex        =   14
          Top             =   1680
+         Width           =   3015
+      End
+      Begin VB.ComboBox AlgCmb 
+         Height          =   315
+         Index           =   2
+         Left            =   2280
+         TabIndex        =   13
+         Top             =   1680
          Width           =   2175
       End
       Begin VB.TextBox ExTxt 
          Height          =   285
          Index           =   2
          Left            =   120
-         TabIndex        =   13
+         TabIndex        =   11
          Top             =   1680
          Width           =   735
       End
@@ -398,7 +399,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   1
          Left            =   4560
-         TabIndex        =   12
+         TabIndex        =   9
          Top             =   1320
          Width           =   3015
       End
@@ -406,7 +407,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   1
          Left            =   2280
-         TabIndex        =   11
+         TabIndex        =   8
          Top             =   1320
          Width           =   2175
       End
@@ -414,7 +415,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   1
          Left            =   120
-         TabIndex        =   10
+         TabIndex        =   6
          Top             =   1320
          Width           =   735
       End
@@ -422,7 +423,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   0
          Left            =   4560
-         TabIndex        =   9
+         TabIndex        =   4
          Top             =   960
          Width           =   3015
       End
@@ -430,7 +431,7 @@ Begin VB.Form frmMain
          Height          =   315
          Index           =   0
          Left            =   2280
-         TabIndex        =   8
+         TabIndex        =   3
          Top             =   960
          Width           =   2175
       End
@@ -438,7 +439,7 @@ Begin VB.Form frmMain
          Height          =   285
          Index           =   0
          Left            =   120
-         TabIndex        =   5
+         TabIndex        =   1
          Top             =   960
          Width           =   735
       End
@@ -446,7 +447,8 @@ Begin VB.Form frmMain
          Caption         =   "Decompress / Decrypt"
          Height          =   255
          Left            =   2040
-         TabIndex        =   3
+         TabIndex        =   54
+         TabStop         =   0   'False
          Top             =   4680
          Width           =   1815
       End
@@ -454,14 +456,15 @@ Begin VB.Form frmMain
          Caption         =   "Compress / Encrypt"
          Height          =   255
          Left            =   120
-         TabIndex        =   2
+         TabIndex        =   53
+         TabStop         =   0   'False
          Top             =   4680
          Width           =   1815
       End
       Begin VB.TextBox DirTxt 
          Height          =   285
          Left            =   1080
-         TabIndex        =   1
+         TabIndex        =   0
          ToolTipText     =   "Root folder path to use when searching for all the files with the defined extensions"
          Top             =   240
          Width           =   7335
@@ -472,7 +475,7 @@ Begin VB.Form frmMain
          Height          =   195
          Index           =   5
          Left            =   960
-         TabIndex        =   50
+         TabIndex        =   60
          Top             =   720
          Width           =   810
       End
@@ -481,7 +484,7 @@ Begin VB.Form frmMain
          Height          =   435
          Index           =   1
          Left            =   120
-         TabIndex        =   48
+         TabIndex        =   59
          Top             =   540
          Width           =   735
       End
@@ -490,7 +493,7 @@ Begin VB.Form frmMain
          Height          =   435
          Index           =   4
          Left            =   7680
-         TabIndex        =   35
+         TabIndex        =   58
          Top             =   540
          Width           =   735
       End
@@ -500,7 +503,7 @@ Begin VB.Form frmMain
          Height          =   195
          Index           =   3
          Left            =   4560
-         TabIndex        =   7
+         TabIndex        =   57
          Top             =   720
          Width           =   315
       End
@@ -510,7 +513,7 @@ Begin VB.Form frmMain
          Height          =   195
          Index           =   2
          Left            =   2280
-         TabIndex        =   6
+         TabIndex        =   56
          Top             =   720
          Width           =   690
       End
@@ -520,7 +523,7 @@ Begin VB.Form frmMain
          Height          =   195
          Index           =   0
          Left            =   120
-         TabIndex        =   4
+         TabIndex        =   55
          Top             =   270
          Width           =   840
       End
@@ -587,6 +590,30 @@ End Sub
 Private Sub AExTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     AExTxt(Index).ToolTipText = "Extension of the file after being run through the defined algorithm"
+
+End Sub
+
+Private Sub AExTxt_GotFocus(Index As Integer)
+
+    AExTxt(Index).BackColor = &H80000013
+
+End Sub
+
+Private Sub AExTxt_LostFocus(Index As Integer)
+
+    AExTxt(Index).BackColor = &H80000005
+
+End Sub
+
+Private Sub AlgCmb_GotFocus(Index As Integer)
+
+    AlgCmb(Index).BackColor = &H80000013
+
+End Sub
+
+Private Sub AlgCmb_LostFocus(Index As Integer)
+
+    AlgCmb(Index).BackColor = &H80000005
 
 End Sub
 
@@ -877,6 +904,30 @@ Private Sub DecompBtn_Click()
 
 End Sub
 
+Private Sub DirTxt_GotFocus()
+
+    DirTxt.BackColor = &H80000013
+
+End Sub
+
+Private Sub DirTxt_LostFocus()
+
+    DirTxt.BackColor = &H80000005
+
+End Sub
+
+Private Sub ExTxt_GotFocus(Index As Integer)
+
+    ExTxt(Index).BackColor = &H80000013
+
+End Sub
+
+Private Sub ExTxt_LostFocus(Index As Integer)
+
+    ExTxt(Index).BackColor = &H80000005
+
+End Sub
+
 Private Sub ExTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     ExTxt(Index).ToolTipText = "Extension of the file before being run through the defined algorithm"
@@ -1054,9 +1105,33 @@ Private Sub KeyTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integ
 
 End Sub
 
+Private Sub KeyTxt_GotFocus(Index As Integer)
+
+    KeyTxt(Index).BackColor = &H80000013
+
+End Sub
+
+Private Sub KeyTxt_LostFocus(Index As Integer)
+
+    KeyTxt(Index).BackColor = &H80000005
+
+End Sub
+
 Private Sub LogLIst_Change()
 
     LogList.SelStart = Len(LogList.Text)
+
+End Sub
+
+Private Sub SubTxt_GotFocus(Index As Integer)
+
+    SubTxt(Index).BackColor = &H80000013
+
+End Sub
+
+Private Sub SubTxt_LostFocus(Index As Integer)
+
+    SubTxt(Index).BackColor = &H80000005
 
 End Sub
 

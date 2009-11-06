@@ -167,8 +167,11 @@ End Function
 
 Private Sub OptimizePNG(ByVal File As String)
 
+    CommandLine App.Path & "\pngrewrite.exe " & Chr$(34) & File & Chr$(34) & " " & Chr$(34) & File & Chr$(34)
     CommandLine App.Path & "\optipngconsole.exe -o7 -q " & Chr$(34) & File & Chr$(34)
-
+    CommandLine App.Path & "\pngout.exe /q /y " & Chr$(34) & File & Chr$(34) & " " & Chr$(34) & File & Chr$(34)
+    CommandLine App.Path & "\advpng.exe -z -4 " & Chr$(34) & File & Chr$(34)
+    
 End Sub
 
 Private Sub CommandLine(ByVal CommandLineString As String)

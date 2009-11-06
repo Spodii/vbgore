@@ -277,7 +277,7 @@ Dim NPCIndex As Integer
                                     ConBuf.Put_Byte DataCode.Server_IconWarCursed
                                     ConBuf.Put_Byte 0
                                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
                                 End If
                             End If                  'Update spell exhaustion
                             If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
@@ -287,7 +287,7 @@ Dim NPCIndex As Integer
                                     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
                                     ConBuf.Put_Byte 0
                                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                                    Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_StatusIcons
                                 End If
                             End If                  'Update thralled NPC dispell (unsummon) time
                             If NPCList(NPCIndex).flags.Thralled Then
@@ -383,7 +383,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte DataCode.Server_IconBlessed
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
                             End If
                         End If                  'Protection
                         If UserList(UserIndex).Counters.ProtectCounter > 0 Then
@@ -393,7 +393,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte DataCode.Server_IconProtected
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
                             End If
                         End If                  'Strengthen
                         If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
@@ -403,7 +403,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte DataCode.Server_IconStrengthened
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
                             End If
                         End If                  'Spell exhaustion
                         If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
@@ -413,7 +413,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+                                Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
                             End If
                         End If
                     End If
@@ -1371,8 +1371,7 @@ Dim s As String
 
 End Sub
 
-
-Function Server_CheckForSameName(ByVal UserIndex As Integer, ByVal sName As String) As Boolean
+Function Server_CheckForSameName(ByVal UserIndex As Integer, ByVal sName As String) As Integer
 
 '*****************************************************************
 'Checks for a user with the same Name
@@ -1386,7 +1385,7 @@ Dim LoopC As Long
         If UserList(LoopC).flags.UserLogged = 1 Then
             If UCase$(UserList(LoopC).Name) = UCase$(sName) Then
                 If UserIndex <> LoopC Then
-                    Server_CheckForSameName = True
+                    Server_CheckForSameName = LoopC
                     Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
                     Exit Function
                 End If
@@ -1394,8 +1393,6 @@ Dim LoopC As Long
         End If
     Next LoopC
 
-    Server_CheckForSameName = False
-    
     Log "Rtrn Server_CheckForSameName = " & Server_CheckForSameName, CodeTracker '//\\LOGLINE//\\
 
 End Function
@@ -2149,7 +2146,7 @@ Dim j As Byte
                         ConBuf.Put_Byte DataCode.Server_Message
                         ConBuf.Put_Byte 16
                         ConBuf.Put_String ReceiverName
-                        Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer
+                        Data_Send ToIndex, WriterIndex, ConBuf.Get_Buffer, , PP_Mail
                     End If
                     Exit Function
                 End If

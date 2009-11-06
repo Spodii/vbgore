@@ -9,6 +9,84 @@ Public MouseEvent As Long
 Public MouseLeftDown As Byte
 Public MouseRightDown As Byte
 
+Private Const KeyPress_Shift As Integer = 2 ^ 12
+Private Const KeyPress_Control As Integer = 2 ^ 13
+Private Const KeyPress_Alt As Integer = 2 ^ 14
+
+Private Type KeyDefinitions
+    MiniMap As Integer
+    PickUpObj As Integer
+    QuickBar(1 To 12) As Integer
+    Attack As Integer
+    ChatBufferUp As Integer
+    ChatBufferDown As Integer
+    InventoryWindow As Integer
+    QuickBarWindow As Integer
+    ChatWindow As Integer
+    StatWindow As Integer
+    MenuWindow As Integer
+    ZoomIn As Integer
+    ZoomOut As Integer
+    MoveNorth As Integer
+    MoveEast As Integer
+    MoveSouth As Integer
+    MoveWest As Integer
+    ResetGUI As Integer
+End Type
+Private KeyDefinitions As KeyDefinitions
+
+Private Function Input_Keys_IsPressed(ByVal DefinitionValue As Integer, ByVal KeyCode As Integer) As Boolean
+
+'*****************************************************************
+'Checks if the definition requirements are met
+'*****************************************************************
+
+    'Check for shift, alt and control requirements
+    If DefinitionValue And KeyPress_Shift Then
+        If GetAsyncKeyState(16) = 0 Then Exit Function
+    End If
+    If DefinitionValue And KeyPress_Control Then
+        If GetAsyncKeyState(17) = 0 Then Exit Function
+    End If
+    If DefinitionValue And KeyPress_Alt Then
+        If GetAsyncKeyState(18) = 0 Then Exit Function
+    End If
+
+    'Remove the shift, alt and control bits, then check for the keycode requirements
+    If (DefinitionValue And 2047) = KeyCode Then Input_Keys_IsPressed = True
+
+End Function
+
+Public Sub Input_Keys_LoadDefinitions()
+
+'*****************************************************************
+'Load the key definitions
+'*****************************************************************
+Dim i As Long
+
+    KeyDefinitions.Attack = Val(Var_Get(DataPath & "Game.ini", "INPUT", "Attack"))
+    KeyDefinitions.ChatBufferDown = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ChatBufferDown"))
+    KeyDefinitions.ChatBufferUp = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ChatBufferUp"))
+    KeyDefinitions.ChatWindow = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ChatWindow"))
+    KeyDefinitions.InventoryWindow = Val(Var_Get(DataPath & "Game.ini", "INPUT", "InventoryWindow"))
+    KeyDefinitions.MenuWindow = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MenuWindow"))
+    KeyDefinitions.MiniMap = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MiniMap"))
+    KeyDefinitions.MoveEast = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MoveEast"))
+    KeyDefinitions.MoveNorth = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MoveNorth"))
+    KeyDefinitions.MoveSouth = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MoveSouth"))
+    KeyDefinitions.MoveWest = Val(Var_Get(DataPath & "Game.ini", "INPUT", "MoveWest"))
+    KeyDefinitions.PickUpObj = Val(Var_Get(DataPath & "Game.ini", "INPUT", "PickUpObj"))
+    KeyDefinitions.QuickBarWindow = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickBarWindow"))
+    KeyDefinitions.StatWindow = Val(Var_Get(DataPath & "Game.ini", "INPUT", "StatWindow"))
+    KeyDefinitions.ZoomIn = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomIn"))
+    KeyDefinitions.ZoomOut = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ZoomOut"))
+    KeyDefinitions.ResetGUI = Val(Var_Get(DataPath & "Game.ini", "INPUT", "ResetGUI"))
+    For i = 1 To 12
+        KeyDefinitions.QuickBar(i) = Val(Var_Get(DataPath & "Game.ini", "INPUT", "QuickBar" & i))
+    Next i
+    
+End Sub
+
 Public Sub Input_Keys_ClearQueue()
 
 '*****************************************************************
@@ -81,13 +159,22 @@ Dim diProp As DIPROPLONG
 
 End Sub
 
-Sub Input_Keys_Press(ByVal KeyAscii As Integer)
+Sub Input_Keys_Up(ByVal KeyCode As Integer, ByVal Shift As Integer)
+
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
+
+End Sub
+
+Sub Input_Keys_Press(ByVal KeyAscii As Integer)
+
+'*****************************************************************
+'Handles input entering to windows (mostly just alphanumeric)
+'*****************************************************************
 Dim StartGold As Long
-Dim i As Long
 Dim b As Boolean
+Dim i As Long
 
     '*************************
     '***** Amount window *****
@@ -224,26 +311,342 @@ Dim b As Boolean
         End If
         
     End If
-    
-    'Clear the key
-    KeyAscii = 0
 
 End Sub
 
-Sub Input_Keys_Up(ByVal KeyCode As Integer, ByVal Shift As Integer)
+Private Sub Input_Keys_Down_Return()
+
+'*****************************************************************
+'Return was pressed down
+'*****************************************************************
+Dim j As Long
+Dim i As Long
+
+    '*************************
+    '***** Amount window *****
+    '*************************
+    If LastClickedWindow = AmountWindow Then
+        If AmountWindowItemIndex Then
+            If AmountWindowValue <> vbNullString Then
+                If IsNumeric(AmountWindowValue) Then
+                    'Drop into mail
+                    If AmountWindowUsage = AW_InvToMail Then
+                        'Check for duplicate entries
+                        For j = 1 To MaxMailObjs
+                            If WriteMailData.ObjIndex(j) = AmountWindowItemIndex Then
+                                ShowGameWindow(AmountWindow) = 0
+                                AmountWindowUsage = 0
+                                If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
+                                Exit Sub
+                            End If
+                        Next j
+                        'Find the next free slot
+                        j = 0
+                        Do
+                            j = j + 1
+                            If j > MaxMailObjs Then
+                                ShowGameWindow(AmountWindow) = 0
+                                AmountWindowUsage = 0
+                                If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
+                                Exit Sub
+                            End If
+                        Loop While WriteMailData.ObjIndex(j) > 0
+                        WriteMailData.ObjIndex(j) = AmountWindowItemIndex
+                        WriteMailData.ObjAmount(j) = CInt(AmountWindowValue)
+                    'Buy from NPC
+                    ElseIf AmountWindowUsage = AW_ShopToInv Then
+                        sndBuf.Allocate 4
+                        sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Integer CInt(AmountWindowValue)
+                    'Sell to NPC
+                    ElseIf AmountWindowUsage = AW_InvToShop Then
+                        sndBuf.Allocate 4
+                        sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Integer CInt(AmountWindowValue)
+                    'Take from bank
+                    ElseIf AmountWindowUsage = AW_BankToInv Then
+                        sndBuf.Allocate 4
+                        sndBuf.Put_Byte DataCode.User_Bank_TakeItem
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Integer CInt(AmountWindowValue)
+                    'Put in bank
+                    ElseIf AmountWindowUsage = AW_InvToBank Then
+                        sndBuf.Allocate 4
+                        sndBuf.Put_Byte DataCode.User_Bank_PutItem
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Integer CInt(AmountWindowValue)
+                    'Put in trade
+                    ElseIf AmountWindowUsage = AW_InvToTrade Then
+                        sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Long CInt(AmountWindowValue)
+                             
+                    'Drop on ground
+                    Else
+                        sndBuf.Allocate 4
+                        sndBuf.Put_Byte DataCode.User_Drop
+                        sndBuf.Put_Byte AmountWindowItemIndex
+                        sndBuf.Put_Integer CInt(AmountWindowValue)
+                    End If
+                Else
+                    AmountWindowValue = vbNullString
+                End If
+                ShowGameWindow(AmountWindow) = 0
+                AmountWindowUsage = 0
+                If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
+            End If
+        End If
+
+    '*****************************
+    '***** Write mail window *****
+    '*****************************
+    ElseIf LastClickedWindow = WriteMessageWindow Then
+        'Send message
+        If LastMailSendTime + 4000 < timeGetTime Then   'DelayTimeMail (+1000ms for packet delay)
+            If Len(WriteMailData.Subject) > 0 Then
+                If Len(WriteMailData.Message) > 0 Then
+                    If Len(WriteMailData.RecieverName) > 0 Then
+                        For i = 1 To MaxMailObjs
+                            If WriteMailData.ObjIndex(i) = 0 Then
+                                i = i - 1
+                                Exit For
+                            End If
+                        Next i
+                        sndBuf.Allocate 6 + Len(WriteMailData.RecieverName) + Len(WriteMailData.Subject) + Len(WriteMailData.Message)
+                        sndBuf.Put_Byte DataCode.Server_MailCompose
+                        sndBuf.Put_String WriteMailData.RecieverName
+                        sndBuf.Put_String WriteMailData.Subject
+                        sndBuf.Put_StringEX WriteMailData.Message
+                        sndBuf.Put_Byte i   'Number of objects
+                        If i > 0 Then
+                            For j = 1 To i
+                                sndBuf.Allocate 3
+                                sndBuf.Put_Byte WriteMailData.ObjIndex(j)
+                                sndBuf.Put_Integer WriteMailData.ObjAmount(j)
+                            Next j
+                        End If
+                        
+                        WriteMailData.Message = vbNullString
+                        WriteMailData.RecieverName = vbNullString
+                        WriteMailData.Subject = vbNullString
+                        ShowGameWindow(WriteMessageWindow) = 0
+                        If LastClickedWindow = WriteMessageWindow Then LastClickedWindow = 0
+                        LastMailSendTime = timeGetTime
+                    End If
+                End If
+            End If
+        End If
+        
+    End If
+    
+    '***********************
+    '***** Chat screen *****
+    '***********************
+    If LastClickedWindow <> WriteMessageWindow And LastClickedWindow <> ViewMessageWindow And LastClickedWindow <> AmountWindow Then
+        If EnterText = True Then
+            If EnterTextBuffer <> vbNullString Then Input_HandleCommands
+            EnterText = False
+        Else
+            EnterText = True
+        End If
+    End If
+
+End Sub
+
+Private Function Input_Keys_IsNumeric(ByVal KeyCode As Integer)
+
+'*****************************************************************
+'Check if a numeric key (0 to 9) was pressed
+'*****************************************************************
+
+    '0 = 48
+    '9 = 57
+    If KeyCode > 47 Then
+        If KeyCode < 58 Then
+            Input_Keys_IsNumeric = True
+        End If
+    End If
+
+End Function
+
+Private Function Input_Keys_IsAlpha(ByVal KeyCode As Integer)
+
+'*****************************************************************
+'Check if an alphabit key (A to Z) was pressed
+'*****************************************************************
+
+    'a = 65
+    'z = 90
+    If KeyCode > 64 Then
+        If KeyCode < 91 Then
+            Input_Keys_IsAlpha = True
+        End If
+    End If
+    
+End Function
+
+Private Function Input_Keys_IsAlphaNumeric(ByVal KeyCode As Integer)
+
+'*****************************************************************
+'Check if an alphanumeric key (A to Z, 0 to 9) was pressed
+'*****************************************************************
+
+    Input_Keys_IsAlphaNumeric = (Input_Keys_IsNumeric(KeyCode) And Input_Keys_IsAlpha(KeyCode))
+
+End Function
+
+Sub Input_Keys_Down(ByVal KeyCode As Integer, ByVal Shift As Integer)
 
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
+Dim TempS() As String
+Dim i As Long
+Dim s As String
+Dim s2 As String
+Dim j As Long
 
-Dim i As Integer
+    'Return was pressed
+    If KeyCode = vbKeyReturn Then
+        Input_Keys_Down_Return
+        Exit Sub
+    End If
     
-    'Reset skins (F12)
-    If GetAsyncKeyState(vbKeyShift) Then
-        If KeyCode = vbKeyF12 Then
-            Engine_Init_GUI 0
-            Game_Config_Save
+    'Escape was pressed
+    If KeyCode = vbKeyEscape Then
+        If LastClickedWindow = 0 Then
+            If ShowGameWindow(MenuWindow) = 0 Then
+                If EnterText Then
+                    EnterTextBuffer = vbNullString
+                    EnterTextBufferWidth = 10
+                    UpdateShownTextBuffer
+                    EnterText = False
+                End If
+            End If
+        Else
+            ShowGameWindow(LastClickedWindow) = 0
+            LastClickedWindow = 0
+            Exit Sub
         End If
+    End If
+    
+    'Hide/show the mini-map
+    If Input_Keys_IsPressed(KeyDefinitions.MiniMap, KeyCode) Then
+        If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0
+    End If
+    
+    'Get object off ground (alt)
+    If Input_Keys_IsPressed(KeyDefinitions.PickUpObj, KeyCode) Then
+        If LastLootTime + LootDelay < timeGetTime Then
+            LastLootTime = timeGetTime
+            sndBuf.Put_Byte DataCode.User_Get
+        End If
+    End If
+    
+    'Use the quick bar
+    For i = 1 To 12
+        If Input_Keys_IsPressed(KeyDefinitions.QuickBar(i), KeyCode) Then
+            Engine_UseQuickBar KeyCode - vbKeyF1 + 1
+        End If
+    Next i
+    
+    'Attack key
+    If Input_Keys_IsPressed(KeyDefinitions.Attack, KeyCode) Then
+        If LastAttackTime + AttackDelay < timeGetTime Then
+            
+            'Check for a valid attacking distance
+            If UserAttackRange > 1 Then
+                If TargetCharIndex > 0 Then
+                    If TargetCharIndex <> UserCharIndex Then
+                        If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
+                            LastAttackTime = timeGetTime
+                            sndBuf.Allocate 2
+                            sndBuf.Put_Byte DataCode.User_Attack
+                            sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                        Else
+                            Engine_AddToChatTextBuffer Message(91), FontColor_Fight
+                        End If
+                    End If
+                End If
+            Else
+                LastAttackTime = timeGetTime
+                sndBuf.Allocate 2
+                sndBuf.Put_Byte DataCode.User_Attack
+                sndBuf.Put_Byte CharList(UserCharIndex).Heading
+            End If
+            
+        End If
+    End If
+    
+    'Chat buffer scrolling
+    If Input_Keys_IsPressed(KeyDefinitions.ChatBufferUp, KeyCode) Then
+        If ShowGameWindow(ChatWindow) Then
+            ChatBufferChunk = ChatBufferChunk + 0.5
+            Engine_UpdateChatArray
+        End If
+    End If
+    If Input_Keys_IsPressed(KeyDefinitions.ChatBufferDown, KeyCode) Then
+        If ShowGameWindow(ChatWindow) Then
+            If ChatBufferChunk > 1 Then
+                ChatBufferChunk = ChatBufferChunk - 0.5
+                Engine_UpdateChatArray
+            End If
+        End If
+    End If
+    
+    'Hide/show windows
+    If Input_Keys_IsPressed(KeyDefinitions.InventoryWindow, KeyCode) Then
+        If ShowGameWindow(InventoryWindow) Then
+            ShowGameWindow(InventoryWindow) = 0
+            If LastClickedWindow = InventoryWindow Then LastClickedWindow = 0
+        Else
+            ShowGameWindow(InventoryWindow) = 1
+            LastClickedWindow = InventoryWindow
+        End If
+    End If
+    If Input_Keys_IsPressed(KeyDefinitions.QuickBarWindow, KeyCode) Then
+        If ShowGameWindow(QuickBarWindow) Then
+            ShowGameWindow(QuickBarWindow) = 0
+            If LastClickedWindow = QuickBarWindow Then LastClickedWindow = 0
+        Else
+            ShowGameWindow(QuickBarWindow) = 1
+            LastClickedWindow = QuickBarWindow
+        End If
+    End If
+    If Input_Keys_IsPressed(KeyDefinitions.ChatWindow, KeyCode) Then
+        If ShowGameWindow(ChatWindow) Then
+            ShowGameWindow(ChatWindow) = 0
+            If LastClickedWindow = ChatWindow Then LastClickedWindow = 0
+        Else
+            ShowGameWindow(ChatWindow) = 1
+            LastClickedWindow = ChatWindow
+        End If
+    End If
+    If Input_Keys_IsPressed(KeyDefinitions.StatWindow, KeyCode) Then
+        If ShowGameWindow(StatWindow) Then
+            ShowGameWindow(StatWindow) = 0
+            If LastClickedWindow = StatWindow Then LastClickedWindow = 0
+        Else
+            ShowGameWindow(StatWindow) = 1
+            LastClickedWindow = StatWindow
+        End If
+    End If
+    If Input_Keys_IsPressed(KeyDefinitions.MenuWindow, KeyCode) Then
+        If ShowGameWindow(MenuWindow) Then
+            ShowGameWindow(MenuWindow) = 0
+            If LastClickedWindow = MenuWindow Then LastClickedWindow = 0
+        Else
+            ShowGameWindow(MenuWindow) = 1
+            LastClickedWindow = MenuWindow
+        End If
+    End If
+    
+    'Reset skin positions
+    If Input_Keys_IsPressed(KeyDefinitions.ResetGUI, KeyCode) Then
+        Engine_Init_GUI 0
+        Game_Config_Save
     End If
 
     'Delete mail (Delete)
@@ -266,7 +669,7 @@ Dim i As Integer
                 If ShowGameWindow(WriteMessageWindow) = 0 Then
                     If ShowGameWindow(NPCChatWindow) = 0 Then
                         If EmoticonDelay < timeGetTime Then
-                            EmoticonDelay = timeGetTime + 1000  'Wait 1000ms (one second) between emoticon usages
+                            EmoticonDelay = timeGetTime + 2000  'Wait 2000ms (two seconds) between emoticon usages
                             
                             Select Case KeyCode
                                 Case vbKey1
@@ -341,284 +744,6 @@ Dim i As Integer
                 End If
             End If
         End If
-    End If
-
-End Sub
-
-Sub Input_Keys_Down(ByVal KeyCode As Integer, ByVal Shift As Integer)
-
-'*****************************************************************
-'Checks keys and respond
-'*****************************************************************
-Dim TempS() As String
-Dim s As String
-Dim s2 As String
-Dim i As Byte
-Dim j As Long
-    
-    '*************************
-    '***** General input *****
-    '*************************
-    
-    'Hide/show Mini-map
-    If KeyCode = vbKeyTab Then
-        If ShowMiniMap = 0 Then ShowMiniMap = 1 Else ShowMiniMap = 0
-    End If
-    
-    'Get object off ground (alt)
-    If KeyCode = 18 Then
-        If LastLootTime + LootDelay < timeGetTime Then
-            LastLootTime = timeGetTime
-            sndBuf.Put_Byte DataCode.User_Get
-        End If
-    End If
-    
-    'Use the quick bar
-    If KeyCode >= vbKeyF1 Then
-        If KeyCode <= vbKeyF12 Then
-            Engine_UseQuickBar KeyCode - vbKeyF1 + 1
-        End If
-    End If
-    
-    'Attack key
-    If KeyCode = vbKeyControl Then
-        If LastAttackTime + AttackDelay < timeGetTime Then
-            
-            'Check for a valid attacking distance
-            If UserAttackRange > 1 Then
-                If TargetCharIndex > 0 Then
-                    If TargetCharIndex <> UserCharIndex Then
-                        If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
-                            LastAttackTime = timeGetTime
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Attack
-                            sndBuf.Put_Byte CharList(UserCharIndex).Heading
-                        Else
-                            Engine_AddToChatTextBuffer Message(91), FontColor_Fight
-                        End If
-                    End If
-                End If
-            Else
-                LastAttackTime = timeGetTime
-                sndBuf.Allocate 2
-                sndBuf.Put_Byte DataCode.User_Attack
-                sndBuf.Put_Byte CharList(UserCharIndex).Heading
-            End If
-            
-        End If
-    End If
-    
-    'Chat buffer stuff
-    If KeyCode = vbKeyPageUp Then
-        If ShowGameWindow(ChatWindow) Then
-            ChatBufferChunk = ChatBufferChunk + 0.5
-            Engine_UpdateChatArray
-        End If
-    End If
-    If KeyCode = vbKeyPageDown Then
-        If ShowGameWindow(ChatWindow) Then
-            If ChatBufferChunk > 1 Then
-                ChatBufferChunk = ChatBufferChunk - 0.5
-                Engine_UpdateChatArray
-            End If
-        End If
-    End If
-    
-    'Hide/show windows
-    If GetAsyncKeyState(vbKeyControl) Then
-        If KeyCode = vbKeyW Then
-            If ShowGameWindow(InventoryWindow) Then
-                ShowGameWindow(InventoryWindow) = 0
-                If LastClickedWindow = InventoryWindow Then LastClickedWindow = 0
-            Else
-                ShowGameWindow(InventoryWindow) = 1
-                LastClickedWindow = InventoryWindow
-            End If
-        ElseIf KeyCode = vbKeyQ Then
-            If ShowGameWindow(QuickBarWindow) Then
-                ShowGameWindow(QuickBarWindow) = 0
-                If LastClickedWindow = QuickBarWindow Then LastClickedWindow = 0
-            Else
-                ShowGameWindow(QuickBarWindow) = 1
-                LastClickedWindow = QuickBarWindow
-            End If
-        ElseIf KeyCode = vbKeyC Then
-            If ShowGameWindow(ChatWindow) Then
-                ShowGameWindow(ChatWindow) = 0
-                If LastClickedWindow = ChatWindow Then LastClickedWindow = 0
-            Else
-                ShowGameWindow(ChatWindow) = 1
-                LastClickedWindow = ChatWindow
-            End If
-        ElseIf KeyCode = vbKeyS Then
-            If ShowGameWindow(StatWindow) Then
-                ShowGameWindow(StatWindow) = 0
-                If LastClickedWindow = StatWindow Then LastClickedWindow = 0
-            Else
-                ShowGameWindow(StatWindow) = 1
-                LastClickedWindow = StatWindow
-            End If
-        End If
-    End If
-
-    If KeyCode = vbKeyReturn Then
-        
-        '*************************
-        '***** Amount window *****
-        '*************************
-        If LastClickedWindow = AmountWindow Then
-            If AmountWindowItemIndex Then
-                If AmountWindowValue <> "" Then
-                    If IsNumeric(AmountWindowValue) Then
-                        'Drop into mail
-                        If AmountWindowUsage = AW_InvToMail Then
-                            'Check for duplicate entries
-                            For j = 1 To MaxMailObjs
-                                If WriteMailData.ObjIndex(j) = AmountWindowItemIndex Then
-                                    ShowGameWindow(AmountWindow) = 0
-                                    AmountWindowUsage = 0
-                                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
-                                    Exit Sub
-                                End If
-                            Next j
-                            'Find the next free slot
-                            j = 0
-                            Do
-                                j = j + 1
-                                If j > MaxMailObjs Then
-                                    ShowGameWindow(AmountWindow) = 0
-                                    AmountWindowUsage = 0
-                                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
-                                    Exit Sub
-                                End If
-                            Loop While WriteMailData.ObjIndex(j) > 0
-                            WriteMailData.ObjIndex(j) = AmountWindowItemIndex
-                            WriteMailData.ObjAmount(j) = CInt(AmountWindowValue)
-                        'Buy from NPC
-                        ElseIf AmountWindowUsage = AW_ShopToInv Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Sell to NPC
-                        ElseIf AmountWindowUsage = AW_InvToShop Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Take from bank
-                        ElseIf AmountWindowUsage = AW_BankToInv Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Bank_TakeItem
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Put in bank
-                        ElseIf AmountWindowUsage = AW_InvToBank Then
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Bank_PutItem
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        'Put in trade
-                        ElseIf AmountWindowUsage = AW_InvToTrade Then
-                            sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Long CInt(AmountWindowValue)
-                                 
-                        'Drop on ground
-                        Else
-                            sndBuf.Allocate 4
-                            sndBuf.Put_Byte DataCode.User_Drop
-                            sndBuf.Put_Byte AmountWindowItemIndex
-                            sndBuf.Put_Integer CInt(AmountWindowValue)
-                        End If
-                    Else
-                        AmountWindowValue = vbNullString
-                    End If
-                    ShowGameWindow(AmountWindow) = 0
-                    AmountWindowUsage = 0
-                    If LastClickedWindow = AmountWindow Then LastClickedWindow = 0
-                End If
-            End If
-
-        '*****************************
-        '***** Write mail window *****
-        '*****************************
-        ElseIf LastClickedWindow = WriteMessageWindow Then
-            'Send message
-            If LastMailSendTime + 4000 < timeGetTime Then   'DelayTimeMail (+1000ms for packet delay)
-                If Len(WriteMailData.Subject) > 0 Then
-                    If Len(WriteMailData.Message) > 0 Then
-                        If Len(WriteMailData.RecieverName) > 0 Then
-                            For i = 1 To MaxMailObjs
-                                If WriteMailData.ObjIndex(i) = 0 Then
-                                    i = i - 1
-                                    Exit For
-                                End If
-                            Next i
-                            sndBuf.Allocate 6 + Len(WriteMailData.RecieverName) + Len(WriteMailData.Subject) + Len(WriteMailData.Message)
-                            sndBuf.Put_Byte DataCode.Server_MailCompose
-                            sndBuf.Put_String WriteMailData.RecieverName
-                            sndBuf.Put_String WriteMailData.Subject
-                            sndBuf.Put_StringEX WriteMailData.Message
-                            sndBuf.Put_Byte i   'Number of objects
-                            If i > 0 Then
-                                For j = 1 To i
-                                    sndBuf.Allocate 3
-                                    sndBuf.Put_Byte WriteMailData.ObjIndex(j)
-                                    sndBuf.Put_Integer WriteMailData.ObjAmount(j)
-                                Next j
-                            End If
-                            
-                            WriteMailData.Message = vbNullString
-                            WriteMailData.RecieverName = vbNullString
-                            WriteMailData.Subject = vbNullString
-                            ShowGameWindow(WriteMessageWindow) = 0
-                            If LastClickedWindow = WriteMessageWindow Then LastClickedWindow = 0
-                            LastMailSendTime = timeGetTime
-                        End If
-                    End If
-                End If
-            End If
-            
-        End If
-        
-        '***********************
-        '***** Chat screen *****
-        '***********************
-        If LastClickedWindow <> WriteMessageWindow And LastClickedWindow <> ViewMessageWindow And LastClickedWindow <> AmountWindow Then
-            If EnterText = True Then
-                If EnterTextBuffer <> vbNullString Then Input_HandleCommands
-                EnterText = False
-            Else
-                EnterText = True
-            End If
-        End If
-        
-    End If
-    
-    '*****************************
-    '***** Close last screen *****
-    '*****************************
-    If KeyCode = vbKeyEscape Then
-        If LastClickedWindow = 0 Then
-            If ShowGameWindow(MenuWindow) = 1 Then
-                ShowGameWindow(MenuWindow) = 0
-                If LastClickedWindow = MenuWindow Then LastClickedWindow = 0
-            Else
-                If EnterText Then
-                    EnterTextBuffer = vbNullString
-                    EnterText = False
-                Else
-                    ShowGameWindow(MenuWindow) = 1
-                    LastClickedWindow = MenuWindow
-                End If
-            End If
-        Else
-            If ShowGameWindow(LastClickedWindow) Then
-                ShowGameWindow(LastClickedWindow) = 0
-            End If
-        End If
-        LastClickedWindow = 0
     End If
 
 End Sub

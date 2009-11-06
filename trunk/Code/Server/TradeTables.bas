@@ -208,8 +208,8 @@ Dim SendPacket As Boolean
         ConBuf.PreAllocate 2
         ConBuf.Put_Byte DataCode.User_Trade_Accept
         ConBuf.Put_Byte UserTableIndex
-        Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
-        Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer, , PP_Trading
+        Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer, , PP_Trading
     End If
         
 End Sub
@@ -228,8 +228,8 @@ Dim UserTableIndex As Byte
     'Close the table
     ConBuf.PreAllocate 1
     ConBuf.Put_Byte DataCode.User_Trade_Cancel
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer, , PP_Trading
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer, , PP_Trading
     
     'Clear the memory
     ZeroMemory TradeTable(TradeTableIndex), Len(TradeTable(TradeTableIndex))
@@ -435,8 +435,8 @@ Dim GrhIndex As Long
     End If
     
     'Send the data to both the clients
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer
-    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User1, ConBuf.Get_Buffer, , PP_Trading
+    Data_Send ToIndex, TradeTable(TradeTableIndex).User2, ConBuf.Get_Buffer, , PP_Trading
 
 End Sub
 
@@ -505,14 +505,14 @@ Dim PacketSize As Long
     ConBuf.Put_String UserList(UserIndex2).Name
     ConBuf.Put_String UserList(UserIndex1).Name
     ConBuf.Put_Byte 2
-    Data_Send ToIndex, UserIndex2, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex2, ConBuf.Get_Buffer, , PP_Trading
     
     ConBuf.PreAllocate PacketSize
     ConBuf.Put_Byte DataCode.User_Trade_Trade
     ConBuf.Put_String UserList(UserIndex1).Name
     ConBuf.Put_String UserList(UserIndex2).Name
     ConBuf.Put_Byte 1
-    Data_Send ToIndex, UserIndex1, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex1, ConBuf.Get_Buffer, , PP_Trading
 
 End Sub
 

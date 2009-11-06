@@ -3102,6 +3102,9 @@ Dim t As Long
     UseMotionBlur = Val(Var_Get(DataPath & "Game.ini", "INIT", "UseMotionBlur"))
     If UseMotionBlur <> 0 Then UseMotionBlur = 1
     
+    'Load the key definitions
+    Input_Keys_LoadDefinitions
+    
     '****** INIT DirectX ******
     ' Create the root D3D objects
     Set DX = New DirectX8
@@ -3156,10 +3159,6 @@ Dim t As Long
     'Set the ending time to now (to prevent the client thinking there was a huge FPS jump)
     EndTime = timeGetTime
 
-    'Start the engine
-    Engine_Init_TileEngine = True
-    EngineRun = True
-    
     'Get the AlternateRender flag
     AlternateRender = Val(Var_Get(DataPath & "Game.ini", "INIT", "AlternateRender"))
     AlternateRenderMap = Val(Var_Get(DataPath & "Game.ini", "INIT", "AlternateRenderMap"))
@@ -3182,6 +3181,10 @@ Dim t As Long
         SpriteScaleVector.Y = 1
         
     End If
+    
+    'Start the engine
+    Engine_Init_TileEngine = True
+    EngineRun = True
 
 End Function
 
@@ -7147,7 +7150,7 @@ Sub Engine_UseQuickBar(ByVal Slot As Byte)
             If LastAttackTime + AttackDelay < timeGetTime Then
                 If CharList(UserCharIndex).CharStatus.Exhausted = 0 Then
                     LastAttackTime = timeGetTime
-                    sndBuf.Allocate 4
+                    sndBuf.Allocate 5
                     sndBuf.Put_Byte DataCode.User_CastSkill
                     sndBuf.Put_Byte QuickBarID(Slot).ID
                     sndBuf.Put_Integer TargetCharIndex

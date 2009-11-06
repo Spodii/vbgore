@@ -39,30 +39,7 @@ Public Const ToPCAreaButIndex As Byte = 11      'Send to all the users in the us
 'vbGORE, by default, aims for the lowest packet priority values that will
 ' affect the gameplay the least (most stuff not listed as HIGH you wont notice the lag time)
 
-'*** Option 1 - Optimized for minimal bandwidth usage ***
-'Public Const Packet_WaitTime As Long = 200      'Recommended about 200~300 at highest - lower is faster, but more packets sent (more bandwidth used)
-
-'Communication
-'Public Const PP_GlobalChat As Long = PP_Low     'Talking to everyone online (shout)
-'Public Const PP_LocalChat As Long = PP_Low      'Talking to people locally (normal chat, emoting)
-'Public Const PP_PrivateChat As Long = PP_Low    'Talking to someone privately (private messages, NOT mailing)
-'Public Const PP_GMMessages As Long = PP_Low     'Messages sent back from using a GM command (only GMs can see)
-'Public Const PP_GlobalMessage As Long = PP_None 'Messages sent by the server globally not specified above (kicking a user, server messages, etc)
-
-'Misc
-'Public Const PP_ChangeChar As Long = PP_None    'Updating character paperdoll values
-'Public Const PP_NewMail As Long = PP_None       '"You just got new mail" message
-'Public Const PP_Connect As Long = PP_Low        '"User xxx connected" message
-'Public Const PP_Stat As Long = PP_Low           'Base/mod stat updating
-'Public Const PP_StatPercent As Long = PP_Low    'Stat percentage (MP and SP bars) updating
-'Public Const PP_Blink As Long = PP_None         'Sending character eye blinks
-'Public Const PP_Look As Long = PP_Low           'Change looking direction (lookleft, lookright)
-'Public Const PP_Rotate As Long = PP_Low         'Change body direction (rotating)
-'Public Const PP_CloseCharMove As Long = PP_High 'Character movement of near-by characters (in screen)
-'Public Const PP_FarCharMove As Long = PP_None   'Character movement of characters out of the screen
-'Public Const PP_GroupCharMove As Long = PP_High 'Character in the user's group moves
-
-'*** Option 2 - Optimized for speed and performance ***
+'*** Option 1 - Optimized for speed and performance ***
 Public Const Packet_WaitTime As Long = 0        'Recommended about 200~300 at highest - lower is faster, but more packets sent (more bandwidth used)
 
 'Communication
@@ -72,18 +49,27 @@ Public Const PP_PrivateChat As Long = PP_High   'Talking to someone privately (p
 Public Const PP_GMMessages As Long = PP_High    'Messages sent back from using a GM command (only GMs can see)
 Public Const PP_GlobalMessage As Long = PP_High 'Messages sent by the server globally not specified above (kicking a user, server messages, etc)
 
-'Misc
+'Visuals information
+Public Const PP_StatusIcons As Long = PP_High   'Displaying and removing status icons
+Public Const PP_DisplaySpell As Long = PP_High  'Displaying spell effects
 Public Const PP_ChangeChar As Long = PP_High    'Updating character paperdoll values
-Public Const PP_NewMail As Long = PP_High       '"You just got new mail" message
-Public Const PP_Connect As Long = PP_High       '"User xxx connected" message
-Public Const PP_Stat As Long = PP_High          'Base/mod stat updating
-Public Const PP_StatPercent As Long = PP_High   'Stat percentage (MP and SP bars) updating
 Public Const PP_Blink As Long = PP_High         'Sending character eye blinks
 Public Const PP_Look As Long = PP_High          'Change looking direction (lookleft, lookright)
 Public Const PP_Rotate As Long = PP_High        'Change body direction (rotating)
 Public Const PP_CloseCharMove As Long = PP_High 'Character movement of near-by characters (in screen)
 Public Const PP_FarCharMove As Long = PP_None   'Character movement of characters out of the screen
 Public Const PP_GroupCharMove As Long = PP_High 'Character in the user's group moves
+Public Const PP_GroundObjects As Long = PP_High 'Updating the objects on the ground, adding and removing them
+
+'Misc
+Public Const PP_Banking As Long = PP_High       'All information related to banking
+Public Const PP_Trading As Long = PP_High       'All information on peer-to-peer trading and npc-to-pc trading
+Public Const PP_Mail As Long = PP_High          'Mailing information
+Public Const PP_Sound As Long = PP_High         'Playing sound effects
+Public Const PP_NewMail As Long = PP_High       '"You just got new mail" message
+Public Const PP_Connect As Long = PP_High       '"User xxx connected" message
+Public Const PP_Stat As Long = PP_High          'Base/mod stat updating
+Public Const PP_StatPercent As Long = PP_High   'Stat percentage (MP and SP bars) updating
 
 Sub Data_User_Bank_PutItem(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
@@ -187,9 +173,9 @@ Sub Data_User_Bank_TakeItem(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer
 'Client requests to take an item from their bank
 '<Slot(B)><Amount(I)>
 '*****************************************************************
+Dim AmountTaken As Integer
 Dim Amount As Integer
 Dim Slot As Byte
-Dim PutSlot As Byte
 
     'Get the values
     Slot = rBuf.Get_Byte
@@ -212,54 +198,15 @@ Dim PutSlot As Byte
         Exit Sub    'No clicked NPC
     End If
     
-    'Check for item of the same type already in there
-    If ObjData.Stacking(UserList(UserIndex).Bank(Slot).ObjIndex) > 1 Then
-        PutSlot = 0
-        Do
-            PutSlot = PutSlot + 1
-            If PutSlot > MAX_INVENTORY_SLOTS Then
-                PutSlot = 0
-                Exit Do
-            End If
-        Loop While UserList(UserIndex).Object(PutSlot).ObjIndex <> UserList(UserIndex).Bank(Slot).ObjIndex
+    'Grab the objects from the bank account
+    AmountTaken = User_GiveObj(UserIndex, UserList(UserIndex).Bank(Slot).ObjIndex, UserList(UserIndex).Bank(Slot).Amount)
+    
+    'Take away the objects from the bank
+    UserList(UserIndex).Bank(Slot).Amount = UserList(UserIndex).Bank(Slot).Amount - AmountTaken
+    If UserList(UserIndex).Bank(Slot).Amount <= 0 Then
+        UserList(UserIndex).Bank(Slot).Amount = 0
+        UserList(UserIndex).Bank(Slot).ObjIndex = 0
     End If
-    
-    'If PutSlot = 0, no duplicate item was found, so use the next free slot
-    If PutSlot = 0 Then
-        Do
-            PutSlot = PutSlot + 1
-            If PutSlot > MAX_INVENTORY_SLOTS Then
-                
-                'Bank is full
-                Data_Send ToIndex, UserIndex, cMessage(26).Data
-                Exit Sub
-                
-            End If
-        Loop While UserList(UserIndex).Object(PutSlot).ObjIndex > 0
-        
-        'Just as a pre-caution, we empty the amount value since we are going to be adding on to it and it should be empty
-        UserList(UserIndex).Object(PutSlot).Amount = 0
-        
-    End If
-    
-    'Check if theres room for the item
-    If UserList(UserIndex).Object(PutSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Bank(Slot).ObjIndex) Then
-        Data_Send ToIndex, UserIndex, cMessage(26).Data
-        Exit Sub
-    End If
-    
-    'Put the items in the inventory
-    UserList(UserIndex).Object(PutSlot).ObjIndex = UserList(UserIndex).Bank(Slot).ObjIndex
-    UserList(UserIndex).Object(PutSlot).Amount = UserList(UserIndex).Object(PutSlot).Amount + Amount
-    
-    'Remove the items from the bank
-    UserList(UserIndex).Bank(Slot).Amount = UserList(UserIndex).Bank(Slot).Amount - Amount
-
-    'Check if the user ran out of items
-    If UserList(UserIndex).Bank(Slot).Amount <= 0 Then UserList(UserIndex).Bank(Slot).ObjIndex = 0
-    
-    'Update the inventory
-    User_UpdateInv False, UserIndex, PutSlot
     
     'Update the bank slot
     User_UpdateBank UserIndex, Slot
@@ -799,7 +746,9 @@ Dim Y As Long
             If MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex Then
                 NPCIndex = MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex
                 If NPCList(NPCIndex).flags.Thralled Then
-                    NPC_Kill NPCIndex
+                    If NPCList(NPCIndex).OwnerIndex = 0 Then
+                        NPC_Kill NPCIndex
+                    End If
                 End If
             End If
         
@@ -1792,7 +1741,7 @@ Dim MsgData As MailData
         End If
     Next LoopC
     ConBuf.Put_Byte 255 'The byte of value 255 states that we have reached the end, while 0 or 1 means it is a new message (states the "New" flag)
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
 
 End Sub
 
@@ -1802,7 +1751,7 @@ Sub Data_Server_MailItemTake(ByRef rBuf As DataBuffer, ByVal UserIndex As Intege
 'Take an item out of the mail
 '<ObjIndex(B)>
 '*****************************************************************
-
+Dim AmountTaken As Integer
 Dim ObjIndex As Byte
 Dim LoopC As Byte
 Dim MsgData As MailData
@@ -1844,95 +1793,32 @@ Dim Y As Long
         Log "Data_Server_MailItemTake: Invalid object amount (" & MsgData.Obj(ObjIndex).Amount & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
     End If
-
-    'Check if the user already has an item of the type
-    LoopC = 1
-    If ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) > 1 Then
-        Do Until UserList(UserIndex).Object(LoopC).ObjIndex = MsgData.Obj(ObjIndex).ObjIndex
-            LoopC = LoopC + 1
-            If LoopC > MAX_INVENTORY_SLOTS Then Exit Do
-        Loop
-    ElseIf ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) = 1 Then
-        Do Until UserList(UserIndex).Object(LoopC).ObjIndex = 0
-            LoopC = LoopC + 1
-            If LoopC > MAX_INVENTORY_SLOTS Then Exit Do
-        Loop
-    Else
-        'Error :x
-        Exit Sub
-    End If
     
-    'Check that the user has room in their inventory
-    If LoopC > MAX_INVENTORY_SLOTS Then
-        LoopC = 1
-        Do Until UserList(UserIndex).Object(LoopC).ObjIndex = 0
-            LoopC = LoopC + 1
-            If LoopC > MAX_INVENTORY_SLOTS Then
-                Data_Send ToIndex, UserIndex, cMessage(26).Data
-                Exit Sub
-            End If
-        Loop
-    Else
-        'Check if user has less than Stacking
-        If UserList(UserIndex).Object(LoopC).Amount >= ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) Then
-            Data_Send ToIndex, UserIndex, cMessage(26).Data
-            Exit Sub
+    'Give the user the objects
+    AmountTaken = User_GiveObj(UserIndex, MsgData.Obj(ObjIndex).ObjIndex, MsgData.Obj(ObjIndex).Amount)
+    If AmountTaken = 0 Then Exit Sub
+    MsgData.Obj(ObjIndex).Amount = MsgData.Obj(ObjIndex).Amount - AmountTaken
+    
+    'Get the number of objects
+    Y = 0
+    For X = 1 To MaxMailObjs
+        If MsgData.Obj(X).Amount > 0 Then Y = Y + 1
+    Next X
+        
+    'Update the mail objects
+    ConBuf.PreAllocate 2
+    ConBuf.Put_Byte DataCode.Server_MailObjUpdate
+    ConBuf.Put_Byte Y   'Number of objects
+    For X = 1 To MaxMailObjs
+        If MsgData.Obj(X).Amount > 0 Then
+            ConBuf.Allocate 7 + Len(ObjData.Name(MsgData.Obj(X).ObjIndex))
+            ConBuf.Put_Long ObjData.GrhIndex(MsgData.Obj(X).ObjIndex)
+            ConBuf.Put_String ObjData.Name(MsgData.Obj(X).ObjIndex)
+            ConBuf.Put_Integer MsgData.Obj(X).Amount
         End If
-    End If
-
-    'Take all the items
-    If UserList(UserIndex).Object(LoopC).Amount + MsgData.Obj(ObjIndex).Amount <= ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) Then
-        ConBuf.PreAllocate 5 + Len(ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex))
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 58
-        ConBuf.Put_String ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex)
-        ConBuf.Put_Integer MsgData.Obj(ObjIndex).Amount
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        
-        UserList(UserIndex).Object(LoopC).ObjIndex = MsgData.Obj(ObjIndex).ObjIndex
-        UserList(UserIndex).Object(LoopC).Amount = UserList(UserIndex).Object(LoopC).Amount + MsgData.Obj(ObjIndex).Amount
-        MsgData.Obj(ObjIndex).ObjIndex = 0
-        MsgData.Obj(ObjIndex).Amount = 0
-
-        'Get the number of objects
-        Y = 0
-        For X = 1 To MaxMailObjs
-            If MsgData.Obj(X).ObjIndex > 0 Then Y = Y + 1
-        Next X
-        
-        'Update the mail objects
-        ConBuf.PreAllocate 2
-        ConBuf.Put_Byte DataCode.Server_MailObjUpdate
-        ConBuf.Put_Byte Y   'Number of objects
-        For X = 1 To MaxMailObjs
-            If MsgData.Obj(X).ObjIndex > 0 Then
-                ConBuf.Allocate 7 + Len(ObjData.Name(MsgData.Obj(X).ObjIndex))
-                ConBuf.Put_Long ObjData.GrhIndex(MsgData.Obj(X).ObjIndex)
-                ConBuf.Put_String ObjData.Name(MsgData.Obj(X).ObjIndex)
-                ConBuf.Put_Integer MsgData.Obj(X).Amount
-            End If
-        Next X
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-    Else
-
-        'Take as many items as possible
-        ConBuf.PreAllocate 7 + Len(ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex))
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 59
-        ConBuf.Put_String ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex)
-        ConBuf.Put_Integer (ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount)
-        ConBuf.Put_Integer (MsgData.Obj(ObjIndex).Amount - (ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount))
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        MsgData.Obj(ObjIndex).Amount = (MsgData.Obj(ObjIndex).Amount + UserList(UserIndex).Object(LoopC).Amount) - ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex)
-        UserList(UserIndex).Object(LoopC).Amount = ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex)
-        UserList(UserIndex).Object(LoopC).ObjIndex = MsgData.Obj(ObjIndex).ObjIndex
-
-    End If
-
-    'Update the changed inventory slot
-    User_UpdateInv False, UserIndex, LoopC
-
+    Next X
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
+    
     'Save the changes done to the mail
     Save_Mail UserList(UserIndex).MailID(UserList(UserIndex).flags.LastViewedMail), MsgData
 
@@ -1986,7 +1872,7 @@ Dim NumObjs As Byte
             ConBuf.Put_Integer MsgData.Obj(LoopC).Amount
         End If
     Next LoopC
-    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
 
     'Remember the last message the user viewed
     UserList(UserIndex).flags.LastViewedMail = MessageID
@@ -2163,6 +2049,7 @@ Dim i As Integer
     'Easiest to always pass a target, even if a target can not be selected for the skill
     TargetCharIndex = rBuf.Get_Integer
     
+    'Same with the heading
     Heading = rBuf.Get_Byte
     
     'Check for a valid char index
@@ -3598,6 +3485,7 @@ Dim IPs() As String
 Dim CurrIP As String
 Dim s As String
 Dim i As Byte
+Dim j As Long
 
     Log "Call User_Connect(" & UserIndex & "," & strName & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -3682,11 +3570,16 @@ Dim i As Byte
     End If
 
     'Check to see is user already logged with name
-    If Server_CheckForSameName(UserIndex, strName) Then
+    j = Server_CheckForSameName(UserIndex, strName)
+    If j > 0 Then
 
         'Tell the client we're disconnecting
         Data_Send ToIndex, UserIndex, cMessage(79).Data
         Data_Send_Buffer UserIndex
+        
+        'Disconnect the user currently on
+        UserList(j).flags.Disconnecting = 1
+        
         Exit Sub
         
     End If
