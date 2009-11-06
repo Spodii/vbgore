@@ -47,6 +47,8 @@ Public UseVSync As Byte     'If vertical synchronization copy is used
 Public Windowed As Boolean  'If the screen is windowed or fullscreen
 Public Const ScreenWidth As Long = 800  'Keep this identical to the value on the server!
 Public Const ScreenHeight As Long = 600 'Keep this identical to the value on the server!
+Private Const BufferWidth As Long = 1024    'If ScreenWidth is <= 1024, this will = 1024, else set it as 2048
+Private Const BufferHeight As Long = 1024   'Same as the BufferWidth, but with the ScreenHeight
 
 'Heading constants
 Public Const NORTH As Byte = 1
@@ -1108,6 +1110,70 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
     End If
 
 End Sub
+
+Function Engine_UserIsFacingChar() As Boolean
+
+'*****************************************************************
+'Checks if the user is facing a character - used to check if a character
+' is at a tile before making a melee attack
+'*****************************************************************
+Dim i As Long
+Dim X As Long
+Dim Y As Long
+Dim AddX As Long
+Dim AddY As Long
+
+    'Get the co-ordinates of the tile the user is facing
+    Select Case CharList(UserCharIndex).Heading
+    Case NORTH
+        AddY = -1
+    Case EAST
+        AddX = 1
+    Case SOUTH
+        AddY = 1
+    Case WEST
+        AddX = -1
+    Case NORTHEAST
+        AddY = -1
+        AddX = 1
+    Case SOUTHEAST
+        AddY = 1
+        AddX = 1
+    Case SOUTHWEST
+        AddY = 1
+        AddX = -1
+    Case NORTHWEST
+        AddY = -1
+        AddX = -1
+    End Select
+    X = CharList(UserCharIndex).Pos.X + AddX
+    Y = CharList(UserCharIndex).Pos.Y + AddY
+    
+    'Make sure the tile is valid
+    If X <= 0 Then Exit Function
+    If Y <= 0 Then Exit Function
+    If X > MapInfo.Width Then Exit Function
+    If Y > MapInfo.Height Then Exit Function
+    
+    'Loop through all the characters
+    For i = 1 To LastChar
+        If i <> UserCharIndex Then
+            
+            'Check if the character is located at the tile
+            If CharList(i).Pos.X = X Then
+                If CharList(i).Pos.Y = Y Then
+                    
+                    'We have an character here!
+                    Engine_UserIsFacingChar = True
+                    Exit Function
+                    
+                End If
+            End If
+            
+        End If
+    Next i
+
+End Function
 
 Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Byte, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
@@ -2990,8 +3056,8 @@ Dim t As Long
     If UseMotionBlur Then
         Set DeviceBuffer = D3DDevice.GetRenderTarget
         Set DeviceStencil = D3DDevice.GetDepthStencilSurface
-        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(1024, 1024, D3DFMT_D16, D3DMULTISAMPLE_NONE)
-        Set BlurTexture = D3DX.CreateTexture(D3DDevice, 1024, 1024, 1, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
+        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(BufferWidth, BufferHeight, D3DFMT_D16, D3DMULTISAMPLE_NONE)
+        Set BlurTexture = D3DX.CreateTexture(D3DDevice, BufferWidth, BufferHeight, 0, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
         Set BlurSurf = BlurTexture.GetSurfaceLevel(0)
         
         'Create the motion-blur vertex array
@@ -3715,6 +3781,34 @@ Dim ObjIndex As Integer
     Engine_Init_Grh OBJList(ObjIndex).Grh, GrhIndex
 
 End Sub
+
+Function Engine_OBJ_AtTile(ByVal X As Byte, ByVal Y As Byte) As Boolean
+
+'*****************************************************************
+'Checks for an object at tile (X,Y)
+'*****************************************************************
+Dim i As Long
+
+    'Check if any objects exist
+    If LastObj = 0 Then Exit Function
+
+    'Loop through all the objects
+    For i = 1 To LastObj
+        
+        'Check if the object is located at the tile
+        If OBJList(i).Pos.X = X Then
+            If OBJList(i).Pos.Y = Y Then
+                
+                'We have an object here!
+                Engine_OBJ_AtTile = True
+                Exit Function
+                
+            End If
+        End If
+        
+    Next i
+
+End Function
 
 Sub Engine_OBJ_Erase(ByVal ObjIndex As Integer)
 
@@ -5290,8 +5384,8 @@ Dim Layer As Byte
         
         Set DeviceBuffer = D3DDevice.GetRenderTarget
         Set DeviceStencil = D3DDevice.GetDepthStencilSurface
-        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(1024, 1024, D3DFMT_D16, D3DMULTISAMPLE_NONE)
-        Set BlurTexture = D3DX.CreateTexture(D3DDevice, 1024, 1024, 1, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
+        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(BufferWidth, BufferHeight, D3DFMT_D16, D3DMULTISAMPLE_NONE)
+        Set BlurTexture = D3DX.CreateTexture(D3DDevice, BufferWidth, BufferHeight, 0, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
         Set BlurSurf = BlurTexture.GetSurfaceLevel(0)
         
         'Reset the render states
@@ -5642,35 +5736,6 @@ Dim Layer As Byte
     LastOffsetX = ParticleOffsetX
     LastOffsetY = ParticleOffsetY
 
-    With D3DDevice
-    
-        'Check if using motion blur / zooming
-        If UseMotionBlur Then
-            
-            'Perform the zooming calculations
-            ' * 1.333... maintains the aspect ratio
-            ' ... / 1024 is to factor in the buffer size
-            BlurTA(0).tU = ZoomLevel * 1.333333333
-            BlurTA(0).tV = ZoomLevel
-            BlurTA(1).tU = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
-            BlurTA(1).tV = ZoomLevel
-            BlurTA(2).tU = ZoomLevel * 1.333333333
-            BlurTA(2).tV = ((ScreenHeight + 1) / 1024) - ZoomLevel
-            BlurTA(3).tU = BlurTA(1).tU
-            BlurTA(3).tV = BlurTA(2).tV
-            
-            'Draw what we have drawn thus far since the last .Clear
-            LastTexture = -100
-            .SetRenderTarget DeviceBuffer, DeviceStencil, 0
-            .SetTexture 0, BlurTexture
-            .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
-            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR
-            .DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, BlurTA(0), FVF_Size
-            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE
-        End If
-        
-    End With
-
     'Render the GUI
     Engine_Render_GUI
     
@@ -5745,6 +5810,35 @@ NextChar:
 
     'Show FPS
     Engine_Render_Text "FPS: " & FPS, ScreenWidth - 80, 2, -1
+    
+    With D3DDevice
+    
+        'Check if using motion blur / zooming
+        If UseMotionBlur Then
+            
+            'Perform the zooming calculations
+            ' * 1.333... maintains the aspect ratio
+            ' ... / 1024 is to factor in the buffer size
+            BlurTA(0).tU = ZoomLevel * 1.333333333
+            BlurTA(0).tV = ZoomLevel
+            BlurTA(1).tU = ((ScreenWidth + 1) / 1024) - (ZoomLevel * 1.333333333)
+            BlurTA(1).tV = ZoomLevel
+            BlurTA(2).tU = ZoomLevel * 1.333333333
+            BlurTA(2).tV = ((ScreenHeight + 1) / 1024) - ZoomLevel
+            BlurTA(3).tU = BlurTA(1).tU
+            BlurTA(3).tV = BlurTA(2).tV
+            
+            'Draw what we have drawn thus far since the last .Clear
+            LastTexture = -100
+            .SetRenderTarget DeviceBuffer, DeviceStencil, 0
+            .SetTexture 0, BlurTexture
+            .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
+            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR
+            .DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, BlurTA(0), FVF_Size
+            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE
+        End If
+        
+    End With
 
 End Sub
 

@@ -1612,6 +1612,3 @@ Public Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As St
     WritePrivateProfileString Main, Var, Value, File
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 1  Code: 656  Total: 657 Lines
-':) CommentOnly: 130 (19.8%)  Commented: 6 (0.9%)  Empty: 151 (23%)  Max Logic Depth: 6

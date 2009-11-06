@@ -6,10 +6,17 @@
 /////  TO MAKE THE CHANGES OR ELSE YOU WILL NOT BE ABLE TO USE  \\\\\\
 /////                THE GRH VALUES YOU ENTERED!                \\\\\\
 ///////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+///// You can use ToolGrhRawAssistant or a 3rd party tool to    \\\\\\
+///// help create the Grh entries.                              \\\\\\
+///////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+///// More information on Grhs and graphics: 					\\\\\\
+///// http://www.vbgore.com/Adding_graphics                     \\\\\\
 ///////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 ///////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+'Ignore this [A], it just stats the start of the file
 [A]
+
 Grh1=1-9-0-32-32-32-(128)
 Grh2=1-1-0-0-32-32-(128)
 

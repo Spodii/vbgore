@@ -2,10 +2,11 @@
 == What are 3rd party tools? ==
 ===============================
 
-Third party tools are tools submitted by other users for vbGORE, but are not
-maintained or updated by vbGORE. Any problems with these tools will have to be
-directed to the owners of the tools, and not the vbGORE staff. The vbGORE staff
-will try to help you with the tools, but do not be surprised if they do not
+Third party tools are either tools submitted by other users for vbGORE, but are not
+maintained or updated by the creator of vbGORE, or tools created for vbGORE by the 
+creator but not significant enough to be in the main directory. Any problems with these 
+tools will have to be directed to the owners of the tools, and not the vbGORE staff. 
+The vbGORE staff will try to help you with the tools, but do not be surprised if they do not
 know how to use them.
 
 Any questions on the tools can be directed to the vbGORE Questions section of the forum:

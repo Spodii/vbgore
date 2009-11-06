@@ -158,6 +158,13 @@ Public Type DataCode
     GM_FindItem As Byte
     GM_SQL As Byte
     GM_GiveSkill As Byte
+    GM_GiveGold As Byte
+    GM_GiveObject As Byte
+    GM_KillMap As Byte
+    GM_Kill As Byte
+    GM_WarpToMap As Byte
+    GM_IPInfo As Byte
+    GM_BanList As Byte
     Combo_ProjectileSoundRotateDamage As Byte
     Combo_SoundRotateDamage As Byte
     Combo_SlashSoundRotateDamage As Byte
@@ -379,6 +386,13 @@ Public Sub InitDataCommands()
         .GM_FindItem = 111
         .GM_SQL = 112
         .GM_GiveSkill = 113
+        .GM_GiveGold = 114
+        .GM_GiveObject = 115
+        .GM_KillMap = 116
+        .GM_Kill = 117
+        .GM_WarpToMap = 118
+        .GM_IPInfo = 119
+        .GM_BanList = 120
         
         'This values can be used over again since they aren't used in their own packet header
         .Comm_FontType_Fight = 1

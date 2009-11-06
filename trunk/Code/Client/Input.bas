@@ -551,9 +551,11 @@ Dim i As Long
     
     'Get object off ground (alt)
     If Input_Keys_IsPressed(KeyDefinitions.PickUpObj, KeyCode) Then
-        If LastLootTime < timeGetTime Then
-            LastLootTime = timeGetTime + LootDelay
-            sndBuf.Put_Byte DataCode.User_Get
+        If Engine_OBJ_AtTile(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y) Then
+            If LastLootTime < timeGetTime Then
+                LastLootTime = timeGetTime + LootDelay
+                sndBuf.Put_Byte DataCode.User_Get
+            End If
         End If
     End If
     
@@ -585,9 +587,11 @@ Dim i As Long
                         End If
                     End If
                 Else
-                    sndBuf.Allocate 2
-                    sndBuf.Put_Byte DataCode.User_Attack
-                    sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                    If Engine_UserIsFacingChar Then
+                        sndBuf.Allocate 2
+                        sndBuf.Put_Byte DataCode.User_Attack
+                        sndBuf.Put_Byte CharList(UserCharIndex).Heading
+                    End If
                 End If
                 
             End If
@@ -1077,6 +1081,74 @@ Dim j As Long
         sndBuf.Put_Byte DataCode.GM_SQL
         sndBuf.Put_String s
         
+    ElseIf Input_GetCommand("/KILLMAP") Then
+        sndBuf.Put_Byte DataCode.GM_KillMap
+
+    ElseIf Input_GetCommand("/KILL") Then
+        If TargetCharIndex = UserCharIndex Or TargetCharIndex = 0 Then
+            Engine_AddToChatTextBuffer "Suicide is not the answer...", FontColor_Info
+        Else
+            sndBuf.Put_Byte DataCode.GM_Kill
+        End If
+        
+    ElseIf Input_GetCommand("/GIVEGO") Then
+        s = Input_GetBufferArgs
+        If Val(s) <= 0 Or Val(s) > MAXLONG Then
+            Engine_AddToChatTextBuffer "Please enter an amount greater than 0.", FontColor_Info
+            GoTo CleanUp
+        End If
+        sndBuf.Put_Byte DataCode.GM_GiveGold
+        sndBuf.Put_Long Val(s)
+        
+    ElseIf Input_GetCommand("/GIVEOBJ") Then
+        s = Input_GetBufferArgs
+        If s = vbNullString Then GoTo CleanUp
+        TempS = Split(s, " ")
+        If UBound(TempS) <> 1 Then
+            Engine_AddToChatTextBuffer "Please use the format: <ObjIndex> <Amount>", FontColor_Info
+            GoTo CleanUp
+        End If
+        If Val(TempS(0)) <= 0 Or Val(TempS(0)) > MAXINT Then
+            Engine_AddToChatTextBuffer "Invalid ObjIndex parameter - enter a value between 1 and " & MAXINT & ".", FontColor_Info
+            GoTo CleanUp
+        End If
+        If Val(TempS(1)) <= 0 Or Val(TempS(1)) > MAXINT Then
+            Engine_AddToChatTextBuffer "Invalid Amount parameter - enter a value between 1 and " & MAXINT & ".", FontColor_Info
+            GoTo CleanUp
+        End If
+        sndBuf.Put_Byte DataCode.GM_GiveObject
+        sndBuf.Put_Integer Val(TempS(0))
+        sndBuf.Put_Integer Val(TempS(1))
+        
+    ElseIf Input_GetCommand("/WARP") Then
+        i = Val(Input_GetBufferArgs)
+        If Not Engine_FileExist(MapPath & i & ".map", vbNormal) Then
+            Engine_AddToChatTextBuffer "Please enter a valid map number.", FontColor_Info
+            GoTo CleanUp
+        End If
+        sndBuf.Put_Byte DataCode.GM_WarpToMap
+        sndBuf.Put_Integer i
+    
+    ElseIf Input_GetCommand("/IPINFO") Then
+        s = Input_GetBufferArgs
+        If s = vbNullString Then GoTo CleanUp
+        TempS = Split(s, ".")   'All of this is just a check for a valid IP
+        If UBound(TempS) <> 3 Then  'Check for 3 periods
+            Engine_AddToChatTextBuffer Message(92), FontColor_Info
+            GoTo CleanUp
+        End If
+        For j = 0 To 3  'Check for values between 0 and 255
+            If Val(TempS(j)) < 0 Or Val(TempS(j)) > 255 Then
+                Engine_AddToChatTextBuffer Message(92), FontColor_Info
+                GoTo CleanUp
+            End If
+        Next j
+        sndBuf.Put_Byte DataCode.GM_IPInfo
+        sndBuf.Put_String s
+        
+    ElseIf Input_GetCommand("/BANLIST") Then
+        sndBuf.Put_Byte DataCode.GM_BanList
+        
     ElseIf Input_GetCommand("/RAISE") Then
         TempS() = Split(Input_GetBufferArgs, " ")
         If UBound(TempS) > 0 Then
@@ -1087,6 +1159,7 @@ Dim j As Long
                 sndBuf.Put_Long CLng(TempS(1))
             End If
         End If
+        
         
     Else
         '*** No commands sent, send as text ***

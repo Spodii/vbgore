@@ -1079,7 +1079,6 @@ Public Sub NPC_Close(ByVal NPCIndex As Integer, Optional ByVal CleanArray As Byt
     Log "Call NPC_Close(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Close down the NPC
-    NPCList(NPCIndex).Flags.NPCActive = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).CharType = 0
 
@@ -1403,7 +1402,6 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
     NPCList(NPCIndex).Flags.NPCAlive = 0
-    NPCList(NPCIndex).Flags.NPCActive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map

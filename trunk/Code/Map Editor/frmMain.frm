@@ -746,7 +746,7 @@ Dim FileName As String
         .DialogTitle = "Load"
         .FileName = vbNullString
         .InitDir = MapPath
-        .Flags = cdlOFNFileMustExist
+        .Flags = cdlOFNFileMustExist Or cdlOFNHideReadOnly Or cdlOFNPathMustExist
         .ShowOpen
     End With
     FileName = Right$(frmMain.CD.FileName, Len(frmMain.CD.FileName) - Len(MapPath))

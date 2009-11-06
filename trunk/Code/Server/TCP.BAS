@@ -995,7 +995,7 @@ Dim i As Long
     IP = rBuf.Get_String
     Reason = rBuf.Get_String
     
-    'Check the user admin ID
+    'Confirm that the user has a high enough GM level
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Check for a reason and IP
@@ -1064,7 +1064,7 @@ Dim nPos As WorldPos
 
     TargetName = rBuf.Get_String
 
-    'Check the user admin ID
+    'Confirm that the user has a high enough GM level
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Convert the name to index
@@ -1082,6 +1082,286 @@ Dim nPos As WorldPos
 
 End Sub
 
+Sub Data_GM_GiveGold(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM gives themself gold
+'<Amount(L)>
+'*****************************************************************
+Dim Amount As Long
+    
+    'Get the gold amount
+    Amount = rBuf.Get_Long
+    
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Give the GM the gold
+    UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + Amount
+    
+    '"You got gold" message
+    ConBuf.PreAllocate 5
+    ConBuf.Put_Byte DataCode.Server_Message
+    ConBuf.Put_Byte 138
+    ConBuf.Put_Long Amount
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
+
+End Sub
+
+Sub Data_GM_GiveObject(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM gives themself an object
+'<ObjIndex(I)><Amount(I)>
+'*****************************************************************
+Dim ObjIndex As Integer
+Dim Amount As Integer
+    
+    'Get the values
+    ObjIndex = rBuf.Get_Integer
+    Amount = rBuf.Get_Integer
+    
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Let the GiveObj routine handle the rest
+    User_GiveObj UserIndex, ObjIndex, Amount
+    
+End Sub
+
+Sub Data_GM_KillMap(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM kills all of the NPCs on the map
+'<>
+'*****************************************************************
+Dim i As Integer
+
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Loop through every NPC
+    For i = 1 To LastNPC
+        
+        'Check if the NPC is on the user's map
+        If NPCList(i).Pos.Map = UserList(UserIndex).Pos.Map Then
+        
+            'Check for valid NPC flags
+            If NPCList(i).Flags.NPCAlive Then
+                If NPCList(i).Flags.NPCActive Then
+                    
+                    'Kill them!
+                    NPC_Kill i
+                    
+                End If
+            End If
+        
+        End If
+        
+    Next i
+    
+End Sub
+
+Sub Data_GM_Kill(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM kills their target
+'<>
+'*****************************************************************
+Dim TargetIndex As Integer
+Dim TargetType As Byte
+
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Get the target index and type
+    TargetIndex = UserList(UserIndex).Flags.TargetIndex
+    TargetType = UserList(UserIndex).Flags.Target
+    
+    'Check for PC
+    If TargetType = CharType_PC Then
+    
+        'Make sure the GM isn't targeting themself
+        If TargetIndex = 0 Then Exit Sub
+        If TargetIndex = UserIndex Then Exit Sub
+        
+        'Check for a valid target
+        If TargetIndex <= 0 Then Exit Sub
+        If TargetIndex > LastUser Then Exit Sub
+        If UserList(TargetIndex).Flags.Disconnecting = 1 Then Exit Sub
+        If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
+        
+        'Kill the user
+        User_Kill TargetIndex
+        
+    'Check for NPC
+    Else
+    
+        'Check for a valid target
+        If TargetIndex <= 0 Then Exit Sub
+        If TargetIndex > LastNPC Then Exit Sub
+        If NPCList(TargetIndex).Flags.NPCActive = 0 Then Exit Sub
+        If NPCList(TargetIndex).Flags.NPCAlive = 0 Then Exit Sub
+        
+        'Kill the NPC
+        NPC_Kill TargetIndex
+        
+    End If
+    
+End Sub
+
+Sub Data_GM_WarpToMap(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM warps to a map by number
+'<MapIndex(I)>
+'*****************************************************************
+Dim MapIndex As Integer
+Dim X As Byte
+Dim Y As Byte
+    
+    'Get the map index
+    MapIndex = rBuf.Get_Integer
+    
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Check for a valid map
+    If MapIndex <= 0 Then Exit Sub
+    If MapIndex > NumMaps Then Exit Sub
+    
+    'Make sure the map is loaded
+    Load_Maps_Temp MapIndex
+    
+    'Warp the user to the very first legal tile
+    For Y = 1 To MapInfo(MapIndex).Width
+        For X = 1 To MapInfo(MapIndex).Height
+            If MapInfo(MapIndex).Data(X, Y).Blocked = 0 Then
+                User_WarpChar UserIndex, MapIndex, X, Y
+                Exit Sub
+            End If
+        Next X
+    Next Y
+            
+End Sub
+
+Sub Data_GM_IPInfo(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM requests information on an IP
+'<IP(S)>
+'*****************************************************************
+Dim s() As String
+Dim IP As String
+Dim i As Long
+Dim j As Long
+
+    'Get the IP (we assume it is valid, since it IS a GM, so they shouldn't be trying to crash the server)
+    IP = rBuf.Get_String
+    
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Clear the conversion buffer
+    ConBuf.Clear
+    
+    'Make a query to the database that contains the IP in the ban list
+    DB_RS.Open "SELECT name,ip FROM users WHERE ip LIKE '%" & IP & "%'", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Check if there are any results
+    If Not DB_RS.EOF Then
+    
+        'Loop through all of the results and return the names
+        i = 0
+        Do While Not DB_RS.EOF
+            
+            'Confirm that the IP is really what we wanted since the LIKE operator won't always give us just what we want
+            s = Split(DB_RS!IP, vbNewLine)      'Split up the IPs
+            If UBound(s) > 0 Then               'Make sure there is more than one IP
+                For j = 0 To UBound(s)          'Loop through and check every value of s()
+                    If s(j) = IP Then Exit For  'Valid match found
+                Next j
+                If j = UBound(s) + 1 Then GoTo NextRS   'If no match was found, skip
+            End If
+                
+            'Add the IP to the list
+            i = i + 1
+            ConBuf.Allocate 5 + Len(DB_RS!Name) + Len(CStr(i))
+            ConBuf.Put_Byte DataCode.Comm_Talk
+            ConBuf.Put_String i & ". " & DB_RS!Name
+            ConBuf.Put_Byte DataCode.Comm_FontType_Info
+
+            'Move to the next recordset
+NextRS:
+            DB_RS.MoveNext
+            
+        Loop
+        
+    End If
+    
+    'Close the record set
+    DB_RS.Close
+    
+    'Check if the data buffer has anything in it (if so, there are results)
+    If ConBuf.HasBuffer = 0 Then
+    
+        'No results :(
+        ConBuf.Allocate 17  'The buffer is already cleared, so no need for PreAllocate
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String "No IP matches."
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        
+    End If
+    
+    'Send whatever we created (either list of names, or "No IP matches") to the user
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
+    
+End Sub
+
+Sub Data_GM_BanList(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'GM requests the list of banned IPs
+'<>
+'*****************************************************************
+Dim i As Long
+
+    'Confirm that the user has a high enough GM level
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
+    
+    'Generate the ban list
+    DB_RS.Open "SELECT * FROM banned_ips", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Check if the are any IP bans
+    If DB_RS.EOF Then
+        DB_RS.Close
+        ConBuf.PreAllocate 28
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String "There are no banned IPs."
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
+        Exit Sub
+    End If
+    
+    'Loop through the IP bans
+    i = 0
+    Do While Not DB_RS.EOF
+        i = i + 1
+        ConBuf.Allocate 8 + Len(DB_RS!IP) + Len(DB_RS!Reason) + Len(CStr(i))
+        ConBuf.Put_Byte DataCode.Comm_Talk
+        ConBuf.Put_String i & ". |" & DB_RS!IP & "| " & DB_RS!Reason
+        ConBuf.Put_Byte DataCode.Comm_FontType_Info
+        DB_RS.MoveNext  'Move to the next IP
+    Loop
+    
+    'Close the record set
+    DB_RS.Close
+    
+    'Send the list to the user
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_GMMessages
+    
+End Sub
+
 Sub Data_GM_Kick(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
 
 '*****************************************************************
@@ -1097,7 +1377,7 @@ Dim i As Byte
     TargetName = rBuf.Get_String
     TargetIndex = User_NameToIndex(TargetName)
 
-    'Check the user admin ID
+    'Confirm that the user has a high enough GM level
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'Check if the user is online
@@ -1147,7 +1427,7 @@ Dim RaiseValue As Long
     RaiseValue = rBuf.Get_Long
     TargetIndex = User_NameToIndex(TargetName)
 
-    'Check the user admin ID
+    'Confirm that the user has a high enough GM level
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'See if user online
@@ -1302,7 +1582,7 @@ Dim nPos As WorldPos
     TargetName = rBuf.Get_String
     TargetIndex = User_NameToIndex(TargetName)
 
-    'Check the user admin ID
+    'Confirm that the user has a high enough GM level
     If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'See if user online
@@ -3667,7 +3947,7 @@ Dim j As Long
     
     'Store the user's IP in a temp variable
     CurrIP = frmMain.GOREsock.Address(UserIndex)
-    
+
     'Check if the user is IP banned
     If Server_IPisBanned(CurrIP, s) Then
         ConBuf.PreAllocate 3 + Len(s)

@@ -1006,7 +1006,7 @@ Dim i As Integer
                     End If
                 End If
             Next i
-            LastUnloadTime = timeGetTime + 5000 'States we will check the unload routine again in 5000 milliseconds
+            LastUnloadTime = timeGetTime + 10000 'States we will check the unload routine again in 10 seconds
         End If
         
         'Check to change servers

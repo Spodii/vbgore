@@ -54,7 +54,7 @@ Public Function MD5_String(SourceString As String) As String
 Dim udtContext As MD5_CONTEXT
 Dim bytDigest(15) As Byte
 Dim bytData() As Byte
-    
+
     'Init the MD5
     MD5Init udtContext
     

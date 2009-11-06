@@ -4,8 +4,9 @@ Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#..\..\..\..\..\..\WIND
 Module=Manifest; ..\..\Code\Common Code\Manifest.bas
 Module=General; Code\General.bas
 Module=AllFilesInFolder; ..\..\Code\Common Code\AllFilesInFolder.bas
+ResFile32="..\..\Data\XP.Manifest.Res"
 IconForm="frmMain"
-Startup="frmMain"
+Startup="Sub Main"
 HelpFile=""
 Title="OptiPNG"
 ExeName32="OptiPNG.exe"
@@ -34,3 +35,6 @@ Unattended=0
 Retained=0
 ThreadPerObject=0
 MaxNumberOfThreads=1
+
+[MS Transaction Server]
+AutoRefresh=1

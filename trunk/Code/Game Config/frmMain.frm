@@ -807,7 +807,7 @@ Begin VB.Form frmMain
          TabIndex        =   9
          Text            =   "0"
          ToolTipText     =   "The highest FPS to aim for (recommended 60 since values higher than 60 will be hardly noticeable)"
-         Top             =   3240
+         Top             =   3360
          Width           =   735
       End
       Begin VB.CheckBox VSyncChk 
@@ -838,7 +838,7 @@ Begin VB.Form frmMain
          Height          =   195
          Left            =   360
          TabIndex        =   19
-         Top             =   3240
+         Top             =   3360
          Width           =   675
       End
    End
@@ -1075,9 +1075,45 @@ Private Function GetKeyValue(ByVal KeyCode As Integer) As Integer
 
 End Function
 
+Private Sub AltRenderChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub AltRenderMapChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub AltRenderTextChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub Bit32Chk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub ChatBubblesChk_Click()
+
+    HasChanged = True
+
+End Sub
+
 Private Sub CloseCmd_Click()
 
     Unload Me
+
+End Sub
+
+Private Sub CompressChk_Click()
+
+    HasChanged = True
 
 End Sub
 
@@ -1227,6 +1263,8 @@ End Sub
 
 Private Sub FPSCapChk_Click()
 
+    HasChanged = True
+
     'Enable/disable FPS limit
     FPSTxt.Enabled = (FPSCapChk.Value = 1)
 
@@ -1250,13 +1288,21 @@ Private Sub FPSTxt_KeyPress(KeyAscii As Integer)
 
     'Check for numeric or backspace
     If Not IsNumeric(Chr$(KeyAscii)) And KeyAscii <> 8 Then KeyAscii = 0
-
+    
+    If KeyAscii > 0 Then HasChanged = True
+    
 End Sub
 
 Private Sub FPSTxt_LostFocus()
     
     'Remove the high-light
     FPSTxt.BackColor = &H80000005
+
+End Sub
+
+Private Sub FullScreenChk_Click()
+
+    HasChanged = True
 
 End Sub
 
@@ -1402,6 +1448,24 @@ Private Sub LoadCmd_Click()
 
 End Sub
 
+Private Sub MotionBlurChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub MusicChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub ReverseChk_Click()
+
+    HasChanged = True
+
+End Sub
+
 Private Sub SaveCmd_Click()
 
     If MsgBox("Are you sure you wish to save the current settings?", vbYesNo) = vbNo Then Exit Sub
@@ -1464,5 +1528,23 @@ Dim f As String
     Var_Write f, "INIT", "UseSfx", SoundsChk.Value
     Var_Write f, "INIT", "ReverseSound", ReverseChk.Value
     Var_Write f, "INIT", "UseMusic", MusicChk.Value
+
+End Sub
+
+Private Sub SoundsChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub VSyncChk_Click()
+
+    HasChanged = True
+
+End Sub
+
+Private Sub WeatherChk_Click()
+
+    HasChanged = True
 
 End Sub

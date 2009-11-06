@@ -5,6 +5,7 @@ Begin VB.Form frmMain
    ClientLeft      =   60
    ClientTop       =   450
    ClientWidth     =   5700
+   Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   5070
    ScaleWidth      =   5700
@@ -16,7 +17,7 @@ Begin VB.Form frmMain
       MultiLine       =   -1  'True
       ScrollBars      =   2  'Vertical
       TabIndex        =   4
-      Text            =   "frmMain.frx":0000
+      Text            =   "frmMain.frx":17D2A
       Top             =   1080
       Width           =   5415
    End
