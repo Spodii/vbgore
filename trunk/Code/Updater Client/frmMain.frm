@@ -200,6 +200,10 @@ Private Sub ConnectTimer_Timer()
 End Sub
 
 Private Sub Form_Load()
+
+    MsgBox "The update client and server are both unstable." & vbNewLine & _
+        "Not recommended to use these unless you truly know what you are doing.", vbOKOnly
+    End
     
     'Check for 7za.exe, because without it we can't decrypt the server files!
     If Not Engine_FileExist(App.Path & "\Data\7za.exe", vbNormal) Then

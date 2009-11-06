@@ -1497,36 +1497,38 @@ Dim CharIndex As Integer
     End If
     
     '*** Status icons ***
-    If UserList(UserIndex).Skills.Bless > 0 Then
-        ConBuf.Allocate 4
-        ConBuf.Put_Byte DataCode.Server_IconBlessed
-        ConBuf.Put_Byte 1
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    End If
-    If UserList(UserIndex).Skills.Protect > 0 Then
-        ConBuf.Allocate 4
-        ConBuf.Put_Byte DataCode.Server_IconProtected
-        ConBuf.Put_Byte 1
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    End If
-    If UserList(UserIndex).Skills.IronSkin > 0 Then
-        ConBuf.Allocate 4
-        ConBuf.Put_Byte DataCode.Server_IconIronSkin
-        ConBuf.Put_Byte 1
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    End If
-    If UserList(UserIndex).Skills.Strengthen > 0 Then
-        ConBuf.Allocate 4
-        ConBuf.Put_Byte DataCode.Server_IconStrengthened
-        ConBuf.Put_Byte 1
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    End If
-    If UserList(UserIndex).Skills.WarCurse > 0 Then
-        ConBuf.Allocate 4
-        ConBuf.Put_Byte DataCode.Server_IconWarCursed
-        ConBuf.Put_Byte 1
-        ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-    End If
+    With UserList(UserIndex)
+        If .Skills.Bless > 0 Then
+            ConBuf.Allocate 4
+            ConBuf.Put_Byte DataCode.Server_IconBlessed
+            ConBuf.Put_Byte 1
+            ConBuf.Put_Integer .Char.CharIndex
+        End If
+        If .Skills.Protect > 0 Then
+            ConBuf.Allocate 4
+            ConBuf.Put_Byte DataCode.Server_IconProtected
+            ConBuf.Put_Byte 1
+            ConBuf.Put_Integer .Char.CharIndex
+        End If
+        If .Skills.IronSkin > 0 Then
+            ConBuf.Allocate 4
+            ConBuf.Put_Byte DataCode.Server_IconIronSkin
+            ConBuf.Put_Byte 1
+            ConBuf.Put_Integer .Char.CharIndex
+        End If
+        If .Skills.Strengthen > 0 Then
+            ConBuf.Allocate 4
+            ConBuf.Put_Byte DataCode.Server_IconStrengthened
+            ConBuf.Put_Byte 1
+            ConBuf.Put_Integer .Char.CharIndex
+        End If
+        If .Skills.WarCurse > 0 Then
+            ConBuf.Allocate 4
+            ConBuf.Put_Byte DataCode.Server_IconWarCursed
+            ConBuf.Put_Byte 1
+            ConBuf.Put_Integer .Char.CharIndex
+        End If
+    End With
 
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
 

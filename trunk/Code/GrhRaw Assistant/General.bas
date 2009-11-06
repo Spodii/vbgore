@@ -61,7 +61,11 @@ Dim i As Long
 End Sub
 
 Public Sub RefreshImage(Optional ByVal MakeNew As Boolean = True)
+Dim Width As Long
+Dim Height As Long
 Dim b(0 To 2) As Byte
+Dim lx As Long
+Dim ly As Long
 Dim l As Long
 Dim x As Long
 Dim y As Long
@@ -82,11 +86,26 @@ Const Add As Single = (255 - (255 * Alpha))
     'Check if we are drawing the grid
     If frmMain.GridChk.Value Then
 
+        'Get the width and height to use
+        If Val(frmMain.RowsTxt.Text) = -1 Then
+            Width = Val(frmMain.TexWidthTxt.Text)
+        Else
+            Width = Val(frmMain.RowsTxt.Text) * Val(frmMain.GridWidthTxt.Text)
+            If Width > Val(frmMain.TexWidthTxt.Text) Then Width = Val(frmMain.TexWidthTxt.Text)
+        End If
+        
+        If Val(frmMain.ColumnsTxt.Text) = -1 Then
+            Height = Val(frmMain.TexHeightTxt.Text)
+        Else
+            Height = Val(frmMain.ColumnsTxt.Text) * Val(frmMain.GridHeightTxt.Text)
+            If Height > Val(frmMain.TexHeightTxt.Text) Then Width = Val(frmMain.TexHeightTxt.Text)
+        End If
+                
         'Loop through the draw area
-        For y = Val(frmMain.StartXTxt.Text) To Val(frmMain.TexWidthTxt.Text) Step Val(frmMain.GridWidthTxt.Text)
-            For x = Val(frmMain.StartYTxt.Text) To Val(frmMain.TexHeightTxt.Text) Step Val(frmMain.GridHeightTxt.Text)
-                If x < Val(frmMain.TexWidthTxt.Text) Then
-                    If y < Val(frmMain.TexHeightTxt.Text) Then
+        For y = Val(frmMain.StartYTxt.Text) To Height Step Val(frmMain.GridHeightTxt.Text)
+            For x = Val(frmMain.StartXTxt.Text) To Width Step Val(frmMain.GridWidthTxt.Text)
+                If x < Width Then
+                    If y < Height Then
                         
                         'Draw the vertical lines
                         If x > 0 Then
@@ -98,6 +117,7 @@ Const Add As Single = (255 - (255 * Alpha))
                                 SetPixel frmMain.PreviewPic.hdc, x, y + i, RGB(b(0) * Alpha + Add, b(1) * Alpha + Add, b(2) * Alpha + Add)
                                 
                             Next i
+                            lx = x + 32
                         End If
                         
                         'Draw the horizontal lines
@@ -110,12 +130,31 @@ Const Add As Single = (255 - (255 * Alpha))
                                 SetPixel frmMain.PreviewPic.hdc, x + i, y, RGB(b(0) * Alpha + Add, b(1) * Alpha + Add, b(2) * Alpha + Add)
                                 
                             Next i
+                            ly = y + 32
                         End If
-                    
+
                     End If
                 End If
             Next x
         Next y
+        
+        'Check if to draw the right side of the grid
+        If lx < Val(frmMain.TexWidthTxt.Text) Then
+            For i = Val(frmMain.StartYTxt.Text) To ly
+                l = GetPixel(frmMain.PreviewPic.hdc, lx, i)
+                CopyMemory b(0), l, 3
+                SetPixel frmMain.PreviewPic.hdc, lx, i, RGB(b(0) * Alpha + Add, b(1) * Alpha + Add, b(2) * Alpha + Add)
+            Next i
+        End If
+    
+        'Check if to draw the bottom side of the grid
+        If ly < Val(frmMain.TexHeightTxt.Text) Then
+            For i = Val(frmMain.StartXTxt.Text) To lx
+                l = GetPixel(frmMain.PreviewPic.hdc, i, ly)
+                CopyMemory b(0), l, 3
+                SetPixel frmMain.PreviewPic.hdc, i, ly, RGB(b(0) * Alpha + Add, b(1) * Alpha + Add, b(2) * Alpha + Add)
+            Next i
+        End If
         
     End If
     
@@ -223,6 +262,8 @@ Dim x As Long
 Dim y As Long
 Dim GrhIndex As Long
 Dim GrhLine As Long
+Dim Width As Long
+Dim Height As Long
 
     'Find the number of rows and columns
     Rows = Val(frmMain.RowsTxt.Text)
@@ -252,15 +293,31 @@ Dim GrhLine As Long
     frmMain.GrhLst.Enabled = False
     frmMain.GrhLst.Visible = False
 
+    'Get the width and height to use
+    If Val(frmMain.RowsTxt.Text) = -1 Then
+        Width = Val(frmMain.TexWidthTxt.Text)
+    Else
+        Width = Val(frmMain.RowsTxt.Text) * Val(frmMain.GridWidthTxt.Text)
+        If Width > Val(frmMain.TexWidthTxt.Text) Then Width = Val(frmMain.TexWidthTxt.Text)
+    End If
+    
+    If Val(frmMain.ColumnsTxt.Text) = -1 Then
+        Height = Val(frmMain.TexHeightTxt.Text)
+    Else
+        Height = Val(frmMain.ColumnsTxt.Text) * Val(frmMain.GridHeightTxt.Text)
+        If Height > Val(frmMain.TexHeightTxt.Text) Then Height = Val(frmMain.TexHeightTxt.Text)
+    End If
+    Debug.Print Width, Height
+
     'Loop through the grid (by pixels)
-    For y = Val(frmMain.StartXTxt.Text) To TexWidth Step GridWidth
-        For x = Val(frmMain.StartYTxt.Text) To TexHeight Step GridHeight
+    For y = Val(frmMain.StartYTxt.Text) To Height Step GridHeight
+        For x = Val(frmMain.StartXTxt.Text) To Width Step GridWidth
             
             'Make sure it is in range
             If x >= 0 Then
                 If y >= 0 Then
-                    If x < TexWidth Then
-                        If y < TexHeight Then
+                    If x < Width Then
+                        If y < Height Then
                         
                             'Get the next Grh line
                             GrhLine = GrhLine + 1

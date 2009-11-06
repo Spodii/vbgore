@@ -321,6 +321,7 @@ Private SaveLastCheck As Long
 
 'How many tiles the engine "looks ahead" when drawing the screen
 Public TileBufferSize As Integer
+Public TileBufferOffset As Long 'Used to calculate offset value in certain cases
 
 'Main view size size in tiles
 Public Const WindowTileWidth As Integer = ScreenWidth \ 32
@@ -720,7 +721,7 @@ Public Function Engine_TPtoSPX(ByVal X As Byte) As Long
 'Takes the tile position and returns the pixel location on the screen
 '************************************************************
 
-    Engine_TPtoSPX = Engine_PixelPosX(X - minX) + OffsetCounterX - 288 + ((10 - TileBufferSize) * 32)
+    Engine_TPtoSPX = Engine_PixelPosX(X - minX) + OffsetCounterX - 288 + TileBufferOffset
 
 End Function
 
@@ -731,7 +732,7 @@ Public Function Engine_TPtoSPY(ByVal Y As Byte) As Long
 'Takes the tile position and returns the pixel location on the screen
 '************************************************************
 
-    Engine_TPtoSPY = Engine_PixelPosY(Y - minY) + OffsetCounterY - 288 + ((10 - TileBufferSize) * 32)
+    Engine_TPtoSPY = Engine_PixelPosY(Y - minY) + OffsetCounterY - 288 + TileBufferOffset
 
 End Function
 
@@ -5181,7 +5182,7 @@ Dim L As Single
     VertexArray(3).tV = VertexArray(2).tV
     
     'Check if a rotation is required
-    If Degrees <> 0 Or Degrees <> 360 Then
+    If Degrees <> 0 And Degrees <> 360 Then
 
         'Converts the angle to rotate by into radians
         RadAngle = Degrees * DegreeToRadian
@@ -5221,8 +5222,8 @@ Public Sub Engine_CreateTileLayers()
 'Has to happen every time the user warps or moves a whole tile
 '************************************************************
 Dim Layer As Byte
-Dim ScreenX As Byte
-Dim ScreenY As Byte
+Dim ScreenX As Long
+Dim ScreenY As Long
 Dim tBuf As Integer
 Dim pX As Integer
 Dim pY As Integer
@@ -5310,6 +5311,7 @@ Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal P
 'Draw current visible to scratch area based on TileX and TileY
 '***********************************************
 Dim FrameUseMotionBlur As Boolean   'Lets us know if this frame is using motion blur so we don't have to leave support for it on
+Dim LightOffset As Long
 Dim ChrID() As Integer
 Dim ChrY() As Integer
 Dim Y As Long           'Keeps track of where on map we are
@@ -5467,6 +5469,7 @@ Dim Layer As Byte
     
     'Loop through the lower 3 layers
     For Layer = 1 To 3
+        LightOffset = ((Layer - 1) * 4) + 1
         
         'Loop through all the tiles we know we will draw for this layer
         For j = 1 To TileLayer(Layer).NumTiles
@@ -5475,9 +5478,9 @@ Dim Layer As Byte
                 'Check if we have to draw with a shadow or not (slighty changes because we have to animate on the shadow, not the main render)
                 If MapData(.TileX, .TileY).Shadow(Layer) = 1 Then
                     Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(LightOffset), MapData(.TileX, .TileY).Light(LightOffset + 1), MapData(.TileX, .TileY).Light(LightOffset + 2), MapData(.TileX, .TileY).Light(LightOffset + 3)
                 Else
-                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(LightOffset), MapData(.TileX, .TileY).Light(LightOffset + 1), MapData(.TileX, .TileY).Light(LightOffset + 2), MapData(.TileX, .TileY).Light(LightOffset + 3)
                 End If
                 
             End With
@@ -5491,8 +5494,8 @@ Dim Layer As Byte
     '************** Objects **************
     For j = 1 To LastObj
         If OBJList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(OBJList(j).Pos.X - minX) + PixelOffsetX + OBJList(j).Offset.X + ((10 - TileBufferSize) * 32)
-            Y = Engine_PixelPosY(OBJList(j).Pos.Y - minY) + PixelOffsetY + OBJList(j).Offset.Y + ((10 - TileBufferSize) * 32)
+            X = Engine_PixelPosX(OBJList(j).Pos.X - minX) + PixelOffsetX + OBJList(j).Offset.X + TileBufferOffset
+            Y = Engine_PixelPosY(OBJList(j).Pos.Y - minY) + PixelOffsetY + OBJList(j).Offset.Y + TileBufferOffset
             If Y >= -32 Then
                 If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
@@ -5525,8 +5528,8 @@ Dim Layer As Byte
     'Loop through the sorted characters
     For j = 1 To LastChar
         If CharList(ChrID(j)).Active Then
-            X = Engine_PixelPosX(CharList(ChrID(j)).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
-            Y = Engine_PixelPosY(CharList(ChrID(j)).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+            X = Engine_PixelPosX(CharList(ChrID(j)).Pos.X - minX) + PixelOffsetX + TileBufferOffset
+            Y = Engine_PixelPosY(CharList(ChrID(j)).Pos.Y - minY) + PixelOffsetY + TileBufferOffset
             
             If Y >= -32 And Y <= (ScreenHeight + 32) And X >= -32 And X <= (ScreenWidth + 32) Then
                 
@@ -5549,13 +5552,14 @@ Dim Layer As Byte
     '************** Layer 4 to 6 **************
     AlternateRender = AlternateRenderMap
     For Layer = 4 To 6
+        LightOffset = ((Layer - 1) * 4) + 1
         For j = 1 To TileLayer(Layer).NumTiles
             With TileLayer(Layer).Tile(j)
                 If MapData(.TileX, .TileY).Shadow(Layer) = 1 Then
                     Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(LightOffset), MapData(.TileX, .TileY).Light(LightOffset + 1), MapData(.TileX, .TileY).Light(LightOffset + 2), MapData(.TileX, .TileY).Light(LightOffset + 3)
                 Else
-                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(LightOffset), MapData(.TileX, .TileY).Light(LightOffset + 1), MapData(.TileX, .TileY).Light(LightOffset + 2), MapData(.TileX, .TileY).Light(LightOffset + 3)
                 End If
             End With
         Next j
@@ -5568,8 +5572,8 @@ Dim Layer As Byte
     If LastEffect > 0 Then
         For j = 1 To LastEffect
             If EffectList(j).Grh.GrhIndex Then
-                X = Engine_PixelPosX(EffectList(j).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
-                Y = Engine_PixelPosY(EffectList(j).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+                X = Engine_PixelPosX(EffectList(j).Pos.X - minX) + PixelOffsetX + TileBufferOffset
+                Y = Engine_PixelPosY(EffectList(j).Pos.Y - minY) + PixelOffsetY + TileBufferOffset
                 If EffectList(j).Time <> 0 And EffectList(j).Time < timeGetTime Then
                 
                     'Timer ran out
@@ -5621,8 +5625,8 @@ Dim Layer As Byte
                 End If
 
                 'Draw if within range
-                X = ((-minX - 1) * 32) + ProjectileList(j).X + PixelOffsetX + ((10 - TileBufferSize) * 32)
-                Y = ((-minY - 1) * 32) + ProjectileList(j).Y + PixelOffsetY + ((10 - TileBufferSize) * 32)
+                X = ((-minX - 1) * 32) + ProjectileList(j).X + PixelOffsetX + TileBufferOffset
+                Y = ((-minY - 1) * 32) + ProjectileList(j).Y + PixelOffsetY + TileBufferOffset
                 If Y >= -32 Then
                     If Y <= (ScreenHeight + 32) Then
                         If X >= -32 Then
@@ -5659,8 +5663,8 @@ Dim Layer As Byte
     'Loop to do drawing
     For j = 1 To LastBlood
         If BloodList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(BloodList(j).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
-            Y = Engine_PixelPosY(BloodList(j).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+            X = Engine_PixelPosX(BloodList(j).Pos.X - minX) + PixelOffsetX + TileBufferOffset
+            Y = Engine_PixelPosY(BloodList(j).Pos.Y - minY) + PixelOffsetY + TileBufferOffset
             If Y >= -32 Then
                 If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
@@ -5713,8 +5717,8 @@ Dim Layer As Byte
     For j = 1 To LastDamage
         If DamageList(j).Counter > 0 Then
             DamageList(j).Counter = DamageList(j).Counter - ElapsedTime
-            X = (((DamageList(j).Pos.X - minX) - 1) * TilePixelWidth) + PixelOffsetX + ((10 - TileBufferSize) * 32)
-            Y = (((DamageList(j).Pos.Y - minY) - 1) * TilePixelHeight) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+            X = (((DamageList(j).Pos.X - minX) - 1) * TilePixelWidth) + PixelOffsetX + TileBufferOffset
+            Y = (((DamageList(j).Pos.Y - minY) - 1) * TilePixelHeight) + PixelOffsetY + TileBufferOffset
             If Y >= -32 Then
                 If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then

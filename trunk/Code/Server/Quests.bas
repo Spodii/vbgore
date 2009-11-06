@@ -49,6 +49,13 @@ Dim i As Long
 
             End If
         Next Slot
+        
+        'If we made it through the whole loop without finding a slot (that is, if the slot = MAX_INVENTORY_SLOTS + 1) then
+        'the object was not found in the user's inventory at all, so give them the missing error and abort
+        If Slot = MAX_INVENTORY_SLOTS + 1 Then
+            Quest_SayIncomplete UserIndex, NPCIndex
+            Exit Sub
+        End If
 
     End If
 

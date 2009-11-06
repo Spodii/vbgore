@@ -738,6 +738,19 @@ Dim Byt1 As Byte
                 Str1 = QuestInfo(Byt1).Name
                 QuestInfo(Byt1).Desc = vbNullString
                 QuestInfo(Byt1).Name = vbNullString
+                Lng1 = QuestInfoUBound
+                Do
+                    If Lng1 = 0 Then Exit Do
+                    If QuestInfo(Lng1).Name <> vbNullString Then Exit Do
+                    Lng1 = Lng1 - 1
+                Loop
+                If Lng1 = 0 Then
+                    Erase QuestInfo
+                    QuestInfoUBound = 0
+                Else
+                    ReDim Preserve QuestInfo(1 To Lng1)
+                    QuestInfoUBound = Lng1
+                End If
                 If Str1 <> vbNullString Then
                     Engine_AddToChatTextBuffer Replace$(Message(129), "<name>", Str1), FontColor_Quest
                 End If

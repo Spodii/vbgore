@@ -332,6 +332,10 @@ End Sub
 
 Private Sub Form_Load()
 
+    MsgBox "The update client and server are both unstable." & vbNewLine & _
+        "Not recommended to use these unless you truly know what you are doing.", vbOKOnly
+    End
+
     'Show the form
     Me.Show
     DoEvents

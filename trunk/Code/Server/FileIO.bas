@@ -741,56 +741,53 @@ Dim j As Byte
 End Sub
 
 Public Sub Load_NPC_Names()
-
+ 
 '*****************************************************************
 'Loads the names of NPCs (only if they are used in a quest)
 '*****************************************************************
 Dim i As Long
-
-    'Resize the NPC name array by the highest index used
-    DB_RS.Open "SELECT finish_req_killnpc FROM quests ORDER BY id DESC", DB_Conn, adOpenStatic, adLockOptimistic
+ 
+    'Grab all of the indexes of NPCs used in quests
+    DB_RS.Open "SELECT finish_req_killnpc FROM quests ORDER BY finish_req_killnpc DESC", DB_Conn, adOpenStatic, adLockOptimistic
     If Val(DB_RS(0)) = 0 Then
-        
-        'No NPCs used for quests, abort
+ 
+        'No NPCs used for quests, abort because we have no names we need
         DB_RS.Close
         Exit Sub
-        
+ 
     End If
-    
+ 
+    'Resize the NPC name array by the highest index used (remember, we're ordered descending, so this is the highest index)
     ReDim NPCName(1 To DB_RS(0))
-    DB_RS.Close
-
-    'Grab all the NPC numbers used in quests
-    DB_RS.Open "SELECT finish_req_killnpc FROM quests", DB_Conn, adOpenStatic, adLockOptimistic
-    
+ 
     'Loop through all the IDs
     Do While Not DB_RS.EOF  'Loop until we reach the end of the recordset
-        
+ 
         'If the ID is used, mark it with ".", so we can get the real name later
         If Val(DB_RS(0)) > 0 Then NPCName(Val(DB_RS(0))) = "."
-        
+ 
         'Move to the next record
         DB_RS.MoveNext
-        
+ 
     Loop
-    
+ 
     DB_RS.Close
-        
+ 
     'Fill in the values
     For i = 1 To UBound(NPCName)
-        
+ 
         'A "." states we need to get the name
         If NPCName(i) = "." Then
-            
+ 
             'Get the name
             DB_RS.Open "SELECT name FROM npcs WHERE id=" & i, DB_Conn, adOpenStatic, adLockOptimistic
             NPCName(i) = Trim$(DB_RS(0))
             DB_RS.Close
-        
+ 
         End If
-        
+ 
     Next i
-        
+ 
 End Sub
 
 Public Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0, Optional ByVal ThralledTime As Long = -1) As Integer

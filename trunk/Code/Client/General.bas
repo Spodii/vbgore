@@ -531,6 +531,10 @@ Dim TempInt As Integer
         'Erase characters
         LastChar = 0
         Erase CharList
+        
+        'Erase damage
+        LastDamage = 0
+        Erase DamageList
     
         'Erase objects
         LastObj = 0
@@ -764,6 +768,9 @@ Dim TempInt As Integer
     'Force to 2 to draw characters since they are 2 tiles tall
     'If you have characters or paperdoll parts > 64 pixels in width or high, you need to increase this
     If TileBufferSize < 2 Then TileBufferSize = 2
+    
+    'Cache the TileBufferOffset value to prevent always having to calculate it on the fly
+    TileBufferOffset = ((10 - TileBufferSize) * 32)
 
 End Sub
 

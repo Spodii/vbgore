@@ -2465,6 +2465,16 @@ Dim StatID As Byte
         Log "Data_User_BaseStat: Invalid stat ID (" & StatID & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
     End If
+    
+    'Check for a valid class to add
+    Select Case StatID
+ 
+        'Invalid stats
+        Case SID.DEF, SID.ELU, SID.ELV, SID.EXP, SID.Gold, SID.MaxMAN, SID.MaxSTA, SID.MaxHIT, _
+            SID.MaxHP, SID.MinMAN, SID.MinSTA, SID.MinHIT, SID.MinHP, SID.Points, SID.Speed
+            Exit Sub
+ 
+    End Select
 
     'Raise the stat if possible
     If UserList(UserIndex).Stats.BaseStat(SID.Points) >= 1 Then

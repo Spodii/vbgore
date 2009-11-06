@@ -73,6 +73,15 @@ version 0.0.2 of vbGORE. It should still get the job done, though.
 The guide for Grh3RawMaker can be found on the vbGORE site at:
 http://www.vbgore.com/index.php?title=Using_GrhRawMaker
 
+==================
+== Grh3RawMaker ==
+==================
+Created by:
+Kampfschaf
+
+Description:
+A tool to help view your GrhRaw.txt entries.
+
 =================
 == Map Capture ==
 =================
