@@ -128,7 +128,7 @@ Dim PutSlot As Byte
             End If
         Loop While UserList(UserIndex).Bank(PutSlot).ObjIndex <> UserList(UserIndex).Object(Slot).ObjIndex
     Else
-        Slot = MAX_INVENTORY_SLOTS + 1  'Override to force to check the next slot
+        PutSlot = 0  'Force to check the next free slot
     End If
     
     'If PutSlot = 0, no duplicate item was found, so use the next free slot
@@ -1107,60 +1107,37 @@ Dim TargetIndex As Integer
     Data_Send ToIndex, UserIndex, cMessage(36).Data()
 
 End Sub
-'--------------------------------------------
 
-Sub Data_User_Trade_UpdateTrade(ByRef rBuf As DataBuffer)
-'THIS SUB IS USED TO RECIVE AND DELIGATE UPDATES FROM A CLIENT INVOLVED IN TRADING.
-Dim UserTableIndex As Byte
+Sub Data_User_Trade_RemoveItem(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'User removes an item from their trade table
+'<TableSlot(B)>
+'*****************************************************************
 Dim TableSlot As Byte
+
+    TableSlot = rBuf.Get_Byte
+    
+    'Invalid values handled by the sub
+    TradeTable_RemoveItem UserIndex, TableSlot
+
+End Sub
+
+Sub Data_User_Trade_UpdateTrade(ByRef rBuf As DataBuffer, ByVal UserIndex As Integer)
+
+'*****************************************************************
+'Update a trade table
+'<InvSlot(B)><Amount(L)>
+'*****************************************************************
 Dim InvSlot As Byte
 Dim Amount As Long
 
-UserTableIndex = rBuf.Get_Byte
-TableSlot = rBuf.Get_Byte
-InvSlot = rBuf.Get_Byte
-Amount = rBuf.Get_Long
-
-'Check for valid info
-'MMM Lets update some gooold!
-If TableSlot = 0 Then
-    If TradeTable(UserTableIndex).User1 = 1 Then
-        If UserTableIndex = 1 Then
-            TradeTable(UserTableIndex).Gold1 = Amount
-        ElseIf UserTableIndex = 2 Then
-            TradeTable(UserTableIndex).Gold2 = Amount
-        End If
-    End If
-End If
-'Great! Now we have it all sorted out, player one has done his thing or player 2
-'has done their thing, lets tell the other whats going on!
-
-If TableSlot = 0 Then
-    If UserTableIndex = 1 Then
-    'if it came from the first player show the second
-        ConBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-        ConBuf.Put_Byte UserTableIndex
-        ConBuf.Put_Byte TableSlot
-        ConBuf.Put_Byte InvSlot
-        ConBuf.Put_Long Amount
-        
-        Data_Send ToIndex, TradeTable(UserTableIndex).User2, ConBuf.Get_Buffer
-    ElseIf UserTableIndex = 2 Then
-    'if it came from the second player, show the first
-        'if it came from the first player show the second
-        ConBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-        ConBuf.Put_Byte UserTableIndex
-        ConBuf.Put_Byte TableSlot
-        ConBuf.Put_Byte InvSlot
-        ConBuf.Put_Long Amount
-        
-        Data_Send ToIndex, TradeTable(UserTableIndex).User1, ConBuf.Get_Buffer
-
+    'Get the values
+    InvSlot = rBuf.Get_Byte
+    Amount = rBuf.Get_Long
     
-    End If
-End If
-
-
+    'Invalid values handled by the sub
+    TradeTable_UpdateSlot UserIndex, InvSlot, Amount
 
 End Sub
 

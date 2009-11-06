@@ -22,6 +22,8 @@ Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
 
+Public FPSCap As Long   'The FPS cap the user defined to use (in milliseconds, not FPS)
+
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
@@ -555,16 +557,7 @@ Dim b() As Byte
         'Erase particle effects
         LastEffect = 0
         ReDim Effect(1 To NumEffects)
-        
-        'Clear map sounds
-        On Error Resume Next
-            For Y = 1 To MapInfo.Width
-                For X = 1 To MapInfo.Height
-                    Sound_Erase MapData(X, Y).Sfx
-                Next X
-            Next Y
-        On Error GoTo 0
-        
+
     End If
 
     'Open map file
@@ -1044,9 +1037,11 @@ Dim i As Integer
         'Do other events
         DoEvents
         
-        'Do sleep event - force FPS at ~60 (62.5) average (prevents extensive processing)
-        If (timeGetTime - StartTime) < 16 Then  'If Elapsed Time < Time required for 60 FPS
-            Sleep 16 - (timeGetTime - StartTime)
+        'Do sleep event - force FPS at the FPS cap
+        If FPSCap > 0 Then
+            If (timeGetTime - StartTime) < FPSCap Then  'If Elapsed Time < Time required for requested highest fps
+                Sleep FPSCap - (timeGetTime - StartTime)
+            End If
         End If
 
     Loop

@@ -5,10 +5,10 @@ Begin VB.Form frmMain
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
    Caption         =   "vbGORE Server"
-   ClientHeight    =   990
+   ClientHeight    =   750
    ClientLeft      =   1950
    ClientTop       =   1830
-   ClientWidth     =   3765
+   ClientWidth     =   3480
    BeginProperty Font 
       Name            =   "Arial"
       Size            =   8.25
@@ -24,9 +24,9 @@ Begin VB.Form frmMain
    MaxButton       =   0   'False
    MinButton       =   0   'False
    PaletteMode     =   1  'UseZOrder
-   ScaleHeight     =   66
+   ScaleHeight     =   50
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   251
+   ScaleWidth      =   232
    StartUpPosition =   2  'CenterScreen
    Begin GOREsock.GOREsockServer GOREsock 
       Left            =   600
@@ -672,12 +672,11 @@ Dim i As Byte
             Case .User_Rotate: Data_User_Rotate rBuf, Index
             Case .User_StartQuest: Data_User_StartQuest Index
             Case .User_Target: Data_User_Target rBuf, Index
-            '--------------------------------------------
-            Case .User_Trade_Trade: Data_User_Trade_Trade rBuf, Index
-            Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf
-            '--------------------------------------------
             Case .User_Trade_BuyFromNPC: Data_User_Trade_BuyFromNPC rBuf, Index
+            Case .User_Trade_RemoveItem: Data_User_Trade_RemoveItem rBuf, Index
             Case .User_Trade_SellToNPC: Data_User_Trade_SellToNPC rBuf, Index
+            Case .User_Trade_Trade: Data_User_Trade_Trade rBuf, Index
+            Case .User_Trade_UpdateTrade: Data_User_Trade_UpdateTrade rBuf, Index
             Case .User_Use: Data_User_Use rBuf, Index
             
             Case Else

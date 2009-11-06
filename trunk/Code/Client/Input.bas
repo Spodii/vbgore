@@ -474,12 +474,12 @@ Dim j As Long
                             sndBuf.Put_Byte DataCode.User_Bank_PutItem
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
-                        '----------------------------------------------------
                         'Put in trade
                         ElseIf AmountWindowUsage = AW_InvToTrade Then
-                            Data_User_Trade_UpdateTradeSlot TradeTable.MyIndex, AmountWindowItemIndex2, AmountWindowItemIndex, CInt(AmountWindowValue)
-                        '----------------------------------------------------
-                        
+                            sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
+                            sndBuf.Put_Byte AmountWindowItemIndex
+                            sndBuf.Put_Long CInt(AmountWindowValue)
+                                 
                         'Drop on ground
                         Else
                             sndBuf.Allocate 4
@@ -500,19 +500,16 @@ Dim j As Long
         '*************************
         '***** Trade window ******
         '*************************
-        '''
-        ElseIf LastClickedWindow = TradeWindow Then
-            If TradeTable.Gold1 >= 0 Then
-                If IsNumeric(TradeTable.Gold1) Then
-                'send gold update to the server
-                '''''
-                Data_User_Trade_UpdateTradeSlot TradeTable.MyIndex, 0, 0, TradeTable.Gold1
-                End If
-            End If
-        
-            
-            
-            
+        '//!!
+        'ElseIf LastClickedWindow = TradeWindow Then
+        '    If TradeTable.Gold1 >= 0 Then
+        '        If IsNumeric(TradeTable.Gold1) Then
+        '            sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
+        '            sndBuf.Put_Byte 0
+        '            sndBuf.Put_Long CLng(TradeTable.Gold1)
+        '        End If
+        '    End If
+
         '*****************************
         '***** Write mail window *****
         '*****************************
@@ -1161,8 +1158,7 @@ Dim i As Byte
 Dim j As Byte
 
     Select Case WindowIndex
-    '-----------------------------------------------------------
-    'Here we Left click the game window.
+
         Case TradeWindow
             If ShowGameWindow(TradeWindow) Then
                 With GameWindow.Trade
@@ -1171,17 +1167,9 @@ Dim j As Byte
                         LastClickedWindow = TradeWindow
                         For i = 1 To 9
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Trade1(i).X, .Screen.Y + .Trade1(i).Y, 32, 32) Then
-                                'An item that had been placed into the trade but the user wants
-                                'to remove it.
-                                
-                                'Do we want to allow that?
-                                
-                                'sndBuf.Allocate 5
-                                ''sndBuf.Put_Byte DataCode.User_Trade_ChangeSlot renamed update trade
-                                'sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-                                'sndBuf.Put_Byte i
-                                'sndBuf.Put_Byte 0
-                                'sndBuf.Put_Integer 0
+                                sndBuf.Allocate 2
+                                sndBuf.Put_Byte DataCode.User_Trade_RemoveItem
+                                sndBuf.Put_Byte i
                                 Exit Function
                             End If
                         Next i
@@ -1189,7 +1177,7 @@ Dim j As Byte
                     End If
                 End With
             End If
-    '-----------------------------------------------------------
+        
         Case NPCChatWindow
             If ShowGameWindow(NPCChatWindow) Then
                 With GameWindow.NPCChat
@@ -2053,8 +2041,7 @@ Dim i As Byte
 
     'Check if we released mouse and have an item in being dragged
     If DragItemSlot Then
-    '-----------------------------------------------------------
-    'Right click draging an item from inventory to the trade window
+    
         'Inventory -> Trade Window
         If DragSourceWindow = InventoryWindow Then
             If ShowGameWindow(TradeWindow) Then
@@ -2064,9 +2051,9 @@ Dim i As Byte
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Trade1(i).X + .Screen.X, .Trade1(i).Y + .Screen.Y, 32, 32) Then
                                 
                                 If UserInventory(DragItemSlot).Amount = 1 Then
-                                
-                                    Data_User_Trade_UpdateTradeSlot TradeTable.MyIndex, CByte(i), DragItemSlot, 1
-
+                                    sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
+                                    sndBuf.Put_Byte DragItemSlot
+                                    sndBuf.Put_Long 1
                                 Else
                                     ShowGameWindow(AmountWindow) = 1
                                     LastClickedWindow = AmountWindow
@@ -2089,7 +2076,7 @@ Dim i As Byte
                 End With
             End If
         End If
-'-----------------------------------------------------------
+        
         'Inventory -> Inventory (change slot)
         If DragSourceWindow = InventoryWindow Then
             If ShowGameWindow(InventoryWindow) Then

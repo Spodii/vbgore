@@ -19,6 +19,21 @@ Public AlternateRenderDefault As Byte
 Public AlternateRenderMap As Byte
 Public AlternateRenderText As Byte
 
+'Describes a transformable lit vertex
+Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE
+Public Type TLVERTEX
+    X As Single
+    Y As Single
+    Z As Single
+    Rhw As Single
+    Color As Long
+    tu As Single
+    tV As Single
+End Type
+
+'The size of a FVF vertex
+Public Const FVF_Size As Long = 28
+
 '********** CONSTANTS ***********
 'Keep window in the game screen - dont let them move outside of the window bounds
 Public Const WindowsInScreen As Boolean = True
@@ -71,6 +86,9 @@ Public Type POINTAPI
 End Type
 
 'vbGORE Font Header
+Private Type CharVA
+    Vertex(0 To 3) As TLVERTEX
+End Type
 Private Type VFH
     BitmapWidth As Long         'Size of the bitmap itself
     BitmapHeight As Long
@@ -78,6 +96,7 @@ Private Type VFH
     CellHeight As Long
     BaseCharOffset As Byte      'The character we start from
     CharWidth(0 To 255) As Byte 'The actual factual width of each character
+    CharVA(0 To 255) As CharVA
 End Type
 
 Private Type CustomFont
@@ -94,6 +113,7 @@ Public Const Font_Default_TextureNum As Long = -1   'The texture number used to 
 Public Font_Default As CustomFont   'Describes our custom font "default"
 
 '********** TYPES ***********
+
 'Text buffer
 Type ChatTextBuffer
     Text As String
@@ -590,21 +610,6 @@ Private Sprite As D3DXSprite
 Private SpriteBegun As Byte
 Private SpriteScaleVector As D3DVECTOR2
 
-'Describes a transformable lit vertex
-Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE
-Public Type TLVERTEX
-    X As Single
-    Y As Single
-    Z As Single
-    Rhw As Single
-    Color As Long
-    tu As Single
-    tV As Single
-End Type
-
-'The size of a FVF vertex
-Public Const FVF_Size As Long = 28
-
 'Motion-bluring information
 Public UseMotionBlur As Byte    'If motion blur is enabled or not
 Public BlurIntensity As Single
@@ -614,12 +619,6 @@ Public BlurStencil As Direct3DSurface8
 Public DeviceStencil As Direct3DSurface8
 Public DeviceBuffer As Direct3DSurface8
 Public BlurTA(0 To 3) As TLVERTEX
-
-'Holds the general purpose vertex array (for building rectangles only)
-Private VertexArray(0 To 3) As TLVERTEX
-
-'Holds the temp vertex array to build vertex buffers
-Private tVA() As TLVERTEX
 
 'Chat vertex buffer (only kept in memory if using alternate rendering)
 Private ChatVA() As TLVERTEX
@@ -898,7 +897,7 @@ Dim LoopC As Byte
 Dim Ascii As Byte
 Dim Row As Long
 Dim Pos As Long
-Dim u As Single
+Dim U As Single
 Dim V As Single
 Dim X As Single
 Dim Y As Single
@@ -967,7 +966,7 @@ Dim TempColor As Long
                 
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
-                    u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
+                    U = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
                     V = Row * Font_Default.RowFactor
 
                     'Set up the verticies
@@ -984,7 +983,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2
-                        .tu = u
+                        .tu = U
                         .tV = V
                         .Rhw = 1
                     End With
@@ -992,7 +991,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
-                        .tu = u
+                        .tu = U
                         .tV = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
@@ -1000,7 +999,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
-                        .tu = u + Font_Default.ColFactor
+                        .tu = U + Font_Default.ColFactor
                         .tV = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
@@ -1011,7 +1010,7 @@ Dim TempColor As Long
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2
-                        .tu = u + Font_Default.ColFactor
+                        .tu = U + Font_Default.ColFactor
                         .tV = V
                         .Rhw = 1
                     End With
@@ -1927,11 +1926,6 @@ Dim i As Byte
     'Store the create flags
     UsedCreateFlags = D3DCREATEFLAGS
 
-    'The Rhw will always be 1, so set it now instead of every call
-    For i = 0 To 3
-        VertexArray(i).Rhw = 1
-    Next i
-    
     'Everything was successful
     Engine_Init_D3DDevice = 1
     
@@ -2303,7 +2297,7 @@ Dim Y As Long
 
     'Load Write Message window
     GameWindow.WriteMessage = GameWindow.ViewMessage
-    With GameWindow.ViewMessage.Screen
+    With GameWindow.WriteMessage.Screen
         If LoadCustomPos Then
             .X = Val(Var_Get(t, "WRITEMESSAGE", "ScreenX"))
             .Y = Val(Var_Get(t, "WRITEMESSAGE", "ScreenY"))
@@ -2312,7 +2306,7 @@ Dim Y As Long
             .Y = Val(Var_Get(s, "WRITEMESSAGE", "ScreenY"))
         End If
     End With
-    Engine_Init_Grh GameWindow.ViewMessage.SkinGrh, Val(Var_Get(s, "WRITEMESSAGE", "Grh"))
+    Engine_Init_Grh GameWindow.WriteMessage.SkinGrh, Val(Var_Get(s, "WRITEMESSAGE", "Grh"))
 
     'Load Amount window
     With GameWindow.Amount.Screen
@@ -2993,17 +2987,20 @@ Sub Engine_Init_FontTextures()
 '*****************************************************************
 'Init the custom font textures
 '*****************************************************************
-Dim FileNum As Byte
 Dim TexInfo As D3DXIMAGE_INFO_A
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
     '*** Default font ***
-    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, TexInfo, ByVal 0)
+    
+    'Set the texture
+    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, 0, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
+    
+    'Store the size of the texture
     Font_Default.TextureSize.X = TexInfo.Width
     Font_Default.TextureSize.Y = TexInfo.Height
-    
+
 End Sub
 
 Sub Engine_Init_FontSettings()
@@ -3012,7 +3009,11 @@ Sub Engine_Init_FontSettings()
 'Init the custom font settings
 '*****************************************************************
 Dim FileNum As Byte
-    
+Dim LoopChar As Long
+Dim Row As Single
+Dim U As Single
+Dim V As Single
+
     '*** Default font ***
 
     'Load the header information
@@ -3026,6 +3027,51 @@ Dim FileNum As Byte
     Font_Default.RowPitch = Font_Default.HeaderInfo.BitmapWidth \ Font_Default.HeaderInfo.CellWidth
     Font_Default.ColFactor = Font_Default.HeaderInfo.CellWidth / Font_Default.HeaderInfo.BitmapWidth
     Font_Default.RowFactor = Font_Default.HeaderInfo.CellHeight / Font_Default.HeaderInfo.BitmapHeight
+    
+    'Cache the verticies used to draw the character (only requires setting the color and adding to the X/Y values)
+    For LoopChar = 0 To 255
+        
+        'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
+        Row = (LoopChar - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
+        U = ((LoopChar - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
+        V = Row * Font_Default.RowFactor
+
+        'Set the verticies
+        With Font_Default.HeaderInfo.CharVA(LoopChar)
+            .Vertex(0).Color = D3DColorARGB(255, 0, 0, 0)   'Black is the most common color
+            .Vertex(0).Rhw = 1
+            .Vertex(0).tu = U
+            .Vertex(0).tV = V
+            .Vertex(0).X = 0
+            .Vertex(0).Y = 0
+            .Vertex(0).Z = 0
+            
+            .Vertex(1).Color = D3DColorARGB(255, 0, 0, 0)
+            .Vertex(1).Rhw = 1
+            .Vertex(1).tu = U + Font_Default.ColFactor
+            .Vertex(1).tV = V
+            .Vertex(1).X = Font_Default.HeaderInfo.CellWidth
+            .Vertex(1).Y = 0
+            .Vertex(1).Z = 0
+            
+            .Vertex(2).Color = D3DColorARGB(255, 0, 0, 0)
+            .Vertex(2).Rhw = 1
+            .Vertex(2).tu = U
+            .Vertex(2).tV = V + Font_Default.RowFactor
+            .Vertex(2).X = 0
+            .Vertex(2).Y = Font_Default.HeaderInfo.CellHeight
+            .Vertex(2).Z = 0
+            
+            .Vertex(3).Color = D3DColorARGB(255, 0, 0, 0)
+            .Vertex(3).Rhw = 1
+            .Vertex(3).tu = U + Font_Default.ColFactor
+            .Vertex(3).tV = V + Font_Default.RowFactor
+            .Vertex(3).X = Font_Default.HeaderInfo.CellWidth
+            .Vertex(3).Y = Font_Default.HeaderInfo.CellHeight
+            .Vertex(3).Z = 0
+        End With
+        
+    Next LoopChar
 
 End Sub
 
@@ -3055,6 +3101,10 @@ Dim t As Long
     
     Bit32 = Val(Var_Get(DataPath & "Game.ini", "INIT", "32bit"))
     If Bit32 <> 0 Then Bit32 = 1        'Force to 1 or 0
+    
+    FPSCap = Val(Var_Get(DataPath & "Game.ini", "INIT", "FPSCap"))
+    If FPSCap < 0 Then FPSCap = 0
+    If FPSCap > 0 Then FPSCap = 1000 \ FPSCap
     
     DisableChatBubbles = Val(Var_Get(DataPath & "Game.ini", "INIT", "DisableChatBubbles"))
     If DisableChatBubbles <> 0 Then DisableChatBubbles = 1        'Force to 1 or 0
@@ -3211,7 +3261,6 @@ Dim Y As Long
     Erase BlurTA
     Erase SurfaceTimer
     Erase SoundBufferTimer
-    Erase VertexArray
     Erase MapData
     Erase GrhData
     Erase GrhData
@@ -4436,13 +4485,13 @@ Dim i As Long
         
         'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
         D3DDevice.SetTexture 0, Font_Default.Texture
-        LastTexture = 0
+        LastTexture = Font_Default_TextureNum
     
         'Set up the vertex buffer
         If ShowGameWindow(ChatWindow) Then
             If ChatArrayUbound > 0 Then
                 D3DDevice.SetStreamSource 0, ChatVB, FVF_Size
-                D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, ChatArrayUbound \ 3
+                D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, (ChatArrayUbound + 1) \ 3
             End If
         End If
     
@@ -4837,6 +4886,19 @@ Dim j As Long
             'Render the chat text
             Engine_Render_ChatTextBuffer
             
+            'Draw entered text
+            If EnterText = True Then
+                If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
+                If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
+                If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+                    TempGrh.GrhIndex = 39
+                    TempGrh.FrameCounter = 1
+                    TempGrh.Started = 1
+                    TempGrh.SpeedCounter = 0
+                    Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
+                End If
+            End If
+            
         Case MenuWindow
             With GameWindow.Menu
                 Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
@@ -5094,6 +5156,7 @@ Sub Engine_Render_Rectangle(ByVal X As Single, ByVal Y As Single, ByVal Width As
 '************************************************************
 'Render a square/rectangle based on the specified values then rotate it if needed
 '************************************************************
+Dim VertexArray(0 To 3) As TLVERTEX
 Dim WidthMod As Single
 Dim HeightMod As Single
 Dim RadAngle As Single 'The angle in Radians
@@ -5137,14 +5200,20 @@ Dim ShadowAdd As Byte
         ShadowAdd = 1
 
     End If
+    
+    VertexArray(0).Rhw = 1
+    VertexArray(1).Rhw = 1
+    VertexArray(2).Rhw = 1
+    VertexArray(3).Rhw = 1
+    
+    VertexArray(2).X = X
+    VertexArray(2).Y = Y + Height
+    VertexArray(3).X = X + Width
+    VertexArray(3).Y = Y + Height
 
     VertexArray(0).Color = Color0
     VertexArray(1).Color = Color1
-    VertexArray(2).X = X
-    VertexArray(2).Y = Y + Height
     VertexArray(2).Color = Color2
-    VertexArray(3).X = X + Width
-    VertexArray(3).Y = Y + Height
     VertexArray(3).Color = Color3
 
     VertexArray(0).tu = (SrcX / SrcBitmapWidth)
@@ -5774,19 +5843,6 @@ Dim bY As Single
     'Render the GUI
     Engine_Render_GUI
     
-    'Draw entered text
-    If EnterText = True Then
-        If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-        If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
-        If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
-            TempGrh.GrhIndex = 39
-            TempGrh.FrameCounter = 1
-            TempGrh.Started = 1
-            TempGrh.SpeedCounter = 0
-            Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
-        End If
-    End If
-    
     '************** Mini-map **************
     Const tS As Single = 3  'Size of the mini-map dots
     
@@ -5853,7 +5909,7 @@ Dim bY As Single
         
     End If
 
-    'Show FPS & Lag
+    'Show FPS & PTD (Packet Transfer Delay - time it takes from the packet to make a round trip, not the same as ping!)
     Engine_Render_Text "FPS: " & FPS, ScreenWidth - 80, 2, -1
     Engine_Render_Text "PTD: " & PTD & " ms", ScreenWidth - 80, 15, -1
     
@@ -5871,6 +5927,7 @@ Dim MMC_Blocked As Long
 Dim MMC_Exit As Long
 Dim MMC_Sign As Long
 Dim Offset As Long
+Dim tVA() As TLVERTEX
 Dim X As Long
 Dim Y As Long
 Dim j As Long
@@ -6683,7 +6740,7 @@ Dim i As Byte
 
 End Sub
 
-Public Function Engine_Render_Text(ByVal Text As String, ByVal X As Integer, ByVal Y As Integer, ByVal Color As Long) As Direct3DVertexBuffer8
+Public Function Engine_Render_Text(ByVal Text As String, ByVal X As Long, ByVal Y As Long, ByVal Color As Long) As Direct3DVertexBuffer8
 
 '************************************************************
 'Draw text on D3DDevice
@@ -6693,7 +6750,7 @@ Dim TempStr() As String
 Dim Count As Integer
 Dim Ascii() As Byte
 Dim Row As Integer
-Dim u As Single
+Dim U As Single
 Dim V As Single
 Dim i As Long
 Dim j As Long
@@ -6703,35 +6760,19 @@ Dim ResetColor As Byte
 Dim SrcRect As RECT
 Dim v2 As D3DVECTOR2
 Dim v3 As D3DVECTOR2
-
-    'Assign the alternate rendering value
-    AlternateRender = AlternateRenderText
-
-    'Check if using alternate rendering
-    If AlternateRender Then
-        
-        'Close off the last sprite
-        If SpriteBegun Then
-            Sprite.End
-            SpriteBegun = 0
-        End If
+Dim YOffset As Single
     
-    End If
-
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Function
 
     'Check for valid text to render
     If LenB(Text) = 0 Then Exit Function
+    
+    'Assign the alternate rendering value
+    AlternateRender = AlternateRenderText
 
     'Get the text into arrays (split by vbCrLf)
     TempStr = Split(Text, vbCrLf)
-    
-    'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
-    LastTexture = Font_Default_TextureNum
-    
-    'Set the texture
-    D3DDevice.SetTexture 0, Font_Default.Texture
     
     'Set the temp color (or else the first character has no color)
     TempColor = Color
@@ -6749,13 +6790,21 @@ Dim v3 As D3DVECTOR2
             End If
             
         End If
+        
+    Else
+        
+        'Set the texture
+        D3DDevice.SetTexture 0, Font_Default.Texture
 
     End If
+    
+    'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
+    LastTexture = Font_Default_TextureNum
     
     'Loop through each line if there are line breaks (vbCrLf)
     For i = 0 To UBound(TempStr)
         If Len(TempStr(i)) > 0 Then
-        
+            YOffset = i * Font_Default.CharHeight
             Count = 0
         
             'Convert the characters to the ascii value
@@ -6766,52 +6815,51 @@ Dim v3 As D3DVECTOR2
 
                 'Check for a key phrase
                 If Ascii(j - 1) = 124 Then 'If Ascii = "|"
-                    KeyPhrase = (Not KeyPhrase)
-                    If KeyPhrase Then TempColor = D3DColorARGB(255, 255, 0, 0) Else ResetColor = 1
+                    KeyPhrase = (Not KeyPhrase)  'TempColor = ARGB 255/255/0/0
+                    If KeyPhrase Then TempColor = -65536 Else ResetColor = 1
                 Else
-                    
-                    'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
-                    Row = (Ascii(j - 1) - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
-                    u = ((Ascii(j - 1) - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                    V = Row * Font_Default.RowFactor
-                
+
                     'Render with triangles
                     If AlternateRender = 0 Then
 
+                        'Copy from the cached vertex array to the temp vertex array
+                        CopyMemory TempVA(0), Font_Default.HeaderInfo.CharVA(Ascii(j - 1)).Vertex(0), FVF_Size * 4
+
                         'Set up the verticies
-                        TempVA(0).Color = TempColor
                         TempVA(0).X = X + Count
-                        TempVA(0).Y = Y + (Font_Default.CharHeight * i)
-                        TempVA(0).tu = u
-                        TempVA(0).tV = V
+                        TempVA(0).Y = Y + YOffset
                         
-                        TempVA(1).Color = TempColor
-                        TempVA(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        TempVA(1).X = TempVA(1).X + X + Count
                         TempVA(1).Y = TempVA(0).Y
-                        TempVA(1).tu = u + Font_Default.ColFactor
-                        TempVA(1).tV = V
-                        
-                        TempVA(2).Color = TempColor
-                        TempVA(2).X = X + Count
-                        TempVA(2).Y = Font_Default.HeaderInfo.CellHeight + TempVA(0).Y
-                        TempVA(2).tu = u
-                        TempVA(2).tV = V + Font_Default.RowFactor
-                        
-                        TempVA(3).Color = TempColor
+
+                        TempVA(2).X = TempVA(0).X
+                        TempVA(2).Y = TempVA(2).Y + TempVA(0).Y
+
                         TempVA(3).X = TempVA(1).X
                         TempVA(3).Y = TempVA(2).Y
-                        TempVA(3).tu = u + Font_Default.ColFactor
-                        TempVA(3).tV = V + Font_Default.RowFactor
                         
+                        'As stupid as this looks, we actually save a bit more time by ignoring the color if its already black
+                        If Color <> -16777216 Then  'ARGB 255/0/0/0
+                            TempVA(0).Color = TempColor
+                            TempVA(1).Color = TempColor
+                            TempVA(2).Color = TempColor
+                            TempVA(3).Color = TempColor
+                        End If
+
                         'Draw the verticies
                         D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, TempVA(0), FVF_Size
                         
                     'Render with D3DXSprite
                     Else
+                    
+                        'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
+                        Row = (Ascii(j - 1) - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
+                        U = ((Ascii(j - 1) - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
+                        V = Row * Font_Default.RowFactor
 
                         'Create the source rectangle
                         With SrcRect
-                            .Left = u * Font_Default.TextureSize.X
+                            .Left = U * Font_Default.TextureSize.X
                             .Top = V * Font_Default.TextureSize.Y
                             .Right = .Left + (Font_Default.ColFactor * Font_Default.TextureSize.X)
                             .bottom = .Top + (Font_Default.RowFactor * Font_Default.TextureSize.Y)

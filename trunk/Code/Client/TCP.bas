@@ -50,50 +50,42 @@ End Sub
 '-----------------------------------------------------------
 
 Sub Data_User_Trade_UpdateTrade(ByRef rBuf As DataBuffer)
-'****************************************************************
-'*** Update something about the trade currently takeing place ***
-'****************************************************************
-'This is the Clent RECIVING trade info. It must be Rendered correctly.
+'*********************************************
+'Update something about the trade currently taking place
+'<UserTableIndex(B)><TableSlot(B)><Amount(L)> (<GrhIndex(L)>)
+'*********************************************
 Dim UserTableIndex As Byte
 Dim TableSlot As Byte
-Dim InvSlot As Byte
 Dim Amount As Long
+Dim GrhIndex As Long
 
-UserTableIndex = rBuf.Get_Byte
-TableSlot = rBuf.Get_Byte
-InvSlot = rBuf.Get_Byte
-Amount = rBuf.Get_Long
-
-'Hey! The server says the other guy
-'wants to add something to the trade!
-'yeahy!
-
-If TableSlot = 0 Then
-    If TradeTable.MyIndex = UserTableIndex Then
-        TradeTable.Gold1 = Amount
-    Else
-        TradeTable.Gold2 = Amount
+    UserTableIndex = rBuf.Get_Byte
+    TableSlot = rBuf.Get_Byte
+    Amount = rBuf.Get_Long
+    
+    'Update the gold
+    If TableSlot = 0 Then
+        If TradeTable.MyIndex = UserTableIndex Then
+            TradeTable.Gold1 = Amount
+        Else
+            TradeTable.Gold2 = Amount
+        End If
+    
+    'Update an item
+    ElseIf TableSlot <= 9 Then
+        GrhIndex = rBuf.Get_Long
+        If TradeTable.MyIndex = UserTableIndex Then
+            TradeTable.Trade1(TableSlot).Amount = Amount
+            TradeTable.Trade1(TableSlot).Grh = GrhIndex
+            TradeTable.Trade1(TableSlot).name = "test"
+        Else
+            TradeTable.Trade2(TableSlot).Amount = Amount
+            TradeTable.Trade2(TableSlot).Grh = GrhIndex
+            TradeTable.Trade2(TableSlot).name = "test"
+        End If
     End If
-End If
 
 End Sub
-
-Sub Data_User_Trade_UpdateTradeSlot(ByVal UserTableIndex As Byte, ByVal TableSlot As Byte, ByVal InvSlot As Byte, ByVal Amount As Long)
-'**************************************************************
-'*** The user has Dragged an item into a slot or added gold ***
-'**************************************************************
-'This is the Client SENDING info. It must be verifed by the server
-'It will use the datacode of UpdateTrade. This is not to be confused with the
-'sub that uses the same datacode for parsing incomming information
-
-    sndBuf.Put_Byte DataCode.User_Trade_UpdateTrade
-    sndBuf.Put_Byte UserTableIndex
-    sndBuf.Put_Byte TableSlot
-    sndBuf.Put_Byte InvSlot
-    sndBuf.Put_Long Amount
-
-End Sub
-'-----------------------------------------------------------
 
 Sub Data_User_Bank_UpdateSlot(ByRef rBuf As DataBuffer)
 

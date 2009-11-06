@@ -115,17 +115,11 @@ Public Type DataCode
     User_Trade_StartNPCTrade As Byte
     User_Trade_BuyFromNPC As Byte
     User_Trade_SellToNPC As Byte
-    '-----------------------------------------------------------
-    'data codes
-    'start the trade
     User_Trade_Trade As Byte
     User_Trade_UpdateTrade As Byte
-    'for when they have finished adding stuff
     User_Trade_Accept As Byte
-    'for when the user conforms
     User_Trade_Confirm As Byte
-
-    '-----------------------------------------------------------
+    User_Trade_RemoveItem As Byte
     User_Bank_Open As Byte
     User_Bank_PutItem As Byte
     User_Bank_TakeItem As Byte
@@ -318,6 +312,7 @@ Public Sub InitDataCommands()
         .User_LookLeft = 47
         .User_LookRight = 48
         .User_Blink = 49
+        .User_Trade_RemoveItem = 50
         .User_Trade_BuyFromNPC = 51
         .User_BaseStat = 52
         .User_ModStat = 53
@@ -368,15 +363,10 @@ Public Sub InitDataCommands()
         .User_Bank_Balance = 98
         .GM_Warp = 99
         .Server_ChangeCharType = 100
-        '-------------------------------
-        'start trade packet
         .User_Trade_Trade = 101
         .User_Trade_UpdateTrade = 102
-        'accept the trade packet
         .User_Trade_Accept = 104
-        'conform trade packet
         .User_Trade_Confirm = 105
-        '-----------------------------------------------------------
         .User_CancelQuest = 106
         .Combo_ProjectileSoundRotateDamage = 107
         .Combo_SoundRotateDamage = 108
