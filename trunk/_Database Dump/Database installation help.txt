@@ -1,0 +1,5 @@
+Many of us dont know how to install a database, and that is totally fine.
+
+Please refer to the follinwg page for step-by-step instructions on setting up the database:
+
+http://www.vbgore.com/index.php?title=Setup#The_MySQL_Database_Setup
