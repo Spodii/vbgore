@@ -1,0 +1,41 @@
+//This file is for adding descriptions to textures. You do not have to, but this is what the Map Editor's
+//searching routine references. On the left of the =, use the texture's number, and on the 
+//right of the =, the description.
+//How you use this is up to you. It is recommended you use as descriptive text combined with specific key-words
+//so you can easily search through. For example, if you have tiles dedicated to a specific cave, use the name of that cave.
+//
+//The search uses UCase$() and InStr(), so searching is not case sensitive.
+//
+//Heres some crappy examples for the default tileset - I suggest you do much better descriptions than this to make use of it. ;)
+
+5=Ninja star, weapon
+7=Mailbox
+10=Spikes, magic
+12=Stars
+20=Emoticons
+24=Chat bubble
+50=House
+51=House
+52=House
+53=House
+54=House
+55=House
+56=House
+57=House
+58=House
+59=House
+60=House
+61=House
+62=House
+82=Housing, fireplace, statue
+83=Table, housing
+86=Water
+87=Water
+88=Water
+89=Water
+90=Water
+91=Water
+92=Water
+103=Waterfall
+104=Waterfall
+105=Cave

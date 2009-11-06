@@ -1,0 +1,3 @@
+For how to use the updater, please read this page:
+
+http://www.vbgore.com/Using_the_updater
