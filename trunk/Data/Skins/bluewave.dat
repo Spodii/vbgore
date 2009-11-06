@@ -1,6 +1,6 @@
 [CHATWINDOW] 
 ScreenX= 0 
-ScreenY= 401 
+ScreenY= 400 
 
 [MENU]
 ScreenX= 340
@@ -11,16 +11,16 @@ ScreenX= 0
 ScreenY= 0
 
 [AMOUNT]
-ScreenX= 375
-ScreenY= 275
+ScreenX= 496
+ScreenY= 226
 
 [WRITEMESSAGE]
 ScreenX= 0
 ScreenY= 0
 
 [VIEWMESSAGE]
-ScreenX= 0
-ScreenY= 0
+ScreenX= 379
+ScreenY= 9
 
 [MAILBOX]
 ScreenX= 0
@@ -31,12 +31,17 @@ ScreenX= 0
 ScreenY= 0
 
 [INVENTORY]
-ScreenX= 0
-ScreenY= 0
+ScreenX= 360
+ScreenY= 156
 
 [QUICKBAR]
 ScreenX= 0
 ScreenY= 553
+
 [BANK]
-ScreenX= 0
+ScreenX= 1
 ScreenY= 0
+
+[NPCCHAT]
+ScreenX= 200
+ScreenY= 50

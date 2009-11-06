@@ -23,19 +23,19 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
 
-    Form_MouseMove Button, Shift, X, Y
+    Form_MouseMove Button, Shift, x, y
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 Dim i As Long
     
     SetInfo vbNullString
     For i = 1 To ShownTextureGrhs.NumGrhs
         With ShownTextureGrhs.Grh(i)
-            If Engine_RectCollision(X, Y, 1, 1, .X, .Y, .Width, .Height) Then
+            If Engine_RectCollision(x, y, 1, 1, .x, .y, .Width, .Height) Then
                 If Button = vbLeftButton Then
                     frmSetTile.GrhTxt.Text = .GrhIndex
                 Else
@@ -48,15 +48,15 @@ Dim i As Long
 
 End Sub
 
-Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
-    Form_MouseMove Button, Shift, X, Y
+    Form_MouseMove Button, Shift, x, y
 
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    If IsUnloading = 0 Then Cancel = 1
+    'If IsUnloading = 0 Then Cancel = 1
 
 End Sub
 
@@ -68,6 +68,6 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
 
-    SearchTextureFileNum = 0
+    ShownTextureGrhs.NumGrhs = 0
 
 End Sub

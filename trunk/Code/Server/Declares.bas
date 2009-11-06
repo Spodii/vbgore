@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.4            ************
+'************            Official Release: Version 0.4.5            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -121,9 +121,9 @@ Public Const DEBUG_RecordPacketsIn As Boolean = True
 '********** Public CONSTANTS ***********
 
 'Change to 1 to enable database optimization on runtime
-Public Const OptimizeDatabase As Byte = 1
+Public Const OptimizeDatabase As Byte = 0
 
-'If we run the server in high priority (recommended to use unless)
+'If we run the server in high priority (recommended to use)
 Public Const RunHighPriority As Byte = 1
 
 'Screen resolution (must be identical to the values on the client!)

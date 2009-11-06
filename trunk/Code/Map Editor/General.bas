@@ -1,7 +1,5 @@
 Attribute VB_Name = "General"
 Option Explicit
-Public LastSetTileX As Integer
-Public LastSetTileY As Integer
 
 Public Type STGG
     GrhIndex As Long
@@ -64,13 +62,13 @@ Sub Server_Unload()
     'Dummy sub
 End Sub
 
-Sub ShowFrmARGB(ByRef tTxtBox As TextBox)
+Sub ShowFrmARGB()
     frmARGB.Visible = True
     frmARGB.Show
-    frmARGB.LongTxt.Text = tTxtBox.Text
+    frmARGB.SetFocus
 End Sub
 
-Sub HideFrmARGB(ByRef tTxtBox As TextBox)
+Sub HideFrmARGB()
     frmARGB.Visible = False
     frmARGB.Hide
 End Sub
@@ -78,7 +76,7 @@ End Sub
 Sub DrawPreview()
 Dim i As Byte
 Dim TempRect As RECT
-    
+
     'Set the map set preview
     If Val(frmSetTile.GrhTxt.Text) < 1 Then
         PreviewMapGrh.GrhIndex = 0
@@ -103,6 +101,37 @@ Dim TempRect As RECT
     D3DDevice.Present TempRect, TempRect, frmPreview.hWnd, ByVal 0
     
     frmPreview.Caption = "Grh: " & frmSetTile.GrhTxt.Text
+
+End Sub
+
+Sub DrawTileInfoPreview()
+Dim i As Byte
+Dim TempRect As RECT
+Dim TempRect2 As RECT
+
+    If Val(frmTile.XLbl.Caption) < 1 Then Exit Sub
+    If Val(frmTile.XLbl.Caption) > MapInfo.Width Then Exit Sub
+    If Val(frmTile.YLbl.Caption) < 1 Then Exit Sub
+    If Val(frmTile.YLbl.Caption) > MapInfo.Height Then Exit Sub
+    
+    'Set the view area
+    TempRect.Top = 280
+    TempRect.Left = 40
+    TempRect.bottom = 256 + 280 'frmTile.GrhPic.Width
+    TempRect.Right = 256 + 40 'frmTile.GrhPic.Height
+    
+    TempRect2.bottom = 256
+    TempRect2.Right = 256
+
+    'Draw the preview
+    D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, D3DColorARGB(255, 255, 255, 255), 1#, 0
+    D3DDevice.BeginScene
+    
+        'Draw the grhs
+        Engine_Render_Grh MapData(Val(frmTile.XLbl.Caption), Val(frmTile.YLbl.Caption)).Graphic(SelectedLayer), 0, 0, 0, 1, True, Val(frmTile.LightTxt(1).Text), Val(frmTile.LightTxt(2).Text), Val(frmTile.LightTxt(3).Text), Val(frmTile.LightTxt(4).Text)
+    
+    D3DDevice.EndScene
+    D3DDevice.Present TempRect2, TempRect, frmTile.hWnd, ByVal 0
 
 End Sub
 
@@ -162,143 +191,159 @@ Dim AC As Byte
     If tX > MapInfo.Width Then Exit Sub
     If tY < 1 Then Exit Sub
     If tY > MapInfo.Height Then Exit Sub
+
+    'Check to get tile information
+    If frmTile.Visible = True Then
+        If Button = vbRightButton Then frmTile.SetTileInfo tX, tY
+    End If
     
-    If LastSetTileX <> tX Or LastSetTileY <> tY Then
-    
-        'Check to get tile information
-        If frmTile.Visible = True Then
-            If Button = vbRightButton Then frmTile.SetTileInfo tX, tY
-        End If
-        
-        'Check to place/erase a tile
-        If frmSetTile.Visible = True Then
-            If Button = vbLeftButton Then
-                With MapData(tX, tY)
-                
-                    'Graphics
-                    If frmSetTile.LayerChk.Value = 1 Then
-                        If Val(frmSetTile.GrhTxt.Text) > 0 Then
+    'Check to place/erase a tile
+    If frmSetTile.Visible = True Then
+        If Button = vbLeftButton Then
+            With MapData(tX, tY)
+            
+                'Graphics
+                If frmSetTile.LayerChk.Value = 1 Then
+                    If Val(frmSetTile.GrhTxt.Text) > 0 Then
+                        If .Graphic(DrawLayer).GrhIndex <> Val(frmSetTile.GrhTxt.Text) Then
                             Engine_Init_Grh .Graphic(DrawLayer), Val(frmSetTile.GrhTxt.Text)
-                        Else
-                            .Graphic(i).GrhIndex = 0
+                            AC = 1
                         End If
-                        AC = 1
+                    Else
+                        If .Graphic(DrawLayer).GrhIndex <> 0 Then
+                            .Graphic(DrawLayer).GrhIndex = 0
+                            AC = 1
+                        End If
                     End If
-                    
-                    'Lights
-                    If frmSetTile.LightChk.Value = 1 Then
-                        .Light((DrawLayer - 1) * 4 + 1) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 1).Text)
-                        .Light((DrawLayer - 1) * 4 + 2) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 2).Text)
-                        .Light((DrawLayer - 1) * 4 + 3) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 3).Text)
-                        .Light((DrawLayer - 1) * 4 + 4) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 4).Text)
-                        SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 1) = .Light((DrawLayer - 1) * 4 + 1)
-                        SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 2) = .Light((DrawLayer - 1) * 4 + 2)
-                        SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 3) = .Light((DrawLayer - 1) * 4 + 3)
-                        SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 4) = .Light((DrawLayer - 1) * 4 + 4)
-                        AC = 1
+                End If
+                
+                'Lights
+                If frmSetTile.LightChk.Value = 1 Then
+                    If .Light((DrawLayer - 1) * 4 + 1) <> Val(frmSetTile.LightTxt(1).Text) Then
+                        If .Light((DrawLayer - 1) * 4 + 2) <> Val(frmSetTile.LightTxt(2).Text) Then
+                            If .Light((DrawLayer - 1) * 4 + 3) <> Val(frmSetTile.LightTxt(3).Text) Then
+                                If .Light((DrawLayer - 1) * 4 + 4) <> Val(frmSetTile.LightTxt(4).Text) Then
+                                    .Light((DrawLayer - 1) * 4 + 1) = Val(frmSetTile.LightTxt(1).Text)
+                                    .Light((DrawLayer - 1) * 4 + 2) = Val(frmSetTile.LightTxt(2).Text)
+                                    .Light((DrawLayer - 1) * 4 + 3) = Val(frmSetTile.LightTxt(3).Text)
+                                    .Light((DrawLayer - 1) * 4 + 4) = Val(frmSetTile.LightTxt(4).Text)
+                                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 1) = .Light((DrawLayer - 1) * 4 + 1)
+                                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 2) = .Light((DrawLayer - 1) * 4 + 2)
+                                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 3) = .Light((DrawLayer - 1) * 4 + 3)
+                                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 4) = .Light((DrawLayer - 1) * 4 + 4)
+                                    AC = 1
+                                End If
+                            End If
+                        End If
                     End If
-                    
-                    'Shadows
-                    If frmSetTile.ShadowChk.Value = 1 Then
-                        .Shadow(DrawLayer) = Val(frmSetTile.ShadowTxt.Text)
-                    End If
-                    
-                End With
-            End If
+                End If
+                
+                'Shadows
+                If frmSetTile.ShadowChk.Value = 1 Then
+                    .Shadow(DrawLayer) = Val(frmSetTile.ShadowTxt.Text)
+                End If
+                
+            End With
         End If
-        
-        'Check to erase a tile
-        If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
-            If frmSetTile.Visible = True Then
-                If Button = vbRightButton Then
-                    If frmSetTile.LayerChk.Value = 1 Then
+    End If
+    
+    'Check to erase a tile
+    If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
+        If frmSetTile.Visible = True Then
+            If Button = vbRightButton Then
+                If frmSetTile.LayerChk.Value = 1 Then
+                    If MapData(tX, tY).Graphic(DrawLayer).GrhIndex <> 0 Then
                         MapData(tX, tY).Graphic(DrawLayer).GrhIndex = 0
                         AB = 1
                     End If
                 End If
             End If
         End If
-                            
-        'Check to place/erase a sound effect
-        If frmSfx.Visible = True Then
-            If Button = vbLeftButton Then
-                MapData(tX, tY).Sfx = Val(frmSfx.SfxTxt.Text)
-            End If
+    End If
+                        
+    'Check to place/erase a sound effect
+    If frmSfx.Visible = True Then
+        If Button = vbLeftButton Then
+            MapData(tX, tY).Sfx = Val(frmSfx.SfxTxt.Text)
         End If
-        
-        'Check to place/erase a NPC
-        If frmNPCs.Visible = True Then
-            If Button = vbLeftButton Then
-                If tY > 1 Then  'Dont place NPCs on tiles y = 1, since their head goes onto tile 0, then uhoh! :o
-                    If Not Shift Then
-                        If frmNPCs.SetOpt.Value = True Then
-                            If MapData(tX, tY).NPCIndex = 0 Then
-                                DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
-                                Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
-                                DB_RS.Close
-                                AB = 1
-                            End If
+    End If
+    
+    'Check to place/erase a NPC
+    If frmNPCs.Visible = True Then
+        If Button = vbLeftButton Then
+            If tY > 1 Then  'Dont place NPCs on tiles y = 1, since their head goes onto tile 0, then uhoh! :o
+                If Not Shift Then
+                    If frmNPCs.SetOpt.Value = True Then
+                        If MapData(tX, tY).NPCIndex = 0 Then
+                            DB_RS.Open "SELECT id,char_body,char_hair,char_head,char_heading,name,char_weapon,char_hair FROM npcs WHERE id=" & frmNPCs.NPCList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
+                            Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, tX, tY, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
+                            DB_RS.Close
+                            AB = 1
                         End If
-                        If frmNPCs.EraseOpt.Value = True Then
-                            If MapData(tX, tY).NPCIndex <> 0 Then
-                                Engine_Char_Erase MapData(tX, tY).NPCIndex
-                                AB = 1
-                            End If
+                    End If
+                    If frmNPCs.EraseOpt.Value = True Then
+                        If MapData(tX, tY).NPCIndex <> 0 Then
+                            Engine_Char_Erase MapData(tX, tY).NPCIndex
+                            AB = 1
                         End If
                     End If
                 End If
             End If
         End If
-        
-        'Check to place/erase an exit
-        If frmExit.Visible = True Then
-            If Button = vbLeftButton Then
-                If Not Shift Then
-                    If frmExit.SetOpt.Value = True Then
-                        MapData(tX, tY).TileExit.Map = Val(frmExit.MapTxt.Text)
-                        MapData(tX, tY).TileExit.X = Val(frmExit.XTxt.Text)
-                        MapData(tX, tY).TileExit.Y = Val(frmExit.YTxt.Text)
-                    End If
-                    If frmExit.EraseOpt.Value = True Then
-                        MapData(tX, tY).TileExit.Map = 0
-                        MapData(tX, tY).TileExit.X = 0
-                        MapData(tX, tY).TileExit.Y = 0
-                    End If
+    End If
+    
+    'Check to place/erase an exit
+    If frmExit.Visible = True Then
+        If Button = vbLeftButton Then
+            If Not Shift Then
+                If frmExit.SetOpt.Value = True Then
+                    MapData(tX, tY).TileExit.Map = Val(frmExit.MapTxt.Text)
+                    MapData(tX, tY).TileExit.X = Val(frmExit.XTxt.Text)
+                    MapData(tX, tY).TileExit.Y = Val(frmExit.YTxt.Text)
+                    AB = 1
+                End If
+                If frmExit.EraseOpt.Value = True Then
+                    MapData(tX, tY).TileExit.Map = 0
+                    MapData(tX, tY).TileExit.X = 0
+                    MapData(tX, tY).TileExit.Y = 0
                     AB = 1
                 End If
             End If
         End If
-        
-        'Check to place a block
-        If frmBlock.Visible = True Then
-            If Button = vbLeftButton Then
-                If Not Shift Then
-                    If frmBlock.SetWalkChk.Value = 1 Then
-                        b = 0   'Build the blocked value
-                        If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
-                        If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
-                        If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
-                        If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
+    End If
+    
+    'Check to place a block
+    If frmBlock.Visible = True Then
+        If Button = vbLeftButton Then
+            If Not Shift Then
+                If frmBlock.SetWalkChk.Value = 1 Then
+                    b = 0   'Build the blocked value
+                    If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
+                    If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
+                    If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
+                    If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
+                    If MapData(tX, tY).Blocked <> b Then
                         MapData(tX, tY).Blocked = b
                         AB = 1
                     End If
-                    If frmBlock.SetAttackChk.Value = 1 Then
+                End If
+                If frmBlock.SetAttackChk.Value = 1 Then
+                    If MapData(tX, tY).BlockedAttack <> frmBlock.BlockAttackChk.Value Then
                         MapData(tX, tY).BlockedAttack = frmBlock.BlockAttackChk.Value
                         AB = 1
                     End If
                 End If
             End If
         End If
-        
-        If Button = vbLeftButton Then
-            If AB = 1 Then
-                If ShowMiniMap Then Engine_BuildMiniMap
-            End If
-            If AC = 1 Or AB = 1 Then Engine_CreateTileLayers
-        End If
-        
     End If
     
+    If Button = vbLeftButton Then
+        If AB = 1 Then
+            If ShowMiniMap Then Engine_BuildMiniMap
+        End If
+        If AC = 1 Or AB = 1 Then Engine_CreateTileLayers
+    End If
+
     'Move a particle effect
     If frmParticles.Visible = True Then
         If Button = vbRightButton Then

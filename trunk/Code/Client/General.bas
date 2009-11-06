@@ -795,6 +795,8 @@ Dim i As Byte
         Engine_Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
         Engine_Var_Write t, "BANK", "ScreenX", Str(.Bank.Screen.X)
         Engine_Var_Write t, "BANK", "ScreenY", Str(.Bank.Screen.Y)
+        Engine_Var_Write t, "NPCCHAT", "ScreenX", Str(.NPCChat.Screen.X)
+        Engine_Var_Write t, "NPCCHAT", "ScreenY", Str(.NPCChat.Screen.Y)
     End With
 
 End Sub

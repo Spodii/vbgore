@@ -1288,11 +1288,15 @@ Dim i As Integer
                     If NPCList(CharList(AttackerCharIndex).Index).OwnerIndex > 0 Then
                         'The NPC is owned by a user, so give the EXP to the user (or group) like above
                         i = CharList(NPCList(CharList(AttackerCharIndex).Index).OwnerIndex).Index
-                        If UserList(i).GroupIndex > 0 Then
-                            Group_EXPandGold i, UserList(i).GroupIndex, NPCList(NPCIndex).GiveEXP, NPCList(NPCIndex).GiveGLD
-                        Else
-                            User_RaiseExp i, NPCList(NPCIndex).GiveEXP
-                            UserList(i).Stats.BaseStat(SID.Gold) = UserList(i).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
+                        If i > 0 Then
+                            If i < LastUser Then
+                                If UserList(i).GroupIndex > 0 Then
+                                    Group_EXPandGold i, UserList(i).GroupIndex, NPCList(NPCIndex).GiveEXP, NPCList(NPCIndex).GiveGLD
+                                Else
+                                    User_RaiseExp i, NPCList(NPCIndex).GiveEXP
+                                    UserList(i).Stats.BaseStat(SID.Gold) = UserList(i).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
+                                End If
+                            End If
                         End If
                     End If
                 End If

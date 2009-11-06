@@ -484,14 +484,16 @@ Dim j As Long
 
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
                         s = LCase$(SplitCommandFromString(EnterTextBuffer))
-                        If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
-                            s = Dir$(MessagePath & s & "*.ini", vbNormal)
-                            s = Left$(s, Len(s) - 4)
-                            Engine_Init_Messages s
-                            Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", s
-                            Engine_AddToChatTextBuffer Replace$(Message(90), "<lang>", s), FontColor_Info
-                        Else
-                            Engine_AddToChatTextBuffer Message(87), FontColor_Info
+                        If Trim$(s) <> vbNullString Then
+                            If Engine_FileExist(MessagePath & s & "*.ini", vbNormal) Then
+                                s = Dir$(MessagePath & s & "*.ini", vbNormal)
+                                s = Left$(s, Len(s) - 4)
+                                Engine_Init_Messages s
+                                Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", s
+                                Engine_AddToChatTextBuffer Replace$(Message(90), "<lang>", s), FontColor_Info
+                            Else
+                                Engine_AddToChatTextBuffer Message(87), FontColor_Info
+                            End If
                         End If
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/SKIN" Then
@@ -701,7 +703,9 @@ Dim j As Long
                 End If
             End If
         Else
-            If ShowGameWindow(LastClickedWindow) Then ShowGameWindow(LastClickedWindow) = 0
+            If ShowGameWindow(LastClickedWindow) Then
+                ShowGameWindow(LastClickedWindow) = 0
+            End If
         End If
         LastClickedWindow = 0
     End If
@@ -851,53 +855,79 @@ Dim i As Integer
     If EnterText = False Then
         If Not LastClickedWindow = WriteMessageWindow Then
             If Not LastClickedWindow = AmountWindow Then
-                If Not ShowGameWindow(WriteMessageWindow) Then
-                    If EmoticonDelay < timeGetTime Then
-                        EmoticonDelay = timeGetTime + 1000  'Wait 1000ms (one second) between emoticon usages
+                If ShowGameWindow(WriteMessageWindow) = 0 Then
+                    If ShowGameWindow(NPCChatWindow) = 0 Then
+                        If EmoticonDelay < timeGetTime Then
+                            EmoticonDelay = timeGetTime + 1000  'Wait 1000ms (one second) between emoticon usages
+                            
+                            Select Case KeyCode
+                                Case vbKey1
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Dots
+                                    Exit Sub
+                                Case vbKey2
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Exclimation
+                                    Exit Sub
+                                Case vbKey3
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Question
+                                    Exit Sub
+                                Case vbKey4
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Surprised
+                                    Exit Sub
+                                Case vbKey5
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Heart
+                                    Exit Sub
+                                Case vbKey6
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Hearts
+                                    Exit Sub
+                                Case vbKey7
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.HeartBroken
+                                    Exit Sub
+                                Case vbKey8
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Utensils
+                                    Exit Sub
+                                Case vbKey9
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.Meat
+                                    Exit Sub
+                                Case vbKey0
+                                    sndBuf.Allocate 2
+                                    sndBuf.Put_Byte DataCode.User_Emote
+                                    sndBuf.Put_Byte EmoID.ExcliQuestion
+                                    Exit Sub
+                            End Select
+                            
+                        End If
                         
-                        Select Case KeyCode
-                        Case vbKey1
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Dots
-                        Case vbKey2
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Exclimation
-                        Case vbKey3
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Question
-                        Case vbKey4
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Surprised
-                        Case vbKey5
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Heart
-                        Case vbKey6
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Hearts
-                        Case vbKey7
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.HeartBroken
-                        Case vbKey8
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Utensils
-                        Case vbKey9
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.Meat
-                        Case vbKey0
-                            sndBuf.Allocate 2
-                            sndBuf.Put_Byte DataCode.User_Emote
-                            sndBuf.Put_Byte EmoID.ExcliQuestion
-                        End Select
+                    Else
                         
+                        If KeyCode >= 49 Then
+                            If KeyCode - 48 <= GameWindow.NPCChat.NumAnswers Then
+                                i = NPCChat(ActiveAsk.ChatIndex).Ask.Ask(ActiveAsk.AskIndex).Answer(KeyCode - 48).GotoID
+                                If i > 0 Then
+                                    Engine_ShowNPCChatWindow ActiveAsk.AskName, ActiveAsk.ChatIndex, i
+                                Else
+                                    ShowGameWindow(NPCChatWindow) = 0
+                                End If
+                            End If
+                        End If
+                    
                     End If
                 End If
             End If

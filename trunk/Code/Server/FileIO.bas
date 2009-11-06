@@ -306,7 +306,7 @@ Dim i As Long
                 CharList(CharIndex).CharType = CharType_NPC
                 
                 'Set the NPC as used
-                .Flags.NPCActive = 1
+                .flags.NPCActive = 1
             
             End With
         Next i
@@ -525,7 +525,7 @@ Dim i As Long
                     If .Pos.Map = MapNum Then
                         CharList(.Char.CharIndex).Index = 0
                         CharList(.Char.CharIndex).CharType = 0
-                        .Flags.NPCActive = 0
+                        .flags.NPCActive = 0
                         NPC_Close i, 0
                     End If
                 End With
@@ -657,7 +657,7 @@ Dim j As Byte
             .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
             .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
             .NPCNumber = DB_RS!id
-            .Flags.NPCActive = 1
+            .flags.NPCActive = 1
             ShopStr = Trim$(DB_RS!objs_shop)
             DropStr = Trim$(DB_RS!drops)
 
@@ -740,8 +740,15 @@ Public Sub Load_NPC_Names()
 Dim i As Long
 
     'Resize the NPC name array by the highest index used
-    DB_RS.Open "SELECT finish_req_killnpc FROM quests ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
-    If DB_RS(0) = 0 Then Exit Sub   'No NPCs used for quests, abort
+    DB_RS.Open "SELECT finish_req_killnpc FROM quests ORDER BY id DESC", DB_Conn, adOpenStatic, adLockOptimistic
+    If Val(DB_RS(0)) = 0 Then
+        
+        'No NPCs used for quests, abort
+        DB_RS.Close
+        Exit Sub
+        
+    End If
+    
     ReDim NPCName(1 To DB_RS(0))
     DB_RS.Close
 
@@ -848,7 +855,7 @@ Dim b As Byte
             Get #FileNum, , NPCList(NPCIndex)
         
             'Set the NPC's thralled value
-            .Flags.Thralled = Thralled
+            .flags.Thralled = Thralled
             If ThralledTime <> -1 Then
                 .Counters.RespawnCounter = timeGetTime + ThralledTime
             Else
@@ -874,7 +881,8 @@ Dim FileNum As Byte
     
     'Get the number of objects (Sort by id, descending, only get 1 entry, only return id)
     DB_RS.Open "SELECT id FROM objects ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
-    NumObjDatas = DB_RS(0)
+    If DB_RS.EOF Then MsgBox "Oh crap, you don't have any objects! This isn't going to be pretty...", vbOKOnly
+    NumObjDatas = Val(DB_RS(0))
     DB_RS.Close
 
     'Resize the objects array
@@ -948,6 +956,7 @@ Public Sub Load_Quests()
     
     'Get the number of quests (Sort by id, descending, only get 1 entry, only return id)
     DB_RS.Open "SELECT id FROM quests ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
+    If DB_RS.EOF Then MsgBox "Oh crap, you don't have any quests! This isn't going to be pretty...", vbOKOnly
     NumQuests = DB_RS(0)
     DB_RS.Close
     
@@ -1107,7 +1116,7 @@ Dim i As Long
     'Loop through every field - match up the names then set the data accordingly
     With DB_RS
         UserChar.Desc = Trim$(!Descr)
-        UserChar.Flags.GMLevel = !gm
+        UserChar.flags.GMLevel = !gm
         InvStr = !inventory
         MailStr = !mail
         BankStr = !Bank
@@ -1319,7 +1328,7 @@ Dim i As Long
     Log "Call Save_User(N/A," & UserIndex & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
     'On special occasions, we want to the typical saving routine and save before the user is even disconnected
-    If UserChar.Flags.DoNotSave = 1 Then Exit Sub
+    If UserChar.flags.DoNotSave = 1 Then Exit Sub
 
     With UserChar
     
@@ -1422,7 +1431,7 @@ Dim i As Long
             DB_RS!IP = GOREsock_Address(UserIndex)
         End If
         DB_RS!date_lastlogin = Date$
-        DB_RS!gm = .Flags.GMLevel
+        DB_RS!gm = .flags.GMLevel
         DB_RS!Class = .Class
         DB_RS!Descr = .Desc
         DB_RS!BankGold = .BankGold

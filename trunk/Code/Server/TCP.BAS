@@ -116,6 +116,7 @@ Dim PutSlot As Byte
     End If
     
     'Check for item of the same type already in there
+    PutSlot = 1
     If ObjData.Stacking(UserList(UserIndex).Bank(PutSlot).ObjIndex) > 1 Then
        Do
            PutSlot = PutSlot + 1
@@ -145,7 +146,7 @@ Dim PutSlot As Byte
     End If
     
     'Check if theres room for the item
-    If UserList(UserIndex).Bank(PutSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Bank(PutSlot).ObjIndex) Then
+    If UserList(UserIndex).Bank(PutSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) Then
         Data_Send ToIndex, UserIndex, cMessage(97).Data
         Exit Sub
     End If
@@ -208,7 +209,7 @@ Dim PutSlot As Byte
     End If
     
     'Check for item of the same type already in there
-    If ObjData.Stacking(UserList(UserIndex).Object(PutSlot).ObjIndex) > 1 Then
+    If ObjData.Stacking(UserList(UserIndex).Bank(Slot).ObjIndex) > 1 Then
        Do
            PutSlot = PutSlot + 1
            If PutSlot > MAX_INVENTORY_SLOTS Then
@@ -237,7 +238,7 @@ Dim PutSlot As Byte
     End If
     
     'Check if theres room for the item
-    If UserList(UserIndex).Object(PutSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Object(PutSlot).ObjIndex) Then
+    If UserList(UserIndex).Object(PutSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Bank(Slot).ObjIndex) Then
         Data_Send ToIndex, UserIndex, cMessage(26).Data
         Exit Sub
     End If
@@ -1710,14 +1711,20 @@ Dim Y As Long
     End If
 
     'Check if the user already has an item of the type
-    If ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex) > 1 Then
-        LoopC = 1
+    LoopC = 1
+    If ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) > 1 Then
         Do Until UserList(UserIndex).Object(LoopC).ObjIndex = MsgData.Obj(ObjIndex).ObjIndex
             LoopC = LoopC + 1
             If LoopC > MAX_INVENTORY_SLOTS Then Exit Do
         Loop
+    ElseIf ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) = 1 Then
+        Do Until UserList(UserIndex).Object(LoopC).ObjIndex = 0
+            LoopC = LoopC + 1
+            If LoopC > MAX_INVENTORY_SLOTS Then Exit Do
+        Loop
     Else
-        LoopC = MAX_INVENTORY_SLOTS + 1
+        'Error :x
+        Exit Sub
     End If
     
     'Check that the user has room in their inventory
@@ -1732,14 +1739,14 @@ Dim Y As Long
         Loop
     Else
         'Check if user has less than Stacking
-        If UserList(UserIndex).Object(LoopC).Amount >= ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex) Then
+        If UserList(UserIndex).Object(LoopC).Amount >= ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) Then
             Data_Send ToIndex, UserIndex, cMessage(26).Data
             Exit Sub
         End If
     End If
 
     'Take all the items
-    If UserList(UserIndex).Object(LoopC).Amount + MsgData.Obj(ObjIndex).Amount <= ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex) Then
+    If UserList(UserIndex).Object(LoopC).Amount + MsgData.Obj(ObjIndex).Amount <= ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) Then
         ConBuf.PreAllocate 5 + Len(ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex))
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 58
@@ -1779,11 +1786,12 @@ Dim Y As Long
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 59
         ConBuf.Put_String ObjData.Name(MsgData.Obj(ObjIndex).ObjIndex)
-        ConBuf.Put_Integer (ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount)
-        ConBuf.Put_Integer (MsgData.Obj(ObjIndex).Amount - (ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount))
+        ConBuf.Put_Integer (ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount)
+        ConBuf.Put_Integer (MsgData.Obj(ObjIndex).Amount - (ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex) - UserList(UserIndex).Object(LoopC).Amount))
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        MsgData.Obj(ObjIndex).Amount = (MsgData.Obj(ObjIndex).Amount + UserList(UserIndex).Object(LoopC).Amount) - ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex)
-        UserList(UserIndex).Object(LoopC).Amount = ObjData.Stacking(UserList(UserIndex).Object(LoopC).ObjIndex)
+        MsgData.Obj(ObjIndex).Amount = (MsgData.Obj(ObjIndex).Amount + UserList(UserIndex).Object(LoopC).Amount) - ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex)
+        UserList(UserIndex).Object(LoopC).Amount = ObjData.Stacking(MsgData.Obj(ObjIndex).ObjIndex)
+        UserList(UserIndex).Object(LoopC).ObjIndex = MsgData.Obj(ObjIndex).ObjIndex
 
     End If
 
@@ -2878,11 +2886,15 @@ Dim Slot As Byte
 
     'Check to see if User already has object type
     UserSlot = 1
-    Do Until UserList(UserIndex).Object(UserSlot).ObjIndex = NPCList(NPCIndex).VendItems(Slot).ObjIndex
-        UserSlot = UserSlot + 1
-        If UserSlot > MAX_INVENTORY_SLOTS Then Exit Do
-    Loop
-
+    If ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) > 1 Then
+        Do Until UserList(UserIndex).Object(UserSlot).ObjIndex = NPCList(NPCIndex).VendItems(Slot).ObjIndex
+            UserSlot = UserSlot + 1
+            If UserSlot > MAX_INVENTORY_SLOTS Then Exit Do
+        Loop
+    Else
+        UserSlot = MAX_INVENTORY_SLOTS + 1
+    End If
+    
     'If not, check if there is a empty UserSlot
     If UserSlot > MAX_INVENTORY_SLOTS Then
         UserSlot = 1
@@ -2896,7 +2908,7 @@ Dim Slot As Byte
     End If
 
     'See how much the user can hold at max
-    If UserList(UserIndex).Object(UserSlot).Amount + Amount > ObjData.Stacking(UserList(UserIndex).Object(UserSlot).ObjIndex) Then Amount = ObjData.Stacking(UserList(UserIndex).Object(UserSlot).ObjIndex) - UserList(UserIndex).Object(UserSlot).Amount
+    If UserList(UserIndex).Object(UserSlot).Amount + Amount > ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) Then Amount = ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) - UserList(UserIndex).Object(UserSlot).Amount
 
     'Set the ObjData of the item to be purchased to the PurchaseObj variable
     PurchaseObj = NPCList(NPCIndex).VendItems(Slot).ObjIndex

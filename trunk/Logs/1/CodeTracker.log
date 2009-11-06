@@ -1,0 +1,1853 @@
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,MYSQL,User)
+Rtrn Var_Get = root
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,MYSQL,Password)
+Rtrn Var_Get = test
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,MYSQL,Database)
+Rtrn Var_Get = vbgore
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,MYSQL,Host)
+Rtrn Var_Get = 127.0.0.1
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,MYSQL,Port)
+Rtrn Var_Get = 3306
+Call StartServer
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Help.ini,INIT,NumHelp)
+Rtrn Var_Get = 4
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Help.ini,INIT, 1)
+Rtrn Var_Get = |vbGORE Help:|
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Help.ini,INIT, 2)
+Rtrn Var_Get = To move, use W A S D or arrow keys.
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Help.ini,INIT, 3)
+Rtrn Var_Get = To attack, use |Ctrl|, and get objects with |Alt|.
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Help.ini,INIT, 4)
+Rtrn Var_Get = Help lines can be defined in |ServerData\Help.ini|
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT,NumLines)
+Rtrn Var_Get = 6
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 1)
+Rtrn Var_Get = Welcome to vbGORE! For help, please type |/help|
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 2)
+Rtrn Var_Get = Use |Ctrl+W| for inventory, |Ctrl+S| for stats.
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 3)
+Rtrn Var_Get = Please visit our site at www.vbgore.com
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 4)
+Rtrn Var_Get = Questions, code, help, etc can be found there. :)
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 5)
+Rtrn Var_Get = Remember to go under the |waterfall| to fight some enemies!
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\MOTD.ini,INIT, 6)
+Rtrn Var_Get = Any lag you experience is due to running the server and client on the same computer.
+Call Load_Maps
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\Data\Map.dat,INIT,NumMaps)
+Rtrn Var_Get = 4
+Call Load_ServerIni
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,INIT,IdleLimit)
+Rtrn Var_Get = 6000000
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,INIT,LastPacket)
+Rtrn Var_Get = 20000
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,INIT,StartPos)
+Rtrn Var_Get = 1-15-15
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,INIT,ResPos)
+Rtrn Var_Get = 1-15-15
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,INIT,Servers)
+Rtrn Var_Get = 1
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,IP)
+Rtrn Var_Get = 127.0.0.1
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,ExIP)
+Rtrn Var_Get = 127.0.0.1
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,Port)
+Rtrn Var_Get = 10200
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,ServerPort)
+Rtrn Var_Get = 10300
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,MaxUsers)
+Rtrn Var_Get = 50
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\Server.ini,SERVER1,Map)
+Rtrn Var_Get = *
+Load_Maps: Loading map (1)
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\1.dat,1,Name)
+Rtrn Var_Get = Kalmer Island
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\1.dat,1,Weather)
+Rtrn Var_Get = 2
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\1.dat,1,Music)
+Rtrn Var_Get = 1
+Call Load_Maps_Data(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\m1.temp,0)
+Rtrn Server_FileExist = False
+Load_Maps: Loading map (2)
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\2.dat,1,Name)
+Rtrn Var_Get = Kalmer Island
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\2.dat,1,Weather)
+Rtrn Var_Get = 3
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\2.dat,1,Music)
+Rtrn Var_Get = 1
+Call Load_Maps_Data(2)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\m2.temp,0)
+Rtrn Server_FileExist = False
+Load_Maps: Loading map (3)
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\3.dat,1,Name)
+Rtrn Var_Get = Kalmer Island
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\3.dat,1,Weather)
+Rtrn Var_Get = 3
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\3.dat,1,Music)
+Rtrn Var_Get = 1
+Call Load_Maps_Data(3)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\m3.temp,0)
+Rtrn Server_FileExist = False
+Load_Maps: Loading map (4)
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\4.dat,1,Name)
+Rtrn Var_Get = Kalmer Island
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\4.dat,1,Weather)
+Rtrn Var_Get = 4
+Call Var_Get(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\MapsEX\4.dat,1,Music)
+Rtrn Var_Get = 1
+Call Load_Maps_Data(4)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\m4.temp,0)
+Rtrn Server_FileExist = False
+Call Load_OBJs
+Load_OBJs: Filling ObjData for object ID 1
+Load_OBJs: Filling ObjData for object ID 2
+Load_OBJs: Filling ObjData for object ID 3
+Load_OBJs: Filling ObjData for object ID 4
+Load_OBJs: Filling ObjData for object ID 5
+Load_OBJs: Filling ObjData for object ID 6
+Load_OBJs: Filling ObjData for object ID 7
+Load_OBJs: Filling ObjData for object ID 8
+Load_OBJs: Filling ObjData for object ID 9
+Call Load_Quests
+Load_Quests: Resizing QuestData array by NumQuests (1)
+Load_Quests: Filling QuestData for quest 1
+Call Save_NPCs_Temp
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n1.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 1
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n2.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 2
+Load_NPC: Splitting DropStr (1 2 50
+5 1 10
+6 1 10
+7 1 10)
+Save_NPCs_Temp: Splitting item information (1 2 50)
+Save_NPCs_Temp: Splitting item information (5 1 10)
+Save_NPCs_Temp: Splitting item information (6 1 10)
+Save_NPCs_Temp: Splitting item information (7 1 10)
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n3.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 3
+Load_NPC: Splitting ShopStr (1 -1
+2 -1
+3 -1
+4 -1
+5 -1
+6 -1
+7 -1)
+Save_NPCs_Temp: Splitting item information (1 -1)
+Save_NPCs_Temp: Splitting item information (2 -1)
+Save_NPCs_Temp: Splitting item information (3 -1)
+Save_NPCs_Temp: Splitting item information (4 -1)
+Save_NPCs_Temp: Splitting item information (5 -1)
+Save_NPCs_Temp: Splitting item information (6 -1)
+Save_NPCs_Temp: Splitting item information (7 -1)
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n4.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 4
+Load_NPC: Splitting DropStr (1 2 50
+5 1 10
+6 1 10
+7 1 10)
+Save_NPCs_Temp: Splitting item information (1 2 50)
+Save_NPCs_Temp: Splitting item information (5 1 10)
+Save_NPCs_Temp: Splitting item information (6 1 10)
+Save_NPCs_Temp: Splitting item information (7 1 10)
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n5.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 5
+Load_NPC: Splitting DropStr (1 2 50
+5 1 10
+6 1 10
+7 1 10)
+Save_NPCs_Temp: Splitting item information (1 2 50)
+Save_NPCs_Temp: Splitting item information (5 1 10)
+Save_NPCs_Temp: Splitting item information (6 1 10)
+Save_NPCs_Temp: Splitting item information (7 1 10)
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n6.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 6
+Call NPC_UpdateModStats(1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n7.temp,0)
+Rtrn Server_FileExist = False
+Save_NPCs_Temp: Filling in values for NPC 7
+Call NPC_UpdateModStats(1)
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call GOREsock_Connection(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 13
+Call GOREsock_DataArrival(1,028[ ] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i] 006[ ] 118[v] 098[b] 103[g] 111[o] 114[r] 101[e])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 13
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 13
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 13
+Call Data_User_Login([028[ ] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i] 006[ ] 118[v] 098[b] 103[g] 111[o] 114[r] 101[e]],1)
+Call User_Connect(1,Spodi,vbgore,False)
+Call Server_LegalString(Spodi)
+Call Server_LegalCharacter(83)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(112)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(111)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(100)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(105)
+Rtrn Server_LegalCharacter = True
+Rtrn Server_LegalString = True
+Call Server_LegalString(vbgore)
+Call Server_LegalCharacter(118)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(98)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(103)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(111)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(114)
+Rtrn Server_LegalCharacter = True
+Call Server_LegalCharacter(101)
+Rtrn Server_LegalCharacter = True
+Rtrn Server_LegalString = True
+Call Server_UserExist(Spodi)
+Rtrn Server_UserExist = True
+Call Server_CheckForSameName(1,Spodi)
+Rtrn Server_CheckForSameName = False
+Call Load_User(N/A,Spodi)
+Let BaseStat(18,5)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(17,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(15,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(16,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(14,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(4,100)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(6,0)
+Let BaseStat(8,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(7,10)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(5,0)
+Let BaseStat(13,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(9,1)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(10,50)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(11,50)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(12,50)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(10)
+Let ModStat(10,50)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(11)
+Let ModStat(11,50)
+Get ModStat(11)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(12)
+Let ModStat(12,50)
+Get ModStat(12)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(1,58)
+Get BaseStat(1)
+Get ModStat(10)
+Get ModStat(10)
+Let BaseStat(1,50)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(2,58)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get ModStat(11)
+Let BaseStat(2,50)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(12)
+Let BaseStat(3,24)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Load_User: Splitting inventory string (1 1 5 0
+2 2 1 0
+3 3 1 0
+4 5 1 1
+5 6 1 1
+6 7 1 1
+7 8 1 0
+8 9 50 0)
+Load_User: Splitting item data (1 1 5 0)
+Load_User: Splitting item data (2 2 1 0)
+Load_User: Splitting item data (3 3 1 0)
+Load_User: Splitting item data (4 5 1 1)
+Load_User: Splitting item data (5 6 1 1)
+Load_User: Splitting item data (6 7 1 1)
+Load_User: Splitting item data (7 8 1 0)
+Load_User: Splitting item data (8 9 50 0)
+Load_User: Splititng mail string (1
+2
+3
+4
+5)
+Call ForceFullUpdate
+Call User_UpdateInv(True,1,0)
+Call User_ChangeInv(1,1,[I:1 A:5 E:0])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 34
+Call Data_Send(0,1,[024[ ] 001[ ] 001[ ] 000[ ] 000[ ] 000[ ] 019[ ] 084[T] 105[i] 110[n] 121[y] 032[ ] 072[H] 101[e] 097[a] 108[l] 105[i] 110[n] 103[g] 032[ ] 080[P] 111[o] 116[t] 105[i] 111[o] 110[n] 005[ ] 000[ ] 000[ ] 000[ ] 000[ ] 038[&] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 34
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,2,[I:2 A:1 E:0])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 34
+Call Data_Send(0,1,[024[ ] 002[ ] 002[ ] 000[ ] 000[ ] 000[ ] 019[ ] 077[M] 105[i] 110[n] 105[i] 032[ ] 072[H] 101[e] 097[a] 108[l] 105[i] 110[n] 103[g] 032[ ] 080[P] 111[o] 116[t] 105[i] 111[o] 110[n] 001[ ] 000[ ] 000[ ] 000[ ] 000[ ] 038[&] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 34
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,3,[I:3 A:1 E:0])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 35
+Call Data_Send(0,1,[024[ ] 003[ ] 003[ ] 000[ ] 000[ ] 000[ ] 020[ ] 083[S] 109[m] 097[a] 108[l] 108[l] 032[ ] 072[H] 101[e] 097[a] 108[l] 105[i] 110[n] 103[g] 032[ ] 080[P] 111[o] 116[t] 105[i] 111[o] 110[n] 001[ ] 000[ ] 000[ ] 000[ ] 000[ ] 038[&] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 35
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,4,[I:5 A:1 E:1])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send(0,1,[024[ ] 004[ ] 005[ ] 000[ ] 000[ ] 000[ ] 012[ ] 078[N] 101[e] 119[w] 098[b] 105[i] 101[e] 032[ ] 065[A] 114[r] 109[m] 111[o] 114[r] 001[ ] 000[ ] 000[ ] 000[ ] 001[ ] 232[è] 003[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,5,[I:6 A:1 E:1])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 28
+Call Data_Send(0,1,[024[ ] 005[ ] 006[ ] 000[ ] 000[ ] 000[ ] 013[ ] 078[N] 101[e] 119[w] 098[b] 105[i] 101[e] 032[ ] 068[D] 097[a] 103[g] 103[g] 101[e] 114[r] 001[ ] 000[ ] 000[ ] 000[ ] 001[ ] 020[ ] 005[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 28
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,6,[I:7 A:1 E:1])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send(0,1,[024[ ] 006[ ] 007[ ] 000[ ] 000[ ] 000[ ] 011[ ] 065[A] 110[n] 103[g] 101[e] 108[l] 032[ ] 087[W] 105[i] 110[n] 103[g] 115[s] 001[ ] 000[ ] 000[ ] 000[ ] 001[ ] 176[°] 004[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,7,[I:8 A:1 E:0])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send(0,1,[024[ ] 007[ ] 008[ ] 000[ ] 000[ ] 000[ ] 011[ ] 078[N] 105[i] 110[n] 106[j] 097[a] 032[ ] 083[S] 116[t] 097[a] 114[r] 115[s] 001[ ] 000[ ] 000[ ] 000[ ] 000[ ] 011[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send_Update(1,1073741824)
+Call User_ChangeInv(1,8,[I:9 A:50 E:0])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 23
+Call Data_Send(0,1,[024[ ] 008[ ] 009[ ] 000[ ] 000[ ] 000[ ] 008[ ] 066[B] 105[i] 103[g] 032[ ] 083[S] 116[t] 097[a] 114[r] 050[2] 000[ ] 000[ ] 000[ ] 000[ ] 027[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 23
+Call Data_Send_Update(1,1073741824)
+Call Load_NPC(7,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 1
+Load_NPC: NPC index acquired (1)
+Load_NPC: ReDimming NPCList array with LastNPC value (1)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n7.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 1
+Call Server_NextOpenCharIndex
+Rtrn Server_NextOpenCharIndex = 1
+Call Load_NPC(1,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 2
+Load_NPC: NPC index acquired (2)
+Load_NPC: ReDimming NPCList array with LastNPC value (2)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n1.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 2
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 1)
+Rtrn Server_NextOpenCharIndex = 2
+Call Load_NPC(7,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 3
+Load_NPC: NPC index acquired (3)
+Load_NPC: ReDimming NPCList array with LastNPC value (3)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n7.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 3
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 2)
+Rtrn Server_NextOpenCharIndex = 3
+Call Load_NPC(6,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 4
+Load_NPC: NPC index acquired (4)
+Load_NPC: ReDimming NPCList array with LastNPC value (4)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n6.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 4
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 3)
+Rtrn Server_NextOpenCharIndex = 4
+Call Load_NPC(7,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 5
+Load_NPC: NPC index acquired (5)
+Load_NPC: ReDimming NPCList array with LastNPC value (5)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n7.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 5
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 4)
+Rtrn Server_NextOpenCharIndex = 5
+Call Load_NPC(7,0)
+Load_NPC: Acquiring NPC index
+Call NPC_NextOpen
+Rtrn NPC_NextOpen = 6
+Load_NPC: NPC index acquired (6)
+Load_NPC: ReDimming NPCList array with LastNPC value (6)
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\ServerData\_temp\n7.temp,0)
+Rtrn Server_FileExist = True
+Rtrn Load_NPC = 6
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 5)
+Rtrn Server_NextOpenCharIndex = 6
+Call Server_ClosestLegalPos([M:1 X:34 Y:35],N/A)
+Call Server_LegalPos(1,34,35,0)
+Call Server_LegalPos(1,34,35,0)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 6
+Call Data_Send(0,1,[026[ ] 008[ ] 001[ ] 000[ ] 001[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 6
+Call Data_Send_Update(1,1073741824)
+Call Server_NextOpenCharIndex
+Server_NextOpenCharIndex: Starting loop (1 to 6)
+Rtrn Server_NextOpenCharIndex = 7
+Call User_MakeChar(2,1,1,1,34,35)
+Get ModStat(18)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send(2,1,[017[ ] 002[ ] 000[ ] 001[ ] 000[ ] 003[ ] 007[ ] 000[ ] 034["] 035[#] 000[ ] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i] 001[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 255[ÿ] 255[ÿ] 000[ ] 001[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send_Update(1,1073741824)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 343
+Call Data_Send(0,1,[041[)] 048[0] 087[W] 101[e] 108[l] 099[c] 111[o] 109[m] 101[e] 032[ ] 116[t] 111[o] 032[ ] 118[v] 098[b] 071[G] 079[O] 082[R] 069[E] 033[!] 032[ ] 070[F] 111[o] 114[r] 032[ ] 104[h] 101[e] 108[l] 112[p] 044[,] 032[ ] 112[p] 108[l] 101[e] 097[a] 115[s] 101[e] 032[ ] 116[t] 121[y] 112[p] 101[e] 032[ ] 124[|] 047[/] 104[h] 101[e] 108[l] 112[p] 124[|] 002[ ] 041[)] 047[/] 085[U] 115[s] 101[e] 032[ ] 124[|] 067[C] 116[t] 114[r] 108[l] 043[+] 087[W] 124[|] 032[ ] 102[f] 111[o] 114[r] 032[ ] 105[i] 110[n] 118[v] 101[e] 110[n] 116[t] 111[o] 114[r] 121[y] 044[,] 032[ ] 124[|] 067[C] 116[t] 114[r] 108[l] 043[+] 083[S] 124[|] 032[ ] 102[f] 111[o] 114[r] 032[ ] 115[s] 116[t] 097[a] 116[t] 115[s] 046[.] 002[ ] 041[)] 039['] 080[P] 108[l] 101[e] 097[a] 115[s] 101[e] 032[ ] 118[v] 105[i] 115[s] 105[i] 116[t] 032[ ] 111[o] 117[u] 114[r] 032[ ] 115[s] 105[i] 116[t] 101[e] 032[ ] 097[a] 116[t] 032[ ] 119[w] 119[w] 119[w] 046[.] 118[v] 098[b] 103[g] 111[o] 114[r] 101[e] 046[.] 099[c] 111[o] 109[m] 002[ ] 041[)] 049[1] 081[Q] 117[u] 101[e] 115[s] 116[t] 105[i] 111[o] 110[n] 115[s] 044[,] 032[ ] 099[c] 111[o] 100[d] 101[e] 044[,] 032[ ] 104[h] 101[e] 108[l] 112[p] 044[,] 032[ ] 101[e] 116[t] 099[c] 032[ ] 099[c] 097[a] 110[n] 032[ ] 098[b] 101[e] 032[ ] 102[f] 111[o] 117[u] 110[n] 100[d] 032[ ] 116[t] 104[h] 101[e] 114[r] 101[e] 046[.] 032[ ] 058[:] 041[)] 002[ ] 041[)] 059[;] 082[R] 101[e] 109[m] 101[e] 109[m] 098[b] 101[e] 114[r] 032[ ] 116[t] 111[o] 032[ ] 103[g] 111[o] 032[ ] 117[u] 110[n] 100[d] 101[e] 114[r] 032[ ] 116[t] 104[h] 101[e] 032[ ] 124[|] 119[w] 097[a] 116[t] 101[e] 114[r] 102[f] 097[a] 108[l] 108[l] 124[|] 032[ ] 116[t] 111[o] 032[ ] 102[f] 105[i] 103[g] 104[h] 116[t] 032[ ] 115[s] 111[o] 109[m] 101[e] 032[ ] 101[e] 110[n] 101[e] 109[m] 105[i] 101[e] 115[s] 033[!] 002[ ] 041[)] 084[T] 065[A] 110[n] 121[y] 032[ ] 108[l] 097[a] 103[g] 032[ ] 121[y] 111[o] 117[u] 032[ ] 101[e] 120[x] 112[p] 101[e] 114[r] 105[i] 101[e] 110[n] 099[c] 101[e] 032[ ] 105[i] 115[s] 032[ ] 100[d] 117[u] 101[e] 032[ ] 116[t] 111[o] 032[ ] 114[r] 117[u] 110[n] 110[n] 105[i] 110[n] 103[g] 032[ ] 116[t] 104[h] 101[e] 032[ ] 115[s] 101[e] 114[r] 118[v] 101[e] 114[r] 032[ ] 097[a] 110[n] 100[d] 032[ ] 099[c] 108[l] 105[i] 101[e] 110[n] 116[t] 032[ ] 111[o] 110[n] 032[ ] 116[t] 104[h] 101[e] 032[ ] 115[s] 097[a] 109[m] 101[e] 032[ ] 099[c] 111[o] 109[m] 112[p] 117[u] 116[t] 101[e] 114[r] 046[.] 002[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 343
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Data_Send(0,1,[079[O] 071[G] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 14
+Call Data_Send(0,1,[056[8] 001[ ] 000[ ] 056[8] 002[ ] 000[ ] 056[8] 003[ ] 000[ ] 056[8] 004[ ] 000[ ] 056[8] 005[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 14
+Call Data_Send_Update(1,1073741824)
+Call User_SendKnownSkills(1)
+User_SendKnownSkills: ReDim KnowSkillList(1 To 1)
+User_SendKnownSkills: Checking if skill ID 1 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 2 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 3 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 4 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 5 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 6 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 7 is known
+User_SendKnownSkills: Index value = 1
+User_SendKnownSkills: Checking if skill ID 8 is known
+User_SendKnownSkills: Index value = 1
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 1
+Call Data_Send(0,1,[023[ ] 255[ÿ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 1
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 7
+Call Data_Send(1,0,[079[O] 072[H] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 7
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 646
+Call SendUpdatedStats
+Call User_UpdateModStats(1)
+User_UpdateModStats: Updating ModStat ID 9
+Get BaseStat(9)
+Let ModStat(9,6)
+Get ModStat(9)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 10
+Get BaseStat(10)
+Let ModStat(10,70)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 11
+Get BaseStat(11)
+Let ModStat(11,60)
+Get ModStat(11)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 12
+Get BaseStat(12)
+Let ModStat(12,60)
+Get ModStat(12)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 13
+Get BaseStat(13)
+Let ModStat(13,4)
+Get ModStat(13)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 14
+Get BaseStat(14)
+Let ModStat(14,5)
+Get ModStat(14)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 15
+Get BaseStat(15)
+Let ModStat(15,2)
+Get ModStat(15)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 16
+Get BaseStat(16)
+Let ModStat(16,2)
+Get ModStat(16)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 17
+Get BaseStat(17)
+Let ModStat(17,2)
+Get ModStat(17)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+User_UpdateModStats: Updating ModStat ID 18
+Get BaseStat(18)
+Let ModStat(18,5)
+Get ModStat(18)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get ModStat(13)
+Get ModStat(17)
+Get ModStat(15)
+Let ModStat(13,6)
+Get ModStat(13)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get ModStat(9)
+Get ModStat(17)
+Get ModStat(15)
+Let ModStat(9,8)
+Get ModStat(9)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get ModStat(18)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[082[R] 007[ ] 000[ ] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Get BaseStat(1)
+Get BaseStat(2)
+Get BaseStat(3)
+Get BaseStat(4)
+Get BaseStat(5)
+Get BaseStat(6)
+Get BaseStat(7)
+Get BaseStat(8)
+Get BaseStat(9)
+Get ModStat(9)
+Get BaseStat(10)
+Get ModStat(10)
+Get BaseStat(11)
+Get ModStat(11)
+Get BaseStat(12)
+Get ModStat(12)
+Get BaseStat(13)
+Get ModStat(13)
+Get BaseStat(14)
+Get ModStat(14)
+Get BaseStat(15)
+Get ModStat(15)
+Get BaseStat(16)
+Get ModStat(16)
+Get BaseStat(17)
+Get ModStat(17)
+Get BaseStat(18)
+Get ModStat(18)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 167
+Call Data_Send(0,1,[052[4] 001[ ] 050[2] 000[ ] 000[ ] 000[ ] 052[4] 002[ ] 050[2] 000[ ] 000[ ] 000[ ] 052[4] 003[ ] 024[ ] 000[ ] 000[ ] 000[ ] 052[4] 004[ ] 100[d] 000[ ] 000[ ] 000[ ] 052[4] 005[ ] 000[ ] 000[ ] 000[ ] 000[ ] 052[4] 006[ ] 000[ ] 000[ ] 000[ ] 000[ ] 052[4] 007[ ] 010[ ] 000[ ] 000[ ] 000[ ] 052[4] 008[ ] 001[ ] 000[ ] 000[ ] 000[ ] 052[4] 009[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 009[ ] 008[ ] 000[ ] 000[ ] 000[ ] 052[4] 010[ ] 050[2] 000[ ] 000[ ] 000[ ] 053[5] 010[ ] 070[F] 000[ ] 000[ ] 000[ ] 052[4] 011[ ] 050[2] 000[ ] 000[ ] 000[ ] 053[5] 011[ ] 060[<] 000[ ] 000[ ] 000[ ] 052[4] 012[ ] 050[2] 000[ ] 000[ ] 000[ ] 053[5] 012[ ] 060[<] 000[ ] 000[ ] 000[ ] 052[4] 013[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 013[ ] 006[ ] 000[ ] 000[ ] 000[ ] 052[4] 014[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 014[ ] 005[ ] 000[ ] 000[ ] 000[ ] 052[4] 015[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 015[ ] 002[ ] 000[ ] 000[ ] 000[ ] 052[4] 016[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 016[ ] 002[ ] 000[ ] 000[ ] 000[ ] 052[4] 017[ ] 001[ ] 000[ ] 000[ ] 000[ ] 053[5] 017[ ] 002[ ] 000[ ] 000[ ] 000[ ] 052[4] 018[ ] 005[ ] 000[ ] 000[ ] 000[ ] 053[5] 018[ ] 005[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 167
+Call Data_Send_Update(1,1073741824)
+Get ModStat(10)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[012[ ] 071[G] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Get ModStat(11)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[045[-] 083[S] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Get ModStat(18)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 6
+Call Data_Send(2,1,[082[R] 007[ ] 000[ ] 005[ ] 000[ ] 000[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 6
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(1,0)
+Call Server_ClosestLegalPos([M:1 X:31 Y:15],N/A)
+Call Server_LegalPos(1,31,15,0)
+Call Server_LegalPos(1,31,15,0)
+Call NPC_MakeChar(2,1,1,1,31,15)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 001[ ] 000[ ] 031[ ] 015[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(2,0)
+Call Server_ClosestLegalPos([M:1 X:39 Y:35],N/A)
+Call Server_LegalPos(1,39,35,0)
+Call Server_LegalPos(1,39,35,0)
+Call NPC_MakeChar(2,1,2,1,39,35)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 33
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 000[ ] 000[ ] 003[ ] 002[ ] 000[ ] 039['] 035[#] 003[ ] 012[ ] 072[H] 101[e] 097[a] 100[d] 108[l] 101[e] 115[s] 115[s] 032[ ] 077[M] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 100[d] 100[d] 003[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 33
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(3,0)
+Call Server_ClosestLegalPos([M:1 X:40 Y:23],N/A)
+Call Server_LegalPos(1,40,23,0)
+Call Server_LegalPos(1,40,23,0)
+Call NPC_MakeChar(2,1,3,1,40,23)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 003[ ] 000[ ] 040[(] 023[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(4,0)
+Call Server_ClosestLegalPos([M:1 X:44 Y:35],N/A)
+Call Server_LegalPos(1,44,35,0)
+Call Server_LegalPos(1,44,35,0)
+Call NPC_MakeChar(2,1,4,1,44,35)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 004[ ] 000[ ] 044[,] 035[#] 000[ ] 006[ ] 066[B] 097[a] 110[n] 107[k] 101[e] 114[r] 000[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 100[d] 100[d] 000[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(5,0)
+Call Server_ClosestLegalPos([M:1 X:44 Y:40],N/A)
+Call Server_LegalPos(1,44,40,0)
+Call Server_LegalPos(1,44,40,0)
+Call NPC_MakeChar(2,1,5,1,44,40)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 005[ ] 000[ ] 044[,] 040[(] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_Spawn(6,0)
+Call Server_ClosestLegalPos([M:1 X:61 Y:22],N/A)
+Call Server_LegalPos(1,61,22,0)
+Call Server_LegalPos(1,61,22,0)
+Call NPC_MakeChar(2,1,6,1,61,22)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(2,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 006[ ] 000[ ] 061[=] 022[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 368
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(6)
+Call NPC_MoveChar(6,3)
+Call Server_HeadToPos(3,[M:1 X:61 Y:22])
+Call Server_LegalPos(1,61,23,3)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,6,[019[ ] 006[ ] 000[ ] 061[=] 023[ ] 003[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(61,22,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,7)
+Call Server_HeadToPos(7,[M:1 X:40 Y:23])
+Call Server_LegalPos(1,39,24,7)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 039['] 024[ ] 007[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(40,23,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_MoveChar(5,4)
+Call Server_HeadToPos(4,[M:1 X:44 Y:40])
+Call Server_LegalPos(1,43,40,4)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,5,[019[ ] 005[ ] 000[ ] 043[+] 040[(] 004[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(44,40,34,35,13,10)
+Rtrn Server_RectDistance = 1
+Call Data_Send_Update(1,1073741824)
+Rtrn NPC_MoveChar = 1
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(1)
+Call NPC_MoveChar(1,8)
+Call Server_HeadToPos(8,[M:1 X:31 Y:15])
+Call Server_LegalPos(1,30,14,8)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 030[ ] 014[ ] 008[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(31,15,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(17)
+Let BaseStat(1,52)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(15)
+Let BaseStat(3,26)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(2)
+Get ModStat(16)
+Let BaseStat(2,52)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Call SendUpdatedStats
+Get BaseStat(1)
+Get BaseStat(2)
+Get BaseStat(3)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send(0,1,[052[4] 001[ ] 052[4] 000[ ] 000[ ] 000[ ] 052[4] 002[ ] 052[4] 000[ ] 000[ ] 000[ ] 052[4] 003[ ] 026[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send_Update(1,1073741824)
+Get ModStat(10)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[012[ ] 074[J] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Get ModStat(11)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[045[-] 087[W] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(6)
+Call NPC_MoveChar(6,5)
+Call Server_HeadToPos(5,[M:1 X:61 Y:23])
+Call Server_LegalPos(1,62,22,5)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,6,[019[ ] 006[ ] 000[ ] 062[>] 022[ ] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(61,23,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 37
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,5)
+Call Server_HeadToPos(5,[M:1 X:39 Y:24])
+Call Server_LegalPos(1,40,23,5)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 040[(] 023[ ] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(39,24,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(1)
+Call NPC_MoveChar(1,3)
+Call Server_HeadToPos(3,[M:1 X:30 Y:14])
+Call Server_LegalPos(1,30,15,3)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 030[ ] 015[ ] 003[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(30,14,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_MoveChar(5,6)
+Call Server_HeadToPos(6,[M:1 X:43 Y:40])
+Call Server_LegalPos(1,44,41,6)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,5,[019[ ] 005[ ] 000[ ] 044[,] 041[)] 006[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(43,40,34,35,13,10)
+Rtrn Server_RectDistance = 1
+Call Data_Send_Update(1,1073741824)
+Rtrn NPC_MoveChar = 1
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,009[ ])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Map_DoneLoadingMap(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 16
+Call Data_Send(0,1,[015[ ] 013[ ] 075[K] 097[a] 108[l] 109[m] 101[e] 114[r] 032[ ] 073[I] 115[s] 108[l] 097[a] 110[n] 100[d] 002[ ] 001[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 16
+Call Data_Send_Update(1,1073741824)
+Call User_UpdateMap(1)
+User_UpdateMap: For X = 1 to 1
+Call User_MakeChar(0,1,1,1,34,35)
+Get ModStat(18)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send(0,1,[017[ ] 002[ ] 000[ ] 001[ ] 000[ ] 003[ ] 007[ ] 000[ ] 034["] 035[#] 005[ ] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i] 001[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 074[J] 087[W] 000[ ] 001[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 26
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,1,1,30,15)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 001[ ] 000[ ] 030[ ] 015[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,6,1,62,22)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 005[ ] 006[ ] 000[ ] 062[>] 022[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,3,1,40,23)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 005[ ] 003[ ] 000[ ] 040[(] 023[ ] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,2,1,39,35)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 33
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 000[ ] 000[ ] 003[ ] 002[ ] 000[ ] 039['] 035[#] 003[ ] 012[ ] 072[H] 101[e] 097[a] 100[d] 108[l] 101[e] 115[s] 115[s] 032[ ] 077[M] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 100[d] 100[d] 003[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 33
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,4,1,44,35)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 003[ ] 004[ ] 000[ ] 044[,] 035[#] 000[ ] 006[ ] 066[B] 097[a] 110[n] 107[k] 101[e] 114[r] 000[ ] 000[ ] 001[ ] 000[ ] 001[ ] 000[ ] 100[d] 100[d] 000[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 27
+Call Data_Send_Update(1,1073741824)
+Call NPC_MakeChar(0,1,5,1,44,41)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send(0,1,[017[ ] 001[ ] 000[ ] 001[ ] 000[ ] 006[ ] 005[ ] 000[ ] 044[,] 041[)] 000[ ] 009[ ] 067[C] 114[r] 097[a] 122[z] 121[y] 032[ ] 109[m] 097[a] 110[n] 000[ ] 000[ ] 001[ ] 000[ ] 000[ ] 000[ ] 100[d] 100[d] 001[ ] 002[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 30
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Data_Send(0,1,[005[ ] 007[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(17)
+Let BaseStat(1,54)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(15)
+Let BaseStat(3,28)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(2)
+Get ModStat(16)
+Let BaseStat(2,54)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 254
+Call SendUpdatedStats
+Get BaseStat(1)
+Get BaseStat(2)
+Get BaseStat(3)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send(0,1,[052[4] 001[ ] 054[6] 000[ ] 000[ ] 000[ ] 052[4] 002[ ] 054[6] 000[ ] 000[ ] 000[ ] 052[4] 003[ ] 028[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send_Update(1,1073741824)
+Get ModStat(10)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[012[ ] 077[M] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Get ModStat(11)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[045[-] 090[Z] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,5)
+Call Server_HeadToPos(5,[M:1 X:40 Y:23])
+Call Server_LegalPos(1,41,22,5)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 041[)] 022[ ] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(40,23,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_MoveChar(5,8)
+Call Server_HeadToPos(8,[M:1 X:44 Y:41])
+Call Server_LegalPos(1,43,40,8)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,5,[019[ ] 005[ ] 000[ ] 043[+] 040[(] 008[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(44,41,34,35,13,10)
+Rtrn Server_RectDistance = 1
+Call Data_Send_Update(1,1073741824)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(6)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 38
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(1)
+Call NPC_MoveChar(1,5)
+Call Server_HeadToPos(5,[M:1 X:30 Y:15])
+Call Server_LegalPos(1,31,14,5)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 031[ ] 014[ ] 005[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(30,15,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call NPC_MoveChar(6,1)
+Call Server_HeadToPos(1,[M:1 X:62 Y:22])
+Call Server_LegalPos(1,62,21,1)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,6,[019[ ] 006[ ] 000[ ] 062[>] 021[ ] 001[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(62,22,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_MoveChar(5,1)
+Call Server_HeadToPos(1,[M:1 X:43 Y:40])
+Call Server_LegalPos(1,43,39,1)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,5,[019[ ] 005[ ] 000[ ] 043[+] 039['] 001[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(43,40,34,35,13,10)
+Rtrn Server_RectDistance = 1
+Call Data_Send_Update(1,1073741824)
+Rtrn NPC_MoveChar = 1
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,4)
+Call Server_HeadToPos(4,[M:1 X:41 Y:22])
+Call Server_LegalPos(1,40,22,4)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 040[(] 022[ ] 004[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(41,22,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(1)
+Call NPC_MoveChar(1,8)
+Call Server_HeadToPos(8,[M:1 X:31 Y:14])
+Call Server_LegalPos(1,30,13,8)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 030[ ] 013[ ] 008[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(31,14,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call NPC_MoveChar(6,2)
+Call Server_HeadToPos(2,[M:1 X:62 Y:21])
+Call Server_LegalPos(1,63,21,2)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,6,[019[ ] 006[ ] 000[ ] 063[?] 021[ ] 002[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(62,21,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,6)
+Call Server_HeadToPos(6,[M:1 X:40 Y:22])
+Call Server_LegalPos(1,41,23,6)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 041[)] 023[ ] 006[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(40,22,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(17)
+Let BaseStat(1,56)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(15)
+Let BaseStat(3,30)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(2)
+Get ModStat(16)
+Let BaseStat(2,56)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call SendUpdatedStats
+Get BaseStat(1)
+Get BaseStat(2)
+Get BaseStat(3)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send(0,1,[052[4] 001[ ] 056[8] 000[ ] 000[ ] 000[ ] 052[4] 002[ ] 056[8] 000[ ] 000[ ] 000[ ] 052[4] 003[ ] 030[ ] 000[ ] 000[ ] 000[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 17
+Call Data_Send_Update(1,1073741824)
+Get ModStat(10)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[012[ ] 080[P] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Get ModStat(11)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send(2,1,[045[-] 093[]] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 3
+Call Data_Send_Update(1,1073741824)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 49
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(1)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_MoveChar(5,6)
+Call Server_HeadToPos(6,[M:1 X:43 Y:39])
+Call Server_LegalPos(1,44,40,6)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,5,[019[ ] 005[ ] 000[ ] 044[,] 040[(] 006[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(43,39,34,35,13,10)
+Rtrn Server_RectDistance = 1
+Call Data_Send_Update(1,1073741824)
+Rtrn NPC_MoveChar = 1
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call NPC_AI(1)
+Call NPC_MoveChar(1,2)
+Call Server_HeadToPos(2,[M:1 X:30 Y:13])
+Call Server_LegalPos(1,31,13,2)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 031[ ] 013[ ] 002[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(30,13,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_MoveChar(3,4)
+Call Server_HeadToPos(4,[M:1 X:41 Y:23])
+Call Server_LegalPos(1,40,23,4)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,3,[019[ ] 003[ ] 000[ ] 040[(] 023[ ] 004[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(41,23,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 12
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(6)
+Call NPC_MoveChar(6,7)
+Call Server_HeadToPos(7,[M:1 X:63 Y:21])
+Call Server_LegalPos(1,62,22,7)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,6,[019[ ] 006[ ] 000[ ] 062[>] 022[ ] 007[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(63,21,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(1)
+Call NPC_MoveChar(1,8)
+Call Server_HeadToPos(8,[M:1 X:31 Y:13])
+Call Server_LegalPos(1,30,12,8)
+Call Server_WalkTimePerTile(0)
+Rtrn Server_WalkTimePerSecond = 727
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Data_Send(7,1,[019[ ] 001[ ] 000[ ] 030[ ] 012[ ] 008[ ]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 5
+Call Server_RectDistance(31,13,34,35,13,10)
+Rtrn Server_RectDistance = 0
+Call Data_Send_Update(1,268435456)
+Rtrn NPC_MoveChar = 1
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(5)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call GOREsock_DataArrival(1,060[<])
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Server_PTD(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send(0,1,[060[<]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 0
+Call Data_Send_Update(1,1073741824)
+Call Data_Send_Buffer(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 12
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call SendUpdatedStats
+Get ModStat(10)
+Get ModStat(11)
+Call NPC_AI(2)
+Call NPC_AI(3)
+Call NPC_AI(4)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(1)
+Get ModStat(17)
+Let BaseStat(1,58)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(3)
+Get ModStat(15)
+Let BaseStat(3,32)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(2)
+Get ModStat(16)
+Let BaseStat(2,58)
+Get BaseStat(1)
+Get ModStat(10)
+Get BaseStat(2)
+Get ModStat(11)
+Get BaseStat(3)
+Get ModStat(12)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call Server_UpdateConnections
+Server_UpdateConnections: Updating 1 users
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call NPC_AI(2)
+Call NPC_AI(4)
+Call GOREsock_Close(1)
+Call User_Close(1)
+Call Save_User(N/A,1,,0)
+Save_User: Built inventory string (1 1 5 0
+2 2 1 0
+3 3 1 0
+4 5 1 1
+5 6 1 1
+6 7 1 1
+7 8 1 0
+8 9 50 0)
+Save_User: Built mail string (1
+2
+3
+4
+5)
+Save_User: Built known skills string (1
+2
+3
+4
+5
+6
+7
+8)
+Save_User: Built completed quests string ()
+Save_User: Built current quest string ()
+Save_User: Built bank string ()
+Get BaseStat(18)
+Get BaseStat(17)
+Get BaseStat(15)
+Get BaseStat(16)
+Get BaseStat(14)
+Get BaseStat(4)
+Get BaseStat(6)
+Get BaseStat(8)
+Get BaseStat(7)
+Get BaseStat(5)
+Get BaseStat(13)
+Get BaseStat(9)
+Get BaseStat(1)
+Get BaseStat(10)
+Get BaseStat(2)
+Get BaseStat(11)
+Get BaseStat(3)
+Get BaseStat(12)
+Call User_EraseChar(1)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Data_Send(2,1,[018[ ] 007[ ] 000[ ]],1,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 2
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 7
+Call Data_Send(1,0,[079[O] 068[D] 005[ ] 083[S] 112[p] 111[o] 100[d] 105[i]],0,1073741824)
+ByteArrayToStr: ByteArray LBound() = 0 UBound() = 7
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_Unload()
+Call GOREsock_Close(0)
+Call Server_UpdateConnections
+Server_UpdateConnections: No users to update
+Call Server_Unload()
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\Logs\1\packetsout.txt,7)
+Rtrn Server_FileExist = False
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\Logs\1\packetsin.txt,7)
+Rtrn Server_FileExist = False
+Call Server_FileExist(C:\Documents and Settings\Compaq_Administrator\Desktop\vbGORE\Logs\1\serverfps.txt,7)
+Rtrn Server_FileExist = False

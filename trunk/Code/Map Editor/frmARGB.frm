@@ -205,7 +205,7 @@ Private Sub ATxt_Change()
 
 End Sub
 
-Private Sub ATxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub ATxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Alpha color value (ex: 255 for opaque / solid, 0 for invisible, 128 for 50% transparency)."
 
@@ -217,9 +217,16 @@ Private Sub BTxt_Change()
 
 End Sub
 
-Private Sub BTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub BTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Blue color value."
+
+End Sub
+
+Private Sub Form_Load()
+
+    Me.Top = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "Y"))
+    Me.Left = Val(Var_Get(Data2Path & "MapEditor.ini", Me.Name, "X"))
 
 End Sub
 
@@ -229,7 +236,7 @@ Private Sub GTxt_Change()
 
 End Sub
 
-Private Sub GTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub GTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Green color value."
 
@@ -256,8 +263,7 @@ Exit Sub
 ErrOut:
 
     MsgBox "Error converting Long value (" & l & ") to ARGB value (" & b(0) & "," & b(1) & "," & b(2) & "," & b(3) & ")"
-    LongTxt.Text = "0"
-    
+
 End Sub
 
 Private Sub ARGBtoLONG()
@@ -266,7 +272,7 @@ Private Sub ARGBtoLONG()
 
 End Sub
 
-Private Sub LongTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LongTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "The LONG value created by the entered ARGB value. This is the value that the engine uses."
 
@@ -278,7 +284,7 @@ Private Sub RTxt_Change()
     
 End Sub
 
-Private Sub RTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub RTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Red color value."
 

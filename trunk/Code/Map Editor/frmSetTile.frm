@@ -20,7 +20,7 @@ Begin VB.Form frmSetTile
       Height          =   285
       Left            =   1200
       MaxLength       =   1
-      TabIndex        =   16
+      TabIndex        =   11
       Text            =   "0"
       ToolTipText     =   "1 = Sets Shadow, 0 = Removes Shadow"
       Top             =   1950
@@ -67,15 +67,15 @@ Begin VB.Form frmSetTile
       AutoRedraw      =   -1  'True
       BackColor       =   &H80000005&
       ForeColor       =   &H80000008&
-      Height          =   375
-      Left            =   2040
-      ScaleHeight     =   23
+      Height          =   255
+      Left            =   2160
+      ScaleHeight     =   15
       ScaleMode       =   3  'Pixel
-      ScaleWidth      =   23
+      ScaleWidth      =   15
       TabIndex        =   9
       ToolTipText     =   "Preview of the light for the layer"
       Top             =   1920
-      Width           =   375
+      Width           =   255
    End
    Begin VB.TextBox GrhTxt 
       Appearance      =   0  'Flat
@@ -195,119 +195,9 @@ Begin VB.Form frmSetTile
       Height          =   195
       Index           =   12
       Left            =   360
-      TabIndex        =   15
+      TabIndex        =   10
       Top             =   1950
       Width           =   750
-   End
-   Begin VB.Label GrhSelectLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "*"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   1
-      Left            =   2400
-      TabIndex        =   14
-      ToolTipText     =   "Click to select from the large Grh selection sheet"
-      Top             =   1560
-      Width           =   90
-   End
-   Begin VB.Label LightLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "*"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   4
-      Left            =   2400
-      TabIndex        =   13
-      ToolTipText     =   "Click to use the ARGB <-> Long tool"
-      Top             =   1200
-      Width           =   90
-   End
-   Begin VB.Label LightLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "*"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   2
-      Left            =   2400
-      TabIndex        =   12
-      ToolTipText     =   "Click to use the ARGB <-> Long tool"
-      Top             =   840
-      Width           =   90
-   End
-   Begin VB.Label LightLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "*"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   3
-      Left            =   1320
-      TabIndex        =   11
-      ToolTipText     =   "Click to use the ARGB <-> Long tool"
-      Top             =   1200
-      Width           =   90
-   End
-   Begin VB.Label LightLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "*"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   1
-      Left            =   1320
-      TabIndex        =   10
-      ToolTipText     =   "Click to use the ARGB <-> Long tool"
-      Top             =   840
-      Width           =   90
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -351,7 +241,7 @@ Private Sub GrhSelectLbl_Click(Index As Integer)
 
 End Sub
 
-Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Click to select from the large Grh selection sheet."
 
@@ -375,8 +265,6 @@ On Error GoTo ErrOut
     
 ErrOut:
 
-    GrhTxt.Text = 0
-
 End Sub
 
 Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
@@ -392,7 +280,7 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     
 End Sub
 
-Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Grh that will be placed on the layer."
 
@@ -416,66 +304,27 @@ Private Sub LayerPic_Click(Index As Integer)
 
 End Sub
 
-Private Sub LayerPic_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LayerPic_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Click to select placing graphics on layer " & Index & "."
 
 End Sub
 
-Private Sub LightChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LightChk_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Enables / disables tile light modifying."
 
 End Sub
 
-Private Sub LightLbl_Click(Index As Integer)
-
-    'Bring up info box
-    ShowFrmARGB LightTxt(Index)
-
-End Sub
-
-Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Click to use the ARGB <-> Long tool."
 
 End Sub
 
-Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Preview of what the light will look like for the layer."
-
-End Sub
-
-Private Sub LightTxt_Change(Index As Integer)
-Dim TempRect As RECT
-Dim i As Long
-Dim j As Byte
-On Error GoTo ErrOut
-    
-    'Check for a valid light value
-    i = Val(LightTxt(Index).Text)
-
-    DrawPreview
-    
-    'Set the view area
-    TempRect.bottom = 15
-    TempRect.Right = 15
-    
-    'Draw the light preview
-    For i = 1 To 6
-        D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-        D3DDevice.BeginScene
-            Engine_Render_Rectangle 0, 0, 15, 15, 1, 1, 1, 1, 1, 1, 0, 0, Val(LightTxt((i - 1) * 4 + 1).Text), Val(LightTxt((i - 1) * 4 + 2).Text), Val(LightTxt((i - 1) * 4 + 3).Text), Val(LightTxt((i - 1) * 4 + 4).Text)
-        D3DDevice.EndScene
-        D3DDevice.Present TempRect, TempRect, frmSetTile.LightPic(i).hWnd, ByVal 0
-    Next i
-
-Exit Sub
-
-ErrOut:
-
-    LightTxt(Index).Text = "0"
 
 End Sub
 
@@ -492,7 +341,38 @@ Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub LightTxt_LostFocus(Index As Integer)
+Dim TempRect As RECT
+Dim i As Long
+Dim j As Byte
+
+    On Error GoTo ErrOut
+    
+    'Check for a valid light value
+    i = Val(LightTxt(Index).Text)
+
+    DrawPreview
+    
+    'Set the view area
+    TempRect.bottom = 15
+    TempRect.Right = 15
+    
+    'Draw the light preview
+    For i = 1 To 6
+        D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, D3DColorARGB(255, 0, 0, 0), 1#, 0
+        D3DDevice.BeginScene
+            Engine_Render_Rectangle 0, 0, 25, 25, 1, 1, 1, 1, 1, 1, 0, 0, Val(LightTxt(1).Text), Val(LightTxt(2).Text), Val(LightTxt(3).Text), Val(LightTxt(4).Text)
+        D3DDevice.EndScene
+        D3DDevice.Present TempRect, TempRect, frmSetTile.LightPic.hWnd, ByVal 0
+    Next i
+
+    Exit Sub
+
+ErrOut:
+    
+End Sub
+
+Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, x As Single, y As Single)
 Dim s As String
 
     Select Case Index
@@ -506,7 +386,7 @@ Dim s As String
 
 End Sub
 
-Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Enables / disables tile graphic shadow value modifying."
 
@@ -523,7 +403,7 @@ On Error GoTo ErrOut
     Exit Sub
     
 ErrOut:
-    ShadowTxt.Text = 0
+
 End Sub
 
 Private Sub ShadowTxt_KeyPress(KeyAscii As Integer)
@@ -537,7 +417,7 @@ Private Sub ShadowTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub ShadowTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub ShadowTxt_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     SetInfo "Sets the tile to cast a shadow (1 = enables shadow, 0 = disables shadow)."
 

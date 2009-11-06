@@ -57,6 +57,14 @@ Begin VB.MDIForm frmMain
       TabIndex        =   6
       Top             =   10380
       Width           =   15240
+      Begin VB.CommandButton ARGBLongCmd 
+         Caption         =   "ARGB <-> Long Tool"
+         Height          =   315
+         Left            =   7080
+         TabIndex        =   11
+         Top             =   30
+         Width           =   1815
+      End
       Begin VB.CommandButton SheetCmd 
          Caption         =   "View Sheet"
          Height          =   315
@@ -231,6 +239,16 @@ Private Sub CharsPic_MouseMove(Button As Integer, Shift As Integer, X As Single,
 
 End Sub
 
+Private Sub Command1_Click()
+
+End Sub
+
+Private Sub ARGBLongCmd_Click()
+
+    ShowFrmARGB
+
+End Sub
+
 Private Sub CritTimer_Timer()
 Static i As Long
     
@@ -345,6 +363,7 @@ Dim F As Form
     End With
 
     'Load preferences
+    On Error Resume Next
     For Each F In VB.Forms
         If UCase$(F.Name) <> "FRMTILESELECT" And UCase$(F.Name) <> "FRMMAIN" And UCase$(F.Name) <> "FRMTSOPT" Then
             F.Top = Val(Var_Get(Data2Path & "MapEditor.ini", F.Name, "Y"))
@@ -357,6 +376,7 @@ Dim F As Form
             If F.Visible Then F.Show Else F.Hide
         End If
     Next F
+    On Error GoTo 0
     frmSearchAnim.Visible = False
     frmSearchTexture.Visible = False
     frmSearchList.Visible = False
@@ -1004,6 +1024,7 @@ Dim j As Long
     End If
     
     DrawPreview
+    DrawTileInfoPreview
 
 End Sub
 

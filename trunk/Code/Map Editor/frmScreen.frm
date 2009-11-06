@@ -24,25 +24,25 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     'Call the MouseMove event
-    Form_MouseMove Button, Shift, X, Y
+    Form_MouseMove Button, Shift, x, y
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, y As Single)
 Dim tX As Integer
 Dim tY As Integer
 
     'Convert the click position to tile position
-    Engine_ConvertCPtoTP 0, 0, X, Y, tX, tY
+    Engine_ConvertCPtoTP 0, 0, x, y, tX, tY
     HovertX = tX
     HovertY = tY
 
     'Update caption
-    HoverX = X + ParticleOffsetX - 288
-    HoverY = Y + ParticleOffsetY - 288
+    HoverX = x + ParticleOffsetX - 288
+    HoverY = y + ParticleOffsetY - 288
     frmMain.MouseLbl.Caption = "(" & HoverX & "," & HoverY & ")"
     frmMain.TileLbl.Caption = "(" & HovertX & "," & HovertY & ")"
     If tX < 0 Then Exit Sub
@@ -52,16 +52,10 @@ Dim tY As Integer
     
     'Click the tile
     SetTile tX, tY, Button, Shift
-    
-    LastSetTileX = tX
-    LastSetTileY = tY
              
 End Sub
 
-Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    LastSetTileX = 0
-    LastSetTileY = 0
+Private Sub Form_MouseUp(Button As Integer, Shift As Integer, x As Single, y As Single)
 
     UpdateEffectList
 

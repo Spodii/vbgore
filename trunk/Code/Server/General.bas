@@ -139,16 +139,15 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
         If LastUpdate_Maps + UpdateRate_Maps < LoopStartTime Then
             Server_Update_Maps
             LastUpdate_Maps = LoopStartTime
+        End If
+        
+        'Check if to send the "Keep-Alive"
+        If LastUpdate_KeepAlive + UpdateRate_KeepAlive < LoopStartTime Then
+            LastUpdate_KeepAlive = LoopStartTime
             
-            'Check if to send the "Keep-Alive" (nested IF to prevent extra IF processing every loop)
-            If LastUpdate_KeepAlive + UpdateRate_KeepAlive < LoopStartTime Then
-                LastUpdate_KeepAlive = LoopStartTime
-                
-                'Do the dummy query to keep the connection alive
-                DB_RS.Open "SELECT * FROM mail_lastid WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
-                DB_RS.Close
-                
-            End If
+            'Do the dummy query to keep the connection alive
+            DB_RS.Open "SELECT * FROM mail_lastid WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
+            DB_RS.Close
             
         End If
         

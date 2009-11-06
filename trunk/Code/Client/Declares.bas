@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.4            ************
+'************            Official Release: Version 0.4.5            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -147,11 +147,25 @@ Public Type NPCChatLine
     Style As Byte               'The style used for the text (see NPCCHAT_STYLE_)
     Delay As Integer            'The delay time applied after saying this line
 End Type
+Public Type NPCChatAskAnswer    'The individual chat input answers
+    Text As String              'The answer string
+    GotoID As Byte              'ID the answer will move to
+End Type
+Public Type NPCChatAskLine      'Individual chat input lines
+    Question As String          'The question text
+    NumAnswers As Byte          'Number of answers that can be used
+    Answer() As NPCChatAskAnswer
+End Type
+Public Type NPCChatAsk          'Chat input information (ASK parameters)
+    StartAsk As Byte            'ID to start the asking on
+    Ask() As NPCChatAskLine     'Holds all the ASK questions/responses
+End Type
 Public Type NPCChat
     Format As Byte              'Format of the chat (see NPCCHAT_FORMAT_)
     ChatLine() As NPCChatLine   'The information on the chat line
     NumLines As Byte            'The number of chat lines
     Distance As Long            'The distance the user must be from the NPC to activate the chat
+    Ask As NPCChatAsk           'All the ASK information
 End Type
 Public NPCChat() As NPCChat
 
@@ -219,6 +233,15 @@ Public ItemDescLines As Byte
 
 'Object constants
 Public Const MAX_INVENTORY_SLOTS As Byte = 49
+
+'Active ASK information
+Public Type ActiveAsk
+    AskName As String
+    AskIndex As Byte
+    ChatIndex As Byte
+    QuestionTxt As String
+End Type
+Public ActiveAsk As ActiveAsk
 
 'User's inventory
 Type Inventory
