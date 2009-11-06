@@ -970,7 +970,7 @@ Dim Slot As Byte
                 
                 'Loop until we find a slot that we can place at least some of the object in
                 If UserList(UserIndex).Object(Slot).ObjIndex = ObjIndex Then
-                    If UserList(UserIndex).Object(Slot).ObjIndex < ObjData.Stacking(ObjIndex) Then Exit Do
+                    If UserList(UserIndex).Object(Slot).Amount < ObjData.Stacking(ObjIndex) Then Exit Do
                 End If
                 
                 'If no free slots are found, we will force an overflow that will check for an empty slot

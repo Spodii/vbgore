@@ -93,7 +93,7 @@ Private Sub Form_Load()
     'Get the username/password
     NameTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Name")
     PasswordTxt.Text = Var_Get(DataPath & "Game.ini", "INIT", "Password")
-    SavePass = CBool(Var_Get(DataPath & "Game.ini", "INIT", "SavePass"))
+    SavePass = CBool(Val(Var_Get(DataPath & "Game.ini", "INIT", "SavePass")) * -1)
     
     'Set the SavePass image
     SavePass = Not SavePass 'Since the routine reverses, we reverse to reverse the reverse... trust me, it just works ;)
@@ -129,7 +129,7 @@ Private Sub ClickExit()
 
     'Save the game ini
     Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
-    Var_Write DataPath & "Game.ini", "INIT", "SavePass", CBool(SavePass)
+    Var_Write DataPath & "Game.ini", "INIT", "SavePass", Val(SavePass) * -1
     If Not SavePass Then
         Var_Write DataPath & "Game.ini", "INIT", "Password", ""
     Else

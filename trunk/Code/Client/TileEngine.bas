@@ -617,7 +617,6 @@ End Type
 Public Type TexInfo
     X As Long
     Y As Long
-    BmpFormat As Long
 End Type
 
 'Used to hold the graphic layers in a quick-to-draw format
@@ -2754,7 +2753,7 @@ Private Sub Engine_Init_RenderStates()
         .SetRenderState D3DRS_ZENABLE, False
         .SetRenderState D3DRS_ZWRITEENABLE, False
         .SetTextureStageState 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE
-   
+
         'Particle engine settings
         .SetRenderState D3DRS_POINTSPRITE_ENABLE, 1
         .SetRenderState D3DRS_POINTSCALE_ENABLE, 0
@@ -2800,29 +2799,18 @@ Dim FilePath As String
         IsUnloading = 1
         Exit Sub
     End If
-
+    
     If SurfaceSize(TextureNum).X = 0 Then   'We need to get the size
     
-        If Bit32 Then
-            UseTextureFormat = D3DFMT_UNKNOWN
-        Else
-            UseTextureFormat = D3DFMT_A4R4G4B4
-        End If
-    
         'Set the texture (and get the dimensions)
-        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, 0, 0, UseTextureFormat, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, 0, 0, D3DFMT_DXT5, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
         SurfaceSize(TextureNum).X = TexInfo.Width
         SurfaceSize(TextureNum).Y = TexInfo.Height
-        If Bit32 Then
-            SurfaceSize(TextureNum).BmpFormat = TexInfo.Format
-        Else
-            SurfaceSize(TextureNum).BmpFormat = D3DFMT_A1R5G5B5
-        End If
         
     Else
         
         'Set the texture (without getting the dimensions)
-        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, SurfaceSize(TextureNum).X, SurfaceSize(TextureNum).Y, 0, 0, SurfaceSize(TextureNum).BmpFormat, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, ByVal 0, ByVal 0)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, SurfaceSize(TextureNum).X, SurfaceSize(TextureNum).Y, 0, 0, D3DFMT_DXT5, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_NONE, &HFF000000, ByVal 0, ByVal 0)
     
     End If
 
@@ -5274,7 +5262,6 @@ Dim Layer As Byte
             SurfaceTimer(j) = 0
             SurfaceSize(j).X = 0
             SurfaceSize(j).Y = 0
-            SurfaceSize(j).BmpFormat = 0
         Next j
         
         'Clear the D3DXSprite

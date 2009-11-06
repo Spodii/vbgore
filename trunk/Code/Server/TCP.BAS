@@ -1665,7 +1665,7 @@ Dim Slots() As Byte
             If .Amount <= 0 Then
         
                 'Unequip if the object is currently equipped
-                If .Equipped = 1 Then User_RemoveInvItem UserIndex, Slots(i)
+                If .Equipped = 1 Then User_RemoveInvItem UserIndex, Slots(i), False
                 
                 'Clear the values
                 .ObjIndex = 0
@@ -1675,7 +1675,7 @@ Dim Slots() As Byte
             End If
             
             'Update the inventory slot
-            User_UpdateInv False, UserIndex, Slot
+            User_UpdateInv False, UserIndex, Slots(i)
             
         End With
     Next i
@@ -2929,6 +2929,7 @@ Sub Data_User_Trade_BuyFromNPC(ByRef rBuf As DataBuffer, ByVal UserIndex As Inte
 'Buy an item from NPC
 '<Slot(B)><Amount(I)>
 '*****************************************************************
+Dim AmountBought As Integer
 Dim PurchaseObj As Integer
 Dim NPCIndex As Integer
 Dim UserSlot As Integer
@@ -2962,32 +2963,6 @@ Dim Slot As Byte
         Data_Send ToIndex, UserIndex, cMessage(36).Data
         Exit Sub
     End If
-
-    'Check to see if User already has object type
-    UserSlot = 1
-    If ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) > 1 Then
-        Do Until UserList(UserIndex).Object(UserSlot).ObjIndex = NPCList(NPCIndex).VendItems(Slot).ObjIndex
-            UserSlot = UserSlot + 1
-            If UserSlot > MAX_INVENTORY_SLOTS Then Exit Do
-        Loop
-    Else
-        UserSlot = MAX_INVENTORY_SLOTS + 1
-    End If
-    
-    'If not, check if there is a empty UserSlot
-    If UserSlot > MAX_INVENTORY_SLOTS Then
-        UserSlot = 1
-        Do Until UserList(UserIndex).Object(UserSlot).ObjIndex = 0
-            UserSlot = UserSlot + 1
-            If UserSlot > MAX_INVENTORY_SLOTS Then
-                Data_Send ToIndex, UserIndex, cMessage(26).Data
-                Exit Sub
-            End If
-        Loop
-    End If
-
-    'See how much the user can hold at max
-    If UserList(UserIndex).Object(UserSlot).Amount + Amount > ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) Then Amount = ObjData.Stacking(NPCList(NPCIndex).VendItems(Slot).ObjIndex) - UserList(UserIndex).Object(UserSlot).Amount
 
     'Set the ObjData of the item to be purchased to the PurchaseObj variable
     PurchaseObj = NPCList(NPCIndex).VendItems(Slot).ObjIndex
@@ -3028,15 +3003,12 @@ Dim Slot As Byte
         End If
 
     End If
-
-    'Change the user's inventory item
-    If UserList(UserIndex).Object(UserSlot).ObjIndex = 0 Then UserList(UserIndex).Object(UserSlot).ObjIndex = NPCList(NPCIndex).VendItems(Slot).ObjIndex
+    
+    'Give the user the objects
+    AmountBought = User_GiveObj(UserIndex, PurchaseObj, Amount, True)
 
     'Take the user's money
-    UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) - (ObjData.Value(PurchaseObj) * Amount)
-
-    'Give the user the items
-    UserList(UserIndex).Object(UserSlot).Amount = UserList(UserIndex).Object(UserSlot).Amount + Amount
+    UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) - (ObjData.Value(PurchaseObj) * AmountBought)
 
     'Send the purchase message
     ConBuf.Put_Byte DataCode.Server_Message
@@ -3045,9 +3017,6 @@ Dim Slot As Byte
     ConBuf.Put_String ObjData.Name(PurchaseObj)
     ConBuf.Put_Long (ObjData.Value(PurchaseObj) * Amount)
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
-    'Update the user's inventory
-    User_UpdateInv False, UserIndex, UserSlot    'Give the item to the user
 
 End Sub
 

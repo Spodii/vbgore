@@ -31,9 +31,15 @@ ScreenX= 0
 ScreenY= 0
 
 [INVENTORY]
-ScreenX= 352
-ScreenY= 55
+ScreenX= 0
+ScreenY= 0
 
 [QUICKBAR]
 ScreenX= 0
 ScreenY= 553
+[BANK]
+ScreenX= 0
+ScreenY= 0
+[NPCCHAT]
+ScreenX= 0
+ScreenY= 0

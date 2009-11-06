@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.6            ************
+'************            Official Release: Version 1.0.1            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -88,6 +88,8 @@ Attribute VB_Name = "Declares"
 '** Nex666: Help with mapping, graphics, bug reports, hosting, etc            **
 '** Graphics (Avatar): Supplied the character sprite graphics, + a few more   **
 '**   http://www.zidev.com/                                                   **
+'** Map tiles:                                                                **
+'**   http://lostgarden.com/2006/07/more-free-game-graphics.html              **
 '** ORE (Aaron Perkins): Used as base engine and for learning experience      **
 '**   http://www.baronsoft.com/                                               **
 '** SOX (Trevor Herselman): Used for all the networking                       **

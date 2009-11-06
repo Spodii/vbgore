@@ -1227,7 +1227,7 @@ Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 '*********************************************
 'Create a character and set their information
 '<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)>
-' <HP%(B)><MP%(B)><ChatID(B)><CharType(B)> (<OwnerCharIndex(I)>
+' <HP%(B)><MP%(B)><ChatID(B)><CharType(B)> (<OwnerCharIndex(I)>)
 '*********************************************
 
 Dim Body As Integer

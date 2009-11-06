@@ -128,7 +128,7 @@ Dim c As Long
     i = 0
     Do While c <= CheckNum
         i = i + 1
-        If LenB(Var_Get(Data2Path & "GrhRaw.txt", "A", "Grh" & i)) <> 0 Then
+        If LenB(Var_Get(Data2Path & "GrhRaw.txt", "A", "Grh" & i)) = 0 Then
             GrhValues(c) = i
             c = c + 1
         End If

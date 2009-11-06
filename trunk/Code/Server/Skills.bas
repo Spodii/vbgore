@@ -132,7 +132,7 @@ Dim tIndex As Integer
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
 
     'Reduce the user's mana
-    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
+    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * SumBandit_Cost)
     
 End Sub
 
@@ -1498,27 +1498,29 @@ Dim WarCursePower As Integer
                 If NPCList(LoopC).Pos.Map = UserList(CasterIndex).Pos.Map Then
                     If NPCList(LoopC).Attackable Then
                         If NPCList(LoopC).Hostile Then
-                            If NPCList(LoopC).Skills.WarCurse <= WarCursePower Then
-                                If Server_RectDistance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
-
-                                    'Tell the users in the screen that the NPC is weaker
-                                    ConBuf.PreAllocate 3 + Len(NPCList(LoopC).Name)
-                                    ConBuf.Put_Byte DataCode.Server_Message
-                                    ConBuf.Put_Byte 50
-                                    ConBuf.Put_String NPCList(LoopC).Name
-                                    Data_Send ToNPCArea, LoopC, ConBuf.Get_Buffer
-                                    
-                                    'Warcurse icon
-                                    If NPCList(LoopC).Skills.WarCurse = 0 Then
-                                        ConBuf.PreAllocate 4
-                                        ConBuf.Put_Byte DataCode.Server_IconWarCursed
-                                        ConBuf.Put_Byte 1
-                                        ConBuf.Put_Integer NPCList(LoopC).Char.CharIndex
-                                        Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map, PP_StatusIcons
+                            If NPCList(LoopC).OwnerIndex = 0 Then
+                                If NPCList(LoopC).Skills.WarCurse <= WarCursePower Then
+                                    If Server_RectDistance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
+    
+                                        'Tell the users in the screen that the NPC is weaker
+                                        ConBuf.PreAllocate 3 + Len(NPCList(LoopC).Name)
+                                        ConBuf.Put_Byte DataCode.Server_Message
+                                        ConBuf.Put_Byte 50
+                                        ConBuf.Put_String NPCList(LoopC).Name
+                                        Data_Send ToNPCArea, LoopC, ConBuf.Get_Buffer
+                                        
+                                        'Warcurse icon
+                                        If NPCList(LoopC).Skills.WarCurse = 0 Then
+                                            ConBuf.PreAllocate 4
+                                            ConBuf.Put_Byte DataCode.Server_IconWarCursed
+                                            ConBuf.Put_Byte 1
+                                            ConBuf.Put_Integer NPCList(LoopC).Char.CharIndex
+                                            Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map, PP_StatusIcons
+                                        End If
+                                        NPCList(LoopC).Skills.WarCurse = WarCursePower
+                                        NPCList(LoopC).Counters.WarCurseCounter = timeGetTime + Warcry_Length
+                                        
                                     End If
-                                    NPCList(LoopC).Skills.WarCurse = WarCursePower
-                                    NPCList(LoopC).Counters.WarCurseCounter = timeGetTime + Warcry_Length
-                                    
                                 End If
                             End If
                         End If
