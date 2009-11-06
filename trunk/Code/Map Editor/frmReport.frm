@@ -1,47 +1,23 @@
 VERSION 5.00
 Begin VB.Form frmReport 
-   BackColor       =   &H00808080&
-   BorderStyle     =   0  'None
-   Caption         =   "Optimization Report"
-   ClientHeight    =   3600
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   5010
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Optimization Report"
+   ClientHeight    =   3435
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   5040
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   240
+   ScaleHeight     =   229
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   334
+   ScaleWidth      =   336
    ShowInTaskbar   =   0   'False
-   StartUpPosition =   2  'CenterScreen
-   Begin MapEditor.cButton FixBtn 
-      Height          =   375
-      Left            =   120
-      TabIndex        =   2
-      ToolTipText     =   "Fixes the selected entry only"
-      Top             =   3120
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
-      Caption         =   "Fix Selected"
-   End
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   1
-      Top             =   0
-      Width           =   375
-      _ExtentX        =   661
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.ListBox OptList 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
       BeginProperty Font 
          Name            =   "Courier New"
          Size            =   8.25
@@ -51,7 +27,6 @@ Begin VB.Form frmReport
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
       Height          =   2970
       ItemData        =   "frmReport.frx":0000
       Left            =   120
@@ -60,38 +35,85 @@ Begin VB.Form frmReport
       Top             =   120
       Width           =   4815
    End
-   Begin MapEditor.cButton SimBtn 
-      Height          =   375
-      Left            =   1320
-      TabIndex        =   3
-      ToolTipText     =   "Fixes all problems similar to the selected entry"
-      Top             =   3120
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
-      Caption         =   "Fix Similar"
-   End
-   Begin MapEditor.cButton AllBtn 
-      Height          =   375
-      Left            =   2520
+   Begin VB.Label DeleteBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Delete"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   4320
       TabIndex        =   4
-      ToolTipText     =   "Fix all the problems in the list"
-      Top             =   3120
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
-      Caption         =   "Fix All"
-   End
-   Begin MapEditor.cButton DeleteBtn 
-      Height          =   375
-      Left            =   3720
-      TabIndex        =   5
       ToolTipText     =   "Delete the selected problem from the list - this will NOT fix or remove the problem, just hide it from the list"
       Top             =   3120
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
-      Caption         =   "Delete"
+      Width           =   570
+   End
+   Begin VB.Label AllBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Fix All"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   3240
+      TabIndex        =   3
+      ToolTipText     =   "Fix all the problems in the list"
+      Top             =   3120
+      Width           =   525
+   End
+   Begin VB.Label SimBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Fix Similar"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   1800
+      TabIndex        =   2
+      ToolTipText     =   "Fixes all problems similar to the selected entry"
+      Top             =   3120
+      Width           =   870
+   End
+   Begin VB.Label FixBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Fix Selected"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   120
+      TabIndex        =   1
+      ToolTipText     =   "Fixes the selected entry only"
+      Top             =   3120
+      Width           =   1065
    End
 End
 Attribute VB_Name = "frmReport"
@@ -155,9 +177,6 @@ End Sub
 
 Private Sub Form_Load()
 
-    cForm.LoadSkin Me
-    Skin_Set Me
-    
     'Show report
     UpdateReport
     

@@ -1,39 +1,23 @@
 VERSION 5.00
 Begin VB.Form frmARGB 
-   BackColor       =   &H00808080&
-   BorderStyle     =   0  'None
-   Caption         =   "ARGB"
-   ClientHeight    =   1260
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   2535
+   BackColor       =   &H00FFFFFF&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " ARGB <-> Long"
+   ClientHeight    =   1350
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   2520
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   84
+   ScaleHeight     =   90
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   169
+   ScaleWidth      =   168
    ShowInTaskbar   =   0   'False
-   StartUpPosition =   2  'CenterScreen
-   Begin MapEditor.cForm cForm 
-      Height          =   135
-      Left            =   0
-      TabIndex        =   11
-      Top             =   0
-      Width           =   135
-      _ExtentX        =   238
-      _ExtentY        =   238
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "ARGB Conversion"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.TextBox BTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   2040
       TabIndex        =   6
       Text            =   "255"
@@ -43,9 +27,7 @@ Begin VB.Form frmARGB
    End
    Begin VB.TextBox GTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1440
       TabIndex        =   5
       Text            =   "255"
@@ -55,9 +37,7 @@ Begin VB.Form frmARGB
    End
    Begin VB.TextBox RTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   840
       TabIndex        =   4
       Text            =   "255"
@@ -67,9 +47,7 @@ Begin VB.Form frmARGB
    End
    Begin VB.TextBox ATxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   240
       TabIndex        =   3
       Text            =   "255"
@@ -79,8 +57,6 @@ Begin VB.Form frmARGB
    End
    Begin VB.TextBox LongTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   120
       TabIndex        =   2
@@ -102,7 +78,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   5
       Left            =   75
@@ -123,7 +99,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   1275
@@ -144,7 +120,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   675
@@ -165,7 +141,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   1875
@@ -186,7 +162,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   120
@@ -207,7 +183,7 @@ Begin VB.Form frmARGB
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   120
@@ -233,14 +209,6 @@ Private Sub BTxt_Change()
 
     ARGBtoLONG
 
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
 End Sub
 
 Private Sub GTxt_Change()

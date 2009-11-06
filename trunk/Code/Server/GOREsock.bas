@@ -6,6 +6,15 @@ Option Explicit
 'This is only used for receiving, not sending!
 Private Const BufferSize As Long = 1024
 
+'This is the maximum number of connections allowed per IP
+'Change to 0 to remove the limit
+'This is intended for two things:
+' - Prevent DOS attack by socket connection flooding from a single computer
+' - Prevent multi-logging (not a recommended reason)
+'Note that multiple people may play that are on the same network, so try to keep this
+' value at a decent height for those people
+Private Const MaxConnectionsPerIP As Long = 5
+
 Private WindowhWnd As Long
 Public GOREsock_Loaded As Byte   'Whether the socket is loaded or not
 
@@ -79,7 +88,7 @@ End Type
 
 Private Type typBuffer ' The advantage of using this is if we sent exactly 8K on the other side, when we receive 8K, FD_READ will not be sent again so we won't get an error like when we use a loop
     Size As Long ' Array Size (To check if there is incomming data, we can check the size of this variable, if -1 then we are not receiving anything)
-    buffer() As Byte
+    Buffer() As Byte
 End Type
 
 Private Type typWSAData
@@ -118,7 +127,7 @@ Private Declare Function apiSocket Lib "WS2_32" Alias "socket" (ByVal af As Long
 Private Declare Function apiCloseSocket Lib "WS2_32" Alias "closesocket" (ByVal s As Long) As Long
 Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal s As Long, addr As typSocketAddr, ByVal namelen As Long) As Long
 Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal s As Long, ByVal backlog As Long) As Long
-Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, name As typSocketAddr, ByVal namelen As Long) As Long
+Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, Name As typSocketAddr, ByVal namelen As Long) As Long
 Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal s As Long, addr As typSocketAddr, addrlen As Long) As Long
 Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
 Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
@@ -144,7 +153,7 @@ Private Portal As typPortal     'Sorta used for general variables
 Private Sockets() As typSocket  'Information on each of the sockets
 Private Send() As typBuffer     'Send Buffer
 
-Private Function GOREsock_Accept(inSocket As Long) As Long 'Returns: New Sox Number -- inSocket is the listening WinSocket, not Sox number ...
+Private Function GOREsock_Accept(ByVal inSocket As Long) As Long 'Returns: New Sox Number -- inSocket is the listening WinSocket, not Sox number ...
 Dim tmpSocket As Long
 Dim tmpSocketAddr As typSocketAddr 'This stores the details of our new socket/client, including the client IP address
 
@@ -172,14 +181,14 @@ Dim tmpSocketAddr As typSocketAddr 'This stores the details of our new socket/cl
         Let Sockets(GOREsock_Accept).PacketInPos = 0
         Let Sockets(GOREsock_Accept).PacketOutPos = 0
         Let Send(GOREsock_Accept).Size = -1
-        Erase Send(GOREsock_Accept).buffer
+        Erase Send(GOREsock_Accept).Buffer
         Call GOREsock_RaiseState(GOREsock_Accept, soxConnecting) ' Could possibly leave this on soxDisconnected, and on Select Case GOREsock_State, thurn it on and set it ready to send data (Or set it to connecting)
         Call GOREsock_Connection(GOREsock_Accept)
     End If
 
 End Function
 
-Public Function GOREsock_Address(inSox As Long) As String ' Returns the address used by a Socket (Either Local or Remote)
+Public Function GOREsock_Address(ByVal inSox As Long) As String ' Returns the address used by a Socket (Either Local or Remote)
 
     If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
         Let GOREsock_Address = soxERROR
@@ -298,7 +307,7 @@ Dim tmpSocketAddr As typSocketAddr
                         Let Sockets(GOREsock_Connect).PacketInPos = 0
                         Let Sockets(GOREsock_Connect).PacketOutPos = 0
                         Let Send(GOREsock_Connect).Size = -1
-                        Erase Send(GOREsock_Connect).buffer
+                        Erase Send(GOREsock_Connect).Buffer
                         Call GOREsock_RaiseState(GOREsock_Connect, soxConnecting)
                     End If
                 End If
@@ -489,7 +498,7 @@ Dim tmpSocketAddr As typSocketAddr
                             Let Sockets(GOREsock_Listen).PacketInPos = 0
                             Let Sockets(GOREsock_Listen).PacketOutPos = 0
                             Let Send(GOREsock_Listen).Size = -1
-                            Erase Send(GOREsock_Listen).buffer
+                            Erase Send(GOREsock_Listen).Buffer
                             Call GOREsock_RaiseState(GOREsock_Listen, soxListening)
                         End If
                     End If
@@ -540,27 +549,27 @@ Dim b() As Byte
                             'Encrypt the packet
                             Select Case PacketEncTypeServerOut
                                 Case PacketEncTypeXOR
-                                    Encryption_XOR_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                    Encryption_XOR_EncryptByte Send(inSox).Buffer(), PacketKeys(.PacketOutPos)
                                 Case PacketEncTypeRC4
-                                    Encryption_RC4_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                    Encryption_RC4_EncryptByte Send(inSox).Buffer(), PacketKeys(.PacketOutPos)
                             End Select
                             
                             'Add the length (this is so we can handle packets that get combined in the network)
-                            i = UBound(Send(inSox).buffer) + 1
+                            i = UBound(Send(inSox).Buffer) + 1
                             ReDim b(0 To i + 2)
-                            apiCopyMemory b(2), Send(inSox).buffer(0), i
+                            apiCopyMemory b(2), Send(inSox).Buffer(0), i
                             apiCopyMemory b(0), i, 2
-                            ReDim Send(inSox).buffer(0 To i + 2)
-                            apiCopyMemory Send(inSox).buffer(0), b(0), UBound(Send(inSox).buffer()) + 1
+                            ReDim Send(inSox).Buffer(0 To i + 2)
+                            apiCopyMemory Send(inSox).Buffer(0), b(0), UBound(Send(inSox).Buffer()) + 1
                         
                         End If
                         
                         'Send the data
-                        If apiSend(Sockets(inSox).Socket, Send(inSox).buffer(0), UBound(Send(inSox).buffer) + 1, 0) <> GOREsock_ERROR Then
+                        If apiSend(Sockets(inSox).Socket, Send(inSox).Buffer(0), UBound(Send(inSox).Buffer) + 1, 0) <> GOREsock_ERROR Then
                             
                             'All data send, clear the buffer
                             Let Send(inSox).Size = -1
-                            Erase Send(inSox).buffer
+                            Erase Send(inSox).Buffer
                             
                             '*** Encrypted send successfully ***
                             If PacketEncTypeServerOut <> PacketEncTypeNone Then
@@ -576,9 +585,9 @@ Dim b() As Byte
                             If PacketEncTypeServerOut <> PacketEncTypeNone Then
                                 Select Case PacketEncTypeServerOut
                                     Case PacketEncTypeXOR
-                                        Encryption_XOR_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                        Encryption_XOR_EncryptByte Send(inSox).Buffer(), PacketKeys(.PacketOutPos)
                                     Case PacketEncTypeRC4
-                                        Encryption_RC4_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                        Encryption_RC4_EncryptByte Send(inSox).Buffer(), PacketKeys(.PacketOutPos)
                                 End Select
                             End If
                             
@@ -598,13 +607,13 @@ Dim b() As Byte
 
 End Sub
 
-Public Sub GOREsock_SendData(inSox As Long, inData() As Byte)
+Public Sub GOREsock_SendData(ByVal inSox As Long, inData() As Byte)
 
     If inSox > -1 Then
         If inSox <= Portal.Sockets Then ' Detect out of Range of our Array ...
             If Sockets(inSox).GOREsock_State = soxIdle Or Sockets(inSox).GOREsock_State = soxSend Or Sockets(inSox).GOREsock_State = soxRecv Then ' If we have initiated a GOREsock_ShutDown, the state would change to Closing
-                ReDim Preserve Send(inSox).buffer(Send(inSox).Size + UBound(inData) + 1) As Byte    'UBound + 1 = DataLength
-                Call apiCopyMemory(Send(inSox).buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1) 'Copy the data
+                ReDim Preserve Send(inSox).Buffer(Send(inSox).Size + UBound(inData) + 1) As Byte    'UBound + 1 = DataLength
+                Call apiCopyMemory(Send(inSox).Buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1) 'Copy the data
                 Let Send(inSox).Size = Send(inSox).Size + UBound(inData) + 1    'Increase according to the data
                 apiWSAAsyncSelect Sockets(inSox).Socket, WindowhWnd, ByVal Sockets(inSox).GOREsock_uMsg, ByVal FD_CLOSEREADWRITE
             End If
@@ -613,7 +622,7 @@ Public Sub GOREsock_SendData(inSox As Long, inData() As Byte)
 
 End Sub
 
-Public Function GOREsock_SetOption(inSox As Long, inOption As enmSoxOptions, inValue As Long) As Long
+Public Function GOREsock_SetOption(ByVal inSox As Long, inOption As enmSoxOptions, inValue As Long) As Long
 
     If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
         Let GOREsock_SetOption = soxERROR
@@ -627,7 +636,7 @@ Public Function GOREsock_SetOption(inSox As Long, inOption As enmSoxOptions, inV
 
 End Function
 
-Public Function GOREsock_Shut(inSox As Long) As Long ' Initiates GOREsock_ShutDown procedure for a Socket
+Public Function GOREsock_Shut(ByVal inSox As Long) As Long ' Initiates GOREsock_ShutDown procedure for a Socket
 
     If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
         Let GOREsock_Shut = INVALID_SOCKET
@@ -743,7 +752,7 @@ Private Function GOREsock_Socket2Sox(inSocket As Long) As Long ' Returns the Soc
 
 End Function
 
-Public Function GOREsock_SocketHandle(inSox As Long) As Long
+Public Function GOREsock_SocketHandle(ByVal inSox As Long) As Long
 
     If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
         Let GOREsock_SocketHandle = soxERROR
@@ -753,7 +762,7 @@ Public Function GOREsock_SocketHandle(inSox As Long) As Long
 
 End Function
 
-Public Function GOREsock_State(inSox As Long) As enmSoxState
+Public Function GOREsock_State(ByVal inSox As Long) As enmSoxState
 
     If inSox < 0 Or inSox > Portal.Sockets Then ' Detect out of Range of our Array ...
         Let GOREsock_State = soxERROR
@@ -828,13 +837,39 @@ Private Function GOREsock_WinSockEvent(ByVal lParam As Long) As Integer 'WSAGETS
 
 End Function
 
+Private Sub GOREsock_ValidateAccept(ByVal inSox As Long)
+Dim Count As Long
+Dim i As Long
+
+    For i = 0 To Portal.Sockets
+        If i <> inSox Then
+            If Sockets(i).GOREsock_State <> soxDisconnected Then
+                If Sockets(i).GOREsock_State <> soxERROR Then
+                    If Sockets(i).GOREsock_State <> soxClosing Then
+                        If Sockets(i).SocketAddr.sin_addr = Sockets(i).SocketAddr.sin_addr Then
+                            Count = Count + 1
+                            If Count > MaxConnectionsPerIP Then
+                                GOREsock_Shut inSox
+                                Exit Sub
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next i
+            
+End Sub
+
 Public Function GOREsock_WndProc(ByVal hwnd As Long, ByVal GOREsock_uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 
     Select Case GOREsock_uMsg
     Case soxSERVER
         Select Case GOREsock_WinSockEvent(lParam)
         Case FD_ACCEPT
-            If GOREsock_WinSockError(lParam) = 0 Then Call GOREsock_Accept(wParam)
+            If GOREsock_WinSockError(lParam) = 0 Then
+                GOREsock_ValidateAccept GOREsock_Accept(wParam)
+            End If
         Case FD_CLOSE
             Select Case GOREsock_WinSockError(lParam)
             Case 0

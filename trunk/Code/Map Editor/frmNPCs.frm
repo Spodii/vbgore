@@ -1,38 +1,26 @@
 VERSION 5.00
 Begin VB.Form frmNPCs 
-   BackColor       =   &H00808080&
-   BorderStyle     =   0  'None
-   Caption         =   "NPCs"
-   ClientHeight    =   3375
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   2730
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " NPCs"
+   ClientHeight    =   3330
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   2655
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   225
+   ScaleHeight     =   222
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   182
+   ScaleWidth      =   177
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   3
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "NPCs"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.OptionButton EraseOpt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Erase NPC"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   1320
       TabIndex        =   2
@@ -42,9 +30,9 @@ Begin VB.Form frmNPCs
    End
    Begin VB.OptionButton SetOpt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Set NPC"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   240
       TabIndex        =   1
@@ -54,8 +42,6 @@ Begin VB.Form frmNPCs
    End
    Begin VB.ListBox NPCList 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   2760
       Left            =   120
       TabIndex        =   0
@@ -84,10 +70,6 @@ Dim NPCs() As NPC
 Dim FileNum As Byte
 Dim LoopC As Integer
 
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
     'Set the default option to Set
     SetOpt.Value = True
     EraseOpt.Value = False

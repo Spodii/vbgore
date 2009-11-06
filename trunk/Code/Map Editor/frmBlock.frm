@@ -1,36 +1,24 @@
 VERSION 5.00
 Begin VB.Form frmBlock 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
-   Caption         =   "Blocks"
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Tile Blocks"
    ClientHeight    =   2220
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   45
+   ClientTop       =   345
    ClientWidth     =   1455
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
    ScaleHeight     =   148
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   97
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   10
-      Top             =   0
-      Width           =   135
-      _ExtentX        =   238
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Blocks"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.CheckBox SetAttackChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Caption         =   "Set attack"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -41,7 +29,7 @@ Begin VB.Form frmBlock
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   120
       TabIndex        =   9
@@ -51,7 +39,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox SetWalkChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Caption         =   "Set walk"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
@@ -62,7 +50,7 @@ Begin VB.Form frmBlock
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   120
       TabIndex        =   8
@@ -72,7 +60,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockAttackChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -84,7 +72,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockAllChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H00000000&
       Height          =   255
@@ -96,7 +84,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -109,7 +97,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -122,7 +110,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -135,7 +123,7 @@ Begin VB.Form frmBlock
    End
    Begin VB.CheckBox BlockChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00C0C0C0&
+      BackColor       =   &H80000005&
       Enabled         =   0   'False
       ForeColor       =   &H80000008&
       Height          =   255
@@ -161,7 +149,7 @@ Begin VB.Form frmBlock
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   120
@@ -184,7 +172,7 @@ Begin VB.Form frmBlock
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   360
@@ -208,14 +196,6 @@ Dim i As Byte
         BlockChk(i).Value = BlockAllChk.Value
     Next i
 
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)

@@ -5,13 +5,13 @@ Begin VB.Form frmMain
    ClientHeight    =   3765
    ClientLeft      =   60
    ClientTop       =   450
-   ClientWidth     =   3855
+   ClientWidth     =   4515
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
    ScaleHeight     =   251
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   257
+   ScaleWidth      =   301
    StartUpPosition =   2  'CenterScreen
    Begin VB.Frame Frame3 
       BackColor       =   &H80000005&
@@ -30,7 +30,7 @@ Begin VB.Form frmMain
       Left            =   120
       TabIndex        =   8
       Top             =   120
-      Width           =   3615
+      Width           =   4335
       Begin VB.Timer SecondTmr 
          Interval        =   1000
          Left            =   2400
@@ -126,7 +126,7 @@ Begin VB.Form frmMain
       Left            =   120
       TabIndex        =   3
       Top             =   1200
-      Width           =   3615
+      Width           =   4335
       Begin VB.Label ClientIDLbl 
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
@@ -237,7 +237,7 @@ Begin VB.Form frmMain
       Left            =   120
       TabIndex        =   0
       Top             =   2520
-      Width           =   3615
+      Width           =   4335
       Begin VB.Label MBoutTxt 
          AutoSize        =   -1  'True
          BackStyle       =   0  'Transparent
@@ -316,22 +316,12 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-'The update server works in the following manner:
-'Step 1:
-'-Server starts up, loads files and file information, the listens for connections
-'-Client connects to server
-'-Server recieves connection
-'Step 2:
-'-Server sends information of first file
-'-Client reads first file's information, checks if the file is up to date
-'*If file up to date, the client requests the next file's information (start of Step 2)
-'*If file is not up to date, the client requests for the update
-' -Server sends file to client
-' -When client recieves the end of file, the client changes the file's information to match the server's
-' -Client requests the next file (start of Step 2)
-'Step 3:
-'-Server loops through Step 2 until every file has been checked and updated
-'-Server disconnects client
+'The update works in the following manner:
+' - Server creates overall update list and MD5 hashes for each list, list & hashes is compressed and stored in memory
+' - Client connects to the server and downloads the list off the server
+' - Client decompresses the list, checks which files it needs to update
+' - For every file the client needs to update, it sends a request to the server
+' - After each download, the MD5 hash is compared with the one from the server to varify file contents
 
 Private Sub Form_DblClick()
 
@@ -396,8 +386,7 @@ Private Sub SecondTmr_Timer()
 Dim TotalValue As Long
 Dim i As Integer
 
-'Calculate total uploaded rate
-
+    'Calculate total uploaded rate
     upBytes = upBytes + UploadCount
     Do While upBytes > 1024
         upKBytes = upKBytes + 1

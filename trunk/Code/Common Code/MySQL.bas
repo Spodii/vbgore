@@ -46,10 +46,9 @@ ErrOut:
 
     'Could not connect to the database
     MsgBox "Error connecting to the MySQL database. Please make sure you have MySQL 5.0 running, and that you have ODBC v3.51!" & vbNewLine & _
-       "Also make sure your connection variables are correct (found in vbGORE's MySQL module's declares section)." & vbNewLine & _
+       "Also make sure your connection variables are correct (found in \ServerData\Server.ini)." & vbNewLine & _
        "If you have your database installed and running, make sure you have executed the database dump on the 'vbgore' table." & vbNewLine & _
-       "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database." & vbNewLine & vbNewLine & _
-       "Finally, if you are running the EXE (compiled) version, make sure you re-compile it or run the program through the code for the MySQL code changes to take affect!", vbOKOnly
+       "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database." & vbNewLine, vbOKOnly
     Server_Unload
 
 End Sub

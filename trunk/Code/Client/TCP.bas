@@ -515,12 +515,57 @@ Dim Byt1 As Byte
             TempStr = Replace$(Message(100), "<linebreak>", vbCrLf)
             MsgBox Replace$(TempStr, "<reason>", Str1), vbOKOnly Or vbCritical
             IsUnloading = 1
-            Unload frmConnect
-            Unload frmMain
+            Engine_UnloadAllForms
         Case 101
             Engine_AddToChatTextBuffer Message(101), FontColor_Info
         Case 102
             Engine_AddToChatTextBuffer Message(102), FontColor_Info
+        Case 106
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(106), "<name>", Str1), FontColor_Group
+        Case 107
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(107), "<name>", Str1), FontColor_Group
+        Case 108
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(108), "<name>", Str1), FontColor_Group
+        Case 109
+            Engine_AddToChatTextBuffer Message(109), FontColor_Group
+        Case 110
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(110), "<name>", Str1), FontColor_Group
+        Case 111
+            Engine_AddToChatTextBuffer Message(111), FontColor_Group
+        Case 112
+            Engine_AddToChatTextBuffer Message(112), FontColor_Group
+        Case 113
+            Engine_AddToChatTextBuffer Message(113), FontColor_Group
+        Case 114
+            Engine_AddToChatTextBuffer Message(114), FontColor_Group
+        Case 115
+            Str1 = rBuf.Get_String
+            Int1 = rBuf.Get_Integer
+            TempStr = Replace$(Message(115), "<name>", Str1)
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<time>", Int1), FontColor_Group
+        Case 116
+            Engine_AddToChatTextBuffer Message(116), FontColor_Group
+        Case 117
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(117), "<amount>", Lng1), FontColor_Info
+        Case 118
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(118), "<amount>", Lng1), FontColor_Info
+        Case 119
+            Engine_AddToChatTextBuffer Message(119), FontColor_Info
+        Case 120
+            Lng1 = rBuf.Get_Long
+            Engine_AddToChatTextBuffer Replace$(Message(120), "<amount>", Lng1), FontColor_Info
+        Case 121
+            Engine_AddToChatTextBuffer Message(121), FontColor_Info
+        Case 123
+            Engine_AddToChatTextBuffer Message(123), FontColor_Group
+        Case 125
+            Engine_AddToChatTextBuffer Message(125), FontColor_Info
     End Select
 
 End Sub
@@ -594,6 +639,9 @@ Dim TempByte As Byte
     TempStr = rBuf.Get_String
     TempByte = rBuf.Get_Byte
     
+    'Filter the temp string
+    TempStr = Game_FilterString(TempStr)
+    
     'See if we have to make a bubble
     If TempByte And DataCode.Comm_UseBubble Then
         
@@ -615,6 +663,8 @@ Dim TempByte As Byte
             TempLng = FontColor_Quest
         Case DataCode.Comm_FontType_Talk
             TempLng = FontColor_Talk
+        Case DataCode.Comm_FontType_Group
+            TempLng = FontColor_Group
         Case Else
             TempLng = FontColor_Talk
     End Select
@@ -636,6 +686,9 @@ Dim SSV As Integer
 Dim Weather As Byte
 Dim TempInt As Integer
 
+    'Clear the target character
+    TargetCharIndex = 0
+
     MapNumInt = rBuf.Get_Integer
     SSV = rBuf.Get_Integer
 
@@ -650,13 +703,13 @@ Dim TempInt As Integer
             sndBuf.Put_Byte DataCode.Map_DoneLoadingMap 'Tell the server we are done loading map
         Else
             'Not correct version
-            MsgBox "Error! Your map version is not up to date with the server's map! Please run the updater!", vbOKOnly Or vbCritical
+            MsgBox Message(105), vbOKOnly Or vbCritical
             EngineRun = False
             IsUnloading = 1
         End If
     Else
         'Didn't find map
-        MsgBox "Error! The requested map could not be found! Please run the updater!", vbOKOnly Or vbCritical
+        MsgBox Message(105), vbOKOnly Or vbCritical
         EngineRun = False
         IsUnloading = 1
     End If
@@ -713,6 +766,37 @@ Dim TempBuffer() As Byte
 
 End Sub
 
+Sub Data_Server_ChangeCharType(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Change a character by the character index
+'<CharIndex(I)><CharType(B)>
+'*********************************************
+Dim CharIndex As Integer
+Dim CharType As Byte
+
+    CharIndex = rBuf.Get_Integer
+    CharType = rBuf.Get_Byte
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Then
+        sndBuf.Allocate 3
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+    If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+    
+    'Change the character's type
+    CharList(CharIndex).CharType = CharType
+
+End Sub
+
 Sub Data_Server_ChangeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -727,6 +811,7 @@ Dim CharHeading As Byte
 Dim CharWeapon As Integer
 Dim CharHair As Integer
 Dim CharWings As Integer
+Dim DontSetData As Byte
     
     'Get the character index we are changing
     CharIndex = rBuf.Get_Integer
@@ -734,31 +819,45 @@ Dim CharWings As Integer
     'Get the flags on what data we need to get
     flags = rBuf.Get_Byte
     
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Then
+        sndBuf.Allocate 3
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        DontSetData = 1
+    End If
+    If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        DontSetData = 1
+    End If
+    
     'Get the data needed
     If flags And 1 Then
         CharBody = rBuf.Get_Integer
-        CharList(CharIndex).Body = BodyData(CharBody)
+        If DontSetData = 0 Then CharList(CharIndex).Body = BodyData(CharBody)
     End If
     If flags And 2 Then
         CharHead = rBuf.Get_Integer
-        CharList(CharIndex).Head = HeadData(CharHead)
+        If DontSetData = 0 Then CharList(CharIndex).Head = HeadData(CharHead)
     End If
     If flags And 4 Then
         CharHeading = rBuf.Get_Byte
-        CharList(CharIndex).Heading = CharHeading
-        CharList(CharIndex).HeadHeading = CharHeading
+        If DontSetData = 0 Then CharList(CharIndex).Heading = CharHeading
+        If DontSetData = 0 Then CharList(CharIndex).HeadHeading = CharHeading
     End If
     If flags And 8 Then
         CharWeapon = rBuf.Get_Integer
-        CharList(CharIndex).Weapon = WeaponData(CharWeapon)
+        If DontSetData = 0 Then CharList(CharIndex).Weapon = WeaponData(CharWeapon)
     End If
     If flags And 16 Then
         CharHair = rBuf.Get_Integer
-        CharList(CharIndex).Hair = HairData(CharHair)
+        If DontSetData = 0 Then CharList(CharIndex).Hair = HairData(CharHair)
     End If
     If flags And 32 Then
         CharWings = rBuf.Get_Integer
-        CharList(CharIndex).Wings = WingData(CharWings)
+        If DontSetData = 0 Then CharList(CharIndex).Wings = WingData(CharWings)
     End If
     
 End Sub
@@ -1189,7 +1288,7 @@ Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Create a character and set their information
-'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)><HP%(B)><MP%(B)><ChatID(B)>
+'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)><HP%(B)><MP%(B)><ChatID(B)><CharType(B)>
 '*********************************************
 
 Dim Body As Integer
@@ -1206,9 +1305,9 @@ Dim Wings As Integer
 Dim HP As Byte
 Dim MP As Byte
 Dim ChatID As Byte
+Dim CharType As Byte
 
-'Retrieve all the information
-
+    'Retrieve all the information
     Body = rBuf.Get_Integer
     Head = rBuf.Get_Integer
     Heading = rBuf.Get_Byte
@@ -1223,9 +1322,10 @@ Dim ChatID As Byte
     HP = rBuf.Get_Byte
     MP = rBuf.Get_Byte
     ChatID = rBuf.Get_Byte
+    CharType = rBuf.Get_Byte
     
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, CharType, HP, MP
 
 End Sub
 
@@ -1647,7 +1747,7 @@ Dim Y As Long
         'Create the spike field depending on the direction the user is facing
         X = CharList(CasterIndex).Pos.X
         Y = CharList(CasterIndex).Pos.Y
-        If CharList(CasterIndex).HeadHeading = NORTH Then
+        If CharList(CasterIndex).HeadHeading = NORTH Or CharList(CasterIndex).HeadHeading = NORTHEAST Then
             Engine_Effect_Create X - 1, Y + 1, 59
             Engine_Effect_Create X, Y + 1, 59
             Engine_Effect_Create X + 1, Y + 1, 59
@@ -1675,7 +1775,7 @@ Dim Y As Long
             Engine_Effect_Create X + 1, Y - 3, 59
 
             Engine_Effect_Create X, Y - 4, 59
-        ElseIf CharList(CasterIndex).HeadHeading = EAST Then
+        ElseIf CharList(CasterIndex).HeadHeading = EAST Or CharList(CasterIndex).HeadHeading = SOUTHEAST Then
             Engine_Effect_Create X - 1, Y - 1, 59
             Engine_Effect_Create X - 1, Y, 59
             Engine_Effect_Create X - 1, Y + 1, 59
@@ -1703,7 +1803,7 @@ Dim Y As Long
             Engine_Effect_Create X + 3, Y + 1, 59
 
             Engine_Effect_Create X + 4, Y, 59
-        ElseIf CharList(CasterIndex).HeadHeading = SOUTH Then
+        ElseIf CharList(CasterIndex).HeadHeading = SOUTH Or CharList(CasterIndex).HeadHeading = SOUTHWEST Then
             Engine_Effect_Create X - 1, Y - 1, 59
             Engine_Effect_Create X, Y - 1, 59
             Engine_Effect_Create X + 1, Y - 1, 59
@@ -1731,7 +1831,7 @@ Dim Y As Long
             Engine_Effect_Create X + 1, Y + 3, 59
 
             Engine_Effect_Create X, Y + 4, 59
-        ElseIf CharList(CasterIndex).HeadHeading = WEST Then
+        ElseIf CharList(CasterIndex).HeadHeading = WEST Or CharList(CasterIndex).HeadHeading = NORTHWEST Then
             Engine_Effect_Create X + 1, Y - 1, 59
             Engine_Effect_Create X + 1, Y, 59
             Engine_Effect_Create X + 1, Y + 1, 59
@@ -2148,6 +2248,8 @@ End Sub
 
 Sub GOREsock_Close(inSox As Long)
 
+    If Not frmMain.Visible Then MsgBox Message(122), vbOKOnly
+        
     If SocketOpen = 1 Then IsUnloading = 1
 
 End Sub
@@ -2261,6 +2363,7 @@ Static X As Long
             Case .Map_SendName:  Data_Map_SendName rBuf
 
             Case .Server_ChangeChar: Data_Server_ChangeChar rBuf
+            Case .Server_ChangeCharType: Data_Server_ChangeCharType rBuf
             Case .Server_CharHP: Data_Server_CharHP rBuf
             Case .Server_CharMP: Data_Server_CharMP rBuf
             Case .Server_Connect: Data_Server_Connect

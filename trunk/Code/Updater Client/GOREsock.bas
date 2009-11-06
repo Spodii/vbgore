@@ -1,7 +1,7 @@
 Attribute VB_Name = "GOREsock"
 Option Explicit
 
-Private Const BufferSize As Long = 8192
+Private Const BufferSize As Long = 8192 * 2 'That sure is one big ****ing buffer!
 
 Private WindowhWnd As Long
 Public Loaded As Byte   'Whether the socket is loaded or not
@@ -75,7 +75,7 @@ End Type
 Private Type typBuffer ' The advantage of using this is if we sent exactly 8K on the other side, when we receive 8K, FD_READ will not be sent again so we won't get an error like when we use a loop
     Size As Long ' Array Size (To check if there is incomming data, we can check the size of this variable, if -1 then we are not receiving anything)
     Pos As Long
-    buffer() As Byte
+    Buffer() As Byte
 End Type
 
 Private Type typWSAData
@@ -111,21 +111,21 @@ Private Const FD_CONNECTLISTEN As Long = FD_ACCEPT Or FD_CLOSE Or FD_CONNECT Or 
 Private Declare Function apiWSAStartup Lib "WS2_32" Alias "WSAStartup" (ByVal wVersionRequired As Long, lpWSADATA As typWSAData) As Long
 Private Declare Function apiWSACleanup Lib "WS2_32" Alias "WSACleanup" () As Long
 Private Declare Function apiSocket Lib "WS2_32" Alias "socket" (ByVal af As Long, ByVal s_type As Long, ByVal protocol As Long) As Long
-Private Declare Function apiCloseSocket Lib "WS2_32" Alias "closesocket" (ByVal S As Long) As Long
-Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal S As Long, addr As typSocketAddr, ByVal namelen As Long) As Long
-Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal S As Long, ByVal backlog As Long) As Long
-Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal S As Long, name As typSocketAddr, ByVal namelen As Long) As Long
-Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal S As Long, addr As typSocketAddr, addrlen As Long) As Long
-Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal S As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
-Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal S As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
-Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal S As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
-Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
-Private Declare Function apiSetSockOpt Lib "WS2_32" Alias "setsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long
+Private Declare Function apiCloseSocket Lib "WS2_32" Alias "closesocket" (ByVal s As Long) As Long
+Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal s As Long, addr As typSocketAddr, ByVal namelen As Long) As Long
+Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal s As Long, ByVal backlog As Long) As Long
+Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, name As typSocketAddr, ByVal namelen As Long) As Long
+Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal s As Long, addr As typSocketAddr, addrlen As Long) As Long
+Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
+Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
+Private Declare Function apiSetSockOpt Lib "WS2_32" Alias "setsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long
 Private Declare Function apiHToNS Lib "WS2_32" Alias "htons" (ByVal hostshort As Long) As Integer 'Host To Network Short
 Private Declare Function apiNToHS Lib "WS2_32" Alias "ntohs" (ByVal netshort As Long) As Integer 'Network To Host Short
 Private Declare Function apiIPToNL Lib "WS2_32" Alias "inet_addr" (ByVal cp As String) As Long
 Private Declare Function apiNLToIP Lib "WS2_32" Alias "inet_ntoa" (ByVal inn As Long) As Long
-Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal S As Long, ByVal how As Long) As Long
+Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal s As Long, ByVal how As Long) As Long
 Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function apiLStrLen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long
@@ -166,10 +166,10 @@ Dim tmpSocketAddr As typSocketAddr 'This stores the details of our new socket/cl
         Let Sockets(GOREsock_Accept).GOREsock_uMsg = soxSERVER  'This is a Client Socket - It has connected to US
         Let Recv(GOREsock_Accept).Size = -1
         Let Recv(GOREsock_Accept).Pos = -1
-        Erase Recv(GOREsock_Accept).buffer
+        Erase Recv(GOREsock_Accept).Buffer
         Let Send(GOREsock_Accept).Size = -1
         Let Send(GOREsock_Accept).Pos = -1
-        Erase Send(GOREsock_Accept).buffer
+        Erase Send(GOREsock_Accept).Buffer
         Call GOREsock_RaiseState(GOREsock_Accept, soxConnecting) ' Could possibly leave this on soxDisconnected, and on Select Case GOREsock_State, thurn it on and set it ready to send data (Or set it to connecting)
         Call GOREsock_Connection(GOREsock_Accept)
     End If
@@ -296,10 +296,10 @@ Dim tmpSocketAddr As typSocketAddr
                         Let Sockets(GOREsock_Connect).GOREsock_uMsg = soxCLIENT ' This is a Server connection - We have connected to it (Could even be another Client computer but the fact is we connected to it)
                         Let Recv(GOREsock_Connect).Size = -1
                         Let Recv(GOREsock_Connect).Pos = -1
-                        Erase Recv(GOREsock_Connect).buffer
+                        Erase Recv(GOREsock_Connect).Buffer
                         Let Send(GOREsock_Connect).Size = -1
                         Let Send(GOREsock_Connect).Pos = -1
-                        Erase Send(GOREsock_Connect).buffer
+                        Erase Send(GOREsock_Connect).Buffer
                         Call GOREsock_RaiseState(GOREsock_Connect, soxConnecting)
                     End If
                 End If
@@ -334,14 +334,14 @@ Private Function GOREsock_ExtractRecv(inSox As Long) As Byte() ' Extracts comple
 Dim tmpBuffer() As Byte
 
     ReDim tmpBuffer(GOREsock_RecvSize(inSox)) As Byte
-    Call apiCopyMemory(tmpBuffer(0), Recv(inSox).buffer(4), GOREsock_RecvSize(inSox) + 1)
+    Call apiCopyMemory(tmpBuffer(0), Recv(inSox).Buffer(4), GOREsock_RecvSize(inSox) + 1)
     If Recv(inSox).Size - GOREsock_RecvSize(inSox) - 5 = -1 Then
         Let Recv(inSox).Size = -1
-        Erase Recv(inSox).buffer
+        Erase Recv(inSox).Buffer
     Else
         Let Recv(inSox).Size = Recv(inSox).Size - GOREsock_RecvSize(inSox) - 5
-        Call apiCopyMemory(Recv(inSox).buffer(0), Recv(inSox).buffer(GOREsock_RecvSize(inSox) + 5), UBound(Recv(inSox).buffer) - (GOREsock_RecvSize(inSox) + 4))
-        ReDim Preserve Recv(inSox).buffer(Recv(inSox).Size)
+        Call apiCopyMemory(Recv(inSox).Buffer(0), Recv(inSox).Buffer(GOREsock_RecvSize(inSox) + 5), UBound(Recv(inSox).Buffer) - (GOREsock_RecvSize(inSox) + 4))
+        ReDim Preserve Recv(inSox).Buffer(Recv(inSox).Size)
     End If
     Let GOREsock_ExtractRecv = tmpBuffer
 
@@ -352,12 +352,12 @@ Private Sub GOREsock_ExtractSend(inSox As Long) ' Just Extracts the Data from th
     If Send(inSox).Size = Send(inSox).Pos Then
         Let Send(inSox).Size = -1
         Let Send(inSox).Pos = -1
-        Erase Send(inSox).buffer
+        Erase Send(inSox).Buffer
     Else
         Let Send(inSox).Pos = Send(inSox).Pos - GOREsock_SendSize(inSox) - 5
         Let Send(inSox).Size = Send(inSox).Size - GOREsock_SendSize(inSox) - 5
-        Call apiCopyMemory(Send(inSox).buffer(0), Send(inSox).buffer(GOREsock_SendSize(inSox) + 5), UBound(Send(inSox).buffer) - (GOREsock_SendSize(inSox) + 4))
-        ReDim Preserve Send(inSox).buffer(Send(inSox).Size)
+        Call apiCopyMemory(Send(inSox).Buffer(0), Send(inSox).Buffer(GOREsock_SendSize(inSox) + 5), UBound(Send(inSox).Buffer) - (GOREsock_SendSize(inSox) + 4))
+        ReDim Preserve Send(inSox).Buffer(Send(inSox).Size)
     End If
 
 End Sub
@@ -378,8 +378,8 @@ Dim tmpBuffer(0 To (BufferSize - 1)) As Byte 'This buffer could be optimized for
                     Call GOREsock_RaiseState(inSox, soxDisconnected)
                     Call GOREsock_Close(inSox)
                 Case Else
-                    ReDim Preserve Recv(inSox).buffer(Recv(inSox).Size + tmpRecvSize)
-                    Call apiCopyMemory(Recv(inSox).buffer(Recv(inSox).Size + 1), tmpBuffer(0), tmpRecvSize)
+                    ReDim Preserve Recv(inSox).Buffer(Recv(inSox).Size + tmpRecvSize)
+                    Call apiCopyMemory(Recv(inSox).Buffer(Recv(inSox).Size + 1), tmpBuffer(0), tmpRecvSize)
                     Let Recv(inSox).Size = Recv(inSox).Size + tmpRecvSize
                     Do While Recv(inSox).Size > 2 ' If for example we received many small 'packets' of data, this will loop until we have returned/extracted all of them!
                         DoEvents
@@ -473,10 +473,10 @@ Dim tmpSocketAddr As typSocketAddr
                             Let Sockets(GOREsock_Listen).GOREsock_uMsg = soxSERVER
                             Let Recv(GOREsock_Listen).Size = -1
                             Let Recv(GOREsock_Listen).Pos = -1
-                            Erase Recv(GOREsock_Listen).buffer
+                            Erase Recv(GOREsock_Listen).Buffer
                             Let Send(GOREsock_Listen).Size = -1
                             Let Send(GOREsock_Listen).Pos = -1
-                            Erase Send(GOREsock_Listen).buffer
+                            Erase Send(GOREsock_Listen).Buffer
                             Call GOREsock_RaiseState(GOREsock_Listen, soxListening)
                         End If
                     End If
@@ -512,7 +512,7 @@ End Sub
 
 Private Function GOREsock_RecvSize(inSox As Long) As Long  ' Given 4 bytes, will directly copy them to a long! WARNING - To speed it up, I have no UBound checks, therefore you MUST send it 4 bytes
 
-    Call apiCopyMemory(GOREsock_RecvSize, Recv(inSox).buffer(0), 4)
+    Call apiCopyMemory(GOREsock_RecvSize, Recv(inSox).Buffer(0), 4)
 
 End Function
 
@@ -527,11 +527,11 @@ Private Sub GOREsock_SendBuffer(inSox As Long)   'Data to be sent. For binary da
                 Case Is < 0 ' We have no more data in buffer,
                 Case Is = 0 ' What was this for again ???
                 Case Is < BufferSize ' We have less data than our buffer size
-                    If apiSend(Sockets(inSox).Socket, Send(inSox).buffer(Send(inSox).Pos + 1), Send(inSox).Size - Send(inSox).Pos, 0) <> GOREsock_ERROR Then
+                    If apiSend(Sockets(inSox).Socket, Send(inSox).Buffer(Send(inSox).Pos + 1), Send(inSox).Size - Send(inSox).Pos, 0) <> GOREsock_ERROR Then
                         Let Send(inSox).Pos = Send(inSox).Size ' We have sent all the data in the Buffer
                     End If
                 Case Else
-                    If apiSend(Sockets(inSox).Socket, Send(inSox).buffer(Send(inSox).Pos + 1), BufferSize, 0) <> GOREsock_ERROR Then
+                    If apiSend(Sockets(inSox).Socket, Send(inSox).Buffer(Send(inSox).Pos + 1), BufferSize, 0) <> GOREsock_ERROR Then
                         Let Send(inSox).Pos = Send(inSox).Pos + BufferSize
                     End If
                 End Select
@@ -567,10 +567,10 @@ Dim tmpSize(0 To 3) As Byte
                 Let GOREsock_SendData = soxERROR
             Else
                 Call GOREsock_Long2Byte2(UBound(inData), tmpSize) ' I use UBound here instead of UBound + 1 to test the buffer on the other side EXACTLY !
-                ReDim Preserve Send(inSox).buffer(Send(inSox).Size + 4 + UBound(inData) + 1) As Byte ' 4 = Sized, UBound + 1 = DataLength
-                Call apiCopyMemory(Send(inSox).buffer(Send(inSox).Size + 1), tmpSize(0), 4)
+                ReDim Preserve Send(inSox).Buffer(Send(inSox).Size + 4 + UBound(inData) + 1) As Byte ' 4 = Sized, UBound + 1 = DataLength
+                Call apiCopyMemory(Send(inSox).Buffer(Send(inSox).Size + 1), tmpSize(0), 4)
                 Let Send(inSox).Size = Send(inSox).Size + 4
-                Call apiCopyMemory(Send(inSox).buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1)
+                Call apiCopyMemory(Send(inSox).Buffer(Send(inSox).Size + 1), inData(0), UBound(inData) + 1)
                 Let Send(inSox).Size = Send(inSox).Size + UBound(inData) + 1
                 apiWSAAsyncSelect Sockets(inSox).Socket, WindowhWnd, ByVal Sockets(inSox).GOREsock_uMsg, ByVal FD_CLOSEREADWRITE
             End If
@@ -581,7 +581,7 @@ End Function
 
 Private Function GOREsock_SendSize(inSox As Long) As Long  ' Given 4 bytes, will directly copy them to a long! WARNING - To speed it up, I have no UBound checks, therefore you MUST send it 4 bytes
 
-    Call apiCopyMemory(GOREsock_SendSize, Send(inSox).buffer(0), 4)
+    Call apiCopyMemory(GOREsock_SendSize, Send(inSox).Buffer(0), 4)
 
 End Function
 

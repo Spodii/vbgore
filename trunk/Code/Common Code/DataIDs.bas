@@ -46,10 +46,12 @@ Public Type DataCode
     Comm_Shout As Byte
     Comm_Emote As Byte
     Comm_Whisper As Byte
+    Comm_GroupTalk As Byte
     Comm_FontType_Talk As Byte
     Comm_FontType_Fight As Byte
     Comm_FontType_Info As Byte
     Comm_FontType_Quest As Byte
+    Comm_FontType_Group As Byte
     Comm_UseBubble As Byte  'Do not use this alone - OR it onto Comm_Talk!
     Server_MailMessage As Byte
     Server_MailBox As Byte
@@ -89,10 +91,10 @@ Public Type DataCode
     Server_MakeEffect As Byte
     Server_PTD As Byte
     Server_SendQuestInfo As Byte
+    Server_ChangeCharType As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_SendName As Byte
-    Map_RequestPositionUpdate As Byte
     User_Target As Byte
     User_KnownSkills As Byte
     User_Attack As Byte
@@ -118,6 +120,9 @@ Public Type DataCode
     User_Bank_PutItem As Byte
     User_Bank_TakeItem As Byte
     User_Bank_UpdateSlot As Byte
+    User_Bank_Balance As Byte
+    User_Bank_Deposit As Byte
+    User_Bank_Withdraw As Byte
     User_BaseStat As Byte
     User_ModStat As Byte
     User_CastSkill As Byte
@@ -128,9 +133,12 @@ Public Type DataCode
     User_RequestMakeChar As Byte
     User_RequestUserCharIndex As Byte
     User_ChangeServer As Byte
-    User_AddFriend As Byte
     User_ConfirmPosition As Byte
-    User_RemoveFriend As Byte
+    User_Group_Make As Byte
+    User_Group_Join As Byte
+    User_Group_Leave As Byte
+    User_Group_Invite As Byte
+    User_Group_Info As Byte
     GM_Approach As Byte
     GM_Summon As Byte
     GM_Kick As Byte
@@ -140,6 +148,7 @@ Public Type DataCode
     GM_DeThrall As Byte
     GM_BanIP As Byte
     GM_UnBanIP As Byte
+    GM_Warp As Byte
 End Type
 Public DataCode As DataCode
 
@@ -165,7 +174,7 @@ Public Type StatOrder
     MaxSTA As Byte
     MaxMAN As Byte
     Str As Byte
-    Agi As Byte
+    Agi As Byte     'For NPCs, this is the hit rate
     Mag As Byte
     Speed As Byte   'Speed works as + (Speed / 2) on the client since just + Speed would be too drastic (8 would double the normal speed)
 End Type
@@ -277,7 +286,7 @@ Public Sub InitDataCommands()
         .User_Rotate = 33
         .User_LeftClick = 34
         .User_RightClick = 35
-        .Map_RequestPositionUpdate = 36
+        .User_Group_Info = 36
         .User_Get = 37
         .User_Drop = 38
         .User_Use = 39
@@ -295,10 +304,10 @@ Public Sub InitDataCommands()
         .User_Trade_BuyFromNPC = 51
         .User_BaseStat = 52
         .User_ModStat = 53
-        .Comm_FontType_Fight = 54
-        .Comm_FontType_Info = 55
-        .Comm_FontType_Quest = 56
-        .Comm_FontType_Talk = 57
+        .GM_BanIP = 54
+        .GM_UnBanIP = 55
+        .Server_SendQuestInfo = 56
+        .User_ConfirmPosition = 57
         .Server_Help = 58
         .User_Desc = 59
         .Server_PTD = 60
@@ -332,10 +341,23 @@ Public Sub InitDataCommands()
         .User_Bank_PutItem = 88
         .User_Bank_TakeItem = 89
         .User_Bank_UpdateSlot = 90
-        .GM_BanIP = 91
-        .GM_UnBanIP = 92
-        .Server_SendQuestInfo = 93
-        .User_ConfirmPosition = 94
+        .User_Group_Join = 91
+        .User_Group_Invite = 92
+        .User_Group_Leave = 93
+        .User_Group_Make = 94
+        .Comm_GroupTalk = 95
+        .User_Bank_Deposit = 96
+        .User_Bank_Withdraw = 97
+        .User_Bank_Balance = 98
+        .GM_Warp = 99
+        .Server_ChangeCharType = 100
+        
+        'This values can be used over again since they aren't used in their own packet header
+        .Comm_FontType_Fight = 1
+        .Comm_FontType_Info = 2
+        .Comm_FontType_Quest = 3
+        .Comm_FontType_Talk = 4
+        .Comm_FontType_Group = 5
 
         'Value 128 can be used over again since this does not count as an ID in itself - just ignore this variable! ;)
         .Comm_UseBubble = 128

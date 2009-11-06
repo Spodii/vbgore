@@ -13,12 +13,11 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
         'War curse
         If .Skills.WarCurse > 0 Then
             Log "NPC_UpdateModStats: Updating modstats with effects from WarCurse", CodeTracker '//\\LOGLINE//\\
-            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.Str) = .ModStat(SID.Str) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (.Skills.WarCurse * 0.25)
-            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (.Skills.WarCurse * 0.25)
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (.Skills.WarCurse \ 4)  'Remember, AGI for NPCs is the hit rate!
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (.Skills.WarCurse \ 4)
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (.Skills.WarCurse \ 4)
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (.Skills.WarCurse \ 4)
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (.Skills.WarCurse \ 4)
         End If
             
         'Strengthen
@@ -37,12 +36,11 @@ Public Sub NPC_UpdateModStats(ByRef NPCIndex As Integer)
         'Bless
         If .Skills.Bless > 0 Then
             Log "NPC_UpdateModStats: Updating modstats with effects from Bless", CodeTracker '//\\LOGLINE//\\
-            .ModStat(SID.Agi) = .ModStat(SID.Agi) + .Skills.Bless * 0.5
-            .ModStat(SID.Mag) = .ModStat(SID.Mag) + .Skills.Bless * 0.5
-            .ModStat(SID.Str) = .ModStat(SID.Str) + .Skills.Bless * 0.5
-            .ModStat(SID.DEF) = .ModStat(SID.DEF) + .Skills.Bless * 0.25
-            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .Skills.Bless * 0.25
-            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .Skills.Bless * 0.25
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) + .Skills.Bless \ 2 'Remember, AGI for NPCs is the hit rate!
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) + .Skills.Bless \ 2
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + .Skills.Bless \ 4
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .Skills.Bless \ 4
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .Skills.Bless \ 4
         End If
         
         'Iron skin
@@ -102,7 +100,7 @@ Dim X As Long
     Else
         
         'Check for the closest user
-        X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+        X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
         If X > 0 Then
             
             'Check for a valid range
@@ -183,7 +181,7 @@ Dim i As Integer
             End If
             
             'Look for a user
-            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
             
             'If no users are nearby, then put a moderate delay to lighten the CPU load
             If X = 0 Then
@@ -243,7 +241,7 @@ Dim i As Integer
         Case 4
             
             'Look for a user
-            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
             If X = 0 Then
                 NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
@@ -335,7 +333,7 @@ Dim i As Integer
         Case 5
             
             'Look for a user
-            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
             If X = 0 Then
                 NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
@@ -420,10 +418,10 @@ Dim i As Integer
                             For tY = 1 To MaxServerDistanceY - 1
                                 For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                                     For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
-                                        If X > MinXBorder Then
-                                            If X < MaxXBorder Then
-                                                If Y > MinYBorder Then
-                                                    If Y < MaxYBorder Then
+                                        If X > XMinMapSize Then
+                                            If X < XMaxMapSize Then
+                                                If Y > YMinMapSize Then
+                                                    If Y < YMaxMapSize Then
                                                         If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
                                                             i = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
                                                             If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
@@ -450,7 +448,7 @@ Dim i As Integer
             End If
             
         '*** Banker ***
-        Case 6
+        'Case 6
             'This NPC has no AI here - the only reference to the banker AI is in the clicking events.
             ' Just do a search for "ai = 6" to find it.
 
@@ -477,10 +475,10 @@ Dim Y As Integer
             For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                     'Make sure tile is legal
-                    If X >= MinXBorder Then
-                        If X <= MaxXBorder Then
-                            If Y >= MinYBorder Then
-                                If Y <= MaxYBorder Then
+                    If X >= XMinMapSize Then
+                        If X <= XMaxMapSize Then
+                            If Y >= YMinMapSize Then
+                                If Y <= YMaxMapSize Then
                                     'Look for a user
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex > 0 Then
                                         NPC_AI_ClosestPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex
@@ -515,24 +513,29 @@ Dim Y As Integer
     'Expand the search range
     For tX = 1 To SearchX
         For tY = 1 To SearchY
+        
             'Loop through the search area (only look on the outside of the search rectangle to prevent checking the same thing multiple times)
             For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
+                
                     'Make sure tile is legal
-                    If X >= MinXBorder Then
-                        If X <= MaxXBorder Then
-                            If Y >= MinYBorder Then
-                                If Y <= MaxYBorder Then
+                    If X >= XMinMapSize Then
+                        If X <= XMaxMapSize Then
+                            If Y >= YMinMapSize Then
+                                If Y <= YMaxMapSize Then
+                                
                                     'Look for a npc
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
                                         NPC_AI_ClosestNPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
                                         Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
                                         Exit Function
                                     End If
+                                    
                                 End If
                             End If
                         End If
                     End If
+                    
                 Next Y
             Next X
         Next tY
@@ -548,7 +551,7 @@ Private Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer
 'Have a NPC attack a User
 '*****************************************************************
 Dim HitRate As Long
-Dim Hit As Integer
+Dim Hit As Long
 
     Log "Call NPC_AttackUser(" & NPCIndex & "," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -597,7 +600,7 @@ Dim Hit As Integer
     End If
     
     'Update the hit rate
-    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + (NPCList(NPCIndex).ModStat(SID.Str) * 0.25) + 50
+    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + 50 'Remember, AGI for NPCs is the hit rate!
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= (HitRate - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
@@ -799,7 +802,7 @@ Dim HPB As Byte
 
 End Sub
 
-Public Sub NPC_Damage(NPCIndex As Integer, UserIndex As Integer, Damage As Integer)
+Public Sub NPC_Damage(NPCIndex As Integer, UserIndex As Integer, Damage As Long)
 
 '*****************************************************************
 'Do damage to a NPC - ONLY USE THIS SUB TO HURT NPCS
@@ -894,11 +897,21 @@ Dim i As Integer
                     End If
                 End If
             Next i
-
-            'Give EXP and gold
-            User_RaiseExp UserIndex, NPCList(NPCIndex).GiveEXP
-            UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
-
+            
+            'Check if the user is part of a group
+            If UserList(UserIndex).GroupIndex > 0 Then
+            
+                'Split up the exp and gold among the group
+                Group_EXPandGold UserIndex, UserList(UserIndex).GroupIndex, NPCList(NPCIndex).GiveEXP, NPCList(NPCIndex).GiveGLD
+            
+            Else
+    
+                'Give EXP and gold to just the user
+                User_RaiseExp UserIndex, NPCList(NPCIndex).GiveEXP
+                UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
+            
+            End If
+            
             'Display kill message to the user
             ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).Name)
             ConBuf.Put_Byte DataCode.Server_Message
@@ -945,6 +958,8 @@ Private Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 '*****************************************************************
 'Erase a character
 '*****************************************************************
+Dim i As Integer
+Dim t As Long
 
     Log "Call NPC_EraseChar(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1019,7 +1034,7 @@ Dim SndMP As Byte
     ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
 
     'Send make character command to clients
-    ConBuf.PreAllocate 21 + Len(NPCList(NPCIndex).Name)
+    ConBuf.PreAllocate 22 + Len(NPCList(NPCIndex).Name)
     ConBuf.Put_Byte DataCode.Server_MakeChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
@@ -1035,6 +1050,7 @@ Dim SndMP As Byte
     ConBuf.Put_Byte SndHP
     ConBuf.Put_Byte SndMP
     ConBuf.Put_Byte NPCList(NPCIndex).ChatID
+    ConBuf.Put_Byte ClientCharType_NPC
 
     'Send the NPC
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
@@ -1102,6 +1118,10 @@ Dim LoopC As Long
             LoopC = LastNPC + 1
             Exit Do
         End If
+        If LoopC > MaxNPCs Then
+            LoopC = 0
+            Exit Do
+        End If
     Loop While NPCList(LoopC).flags.NPCActive = 1
 
     NPC_NextOpen = LoopC
@@ -1121,8 +1141,7 @@ Dim CharIndex As Integer
 
     Log "Call NPC_Spawn(" & NPCIndex & "," & BypassUpdate & ")", CodeTracker '//\\LOGLINE//\\
 
-'Give it a char index if needed
-
+    'Give it a char index if needed
     If NPCList(NPCIndex).Char.CharIndex = 0 Then
         CharIndex = Server_NextOpenCharIndex
         NPCList(NPCIndex).Char.CharIndex = CharIndex
@@ -1142,13 +1161,10 @@ Dim CharIndex As Integer
     NPCList(NPCIndex).flags.NPCAlive = 1
 
     'Make NPC Char
-    If Not BypassUpdate Then
+    If BypassUpdate = 0 Then
         If MapInfo(TempPos.Map).NumUsers > 0 Then
             NPC_MakeChar ToMap, MapUsers(TempPos.Map).Index(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
         End If
     End If
     
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:46)  Decl: 13  Code: 684  Total: 697 Lines
-':) CommentOnly: 126 (18.1%)  Commented: 25 (3.6%)  Empty: 166 (23.8%)  Max Logic Depth: 13

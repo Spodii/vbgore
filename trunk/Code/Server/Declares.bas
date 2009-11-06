@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.1            ************
+'************            Official Release: Version 0.4.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -126,6 +126,10 @@ Public Const OptimizeDatabase As Byte = 0
 'If we run the server in high priority (recommended to use unless)
 Public Const RunHighPriority As Byte = 1
 
+'Screen resolution (must be identical to the values on the client!)
+Public Const ScreenWidth As Long = 1024
+Public Const ScreenHeight As Long = 768
+
 'How long objects can be on the ground (in miliseconds) before being removed
 Public Const GroundObjLife As Long = 300000 '5 minutes
 
@@ -186,9 +190,21 @@ Public Const BlockedAll As Byte = 15
 Public Const CharType_PC As Byte = 1
 Public Const CharType_NPC As Byte = 2
 
-'Max distance for two chars being on the same screen (for the rect distance)
-Public Const MaxServerDistanceX As Long = 13
-Public Const MaxServerDistanceY As Long = 10
+'Client character types
+Public Const ClientCharType_PC As Byte = 1
+Public Const ClientCharType_NPC As Byte = 2
+Public Const ClientCharType_Grouped As Byte = 3
+
+'Max distance for two chars being on the same screen (for the rect distance) - values defined in tiles
+Public Const MaxServerDistanceX As Long = ((ScreenWidth \ 32) \ 2) + 1
+Public Const MaxServerDistanceY As Long = ((ScreenHeight \ 32) \ 2) + 1
+
+'Group settings
+Public Const Group_MaxUsers As Byte = 15        'The maximum number of users in a group
+Public Const Group_MaxGroups As Byte = 255      'Max number of groups total
+Public Const Group_InviteTime As Long = 20000   '(DO NOT raise this value above 255 seconds!) The time (in milliseconds) in which the user has to accept a group invitation
+Public Const Group_MaxDistanceX As Byte = (ScreenWidth \ 32) * 2    'How far away you can be from the one who killed the NPC to get the exp
+Public Const Group_MaxDistanceY As Byte = (ScreenHeight \ 32) * 2   'Values are defined in tiles
 
 '************ Positioning ************
 Type WorldPos   'Holds placement information
@@ -198,8 +214,8 @@ Type WorldPos   'Holds placement information
 End Type
 
 '************ Object types ************
-Public Const MAX_INVENTORY_OBJS As Integer = 9999   'Maximum number of objects per slot (same obj)
-Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of slots
+Public Const MaxObjAmount As Integer = 100          'Maximum number you can hold of an item (if Stacking <= 0)
+Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of inventory slots
 Public Type udtObjData
     Name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
@@ -222,6 +238,11 @@ Public Type udtObjData
     RepHPP As Integer               'Percentage of HP to replenish
     RepMPP As Integer               'Percentage of MP to replenish
     RepSPP As Integer               'Percentage of SP to replenish
+    ReqStr As Long                  'Required strength to use the item
+    ReqAgi As Long                  'Required agility
+    ReqMag As Long                  'Required magic
+    ReqLvl As Long                  'Required level
+    Stacking As Integer             'How much the item can be stacked up (-1 for no limit, 0 for
     AddStat(FirstModStat To NumStats) As Long   'How much to add to the stat by the SID
     Pointer As Integer
 End Type
@@ -277,6 +298,15 @@ Type MailData   'Mailing system information
     New As Byte
     Obj(1 To MaxMailObjs) As Obj
 End Type
+
+'************ Group/Party System ************
+Type GroupData
+    Users() As Integer
+    NumUsers As Byte
+End Type
+Public GroupData() As GroupData
+Public NumGroups As Integer         'Holds the number of groups created (empty groups included, so this is the highest group index)
+Public NumEmptyGroups As Integer    'Holds the number of empty groups - used for group index recycling to speed up the process
 
 '************ Generic Character Data ************
 Type CharData   'Charlist types (for reverting from CharIndex to PC/NPC index)
@@ -337,6 +367,8 @@ Type UserFlags  'Flags for a user
     GMLevel As Byte         'What type of admin the user is: 0 = None, 1 = GM
     Disconnecting As Byte   'If the user will be disconnected after data is sent
     QuestNPC As Integer     'The ID of the NPC that the user is talking to about a quest
+    InviteGroup As Byte     'The index of the group the user has been invited to
+    DoNotSave As Byte       'Used in special cases to define to bypass saving
 End Type
 Type UserCounters   'Counters for a user
     IdleCount As Long           'Stores last time the user sent an action packet
@@ -353,6 +385,8 @@ Type UserCounters   'Counters for a user
     DelayTimeTalk As Long       'Talk delay time
     PacketsInCount As Long      'Packets in per second (used to prevent packet flooding)
     PacketsInTime As Long       'When the packet counting started
+    GroupCounter As Long        'How long the user has to accept to join a group
+    SwapCounter As Long         'Time the user must wait to use the /swap command again
 End Type
 Type UserOBJ    'Objects the user has
     ObjIndex As Long    'Index of the object
@@ -383,12 +417,11 @@ Type User   'Holds data for a user
     Pos As WorldPos         'User's current position
     Gold As Long            'How much gold the user has
     Class As Byte           'User's class
-    ConnID As Long          'Connection ID
+    BankGold As Long        'Amount of gold the user has in the bank
+    GroupIndex As Integer   'The index of the group the user is part of (if any)
     SendBuffer() As Byte    'Buffer for sending data
     BufferSize As Long      'Size of the buffer
     HasBuffer As Byte       'If there is anything in the buffer
-    HasMovePacket As Byte   'If there is a move packet in the buffer (if there is, buffer is forced to PP_High upon movement)
-    PPValue As Byte         'Packet priority value
     PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
     PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
     Object(1 To MAX_INVENTORY_SLOTS) As UserOBJ 'The user's inventory
@@ -523,16 +556,11 @@ Public Const YMaxMapSize As Byte = 100  'Maximum height of the map in tiles
 Public Const YMinMapSize As Byte = 1    'Minimum height of the map in tiles
 
 'Window size in tiles
-Public Const XWindow As Byte = 25   'Size of the window's width in tiles
-Public Const YWindow As Byte = 18   'Size of the window's height in tiles
+Public Const XWindow As Byte = ScreenWidth \ 32     'Size of the window's width in tiles
+Public Const YWindow As Byte = ScreenHeight \ 32    'Size of the window's height in tiles
 
 '********** Public VARS ***********
 
-'Where the map borders are.. Set during load
-Public MinXBorder As Byte
-Public MaxXBorder As Byte
-Public MinYBorder As Byte
-Public MaxYBorder As Byte
 Public ResPos As WorldPos
 Public StartPos As WorldPos
 Public NumUsers As Integer  'Current number of users
@@ -589,6 +617,11 @@ Public NumBytesForSkills As Long
 
 'Server is unloading
 Public UnloadServer As Byte
+
+'Maximum number of NPCs allowed at once per server
+'This value should not be raised without raising the datatype of NPC indexes from integer to long (not recommended)
+'If this value is too low, try decreasing the map unloading time so NPCs are unloaded quicker
+Public Const MaxNPCs As Integer = 32765 'Note this is a little less then 2 ^ 16, just in case
 
 'Packet messages that are cached so they don't have to built real-time
 Public Type CachedMessage

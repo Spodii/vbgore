@@ -1,37 +1,23 @@
 VERSION 5.00
 Begin VB.Form frmTile 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
    Caption         =   "Tile"
    ClientHeight    =   7980
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   45
+   ClientTop       =   345
    ClientWidth     =   1680
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
    ScaleHeight     =   532
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   112
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   54
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Tile Info"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   4
       Left            =   480
@@ -43,8 +29,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   3
       Left            =   480
@@ -56,8 +40,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   2
       Left            =   480
@@ -69,8 +51,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox OldLLbl 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   1
       Left            =   480
@@ -82,8 +62,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox OldGLbl 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   600
       TabIndex        =   49
@@ -94,8 +72,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox SignTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   47
@@ -106,8 +82,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox SfxTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   600
       TabIndex        =   6
@@ -118,9 +92,9 @@ Begin VB.Form frmTile
    End
    Begin VB.CheckBox ShadowChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Shadow"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   240
       TabIndex        =   12
@@ -129,8 +103,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox WYTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   5
@@ -141,8 +113,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox WXTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   4
@@ -153,8 +123,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox WMapTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   3
@@ -165,8 +133,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox GrhTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   480
       TabIndex        =   7
@@ -177,9 +143,7 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox NPCTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
       Enabled         =   0   'False
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   2
@@ -190,8 +154,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox MailboxTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   1080
       MaxLength       =   1
@@ -203,8 +165,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox BlockedTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   1080
       MaxLength       =   2
@@ -216,8 +176,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   4
       Left            =   480
@@ -229,8 +187,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   3
       Left            =   480
@@ -242,8 +198,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   2
       Left            =   480
@@ -255,8 +209,6 @@ Begin VB.Form frmTile
    End
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Index           =   1
       Left            =   480
@@ -279,7 +231,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   23
       Left            =   240
@@ -300,7 +252,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   22
       Left            =   240
@@ -321,7 +273,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   1440
@@ -342,7 +294,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   1440
@@ -363,7 +315,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   1440
@@ -384,7 +336,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   1440
@@ -405,7 +357,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   1440
@@ -426,7 +378,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   21
       Left            =   480
@@ -447,7 +399,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   16
       Left            =   480
@@ -468,7 +420,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   15
       Left            =   120
@@ -489,7 +441,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   120
@@ -511,7 +463,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   14
       Left            =   240
@@ -532,7 +484,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   13
       Left            =   120
@@ -553,7 +505,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   12
       Left            =   120
@@ -574,7 +526,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   6
       Left            =   1320
@@ -596,7 +548,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   5
       Left            =   1080
@@ -618,7 +570,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   840
@@ -640,7 +592,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   600
@@ -662,7 +614,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   360
@@ -684,7 +636,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   17
       Left            =   120
@@ -705,7 +657,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   18
       Left            =   120
@@ -726,7 +678,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   19
       Left            =   120
@@ -747,7 +699,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   20
       Left            =   120
@@ -768,7 +720,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   9
       Left            =   240
@@ -789,7 +741,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   8
       Left            =   240
@@ -810,7 +762,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   7
       Left            =   240
@@ -831,7 +783,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   6
       Left            =   240
@@ -852,7 +804,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   5
       Left            =   240
@@ -873,7 +825,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   240
@@ -894,7 +846,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   240
@@ -907,7 +859,7 @@ Begin VB.Form frmTile
       BackStyle       =   0  'Transparent
       Caption         =   "100"
       Enabled         =   0   'False
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   1080
       TabIndex        =   17
@@ -920,7 +872,7 @@ Begin VB.Form frmTile
       BackStyle       =   0  'Transparent
       Caption         =   "100"
       Enabled         =   0   'False
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   360
       TabIndex        =   16
@@ -941,7 +893,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   120
@@ -962,7 +914,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   840
@@ -983,7 +935,7 @@ Begin VB.Form frmTile
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   120
@@ -1074,13 +1026,6 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     Var_Write Data2Path & "MapEditor.ini", "TILE", "Y", frmTile.Top
     HideFrmTile
     
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-
 End Sub
 
 Private Sub GrhSelectLbl_Click(Index As Integer)

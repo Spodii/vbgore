@@ -260,27 +260,7 @@ Dim s As String
     ParentForm.Height = ParentForm.Height + AddFormHeight + 145 + BBorderHeight
     ParentForm.Width = ParentForm.Width + AddFormWidth + ((LBorderWidth + RBorderWidth) / 2) - 40
 
-    For Each c In ParentForm
-        Select Case TypeName(c)
-            Case "cForm"
-                c.Left = 0
-                c.Top = 0
-            Case "Label"
-                c.ForeColor = pSkin.LabelColor
-            Case "TextBox"
-                c.ForeColor = pSkin.TextColor
-                c.BackColor = pSkin.TextBackColor
-            Case "ListBox"
-                c.ForeColor = pSkin.TextColor
-                c.BackColor = pSkin.TextBackColor
-            Case "CheckBox"
-                c.ForeColor = pSkin.LabelColor
-                c.BackColor = pSkin.FormBackColor
-            Case "OptionButton"
-                c.ForeColor = pSkin.LabelColor
-                c.BackColor = pSkin.FormBackColor
-        End Select
-    Next c
+    Skin_SetForm ParentForm
     
     With UserControl
         .Width = m_Form.Width

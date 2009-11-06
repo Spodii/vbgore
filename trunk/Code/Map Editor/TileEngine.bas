@@ -340,7 +340,7 @@ Public OBJList() As FloatSurface    'Holds info about all objects on the map
 Public PreviewGrhList() As Grh      'Holds the list of Grhs for the Grh Preview screen
 
 'Preview of the graphic to be set
-Public PreviewMapGrh(1 To 6) As Grh
+Public PreviewMapGrh As Grh
 
 'Maximum amount of 64x64 tiles that can fit into the screen
 Public tsWidth As Long
@@ -846,7 +846,7 @@ Public Function Engine_GetTextSize(ByVal Text As String) As POINTAPI
 '***************************************************
 'Get the size of the text
 
-    GetTextExtentPoint32 frmMain.hdc, Text, Len(Text), Engine_GetTextSize
+    GetTextExtentPoint32 frmScreen.hdc, Text, Len(Text), Engine_GetTextSize
 
 End Function
 
@@ -921,7 +921,7 @@ Dim i As Byte
     D3DWindow.BackBufferFormat = DispMode.Format    'Use format just retrieved
 
     'Set the D3DDevices
-    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.ScreenPic.hwnd, D3DCREATEFLAGS, D3DWindow)
+    Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmScreen.hwnd, D3DCREATEFLAGS, D3DWindow)
 
     'Store the create flags
     UsedCreateFlags = D3DCREATEFLAGS
@@ -2666,140 +2666,138 @@ Dim j As Long
     D3DDevice.BeginScene
 
     '************** Layer 1 **************
-    If L1ChkValue = 1 Then
-        For Y = ScreenMinY To ScreenMaxY
-            For X = ScreenMinX To ScreenMaxX
-                
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(1).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(1).Value = 1 Then
-                                    If frmSetTile.ShadowChk(1).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+    For Y = ScreenMinY To ScreenMaxY
+        For X = ScreenMinX To ScreenMaxX
+            
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 1 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     Else
-                                        Engine_Render_Grh PreviewMapGrh(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     End If
                                 End If
-                            End If
-                        End If
-                    End If
-                End If
-                
-                If MapData(X, Y).Shadow(1) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 0, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
-                Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
-                End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenX = ScreenX - X + ScreenMinX
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
-    
-    '************** Layer 2 **************
-    If L2ChkValue = 1 Then
-        ScreenY = minYOffset
-        For Y = minY To maxY
-            ScreenX = minXOffset
-            For X = minX To maxX
-            
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(2).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(2).Value = 1 Then
-                                    If frmSetTile.ShadowChk(2).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
-                                    Else
-                                        Engine_Render_Grh PreviewMapGrh(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
-                                    End If
-                                End If
-                            End If
-                        End If
-                    End If
-                End If
-            
-                If MapData(X, Y).Graphic(2).GrhIndex Then
-                    If MapData(X, Y).Shadow(2) = 1 Then
-                        Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                        Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
-                    Else
-                        Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
-                    End If
-                End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
-    
-    '************** Layer 3 **************
-    If L3ChkValue = 1 Then
-        ScreenY = minYOffset
-        For Y = minY To maxY
-            ScreenX = minXOffset
-            For X = minX To maxX
-            
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(3).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(3).Value = 1 Then
-                                    If frmSetTile.ShadowChk(3).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
-                                    Else
-                                        Engine_Render_Grh PreviewMapGrh(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
-                                    End If
-                                End If
-                            End If
-                        End If
-                    End If
-                End If
-            
-                If MapData(X, Y).Graphic(3).GrhIndex Then
-                    If MapData(X, Y).Shadow(3) = 1 Then
-                        Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                        Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
-                    Else
-                        Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
-                    End If
-                End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
-
-    '************** Objects **************
-    If ObjChkValue = 1 Then
-        For j = 1 To LastObj
-            If OBJList(j).Grh.GrhIndex Then
-                X = Engine_PixelPosX(minXOffset + (OBJList(j).Pos.X - minX)) + PixelOffsetX
-                Y = Engine_PixelPosY(minYOffset + (OBJList(j).Pos.Y - minY)) + PixelOffsetY
-                If Y >= -32 Then
-                    If Y <= 632 Then
-                        If X >= -32 Then
-                            If X <= 832 Then
-                                X2 = minXOffset + (OBJList(j).Pos.X - minX)
-                                Y2 = minYOffset + (OBJList(j).Pos.Y - minY)
-                                Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 0, True, MapData(X2, Y2).Light(1), MapData(X2, Y2).Light(2), MapData(X2, Y2).Light(3), MapData(X2, Y2).Light(4)
                             End If
                         End If
                     End If
                 End If
             End If
-        Next j
-    End If
+            
+            If MapData(X, Y).Shadow(1) = 1 Then
+                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 0, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
+            Else
+                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenX = ScreenX - X + ScreenMinX
+        ScreenY = ScreenY + 1
+    Next Y
+    
+    '************** Layer 2 **************
+    ScreenY = minYOffset
+    For Y = minY To maxY
+        ScreenX = minXOffset
+        For X = minX To maxX
+        
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 2 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                    Else
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        
+            If MapData(X, Y).Graphic(2).GrhIndex Then
+                If MapData(X, Y).Shadow(2) = 1 Then
+                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
+                Else
+                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
+                End If
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenY = ScreenY + 1
+    Next Y
+    
+    '************** Layer 3 **************
+    ScreenY = minYOffset
+    For Y = minY To maxY
+        ScreenX = minXOffset
+        For X = minX To maxX
+        
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 3 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                    Else
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        
+            If MapData(X, Y).Graphic(3).GrhIndex Then
+                If MapData(X, Y).Shadow(3) = 1 Then
+                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
+                Else
+                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
+                End If
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenY = ScreenY + 1
+    Next Y
+
+    '************** Objects **************
+    For j = 1 To LastObj
+        If OBJList(j).Grh.GrhIndex Then
+            X = Engine_PixelPosX(minXOffset + (OBJList(j).Pos.X - minX)) + PixelOffsetX
+            Y = Engine_PixelPosY(minYOffset + (OBJList(j).Pos.Y - minY)) + PixelOffsetY
+            If Y >= -32 Then
+                If Y <= 632 Then
+                    If X >= -32 Then
+                        If X <= 832 Then
+                            X2 = minXOffset + (OBJList(j).Pos.X - minX)
+                            Y2 = minYOffset + (OBJList(j).Pos.Y - minY)
+                            Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                            Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 0, True, MapData(X2, Y2).Light(1), MapData(X2, Y2).Light(2), MapData(X2, Y2).Light(3), MapData(X2, Y2).Light(4)
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next j
 
     '************** Characters **************
     If CharsChkValue = 1 Then
@@ -2837,121 +2835,121 @@ Dim j As Long
     End If
 
     '************** Layer 4 **************
-    If L4ChkValue = 1 Then
-        ScreenY = minYOffset
-        For Y = minY To maxY
-            ScreenX = minXOffset
-            For X = minX To maxX
-            
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(4).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(4).Value = 1 Then
-                                    If frmSetTile.ShadowChk(4).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+    ScreenY = minYOffset
+    For Y = minY To maxY
+        ScreenX = minXOffset
+        For X = minX To maxX
+        
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 4 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     Else
-                                        Engine_Render_Grh PreviewMapGrh(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
-            
-                If MapData(X, Y).Graphic(4).GrhIndex Then
-                    If MapData(X, Y).Shadow(4) = 1 Then
-                        Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                        Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
-                    Else
-                        Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
-                    End If
+            End If
+        
+            If MapData(X, Y).Graphic(4).GrhIndex Then
+                If MapData(X, Y).Shadow(4) = 1 Then
+                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
+                Else
+                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
                 End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenY = ScreenY + 1
+    Next Y
     
     '************** Layer 5 **************
-    If L5ChkValue = 1 Then
-        ScreenY = minYOffset
-        For Y = minY To maxY
-            ScreenX = minXOffset
-            For X = minX To maxX
-            
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(5).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(5).Value = 1 Then
-                                    If frmSetTile.ShadowChk(5).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+    ScreenY = minYOffset
+    For Y = minY To maxY
+        ScreenX = minXOffset
+        For X = minX To maxX
+        
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 5 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     Else
-                                        Engine_Render_Grh PreviewMapGrh(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
-            
-                If MapData(X, Y).Graphic(5).GrhIndex Then
-                    If MapData(X, Y).Shadow(5) = 1 Then
-                        Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                        Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
-                    Else
-                        Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
-                    End If
+            End If
+        
+            If MapData(X, Y).Graphic(5).GrhIndex Then
+                If MapData(X, Y).Shadow(5) = 1 Then
+                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
+                Else
+                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
                 End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
-    
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenY = ScreenY + 1
+    Next Y
+
     '************** Layer 6 **************
-    If L6ChkValue = 1 Then
-        ScreenY = minYOffset
-        For Y = minY To maxY
-            ScreenX = minXOffset
-            For X = minX To maxX
-            
-                'Map preview
-                If frmSetTile.Visible = True Then
-                    If PreviewMapGrh(6).GrhIndex > 0 Then
-                        If X = HovertX Then
-                            If Y = HovertY Then
-                                If frmSetTile.LayerChk(6).Value = 1 Then
-                                    If frmSetTile.ShadowChk(6).Value = 1 Then
-                                        Engine_Render_Grh PreviewMapGrh(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                                        Engine_Render_Grh PreviewMapGrh(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+    ScreenY = minYOffset
+    For Y = minY To maxY
+        ScreenX = minXOffset
+        For X = minX To maxX
+        
+            'Map preview
+            If frmSetTile.Visible = True Then
+                If X = HovertX Then
+                    If Y = HovertY Then
+                        If DrawLayer = 6 Then
+                            If PreviewMapGrh.GrhIndex > 0 Then
+                                If frmSetTile.LayerChk.Value = 1 Then
+                                    If frmSetTile.ShadowChk.Value = 1 Then
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     Else
-                                        Engine_Render_Grh PreviewMapGrh(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
+                                        Engine_Render_Grh PreviewMapGrh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, PreviewColor, PreviewColor, PreviewColor, PreviewColor
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
-            
-                If MapData(X, Y).Graphic(6).GrhIndex Then
-                    If MapData(X, Y).Shadow(6) = 1 Then
-                        Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
-                        Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
-                    Else
-                        Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
-                    End If
+            End If
+        
+            If MapData(X, Y).Graphic(6).GrhIndex Then
+                If MapData(X, Y).Shadow(6) = 1 Then
+                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 0, 1
+                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
+                Else
+                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
                 End If
-                ScreenX = ScreenX + 1
-            Next X
-            ScreenY = ScreenY + 1
-        Next Y
-    End If
+            End If
+            ScreenX = ScreenX + 1
+        Next X
+        ScreenY = ScreenY + 1
+    Next Y
     
     '************** Grid **************
     If GridChkValue = 1 Then
@@ -2962,7 +2960,8 @@ Dim j As Long
         For Y = minY To maxY
             ScreenX = minXOffset
             For X = minX To maxX
-                Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
+                j = D3DColorARGB(25, 255, 255, 255)
+                Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, , j, j, j, j
                 ScreenX = ScreenX + 1
             Next X
             ScreenY = ScreenY + 1
@@ -2977,27 +2976,22 @@ Dim j As Long
             For X = minX To maxX
                 Grh.FrameCounter = 1
                 Grh.Started = 0
-                'Blocked Tiles
-                If X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder Then
-                    Grh.GrhIndex = 654
+                'Blocked tiles
+                If MapData(X, Y).Blocked And 1 Then 'North
+                    Grh.GrhIndex = 650
                     Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
-                Else
-                    If MapData(X, Y).Blocked And 1 Then 'North
-                        Grh.GrhIndex = 650
-                        Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
-                    End If
-                    If MapData(X, Y).Blocked And 2 Then 'East
-                        Grh.GrhIndex = 651
-                        Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
-                    End If
-                    If MapData(X, Y).Blocked And 4 Then 'South
-                        Grh.GrhIndex = 652
-                        Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
-                    End If
-                    If MapData(X, Y).Blocked And 8 Then 'West
-                        Grh.GrhIndex = 653
-                        Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
-                    End If
+                End If
+                If MapData(X, Y).Blocked And 2 Then 'East
+                    Grh.GrhIndex = 651
+                    Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
+                End If
+                If MapData(X, Y).Blocked And 4 Then 'South
+                    Grh.GrhIndex = 652
+                    Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
+                End If
+                If MapData(X, Y).Blocked And 8 Then 'West
+                    Grh.GrhIndex = 653
+                    Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0
                 End If
                 'No-attack tiles
                 If Not (X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder) Then

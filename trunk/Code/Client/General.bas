@@ -87,6 +87,189 @@ Dim RaiseCost As Long
 
 End Sub
 
+Sub Game_BuildFilter()
+
+'*****************************************************************
+'Creates the filtering strings
+'*****************************************************************
+Dim sGroup() As String
+Dim sSplit() As String
+Dim i As Long
+Dim j As Long
+
+    'Check if we even have filtered words
+    If LenB(FilterString) = 0 Then Exit Sub
+
+    'Split up the word groups
+    sGroup() = Split(FilterString, ",")
+    ReDim FilterFind(0 To UBound(sGroup()))
+    ReDim FilterReplace(0 To UBound(sGroup()))
+    For i = 0 To UBound(sGroup())
+        
+        'Split up the group to get the word to search for, and the word to replace it with
+        sSplit() = Split(sGroup(i), "-")
+        
+        'Store the values
+        FilterFind(i) = Trim$(sSplit(0))
+        FilterReplace(i) = Trim$(sSplit(1))
+        
+    Next i
+    
+End Sub
+
+Function Game_FilterString(ByVal s As String) As String
+
+'*****************************************************************
+'Filters a string from all illegal characters and swear words
+'*****************************************************************
+Dim i As Long
+Dim a As Integer
+Dim t As String
+
+    'Check for a legal string
+    If LenB(s) = 0 Then
+        Game_FilterString = s
+        Exit Function
+    End If
+
+    'Filter illegal character
+    For i = 1 To Len(s) - 1
+        a = Asc(Mid$(s, i, 1))
+        If Not Game_ValidCharacter(a) Then
+            t = vbNullString
+            If i > 1 Then t = t & Left$(s, i - 1)
+            t = t & "X"
+            If i < Len(s) - 1 Then t = t & Right$(s, Len(s) - i)
+            s = t
+        End If
+    Next i
+
+    'Call the swear filter
+    s = Game_SwearFilterString(s)
+    
+    'Return the string
+    Game_FilterString = s
+
+End Function
+
+Function Game_ClosestTargetNPC() As Integer
+
+'*****************************************************************
+'Find the closest NPC to target
+'*****************************************************************
+Dim LowestValue As Long
+Dim LowestValueChar As Long
+Dim UserAngleMod As Long
+Dim TempAngle As Long
+Dim TempValue As Long
+Dim j As Long
+
+    'Check for characters
+    If LastChar = 1 Then Exit Function  'If theres only one character, its probably the user
+    
+    'Get the initial size of the chars array
+    ReDim CharValue(1 To LastChar)
+    
+    'Calculate the modifier of the user's heading
+    Select Case CharList(UserCharIndex).Heading
+        Case NORTH: UserAngleMod = 0 * 45
+        Case NORTHEAST: UserAngleMod = 1 * 45
+        Case EAST: UserAngleMod = 2 * 45
+        Case SOUTHEAST: UserAngleMod = 3 * 45
+        Case SOUTH: UserAngleMod = 4 * 45
+        Case SOUTHWEST: UserAngleMod = 5 * 45
+        Case WEST: UserAngleMod = 6 * 45
+        Case NORTHWEST: UserAngleMod = 7 * 45
+    End Select
+    
+    'Loop through all the characters
+    For j = 1 To LastChar
+    
+        'Make sure the character is used
+        If CharList(j).Active Then
+            If j <> UserCharIndex Then
+                If j <> TargetCharIndex Then
+                    
+                    'Check that the character is in the screen
+                    If CharList(j).Pos.X > ScreenMinX Then
+                        If CharList(j).Pos.X < ScreenMaxX Then
+                            If CharList(j).Pos.Y > ScreenMinY Then
+                                If CharList(j).Pos.Y < ScreenMaxY Then
+                                    
+                                    'Get the angle between the user and the NPC
+                                    TempAngle = -UserAngleMod + Engine_GetAngle(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
+                                    
+                                    'Make sure the angle is between 0 and 360
+                                    Do While TempAngle >= 360
+                                        TempAngle = TempAngle - 360
+                                    Loop
+                                    Do While TempAngle < 0
+                                        TempAngle = TempAngle + 360
+                                    Loop
+                                    
+                                    'Check that the angle is less between -95 and 95 (not behind them)
+                                    If TempAngle < 95 Or TempAngle > 265 Then
+                                        
+                                        'Convert the angle to the distance from 0 degrees
+                                        If TempAngle > 180 Then TempAngle = Abs(360 - TempAngle)
+                                        If TempAngle = 360 Then TempAngle = 0
+
+                                        'Calculate the value of the character
+                                        'Value = Angle * 2 + Distance
+                                        TempValue = (TempAngle * 0.5) + Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(j).Pos.X, CharList(j).Pos.Y)
+                                        
+                                        'Check if this value is lower then the first value
+                                        If LowestValue = 0 Then
+                                            LowestValue = TempValue
+                                            LowestValueChar = j
+                                        Else
+                                            If LowestValue > TempValue Then
+                                                LowestValue = TempValue
+                                                LowestValueChar = j
+                                            End If
+                                        End If
+                                        
+                                    End If
+                                
+                                End If
+                            End If
+                        End If
+                    End If
+                
+                End If
+            End If
+        End If
+    
+    Next j
+    
+    'Return the index of the character with the lowest value (best target)
+    Game_ClosestTargetNPC = LowestValueChar
+
+End Function
+
+Function Game_SwearFilterString(ByVal s As String) As String
+
+'*****************************************************************
+'Checks the passed string for any swear words to filter out
+'*****************************************************************
+Dim i As Long
+
+    'Check if we even have filtered words
+    If LenB(FilterString) = 0 Then
+        Game_SwearFilterString = s
+        Exit Function
+    End If
+
+    'Loop through all the filters
+    For i = 0 To UBound(FilterFind())
+        s = Replace$(s, FilterFind(i), FilterReplace(i))
+    Next i
+    
+    'Return the string
+    Game_SwearFilterString = s
+
+End Function
+
 Function Game_CheckUserData() As Boolean
 
 '*****************************************************************
@@ -311,6 +494,8 @@ Sub Game_Map_Switch(Map As Integer)
 '*****************************************************************
 'Loads and switches to a new map
 '*****************************************************************
+Dim LargestTileSize As Long
+Dim MapBuf As DataBuffer
 Dim GetParticleCount As Integer
 Dim GetEffectNum As Byte
 Dim GetDirection As Integer
@@ -322,6 +507,7 @@ Dim MapNum As Byte
 Dim i As Integer
 Dim Y As Byte
 Dim X As Byte
+Dim b() As Byte
 
     'Clear the offset values for the particle engine
     ParticleOffsetX = 0
@@ -333,6 +519,13 @@ Dim X As Byte
     UserPos.X = 0
     UserPos.Y = 0
 
+    'Clear map sounds
+    For Y = YMinMapSize To YMaxMapSize
+        For X = XMinMapSize To XMaxMapSize
+            Engine_Sound_Erase MapData(X, Y).Sfx
+        Next X
+    Next Y
+    
     'Clear the map
     ZeroMemory MapData(1, 1), CLng(Len(MapData(1, 1))) * CLng(XMaxMapSize) * CLng(YMaxMapSize)  'Width * Height * Size
 
@@ -351,10 +544,24 @@ Dim X As Byte
     'Open map file
     MapNum = FreeFile
     Open MapPath & Map & ".map" For Binary As #MapNum
-    Seek #MapNum, 1
+        Seek #MapNum, 1
+        
+        'Store the data in the buffer
+        ReDim b(0 To LOF(MapNum) - 1)
+        Get #MapNum, , b()
+        
+    'Close the map file
+    Close #MapNum
+    
+    'Assign the buffer data
+    Set MapBuf = New DataBuffer
+    MapBuf.Set_Buffer b()
+    
+    'Clear the data array
+    Erase b()
 
     'Map Header
-    Get #MapNum, , MapInfo.MapVersion
+    MapInfo.MapVersion = MapBuf.Get_Integer
 
     'Load arrays
     For Y = YMinMapSize To YMaxMapSize
@@ -366,35 +573,56 @@ Dim X As Byte
             Next i
 
             'Get flag's byte
-            Get #MapNum, , ByFlags
+            ByFlags = MapBuf.Get_Long
 
             'Blocked
-            If ByFlags And 1 Then Get #MapNum, , MapData(X, Y).Blocked Else MapData(X, Y).Blocked = 0
+            If ByFlags And 1 Then MapData(X, Y).Blocked = MapBuf.Get_Byte Else MapData(X, Y).Blocked = 0
 
             'Graphic layers
             If ByFlags And 2 Then
-                Get #MapNum, , MapData(X, Y).Graphic(1).GrhIndex
+                MapData(X, Y).Graphic(1).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(1), MapData(X, Y).Graphic(1).GrhIndex
+                
+                'Find the size of the largest tile used
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth
+                End If
+                
             End If
             If ByFlags And 4 Then
-                Get #MapNum, , MapData(X, Y).Graphic(2).GrhIndex
+                MapData(X, Y).Graphic(2).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(2), MapData(X, Y).Graphic(2).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth
+                End If
             End If
             If ByFlags And 8 Then
-                Get #MapNum, , MapData(X, Y).Graphic(3).GrhIndex
+                MapData(X, Y).Graphic(3).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(3), MapData(X, Y).Graphic(3).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth
+                End If
             End If
             If ByFlags And 16 Then
-                Get #MapNum, , MapData(X, Y).Graphic(4).GrhIndex
+                MapData(X, Y).Graphic(4).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(4), MapData(X, Y).Graphic(4).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth
+                End If
             End If
             If ByFlags And 32 Then
-                Get #MapNum, , MapData(X, Y).Graphic(5).GrhIndex
+                MapData(X, Y).Graphic(5).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(5), MapData(X, Y).Graphic(5).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth
+                End If
             End If
             If ByFlags And 64 Then
-                Get #MapNum, , MapData(X, Y).Graphic(6).GrhIndex
+                MapData(X, Y).Graphic(6).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(6), MapData(X, Y).Graphic(6).GrhIndex
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth
+                End If
             End If
             
             'Set light to default (-1) - it will be set again if it is not -1 from the code below
@@ -405,32 +633,32 @@ Dim X As Byte
             'Get lighting values
             If ByFlags And 128 Then
                 For i = 1 To 4
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
             If ByFlags And 256 Then
                 For i = 5 To 8
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
             If ByFlags And 512 Then
                 For i = 9 To 12
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
             If ByFlags And 1024 Then
                 For i = 13 To 16
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
             If ByFlags And 2048 Then
                 For i = 17 To 20
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
             If ByFlags And 4096 Then
                 For i = 21 To 24
-                    Get #MapNum, , MapData(X, Y).Light(i)
+                    MapData(X, Y).Light(i) = MapBuf.Get_Long
                 Next i
             End If
 
@@ -458,7 +686,7 @@ Dim X As Byte
             
             'Set the sfx
             If ByFlags And 1048576 Then
-                Get #MapNum, , i
+                i = MapBuf.Get_Integer
                 Engine_Sound_SetToMap i, X, Y
             End If
             
@@ -466,7 +694,7 @@ Dim X As Byte
             If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
             
             'Sign
-            If ByFlags And 4194304 Then Get #MapNum, , MapData(X, Y).Sign Else MapData(X, Y).Sign = 0
+            If ByFlags And 4194304 Then MapData(X, Y).Sign = MapBuf.Get_Integer Else MapData(X, Y).Sign = 0
             
             'If there is a warp
             If ByFlags And 8388608 Then MapData(X, Y).Warp = 1 Else MapData(X, Y).Warp = 0
@@ -475,22 +703,23 @@ Dim X As Byte
     Next Y
     
     'Get the number of effects
-    Get #MapNum, , Y
+    Y = MapBuf.Get_Byte
 
     'Store the individual particle effect types
     If Y > 0 Then
         For X = 1 To Y
-            Get #MapNum, , GetEffectNum
-            Get #MapNum, , GetX
-            Get #MapNum, , GetY
-            Get #MapNum, , GetParticleCount
-            Get #MapNum, , GetGfx
-            Get #MapNum, , GetDirection
+            GetEffectNum = MapBuf.Get_Byte
+            GetX = MapBuf.Get_Integer
+            GetY = MapBuf.Get_Integer
+            GetParticleCount = MapBuf.Get_Integer
+            GetGfx = MapBuf.Get_Byte
+            GetDirection = MapBuf.Get_Integer
             Effect_Begin GetEffectNum, GetX, GetY, GetGfx, GetParticleCount, GetDirection
         Next X
     End If
     
-    Close #MapNum
+    'Clear the map data
+    Set MapBuf = Nothing
     
     'Create the minimap
     Engine_BuildMiniMap
@@ -500,6 +729,14 @@ Dim X As Byte
 
     'Set current map
     CurMap = Map
+    
+    'Auto-calculate the maximum size to set the tile buffer
+    LargestTileSize = LargestTileSize + (32 - (LargestTileSize Mod 32)) 'Round to the next highest factor of 32
+    TileBufferSize = (LargestTileSize \ 32) 'Divide into tiles
+    
+    'Force to 2 to draw characters since they are 2 tiles tall
+    'If you have characters or paperdoll parts > 64 pixels in width or high, you need to increase this
+    If TileBufferSize < 2 Then TileBufferSize = 2
 
 End Sub
 
@@ -636,26 +873,19 @@ Dim i As Integer
     'Fill startup variables for the tile engine
     TilePixelWidth = 32
     TilePixelHeight = 32
-    WindowTileHeight = 18
-    WindowTileWidth = 25
-    TileBufferSize = 10
+    WindowTileHeight = ScreenHeight \ 32
+    WindowTileWidth = ScreenWidth \ 32
     EnterTextBufferWidth = 1
     EngineBaseSpeed = 0.011
     ReDim SkillListIDs(1 To NumSkills)
     LineBreakChr = Chr$(10)
 
-    'Setup borders
-    MinXBorder = XMinMapSize + (WindowTileWidth \ 2)
-    MaxXBorder = XMaxMapSize - (WindowTileWidth \ 2)
-    MinYBorder = YMinMapSize + (WindowTileHeight \ 2)
-    MaxYBorder = YMaxMapSize - (WindowTileHeight \ 2)
-
     'Resize mapdata array
     ReDim MapData(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
 
     'Set intial user position
-    UserPos.X = MinXBorder
-    UserPos.Y = MinYBorder
+    UserPos.X = 1
+    UserPos.Y = 1
 
     'Set scroll pixels per frame
     ScrollPixelsPerFrameX = 4
@@ -664,7 +894,7 @@ Dim i As Integer
     ShowGameWindow(ChatWindow) = 1
 
     'Set the array sizes by the number of graphic files
-    NumGrhFiles = CInt(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
+    NumGrhFiles = CLng(Engine_Var_Get(DataPath & "Grh.ini", "INIT", "NumGrhFiles"))
     ReDim SurfaceDB(1 To NumGrhFiles)
     ReDim SurfaceSize(1 To NumGrhFiles)
     ReDim SurfaceTimer(1 To NumGrhFiles)
@@ -692,6 +922,9 @@ Dim i As Integer
 
     'Load the data commands
     InitDataCommands
+    
+    'Build the word filters
+    Game_BuildFilter
 
     'Display connect window
     frmConnect.Visible = True
@@ -704,11 +937,8 @@ Dim i As Integer
         StartTime = timeGetTime
     
         'Check if unloading
-        If IsUnloading = 1 Then
-            GOREsock_UnHook
-            Exit Do
-        End If
-
+        If IsUnloading = 1 Then Exit Do
+        
         'Don't draw frame is window is minimized or there is no map loaded
         If frmMain.WindowState <> 1 Then
             If CurMap > 0 Then
@@ -782,7 +1012,7 @@ Dim i As Integer
         End If
 
     Loop
-
+    
     'Save the config
     Game_Config_Save
     

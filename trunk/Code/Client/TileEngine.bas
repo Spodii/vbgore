@@ -14,9 +14,20 @@ Public EnterText As Boolean             'If the text buffer is used (the user is
 Public EnterTextBuffer As String        'The text in the text buffer
 Public EnterTextBufferWidth As Long     'Width of the text buffer
 
+Public AlternateRender As Byte
+
 '********** CONSTANTS ***********
 'Keep window in the game screen - dont let them move outside of the window bounds
 Public Const WindowsInScreen As Boolean = True
+
+'Screen resolution and information (resolution must be identical to the values on the server!)
+Public Bit32 As Byte        'If 32-bit format is used (0 = 16-bit)
+Public UseVSync As Byte     'If vertical synchronization copy is used
+Public Windowed As Boolean  'If the screen is windowed or fullscreen
+Public UseWidescreen As Byte    'If we are using widescreen or not
+Public ScreenWidthWide As Long  'The screen size if it was widescreen
+Public Const ScreenWidth As Long = 1024 'Keep this identical to the value on the server!
+Public Const ScreenHeight As Long = 768 'Keep this identical to the value on the server!
 
 'Heading constants
 Public Const NORTH As Byte = 1
@@ -39,6 +50,7 @@ Public Const FontColor_Talk As Long = -1
 Public Const FontColor_Info As Long = -16711936
 Public Const FontColor_Fight As Long = -65536
 Public Const FontColor_Quest As Long = -256
+Public Const FontColor_Group As Long = -16711681
 Private Const ChatTextBufferSize As Integer = 200
 Public Const DamageDisplayTime As Integer = 2000
 Public Const BufferSize As Long = 40
@@ -55,6 +67,13 @@ Public DirectShow_Position(1 To NumMusicBuffers) As IMediaPosition
 Public DirectShow_Audio(1 To NumMusicBuffers) As IBasicAudio
 
 '********** Custom Fonts ************
+
+'Point API
+Public Type POINTAPI
+    X As Long
+    Y As Long
+End Type
+
 'vbGORE Font Header
 Private Type VFH
     BitmapWidth As Long         'Size of the bitmap itself
@@ -72,8 +91,10 @@ Private Type CustomFont
     RowFactor As Single         'Percentage of the texture width each character takes
     ColFactor As Single         'Percentage of the texture height each character takes
     CharHeight As Byte          'Height to use for the text - easiest to start with CellHeight value, and keep lowering until you get a good value
+    TextureSize As POINTAPI     'Size of the texture
 End Type
 
+Public Const Font_Default_TextureNum As Long = -1   'The texture number used to represent this font - only used for AlternateRendering - keep negative to prevent interfering with game textures
 Public Font_Default As CustomFont   'Describes our custom font "default"
 
 '********** WEATHER ***********
@@ -121,8 +142,8 @@ End Type
 'Holds data about where a png can be found,
 'How big it is and animation info
 Public Type GrhData
-    SX As Integer
-    SY As Integer
+    sX As Integer
+    sY As Integer
     FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
@@ -190,6 +211,7 @@ Public Type Char
     Active As Byte
     Heading As Byte
     HeadHeading As Byte
+    CharType As Byte
     Pos As Position             'Tile position on the map
     RealPos As Position         'Position on the game screen
     Body As BodyData
@@ -281,12 +303,6 @@ End Type
 
 '********** Public VARS ***********
 
-'Where the map borders are.. Set during load
-Public MinXBorder As Byte
-Public MaxXBorder As Byte
-Public MinYBorder As Byte
-Public MaxYBorder As Byte
-
 'User status vars
 Public CurMap As Integer            'Current map loaded
 Public UserMoving As Boolean
@@ -336,12 +352,12 @@ Public minY As Integer          'Start Y pos on current screen + tilebuffer
 Public maxY As Integer          'End Y pos on current screen
 Public minX As Integer          'Start X pos on current screen
 Public maxX As Integer          'End X pos on current screen
-Public minXOffset As Integer
-Public minYOffset As Integer
 Public ScreenMinY As Integer    'Start Y pos on current screen
 Public ScreenMaxY As Integer    'End Y pos on current screen
 Public ScreenMinX As Integer    'Start X pos on current screen
 Public ScreenMaxX As Integer    'End X pos on current screen
+Public LastTileX As Integer
+Public LastTileY As Integer
 
 '********** GAME WINDOWS ***********
 Public Const SkillListX As Integer = 750            'Position where the skill list where appear
@@ -529,6 +545,9 @@ Public SoundBufferTimer() As Long               'How long until the sound buffer
 Public LastTexture As Long                      'The last texture used
 Public D3DWindow As D3DPRESENT_PARAMETERS       'Describes the viewport and used to restore when in fullscreen
 Public UsedCreateFlags As CONST_D3DCREATEFLAGS  'The flags we used to create the device when it first succeeded
+Public ScreenDestRect As RECT                   'Destination draw area
+Public ScreenSrcRect As RECT                    'Source draw area
+Public DispMode As D3DDISPLAYMODE               'Describes the display mode
 
 'Texture for particle effects - this is handled differently then the rest of the graphics
 Public ParticleTexture(1 To 12) As Direct3DTexture8
@@ -549,6 +568,11 @@ Public MouseEvent As Long
 Public MouseLeftDown As Byte
 Public MouseRightDown As Byte
 
+'Used for alternate rendering only
+Private Sprite As D3DXSprite
+Private SpriteBegun As Byte
+Private SpriteScaleVector As D3DVECTOR2
+
 'Describes a transformable lit vertex
 Private Const FVF As Long = D3DFVF_XYZRHW Or D3DFVF_TEX1 Or D3DFVF_DIFFUSE
 Public Type TLVERTEX
@@ -564,11 +588,24 @@ End Type
 'The size of a FVF vertex
 Public Const FVF_Size As Long = 28
 
+'Motion-bluring information
+Public UseMotionBlur As Byte    'If motion blur is enabled or not
+Public BlurIntensity As Single
+Public BlurTexture As Direct3DTexture8
+Public BlurSurf As Direct3DSurface8
+Public BlurStencil As Direct3DSurface8
+Public DeviceStencil As Direct3DSurface8
+Public DeviceBuffer As Direct3DSurface8
+Public BlurTA(0 To 3) As TLVERTEX
+
 'Holds the general purpose vertex array (for building rectangles only)
 Private VertexArray(0 To 3) As TLVERTEX
 
 'Holds the temp vertex array to build vertex buffers
 Private tVA() As TLVERTEX
+
+'Chat vertex buffer (only kept in memory if using alternate rendering)
+Private ChatVA() As TLVERTEX
 
 'Chat vertex buffer information
 Private ChatArrayUbound As Long
@@ -596,6 +633,19 @@ End Type
 'If to use the sounds or not
 Public UseSounds As Byte
 
+'Used to hold the graphic layers in a quick-to-draw format
+Public Type Tile
+    TileX As Byte
+    TileY As Byte
+    PixelPosX As Integer
+    PixelPosY As Integer
+End Type
+Public Type TileLayer
+    Tile() As Tile
+    NumTiles As Integer
+End Type
+Public TileLayer(1 To 6) As TileLayer
+
 '********** Public ARRAYS ***********
 Public GrhData() As GrhData             'Holds data for the graphic structure
 Public SurfaceSize() As TexInfo         'Holds the size of the surfaces for SurfaceDB()
@@ -622,16 +672,14 @@ Public EngineBaseSpeed As Single
 Public OffsetCounterX As Single
 Public OffsetCounterY As Single
 
-'Point API
-Public Type POINTAPI
-    X As Long
-    Y As Long
-End Type
-
 Private NotFirstRender As Byte
 
 Public ShownText As String
 Public LineBreakChr As String * 1
+
+'Weather information
+Public LastWeather As Byte
+Public UseWeather As Byte
 
 'Mini-map tiles
 Public Type MiniMapTile
@@ -817,7 +865,7 @@ Dim Ascii As Byte
 Dim Row As Long
 Dim Pos As Long
 Dim u As Single
-Dim V As Single
+Dim v As Single
 Dim X As Single
 Dim Y As Single
 Dim Y2 As Single
@@ -847,7 +895,7 @@ Dim TempColor As Long
     Next LoopC
     Size = Size - j
     ChatArrayUbound = Size * 6 - 1
-    ReDim tVA(0 To ChatArrayUbound) 'Size our array to fix the 6 verticies of each character
+    ReDim ChatVA(0 To ChatArrayUbound) 'Size our array to fix the 6 verticies of each character
 
     'Set the base position
     X = GameWindow.ChatWindow.Screen.X + GameWindow.ChatWindow.Text.X
@@ -883,7 +931,7 @@ Dim TempColor As Long
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
                     u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                    V = Row * Font_Default.RowFactor
+                    v = Row * Font_Default.RowFactor
 
                     'Set up the verticies
                     '    4____5
@@ -895,42 +943,42 @@ Dim TempColor As Long
                     '       3 6
                     
                     'Triangle 1
-                    With tVA(0 + (6 * Pos))   'Top-left corner
+                    With ChatVA(0 + (6 * Pos))   'Top-left corner
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2
                         .tu = u
-                        .tv = V
+                        .tv = v
                         .Rhw = 1
                     End With
-                    With tVA(1 + (6 * Pos))   'Bottom-left corner
+                    With ChatVA(1 + (6 * Pos))   'Bottom-left corner
                         .Color = TempColor
                         .X = X + Count
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u
-                        .tv = V + Font_Default.RowFactor
+                        .tv = v + Font_Default.RowFactor
                         .Rhw = 1
                     End With
-                    With tVA(2 + (6 * Pos))   'Bottom-right corner
+                    With ChatVA(2 + (6 * Pos))   'Bottom-right corner
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u + Font_Default.ColFactor
-                        .tv = V + Font_Default.RowFactor
+                        .tv = v + Font_Default.RowFactor
                         .Rhw = 1
                     End With
                     
                     'Triangle 2 (only one new verticy is needed)
-                    tVA(3 + (6 * Pos)) = tVA(0 + (6 * Pos)) 'Top-left corner
-                    With tVA(4 + (6 * Pos))   'Top-right corner
+                    ChatVA(3 + (6 * Pos)) = ChatVA(0 + (6 * Pos)) 'Top-left corner
+                    With ChatVA(4 + (6 * Pos))   'Top-right corner
                         .Color = TempColor
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2
                         .tu = u + Font_Default.ColFactor
-                        .tv = V
+                        .tv = v
                         .Rhw = 1
                     End With
-                    tVA(5 + (6 * Pos)) = tVA(2 + (6 * Pos))
+                    ChatVA(5 + (6 * Pos)) = ChatVA(2 + (6 * Pos))
 
                     'Update the character we are on
                     Pos = Pos + 1
@@ -952,11 +1000,17 @@ Dim TempColor As Long
 
     Next LoopC
 
-    'Set the vertex array to the vertex buffer
-    If Pos <= 0 Then Pos = 1
-    If ObjPtr(D3DDevice) Then   'Make sure the D3DDevice exists - this will only return false if we received messages before it had time to load
-        Set ChatVB = D3DDevice.CreateVertexBuffer(FVF_Size * Pos * 6, 0, FVF, D3DPOOL_MANAGED)
-        D3DVertexBuffer8SetData ChatVB, 0, FVF_Size * Pos * 6, 0, tVA(0)
+    'Check what rendering method we're using
+    If AlternateRender = 0 Then
+    
+        'Set the vertex array to the vertex buffer
+        If Pos <= 0 Then Pos = 1
+        If Not D3DDevice Is Nothing Then   'Make sure the D3DDevice exists - this will only return false if we received messages before it had time to load
+            Set ChatVB = D3DDevice.CreateVertexBuffer(FVF_Size * Pos * 6, 0, FVF, D3DPOOL_MANAGED)
+            D3DVertexBuffer8SetData ChatVB, 0, FVF_Size * Pos * 6, 0, ChatVA(0)
+        End If
+        Erase ChatVA()
+        
     End If
     
 End Sub
@@ -1139,7 +1193,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -1168,6 +1222,7 @@ Dim EmptyChar As Char
     CharList(CharIndex).ManaPercent = MP
     CharList(CharIndex).Speed = Speed
     CharList(CharIndex).NPCChatIndex = ChatID
+    CharList(CharIndex).CharType = CharType
     
     'Update position
     CharList(CharIndex).Pos.X = X
@@ -1546,7 +1601,7 @@ Function Engine_FileExist(File As String, FileType As VbFileAttribute) As Boolea
 '*****************************************************************
 On Error GoTo ErrOut
 
-    If Dir$(File, FileType) <> "" Then Engine_FileExist = True
+    If LenB(Dir$(File, FileType)) Then Engine_FileExist = True
 
 Exit Function
 
@@ -1742,7 +1797,7 @@ Dim j As Long
 
 'Get number of bodies
 
-    NumBodies = CInt(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
+    NumBodies = CLng(Engine_Var_Get(DataPath & "Body.dat", "INIT", "NumBodies"))
     
     'Resize array
     ReDim BodyData(0 To NumBodies) As BodyData
@@ -1750,8 +1805,8 @@ Dim j As Long
     'Fill list
     For LoopC = 1 To NumBodies
         For j = 1 To 8
-            Engine_Init_Grh BodyData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), Str(j))), 0
-            Engine_Init_Grh BodyData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "a" & j)), 1
+            Engine_Init_Grh BodyData(LoopC).Walk(j), CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh BodyData(LoopC).Attack(j), CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "a" & j)), 1
         Next j
         BodyData(LoopC).HeadOffset.X = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetX"))
         BodyData(LoopC).HeadOffset.Y = CLng(Engine_Var_Get(DataPath & "Body.dat", Str(LoopC), "HeadOffsetY"))
@@ -1768,7 +1823,7 @@ Dim LoopC As Long
 Dim j As Long
 
     'Get number of wings
-    NumWings = CInt(Engine_Var_Get(DataPath & "Wing.dat", "INIT", "NumWings"))
+    NumWings = CLng(Engine_Var_Get(DataPath & "Wing.dat", "INIT", "NumWings"))
     
     'Resize array
     ReDim WingData(0 To NumWings) As WingData
@@ -1776,8 +1831,8 @@ Dim j As Long
     'Fill list
     For LoopC = 1 To NumWings
         For j = 1 To 8
-            Engine_Init_Grh WingData(LoopC).Walk(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
-            Engine_Init_Grh WingData(LoopC).Attack(j), CInt(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
+            Engine_Init_Grh WingData(LoopC).Walk(j), CLng(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), Str(j))), 0
+            Engine_Init_Grh WingData(LoopC).Attack(j), CLng(Engine_Var_Get(DataPath & "Wing.dat", Str(LoopC), "a" & j)), 1
         Next j
     Next LoopC
 
@@ -1793,7 +1848,7 @@ Private Sub Engine_Init_Sound()
     If IsUnloading Then Exit Sub
     
     On Error GoTo ErrOut
-
+    'GoTo ErrOut '//TEMP
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
     DS.SetCooperativeLevel frmMain.hWnd, DSSCL_PRIORITY
@@ -1865,8 +1920,8 @@ Public Sub Engine_Sound_UpdateMap()
 '************************************************************
 'Update the panning and volume on the map's sfx
 '************************************************************
-Dim SX As Integer
-Dim SY As Integer
+Dim sX As Integer
+Dim sY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
@@ -1874,8 +1929,8 @@ Dim L As Long
     If UseSounds = 0 Then Exit Sub
 
     'Set the user's position to sX/sY
-    SX = CharList(UserCharIndex).Pos.X
-    SY = CharList(UserCharIndex).Pos.Y
+    sX = CharList(UserCharIndex).Pos.X
+    sY = CharList(UserCharIndex).Pos.Y
     
     'Loop through all the map tiles
     For X = XMinMapSize To XMaxMapSize
@@ -1885,7 +1940,7 @@ Dim L As Long
             If Not MapData(X, Y).Sfx Is Nothing Then
                 
                 'Calculate the volume and check for valid range
-                L = Engine_Sound_CalcVolume(SX, SY, X, Y)
+                L = Engine_Sound_CalcVolume(sX, sY, X, Y)
                 If L < -5000 Then
                     MapData(X, Y).Sfx.Stop
                 Else
@@ -1895,7 +1950,7 @@ Dim L As Long
                 End If
                 
                 'Calculate the panning and check for a valid range
-                L = Engine_Sound_CalcPan(SX, X)
+                L = Engine_Sound_CalcPan(sX, X)
                 If L > 10000 Then L = 10000
                 If L < -10000 Then L = -10000
                 MapData(X, Y).Sfx.SetPan L
@@ -1913,7 +1968,7 @@ Public Sub Engine_Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, O
 '************************************************************
 
     'Play the sound
-    SoundBuffer.Play flags
+    If Not SoundBuffer Is Nothing Then SoundBuffer.Play flags
     
 End Sub
 
@@ -1924,7 +1979,7 @@ Public Sub Engine_Sound_Erase(ByRef SoundBuffer As DirectSoundSecondaryBuffer8)
 '************************************************************
     
     'Make sure the object exists
-    If ObjPtr(SoundBuffer) Then
+    If Not SoundBuffer Is Nothing Then
     
         'If it is playing, we have to stop it first
         If SoundBuffer.GetStatus > 0 Then SoundBuffer.Stop
@@ -1957,8 +2012,8 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 '************************************************************
 'Play a pseudo-3D sound by the sound buffer ID
 '************************************************************
-Dim SX As Integer
-Dim SY As Integer
+Dim sX As Integer
+Dim sY As Integer
 
     If UseSounds = 0 Then Exit Sub
 
@@ -1980,14 +2035,14 @@ Dim SY As Integer
     DSBuffer(SoundID).SetCurrentPosition 0
     
     'Set the user's position to sX/sY
-    SX = CharList(UserCharIndex).Pos.X
-    SY = CharList(UserCharIndex).Pos.Y
+    sX = CharList(UserCharIndex).Pos.X
+    sY = CharList(UserCharIndex).Pos.Y
     
     'Calculate the panning
-    Engine_Sound_Pan DSBuffer(SoundID), Engine_Sound_CalcPan(SX, TileX)
+    Engine_Sound_Pan DSBuffer(SoundID), Engine_Sound_CalcPan(sX, TileX)
     
     'Calculate the volume
-    Engine_Sound_Volume DSBuffer(SoundID), Engine_Sound_CalcVolume(SX, SY, TileX, TileY)
+    Engine_Sound_Volume DSBuffer(SoundID), Engine_Sound_CalcVolume(sX, sY, TileX, TileY)
     
     'Play the sound
     DSBuffer(SoundID).Play DSBPLAY_DEFAULT
@@ -2056,39 +2111,78 @@ Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS)
 'Initialize the Direct3D Device - start off trying with the
 'best settings and move to the worst until one works
 '************************************************************
-
-Dim DispMode As D3DDISPLAYMODE          'Describes the display mode
 Dim i As Byte
-
-'When there is an error, destroy the D3D device and get ready to make a new one
-
+Dim t As Long
+    
+    'When there is an error, destroy the D3D device and get ready to make a new one
     On Error GoTo ErrOut
 
     'Retrieve current display mode
     D3D.GetAdapterDisplayMode D3DADAPTER_DEFAULT, DispMode
+    
+    'If UseWidescreen > 1, autocalculate if we will be using widescreen or not
+    If UseWidescreen > 1 Then
+        If DispMode.Width / DispMode.Height > 1.4 Then UseWidescreen = 1 Else UseWidescreen = 0
+    End If
+    
+    'Create the destination rectangle
+    If Windowed = False And UseWidescreen = 1 Then
+        
+        'Find out the widescreen value
+        Select Case ScreenWidth
+            Case 800: ScreenWidthWide = 960
+            Case 1024: ScreenWidthWide = 1280
+        End Select
 
+        'Figure out how much white-space on each side
+        t = (ScreenWidthWide - ScreenWidth) \ 2
+
+        'Wide screen (16:9 aspect ratio) - only use if fullscreen, too
+        ScreenDestRect.Right = t + ScreenWidth
+        ScreenDestRect.Left = t
+        ScreenDestRect.bottom = ScreenHeight
+        ScreenDestRect.Top = 0
+        
+    Else
+        
+        'Normal screen (4:3 aspect ratio)
+        ScreenDestRect.Right = ScreenWidth
+        ScreenDestRect.Left = 0
+        ScreenDestRect.bottom = ScreenHeight
+        ScreenDestRect.Top = 0
+        
+    End If
+    
+    ScreenSrcRect.Left = 0
+    ScreenSrcRect.Top = 0
+    ScreenSrcRect.Right = ScreenWidth
+    ScreenSrcRect.bottom = ScreenHeight
+    
     'Set format for windowed mode
     If Windowed Then
         D3DWindow.Windowed = 1  'State that using windowed mode
         D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         D3DWindow.BackBufferFormat = DispMode.Format    'Use format just retrieved
+        D3DWindow.EnableAutoDepthStencil = 1
+        D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
     Else
-        DispMode.Format = DispMode.Format
-        DispMode.Width = 800
-        DispMode.Height = 600
-        DispMode.Format = D3DFMT_R5G6B5
-        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
+        If Bit32 = 1 Then DispMode.Format = D3DFMT_X8R8G8B8 Else DispMode.Format = D3DFMT_R5G6B5
+        If UseWidescreen = 0 Then DispMode.Width = ScreenWidth Else DispMode.Width = ScreenWidthWide
+        DispMode.Height = ScreenHeight
+        If UseVSync = 1 Then D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC Else D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         D3DWindow.BackBufferCount = 1
         D3DWindow.BackBufferFormat = DispMode.Format
-        D3DWindow.BackBufferWidth = 800
-        D3DWindow.BackBufferHeight = 600
+        D3DWindow.BackBufferWidth = DispMode.Width
+        D3DWindow.BackBufferHeight = DispMode.Height
         D3DWindow.hDeviceWindow = frmMain.hWnd
+        D3DWindow.EnableAutoDepthStencil = 1
+        D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
     End If
 
     'Set the D3DDevices
-    If ObjPtr(D3DDevice) Then Set D3DDevice = Nothing
+    If Not D3DDevice Is Nothing Then Set D3DDevice = Nothing
     Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hWnd, D3DCREATEFLAGS, D3DWindow)
-
+    
     'Store the create flags
     UsedCreateFlags = D3DCREATEFLAGS
 
@@ -2099,6 +2193,11 @@ Dim i As Byte
     
     'Everything was successful
     Engine_Init_D3DDevice = 1
+    
+    'Force the main form to refresh - vital for widescreen! Remove and find out why if you dare... >:D
+    frmMain.Show
+    frmMain.Refresh
+    DoEvents
 
 Exit Function
 
@@ -2179,6 +2278,7 @@ Dim Frame As Long
             Next Frame
             
             Get #1, , GrhData(Grh).Speed
+            GrhData(Grh).Speed = GrhData(Grh).Speed * 0.075 * EngineBaseSpeed
             If GrhData(Grh).Speed <= 0 Then GoTo ErrorHandler
             
             'Compute width and height
@@ -2197,10 +2297,10 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To 1)
             Get #1, , GrhData(Grh).FileNum
             If GrhData(Grh).FileNum <= 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).SX
-            If GrhData(Grh).SX < 0 Then GoTo ErrorHandler
-            Get #1, , GrhData(Grh).SY
-            If GrhData(Grh).SY < 0 Then GoTo ErrorHandler
+            Get #1, , GrhData(Grh).sX
+            If GrhData(Grh).sX < 0 Then GoTo ErrorHandler
+            Get #1, , GrhData(Grh).sY
+            If GrhData(Grh).sY < 0 Then GoTo ErrorHandler
             Get #1, , GrhData(Grh).pixelWidth
             If GrhData(Grh).pixelWidth <= 0 Then GoTo ErrorHandler
             Get #1, , GrhData(Grh).pixelHeight
@@ -2210,7 +2310,7 @@ Dim Frame As Long
             GrhData(Grh).TileWidth = GrhData(Grh).pixelWidth / TilePixelHeight
             GrhData(Grh).TileHeight = GrhData(Grh).pixelHeight / TilePixelWidth
             GrhData(Grh).Frames(1) = Grh
-            
+
         End If
         
         'Get Next Grh Number
@@ -2522,18 +2622,19 @@ Sub Engine_Init_HairData()
 '*****************************************************************
 'Loads Hair.dat
 '*****************************************************************
-
 Dim LoopC As Long
 Dim i As Integer
-'Get Number of hairs
 
-    NumHairs = CInt(Engine_Var_Get(DataPath & "Hair.dat", "INIT", "NumHairs"))
+    'Get Number of hairs
+    NumHairs = CLng(Engine_Var_Get(DataPath & "Hair.dat", "INIT", "NumHairs"))
+    
     'Resize array
     ReDim HairData(0 To NumHairs) As HairData
+    
     'Fill List
     For LoopC = 1 To NumHairs
         For i = 1 To 8
-            Engine_Init_Grh HairData(LoopC).Hair(i), CInt(Engine_Var_Get(DataPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
+            Engine_Init_Grh HairData(LoopC).Hair(i), CLng(Engine_Var_Get(DataPath & "Hair.dat", Str$(LoopC), Str$(i))), 0
         Next i
     Next LoopC
 
@@ -2549,7 +2650,7 @@ Dim LoopC As Long
 Dim i As Integer
 
     'Get Number of heads
-    NumHeads = CInt(Engine_Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
+    NumHeads = CLng(Engine_Var_Get(DataPath & "Head.dat", "INIT", "NumHeads"))
     
     'Resize array
     ReDim HeadData(0 To NumHeads) As HeadData
@@ -2557,10 +2658,10 @@ Dim i As Integer
     'Fill List
     For LoopC = 1 To NumHeads
         For i = 1 To 8
-            Engine_Init_Grh HeadData(LoopC).Head(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
-            Engine_Init_Grh HeadData(LoopC).Blink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
-            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CInt(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).Head(i), CLng(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), Str(i))), 0
+            Engine_Init_Grh HeadData(LoopC).Blink(i), CLng(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "b" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrHead(i), CLng(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "a" & i)), 0
+            Engine_Init_Grh HeadData(LoopC).AgrBlink(i), CLng(Engine_Var_Get(DataPath & "Head.dat", Str$(LoopC), "ab" & i)), 0
         Next i
     Next LoopC
 
@@ -2814,7 +2915,11 @@ Dim diProp As DIPROPLONG
     Set DI = DX.DirectInputCreate
     Set DIDevice = DI.CreateDevice("guid_SysMouse")
     Call DIDevice.SetCommonDataFormat(DIFORMAT_MOUSE)
-    Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
+    If Windowed Then
+        Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_BACKGROUND Or DISCL_NONEXCLUSIVE)
+    Else
+        Call DIDevice.SetCooperativeLevel(frmMain.hWnd, DISCL_FOREGROUND Or DISCL_EXCLUSIVE)
+    End If
     diProp.lHow = DIPH_DEVICE
     diProp.lObj = 0
     diProp.lData = BufferSize
@@ -2829,10 +2934,9 @@ Sub Engine_Init_MapData()
 '*****************************************************************
 'Load Map.dat
 '*****************************************************************
-'Get Number of Maps
-
-    NumMaps = CInt(Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
     
+    'Get Number of Maps
+    NumMaps = CInt(Engine_Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
 
 End Sub
 
@@ -2863,26 +2967,32 @@ Private Sub Engine_Init_RenderStates()
 'This is in a seperate sub since if using Fullscreen and device is lost
 'this is eventually called to restore settings.
 '************************************************************
-    
-    'Set the shader to be used
-    D3DDevice.SetVertexShader FVF
 
-    'Set the render states
-    D3DDevice.SetRenderState D3DRS_LIGHTING, False
-    D3DDevice.SetRenderState D3DRS_SRCBLEND, D3DBLEND_SRCALPHA
-    D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
-    D3DDevice.SetRenderState D3DRS_ALPHABLENDENABLE, True
-    D3DDevice.SetRenderState D3DRS_FILLMODE, D3DFILL_SOLID
-    D3DDevice.SetRenderState D3DRS_CULLMODE, D3DCULL_NONE
-    D3DDevice.SetTextureStageState 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE
+    With D3DDevice
+        
+        'Set the shader to be used
+        D3DDevice.SetVertexShader FVF
     
-    'Particle engine settings
-    D3DDevice.SetRenderState D3DRS_POINTSPRITE_ENABLE, 1
-    D3DDevice.SetRenderState D3DRS_POINTSCALE_ENABLE, 0
-
-    'Set the texture stage stats (filters)
-    'D3DDevice.SetTextureStageState 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR
-    'D3DDevice.SetTextureStageState 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR
+        'Set the render states
+        .SetRenderState D3DRS_LIGHTING, False
+        .SetRenderState D3DRS_SRCBLEND, D3DBLEND_SRCALPHA
+        .SetRenderState D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA
+        .SetRenderState D3DRS_ALPHABLENDENABLE, True
+        .SetRenderState D3DRS_FILLMODE, D3DFILL_SOLID
+        .SetRenderState D3DRS_CULLMODE, D3DCULL_NONE
+        .SetRenderState D3DRS_ZENABLE, False
+        .SetRenderState D3DRS_ZWRITEENABLE, False
+        .SetTextureStageState 0, D3DTSS_ALPHAOP, D3DTOP_MODULATE
+        
+        'Particle engine settings
+        .SetRenderState D3DRS_POINTSPRITE_ENABLE, 1
+        .SetRenderState D3DRS_POINTSCALE_ENABLE, 0
+    
+        'Set the texture stage stats (filters)
+        '.SetTextureStageState 0, D3DTSS_MAGFILTER, D3DTEXF_LINEAR
+        '.SetTextureStageState 0, D3DTSS_MINFILTER, D3DTEXF_LINEAR
+        
+    End With
 
 End Sub
 
@@ -2893,6 +3003,15 @@ Sub Engine_Init_Texture(ByVal TextureNum As Integer)
 '*****************************************************************
 Dim TexInfo As D3DXIMAGE_INFO_A
 Dim FilePath As String
+
+    'Check for a valid texture
+    If TextureNum < 1 Then Exit Sub
+
+    'Make sure we even need to load the texture
+    If SurfaceTimer(TextureNum) > 0 Then Exit Sub
+    
+    'Set the texture timer
+    SurfaceTimer(TextureNum) = SurfaceTimerMax
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
@@ -2926,9 +3045,6 @@ Dim FilePath As String
     
     End If
 
-    'Set the texture timer
-    SurfaceTimer(TextureNum) = SurfaceTimerMax
-
 End Sub
 
 Sub Engine_Init_FontTextures()
@@ -2937,13 +3053,16 @@ Sub Engine_Init_FontTextures()
 'Init the custom font textures
 '*****************************************************************
 Dim FileNum As Byte
+Dim TexInfo As D3DXIMAGE_INFO_A
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
     '*** Default font ***
-    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
-
+    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, TexInfo, ByVal 0)
+    Font_Default.TextureSize.X = TexInfo.Width
+    Font_Default.TextureSize.Y = TexInfo.Height
+    
 End Sub
 
 Sub Engine_Init_FontSettings()
@@ -2974,7 +3093,27 @@ Function Engine_Init_TileEngine() As Boolean
 '*****************************************************************
 'Init Tile Engine
 '*****************************************************************
+Dim t As Long
 
+    'Size the form
+    frmMain.Width = ScreenWidth * Screen.TwipsPerPixelX
+    frmMain.Height = ScreenHeight * Screen.TwipsPerPixelY
+    
+    'Get some engine settings
+    UseVSync = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "VSync"))
+    If UseVSync <> 0 Then UseVSync = 1  'Force to 1 or 0
+    
+    UseWidescreen = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Widescreen"))
+    
+    t = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Windowed"))
+    If t = 0 Then Windowed = False Else Windowed = True
+    
+    Bit32 = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "32bit"))
+    If Bit32 <> 0 Then Bit32 = 0        'Force to 1 or 0
+    
+    UseWeather = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseWeather"))
+    If UseWeather <> 0 Then UseWeather = 1
+    
     '****** INIT DirectX ******
     ' Create the root D3D objects
     Set DX = New DirectX8
@@ -3005,11 +3144,37 @@ Function Engine_Init_TileEngine() As Boolean
     'Load the rest of the tile engine stuff
     Engine_Init_FontTextures
     Engine_Init_ParticleEngine
+    
+    'Create the needed information for the motion bluring
+    UseMotionBlur = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseMotionBlur"))
+    If UseMotionBlur <> 0 Then UseMotionBlur = 1
+    If UseMotionBlur = 1 Then
+        Set DeviceBuffer = D3DDevice.GetRenderTarget
+        Set DeviceStencil = D3DDevice.GetDepthStencilSurface
+        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(1024, 1024, D3DFMT_D16, D3DMULTISAMPLE_NONE)
+        Set BlurTexture = D3DX.CreateTexture(D3DDevice, 1024, 1024, 1, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
+        Set BlurSurf = BlurTexture.GetSurfaceLevel(0)
+        
+        'Create the motion-blur vertex array
+        For t = 0 To 3
+            BlurTA(t).Color = D3DColorXRGB(255, 255, 255)
+            BlurTA(t).Rhw = 1
+        Next t
+        BlurTA(1).X = 1024
+        BlurTA(2).Y = 1024
+        BlurTA(3).X = 1024
+        BlurTA(3).Y = 1024
+        BlurTA(1).tu = 1
+        BlurTA(2).tv = 1
+        BlurTA(3).tu = 1
+        BlurTA(3).tv = 1
+        
+    End If
 
     'Set FPS value to 60 for startup
     FPS = 60
     FramesPerSecCounter = 60
-
+    
     'Set high resolution timer
     timeBeginPeriod 1
     EndTime = timeGetTime
@@ -3017,6 +3182,23 @@ Function Engine_Init_TileEngine() As Boolean
     'Start the engine
     Engine_Init_TileEngine = True
     EngineRun = True
+    
+    'Get the AlternateRender flag
+    AlternateRender = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "AlternateRender"))
+    
+    'Set the blur to off
+    BlurIntensity = 255
+
+    If AlternateRender Then
+
+        'If using alternate rendering, create the sprite object
+        Set Sprite = D3DX.CreateSprite(D3DDevice)
+        
+        'Set the scaling to default aspect ratio
+        SpriteScaleVector.X = 1
+        SpriteScaleVector.Y = 1
+        
+    End If
 
 End Function
 
@@ -3031,7 +3213,7 @@ Dim X As Long
 Dim Y As Long
 
     EngineRun = False
-    
+
     '****** Clear DirectX objects ******
     If Not DIDevice Is Nothing Then DIDevice.Unacquire
     If Not D3DDevice Is Nothing Then Set D3DDevice = Nothing
@@ -3069,7 +3251,17 @@ Dim Y As Long
         If Not DirectShow_Audio(LoopC) Is Nothing Then Set DirectShow_Audio(LoopC) = Nothing
     Next LoopC
     
+    'Clear motion blur objects
+    If Not BlurTexture Is Nothing Then
+        Set BlurTexture = Nothing
+        Set BlurSurf = Nothing
+        Set BlurStencil = Nothing
+        Set DeviceStencil = Nothing
+        Set DeviceBuffer = Nothing
+    End If
+    
     'Clear arrays
+    Erase BlurTA
     Erase SurfaceTimer
     Erase SoundBufferTimer
     Erase VertexArray
@@ -3098,31 +3290,32 @@ Sub Engine_Init_WeaponData()
 '*****************************************************************
 'Loads Weapon.dat
 '*****************************************************************
-
 Dim LoopC As Long
-'Get number of weapons
-
-    NumWeapons = CInt(Engine_Var_Get(DataPath & "Weapon.dat", "INIT", "NumWeapons"))
+    
+    'Get number of weapons
+    NumWeapons = CLng(Engine_Var_Get(DataPath & "Weapon.dat", "INIT", "NumWeapons"))
+    
     'Resize array
     ReDim WeaponData(0 To NumWeapons) As WeaponData
-    'Fill listn
+    
+    'Fill list
     For LoopC = 1 To NumWeapons
-        Engine_Init_Grh WeaponData(LoopC).Walk(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
-        Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
-        Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(4), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(5), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
-        Engine_Init_Grh WeaponData(LoopC).Attack(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
+        Engine_Init_Grh WeaponData(LoopC).Walk(1), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk1")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(2), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk2")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(3), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk3")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(4), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk4")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(5), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk5")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(6), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(7), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
+        Engine_Init_Grh WeaponData(LoopC).Walk(8), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
+        Engine_Init_Grh WeaponData(LoopC).Attack(1), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(2), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(3), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(4), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack4")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(5), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack5")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(6), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack6")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(7), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack7")), 1
+        Engine_Init_Grh WeaponData(LoopC).Attack(8), CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack8")), 1
     Next LoopC
 
 End Sub
@@ -3132,10 +3325,12 @@ Sub Engine_Init_Weather()
 '*****************************************************************
 'Initializes the weather effects
 '*****************************************************************
-Static LastWeather As Byte
 Dim X As Byte
 Dim Y As Byte
 Dim i As Byte
+
+    'Check if we're using weather
+    If UseWeather = 0 Then Exit Sub
 
     'Only update the weather settings if it has changed!
     If LastWeather <> MapInfo.Weather Then
@@ -3263,7 +3458,7 @@ Sub Engine_Input_CheckKeys()
     End If
 
     'Zoom in / out
-    If GetAsyncKeyState(vbKeyNumpad8) Then      'In
+    If GetAsyncKeyState(vbKeyNumpad8) Then       'In
         ZoomLevel = ZoomLevel + (ElapsedTime * 0.0003)
         If ZoomLevel > MaxZoomLevel Then ZoomLevel = MaxZoomLevel
     ElseIf GetAsyncKeyState(vbKeyNumpad2) Then  'Out
@@ -3433,12 +3628,13 @@ Sub Engine_Input_Mouse_LeftClick()
 '******************************************
 'Left click mouse
 '******************************************
-
 Dim tX As Integer
 Dim tY As Integer
+Dim X As Long
+Dim Y As Long
+Dim i As Integer
 
-'Make sure engine is running
-
+    'Make sure engine is running
     If Not EngineRun Then Exit Sub
 
     '***Check for skill list click***
@@ -3478,7 +3674,7 @@ Dim tY As Integer
                                                     'No windows clicked, so a tile click will take place
                                                     'Get the tile positions
                                                     Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
-            
+
                                                     'Send left click
                                                     sndBuf.Allocate 3
                                                     sndBuf.Put_Byte DataCode.User_LeftClick
@@ -3934,8 +4130,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move ChatWindow
@@ -3946,8 +4142,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
                 Engine_UpdateChatArray
             End With
@@ -3959,8 +4155,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move Inventory
@@ -3971,8 +4167,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move Shop
@@ -3983,8 +4179,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move Bank
@@ -3995,8 +4191,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move Mailbox
@@ -4007,8 +4203,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move View Message
@@ -4019,8 +4215,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move write message
@@ -4031,8 +4227,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
             'Move Amount
@@ -4043,8 +4239,8 @@ Dim tY As Integer
                 If WindowsInScreen Then
                     If .X < 0 Then .X = 0
                     If .Y < 0 Then .Y = 0
-                    If .X > 800 - .Width Then .X = 800 - .Width
-                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
         End If
@@ -4078,14 +4274,29 @@ Dim tY As Integer
                                 'No windows clicked, so a tile click will take place
                                 'Get the tile positions
                                 Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
-                                'Check if a sign was clicked
-                                If MapData(tX, tY).Sign Then Engine_AddToChatTextBuffer Signs(MapData(tX, tY).Sign), FontColor_Info
-                                'Send left click
-                                sndBuf.Allocate 3
-                                sndBuf.Put_Byte DataCode.User_RightClick
-                                sndBuf.Put_Byte CByte(tX)
-                                sndBuf.Put_Byte CByte(tY)
+                        
+                                'Normal click
+                                If UseClickWarp = 0 Then
+                                    
+                                    'Check if a sign was clicked
+                                    If MapData(tX, tY).Sign Then Engine_AddToChatTextBuffer Replace$(Message(126), "<text>", Signs(MapData(tX, tY).Sign)), FontColor_Info
+                                    
+                                    'Send left click
+                                    sndBuf.Allocate 3
+                                    sndBuf.Put_Byte DataCode.User_RightClick
+                                    sndBuf.Put_Byte CByte(tX)
+                                    sndBuf.Put_Byte CByte(tY)
+                                    
+                                'Warp click
+                                Else
                                 
+                                    sndBuf.Allocate 3
+                                    sndBuf.Put_Byte DataCode.GM_Warp
+                                    sndBuf.Put_Byte CByte(tX)
+                                    sndBuf.Put_Byte CByte(tY)
+                                    
+                                End If
+                                    
                             End If
                         End If
                     End If
@@ -4465,12 +4676,11 @@ Function Engine_LegalPos(ByVal X As Integer, ByVal Y As Integer, ByVal Heading A
 
 Dim i As Integer
 
-'Check to see if its out of bounds
-
-    If X < MinXBorder Then Exit Function
-    If X > MaxXBorder Then Exit Function
-    If Y < MinYBorder Then Exit Function
-    If Y > MaxYBorder Then Exit Function
+    'Check that it is in the map
+    If X < XMinMapSize Then Exit Function
+    If X > XMaxMapSize Then Exit Function
+    If Y < YMinMapSize Then Exit Function
+    If Y > YMaxMapSize Then Exit Function
 
     'Check to see if its blocked
     If MapData(X, Y).Blocked = BlockedAll Then Exit Function
@@ -4523,8 +4733,8 @@ Dim X As Integer
 Dim Y As Integer
 Dim tX As Integer
 Dim tY As Integer
-'Figure out which way to move
 
+    'Figure out which way to move
     Select Case Heading
     Case NORTH
         Y = -1
@@ -4547,19 +4757,21 @@ Dim tY As Integer
         Y = -1
         X = -1
     End Select
+    
     'Fill temp pos
     tX = UserPos.X + X
     tY = UserPos.Y + Y
+    
     'Check to see if its out of bounds
-    If tX < MinXBorder Or tX > MaxXBorder Or tY < MinYBorder Or tY > MaxYBorder Then
-        Exit Sub
-    Else
+    If Not (tX < XMinMapSize Or tX > XMaxMapSize Or tY < YMinMapSize Or tY > YMaxMapSize) Then
+    
         'Start moving... MainLoop does the rest
         AddtoUserPos.X = X
         UserPos.X = tX
         AddtoUserPos.Y = Y
         UserPos.Y = tY
         UserMoving = True
+        
     End If
 
 End Sub
@@ -4572,7 +4784,14 @@ Sub Engine_MoveUser(ByVal Direction As Byte)
 Dim Running As Byte
 Dim aX As Integer
 Dim aY As Integer
-    
+Dim aX2 As Integer
+Dim aY2 As Integer
+Dim aX3 As Integer
+Dim aY3 As Integer
+Dim Direction2 As Byte
+Dim Direction3 As Byte
+Dim b As Byte
+
     'Check for a valid UserCharIndex
     If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
     
@@ -4587,30 +4806,54 @@ Dim aY As Integer
 
     'Figure out the AddX and AddY values
     Select Case Direction
-    Case NORTHEAST
-        aX = 1
-        aY = -1
-    Case NORTHWEST
-        aX = -1
-        aY = -1
-    Case SOUTHEAST
-        aX = 1
-        aY = 1
-    Case SOUTHWEST
-        aX = -1
-        aY = 1
-    Case NORTH
-        aX = 0
-        aY = -1
-    Case EAST
-        aX = 1
-        aY = 0
-    Case SOUTH
-        aX = 0
-        aY = 1
-    Case WEST
-        aX = -1
-        aY = 0
+        Case NORTHEAST
+            aX = 1
+            aY = -1
+            aX2 = 0
+            aY2 = -1
+            aX3 = 1
+            aY3 = 0
+            Direction2 = NORTH
+            Direction3 = EAST
+        Case NORTHWEST
+            aX = -1
+            aY = -1
+            aX2 = 0
+            aY2 = -1
+            aX3 = -1
+            aY3 = 0
+            Direction2 = NORTH
+            Direction3 = WEST
+        Case SOUTHEAST
+            aX = 1
+            aY = 1
+            aX2 = 0
+            aY2 = 1
+            aX3 = 1
+            aY3 = 0
+            Direction2 = SOUTH
+            Direction3 = EAST
+        Case SOUTHWEST
+            aX = -1
+            aY = 1
+            aX2 = 0
+            aY2 = 1
+            aX3 = -1
+            aY3 = 0
+            Direction2 = SOUTH
+            Direction3 = WEST
+        Case NORTH
+            aX = 0
+            aY = -1
+        Case EAST
+            aX = 1
+            aY = 0
+        Case SOUTH
+            aX = 0
+            aY = 1
+        Case WEST
+            aX = -1
+            aY = 0
     End Select
 
     'If the shop, mailbox or read mail window are showing, hide them
@@ -4623,46 +4866,62 @@ Dim aY As Integer
     AmountWindowItemIndex = 0
     AmountWindowValue = ""
 
-    'Check for legal position
+    'Try the first movement
     If Engine_LegalPos(UserPos.X + aX, UserPos.Y + aY, Direction) Then
-
-        'If running
-        If GetAsyncKeyState(vbKeyShift) Then Running = 1
-
-        'Send the information to the server
-        sndBuf.Allocate 2
-        sndBuf.Put_Byte DataCode.User_Move
-        
-        'Running or not
-        If Running Then sndBuf.Put_Byte Direction Or 128 Else sndBuf.Put_Byte Direction
-
-        'If the user changed directions or just started moving, request a position update
-        If CharList(UserCharIndex).Moving = 0 Or CharList(UserCharIndex).Heading <> Direction Then
-            sndBuf.Allocate 3
-            sndBuf.Put_Byte DataCode.Server_SetUserPosition
-            sndBuf.Put_Byte UserPos.X
-            sndBuf.Put_Byte UserPos.Y
+        Engine_SendMovePacket Direction
+        Exit Sub
+    End If
+    
+    'If the first movement failed, use the second and third if a diagonal direction
+    If Direction2 > 0 Then
+        If Engine_LegalPos(UserPos.X + aX2, UserPos.Y + aY2, Direction) Then
+            Engine_SendMovePacket Direction2
+            Exit Sub
         End If
-
-        'Move the screen and character
-        Engine_Char_Move_ByHead UserCharIndex, Direction, Running
-        Engine_MoveScreen Direction
-        
-        'Update the map sounds
-        Engine_Sound_UpdateMap
-
-        'Rotate the user to face the direction if needed
-    Else
-
-        'Only rotate if the user is not already facing that direction
-        If CharList(UserCharIndex).Heading <> Direction Then
-            sndBuf.Allocate 2
-            sndBuf.Put_Byte DataCode.User_Rotate
-            sndBuf.Put_Byte Direction
+        If Engine_LegalPos(UserPos.X + aX3, UserPos.Y + aY3, Direction3) Then
+            Engine_SendMovePacket Direction3
+            Exit Sub
         End If
-
     End If
 
+    'Movement failed, rotate the user to face the direction if needed
+    'Only rotate if the user is not already facing that direction
+    If CharList(UserCharIndex).Heading <> Direction Then
+        sndBuf.Allocate 2
+        sndBuf.Put_Byte DataCode.User_Rotate
+        sndBuf.Put_Byte Direction
+    End If
+
+End Sub
+
+Sub Engine_SendMovePacket(ByVal Direction As Byte)
+Dim Running As Byte
+
+    'If running
+    If GetAsyncKeyState(vbKeyShift) Then Running = 1
+
+    'Send the information to the server
+    sndBuf.Allocate 2
+    sndBuf.Put_Byte DataCode.User_Move
+    
+    'Running or not
+    If Running Then sndBuf.Put_Byte Direction Or 128 Else sndBuf.Put_Byte Direction
+
+    'If the user changed directions or just started moving, request a position update
+    If CharList(UserCharIndex).Moving = 0 Or CharList(UserCharIndex).Heading <> Direction Then
+        sndBuf.Allocate 3
+        sndBuf.Put_Byte DataCode.Server_SetUserPosition
+        sndBuf.Put_Byte UserPos.X
+        sndBuf.Put_Byte UserPos.Y
+    End If
+
+    'Move the screen and character
+    Engine_Char_Move_ByHead UserCharIndex, Direction, Running
+    Engine_MoveScreen Direction
+    
+    'Update the map sounds
+    Engine_Sound_UpdateMap
+    
 End Sub
 
 Sub Engine_OBJ_Create(ByVal GrhIndex As Long, ByVal X As Byte, ByVal Y As Byte)
@@ -4859,32 +5118,32 @@ Dim IX As Single
     
 End Function
 
-Public Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+Public Function Engine_Collision_LineRect(ByVal sX As Long, ByVal sY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
 
 '*****************************************************************
 'Check if a line intersects with a rectangle (returns 1 if true)
 '*****************************************************************
 
     'Top line
-    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY, sX + SW, sY, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
     
     'Right line
-    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX + SW, sY, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Bottom line
-    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY + SH, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Left line
-    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(sX, sY, sX, sY + SW, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
@@ -4953,8 +5212,12 @@ Dim WingsGrh As Grh
     
     'Set the map block the char is on to the TempBlock, and the block above the user as TempBlock2
     TempBlock = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y)
-    TempBlock2 = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y - 1)
-
+    If CharList(CharIndex).Pos.Y > YMinMapSize Then
+        TempBlock2 = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y - 1)
+    Else
+        TempBlock2 = TempBlock
+    End If
+    
     'Check for selected NPC
     If CharIndex = TargetCharIndex Then
     
@@ -5252,20 +5515,62 @@ Private Sub Engine_Render_ChatTextBuffer()
 '************************************************************
 'Update and render the chat text buffer
 '************************************************************
+Dim SrcRect As RECT
+Dim v2 As D3DVECTOR2
+Dim v3 As D3DVECTOR2
+Dim i As Long
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
-    
-    'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
-    D3DDevice.SetTexture 0, Font_Default.Texture
-    LastTexture = 0
 
-    'Set up the vertex buffer
-    If ShowGameWindow(ChatWindow) Then
-        If ChatArrayUbound > 0 Then
-            D3DDevice.SetStreamSource 0, ChatVB, FVF_Size
-            D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, ChatArrayUbound \ 3
+    'Check if using alternate rendering
+    If AlternateRender Then
+
+        'Check if the texture is no longer the font texture
+        If LastTexture <> Font_Default_TextureNum Then
+        
+            'End the old sprite we had going
+            If SpriteBegun = 1 Then
+                Sprite.End
+                Sprite.Begin
+            End If
+            
         End If
+        
+        'Loop through all the characters
+        For i = 0 To UBound(ChatVA) Step 6
+
+            'Create the source rectangle
+            With SrcRect
+                .Left = ChatVA(i).tu * Font_Default.TextureSize.X
+                .Top = ChatVA(i).tv * Font_Default.TextureSize.Y
+                .Right = ChatVA(i + 5).tu * Font_Default.TextureSize.X
+                .bottom = ChatVA(i + 5).tv * Font_Default.TextureSize.Y
+            End With
+            
+            'Set the translation (location on the screen)
+            v3.X = ChatVA(i).X
+            v3.Y = ChatVA(i).Y
+            
+            'Draw the character
+            Sprite.Draw Font_Default.Texture, SrcRect, SpriteScaleVector, v2, 0, v3, ChatVA(i).Color
+    
+        Next i
+
+    Else
+        
+        'Clear the LastTexture, letting the rest of the engine know that the texture needs to be changed for next rect render
+        D3DDevice.SetTexture 0, Font_Default.Texture
+        LastTexture = 0
+    
+        'Set up the vertex buffer
+        If ShowGameWindow(ChatWindow) Then
+            If ChatArrayUbound > 0 Then
+                D3DDevice.SetStreamSource 0, ChatVB, FVF_Size
+                D3DDevice.DrawPrimitive D3DPT_TRIANGLELIST, 0, ChatArrayUbound \ 3
+            End If
+        End If
+    
     End If
 
 End Sub
@@ -5280,7 +5585,8 @@ Private Function Engine_UpdateGrh(ByRef Grh As Grh, Optional ByVal LoopAnim As B
     If Grh.Started = 1 Then
     
         'Update the frame counter
-        Grh.FrameCounter = Grh.FrameCounter + (TimerMultiplier * GrhData(Grh.GrhIndex).Speed)
+        Grh.FrameCounter = Grh.FrameCounter + ((timeGetTime - Grh.LastCount) * GrhData(Grh.GrhIndex).Speed)
+        Grh.LastCount = timeGetTime
         
         'If the frame counter is higher then the number of frames...
         If Grh.FrameCounter >= GrhData(Grh.GrhIndex).NumFrames + 1 Then
@@ -5306,47 +5612,21 @@ Private Function Engine_UpdateGrh(ByRef Grh As Grh, Optional ByVal LoopAnim As B
     
 End Function
 
-Sub Engine_Render_GrhEX(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Degrees As Single = 0, Optional ByVal Shadow As Byte = 0)
+Sub Engine_Render_Grh(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Shadow As Byte = 0, Optional ByVal Angle As Single = 0)
 
 '*****************************************************************
-'Draws a GRH transparently to a X and Y position with more options then the non-EX
-'This routine is slower, but hardly slower - it is here just since there is no point
-' in passing variables for things we dont use on tiles and such, which are called
-' hundreds of times per loop.
+'Draws a GRH transparently to a X and Y position
 '*****************************************************************
 Dim CurrGrhIndex As Long    'The grh index we will be working with (acquired after updating animations)
-Dim RadAngle As Single      'The angle in Radians
-Dim SrcHeight As Integer
-Dim SrcWidth As Integer
-Dim CenterX As Single
-Dim CenterY As Single
-Dim Index As Long
-Dim SinRad As Single
-Dim CosRad As Single
-Dim NewX As Single
-Dim NewY As Single
+Dim FileNum As Integer
 
     'Check to make sure it is legal
     If Grh.GrhIndex < 1 Then Exit Sub
     If GrhData(Grh.GrhIndex).NumFrames < 1 Then Exit Sub
-
-    'Update the animation frame
-    If Animate Then
-        If Not Engine_UpdateGrh(Grh, LoopAnim) Then Exit Sub
-    End If
+    If Int(Grh.FrameCounter) > GrhData(Grh.GrhIndex).NumFrames Then Grh.FrameCounter = 1
     
     'Figure out what frame to draw (always 1 if not animated)
     CurrGrhIndex = GrhData(Grh.GrhIndex).Frames(Int(Grh.FrameCounter))
-
-    'Center Grh over X,Y pos
-    If Center Then
-        If GrhData(CurrGrhIndex).TileWidth <> 1 Then
-            X = X - Int(GrhData(CurrGrhIndex).TileWidth * TilePixelWidth * 0.5) + TilePixelWidth * 0.5
-        End If
-        If GrhData(CurrGrhIndex).TileHeight <> 1 Then
-            Y = Y - Int(GrhData(CurrGrhIndex).TileHeight * TilePixelHeight) + TilePixelHeight
-        End If
-    End If
 
     'Check for in-bounds
     If X + GrhData(CurrGrhIndex).pixelWidth > 0 Then
@@ -5354,114 +5634,38 @@ Dim NewY As Single
             If X < frmMain.ScaleWidth Then
                 If Y < frmMain.ScaleHeight Then
                 
-                    '***** Render the texture *****
-                    'Sorry if this confuses anyone - this code was placed in-line (in opposed to calling another sub/function) to
-                    ' speed things up. In-line code is always faster, especially with passing as many arguments as there is
-                    ' in Engine_Render_Rectangle. This code should be just about the exact same as Engine_Render_Rectangle
-                    ' minus possibly a few changes to work more specified to the manner in which it is called.
-                    SrcWidth = GrhData(CurrGrhIndex).pixelWidth
-                    SrcHeight = GrhData(CurrGrhIndex).pixelHeight
-                    
-                    'Load the surface into memory if it is not in memory and reset the timer
-                    If GrhData(CurrGrhIndex).FileNum > 0 Then
-                        If SurfaceTimer(GrhData(CurrGrhIndex).FileNum) = 0 Then Engine_Init_Texture GrhData(CurrGrhIndex).FileNum
-                        SurfaceTimer(GrhData(CurrGrhIndex).FileNum) = SurfaceTimerMax
+                    'Update the animation frame
+                    If Animate Then
+                        If Not Engine_UpdateGrh(Grh, LoopAnim) Then Exit Sub
                     End If
+                    
+                    'Set the file number in a shorter variable
+                    FileNum = GrhData(CurrGrhIndex).FileNum
                 
-                    'Set the texture
-                    If GrhData(CurrGrhIndex).FileNum <= 0 Then
-                        D3DDevice.SetTexture 0, Nothing
-                    Else
-                        If LastTexture <> GrhData(CurrGrhIndex).FileNum Then
-                            D3DDevice.SetTexture 0, SurfaceDB(GrhData(CurrGrhIndex).FileNum)
-                            LastTexture = GrhData(CurrGrhIndex).FileNum
+                    'Center Grh over X,Y pos
+                    If Center Then
+                        If GrhData(CurrGrhIndex).TileWidth > 1 Then
+                            X = X - GrhData(CurrGrhIndex).TileWidth * TilePixelWidth \ 2 + TilePixelWidth \ 2
+                        End If
+                        If GrhData(CurrGrhIndex).TileHeight > 1 Then
+                            Y = Y - GrhData(CurrGrhIndex).TileHeight * TilePixelHeight + TilePixelHeight
                         End If
                     End If
                 
-                    'Set shadowed settings - shadows only change on the top 2 points
-                    If Shadow Then
-                
-                        SrcWidth = SrcWidth - 1
-                
-                        'Set the top-left corner
-                        VertexArray(0).X = X + (GrhData(CurrGrhIndex).pixelWidth * 0.5)
-                        VertexArray(0).Y = Y - (GrhData(CurrGrhIndex).pixelHeight * 0.5)
-                
-                        'Set the top-right corner
-                        VertexArray(1).X = X + GrhData(CurrGrhIndex).pixelWidth + (GrhData(CurrGrhIndex).pixelWidth * 0.5)
-                        VertexArray(1).Y = Y - (GrhData(CurrGrhIndex).pixelHeight * 0.5)
-                
+                    'Check the rendering method to use
+                    If AlternateRender = 0 Then
+                    
+                        'Render the texture with 2 triangles on a triangle strip
+                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
+                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow
+                        
                     Else
-                
-                        SrcWidth = SrcWidth + 1
-                        SrcHeight = SrcHeight + 1
-                
-                        'Set the top-left corner
-                        VertexArray(0).X = X
-                        VertexArray(0).Y = Y
-                
-                        'Set the top-right corner
-                        VertexArray(1).X = X + GrhData(CurrGrhIndex).pixelWidth
-                        VertexArray(1).Y = Y
-                
+                        
+                        'Render the texture as a D3DXSprite
+                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, GrhData(CurrGrhIndex).sY, Light1, FileNum, Angle
+                        
                     End If
-
-                    'Set the top-left corner
-                    VertexArray(0).Color = Light1
-                    VertexArray(0).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(0).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
-                
-                    'Set the top-right corner
-                    VertexArray(1).Color = Light2
-                    VertexArray(1).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(1).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
-                
-                    'Set the bottom-left corner
-                    VertexArray(2).X = X
-                    VertexArray(2).Y = Y + GrhData(CurrGrhIndex).pixelHeight
-                    VertexArray(2).Color = Light3
-                    VertexArray(2).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(2).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
-                
-                    'Set the bottom-right corner
-                    VertexArray(3).X = X + GrhData(CurrGrhIndex).pixelWidth
-                    VertexArray(3).Y = Y + GrhData(CurrGrhIndex).pixelHeight
-                    VertexArray(3).Color = Light4
-                    VertexArray(3).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).X
-                    VertexArray(3).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(GrhData(CurrGrhIndex).FileNum).Y
-                
-                    'Check if a rotation is required
-                    If Degrees <> 0 Then
-                
-                        'Converts the angle to rotate by into radians
-                        RadAngle = Degrees * DegreeToRadian
-                
-                        'Set the CenterX and CenterY values
-                        CenterX = X + (GrhData(CurrGrhIndex).pixelWidth * 0.5)
-                        CenterY = Y + (GrhData(CurrGrhIndex).pixelHeight * 0.5)
-                
-                        'Pre-calculate the cosine and sine of the radiant
-                        SinRad = Sin(RadAngle)
-                        CosRad = Cos(RadAngle)
-                
-                        'Loops through the passed vertex buffer
-                        For Index = 0 To 3
-                
-                            'Calculates the new X and Y co-ordinates of the vertices for the given angle around the center co-ordinates
-                            NewX = ((VertexArray(Index).X - CenterX) * CosRad) - ((VertexArray(Index).Y - CenterY) * SinRad)
-                            NewY = ((VertexArray(Index).X - CenterX) * SinRad) + ((VertexArray(Index).Y - CenterY) * CosRad)
-                
-                            'Applies the new co-ordinates to the buffer
-                            VertexArray(Index).X = NewX + CenterX
-                            VertexArray(Index).Y = NewY + CenterY
-                
-                        Next Index
-                
-                    End If
-                
-                    'Render the texture to the device
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
-                
+                    
                 End If
             End If
         End If
@@ -5469,131 +5673,55 @@ Dim NewY As Single
 
 End Sub
 
-Sub Engine_Render_Grh(ByRef Grh As Grh, ByVal X As Integer, ByVal Y As Integer, ByVal Center As Byte, ByVal Animate As Byte, Optional ByVal LoopAnim As Boolean = True, Optional ByVal Light1 As Long = -1, Optional ByVal Light2 As Long = -1, Optional ByVal Light3 As Long = -1, Optional ByVal Light4 As Long = -1, Optional ByVal Shadow As Byte = 0)
+Private Sub Engine_Render_D3DXSprite(ByVal X As Single, ByVal Y As Single, ByVal Width As Single, ByVal Height As Single, ByVal SrcX As Single, ByVal SrcY As Single, ByVal Light As Long, ByVal TextureNum As Long, ByVal Degrees As Single)
 
 '*****************************************************************
-'Draws a GRH transparently to a X and Y position
+'Renders a Grh in the form of a D3DXSprite instead of a rectangle (slower, less flexibility)
 '*****************************************************************
-Dim CurrGrhIndex As Long    'The grh index we will be working with (acquired after updating animations)
-Dim SrcHeight As Integer
-Dim SrcWidth As Integer
-Dim FileNum As Integer
+Dim SrcRect As RECT
+Dim v2 As D3DVECTOR2
+Dim v3 As D3DVECTOR2
 
-    'Check to make sure it is legal
-    If Grh.GrhIndex < 1 Then Exit Sub
-    If GrhData(Grh.GrhIndex).NumFrames < 1 Then Exit Sub
-
-    'Update the animation frame
-    If Animate Then
-        If Not Engine_UpdateGrh(Grh, LoopAnim) Then Exit Sub
+    'End the old sprite we had going (only if the texture changed)
+    If TextureNum <> LastTexture Then
+        If SpriteBegun = 1 Then
+            Sprite.End
+            Sprite.Begin
+        End If
     End If
     
-    'Figure out what frame to draw (always 1 if not animated)
-    CurrGrhIndex = GrhData(Grh.GrhIndex).Frames(Int(Grh.FrameCounter))
+    'Ready the texture
+    Engine_ReadyTexture TextureNum
     
-    'Set the file number in a shorter variable
-    FileNum = GrhData(CurrGrhIndex).FileNum
-
-    'Center Grh over X,Y pos
-    If Center Then
-        If GrhData(CurrGrhIndex).TileWidth <> 1 Then
-            X = X - Int(GrhData(CurrGrhIndex).TileWidth * TilePixelWidth * 0.5) + TilePixelWidth * 0.5
-        End If
-        If GrhData(CurrGrhIndex).TileHeight <> 1 Then
-            Y = Y - Int(GrhData(CurrGrhIndex).TileHeight * TilePixelHeight) + TilePixelHeight
-        End If
+    'Create the source rectangle
+    With SrcRect
+        .Left = SrcX
+        .Top = SrcY
+        .Right = .Left + Width
+        .bottom = .Top + Height
+    End With
+    
+    'Create the rotation point
+    If Degrees Then
+        Degrees = ((Degrees + 180) * DegreeToRadian)
+        If Degrees > 360 Then Degrees = Degrees - 360
+        With v2
+            .X = (Width * 0.5)
+            .Y = (Height * 0.5)
+        End With
     End If
+    
+    'Set the translation (location on the screen)
+    v3.X = X
+    v3.Y = Y
 
-    'Check for in-bounds
-    If X + GrhData(CurrGrhIndex).pixelWidth > 0 Then
-        If Y + GrhData(CurrGrhIndex).pixelHeight > 0 Then
-            If X < frmMain.ScaleWidth Then
-                If Y < frmMain.ScaleHeight Then
-                
-                    '***** Render the texture *****
-                    'Sorry if this confuses anyone - this code was placed in-line (in opposed to calling another sub/function) to
-                    ' speed things up. In-line code is always faster, especially with passing as many arguments as there is
-                    ' in Engine_Render_Rectangle. This code should be just about the exact same as Engine_Render_Rectangle
-                    ' minus possibly a few changes to work more specified to the manner in which it is called.
-                    SrcWidth = GrhData(CurrGrhIndex).pixelWidth
-                    SrcHeight = GrhData(CurrGrhIndex).pixelHeight
-                    
-                    'Load the surface into memory if it is not in memory and reset the timer
-                    If FileNum > 0 Then
-                        If SurfaceTimer(FileNum) = 0 Then Engine_Init_Texture FileNum
-                        SurfaceTimer(FileNum) = SurfaceTimerMax
-                    End If
-                
-                    'Set the texture
-                    If FileNum <= 0 Then
-                        D3DDevice.SetTexture 0, Nothing
-                    Else
-                        If LastTexture <> FileNum Then
-                            D3DDevice.SetTexture 0, SurfaceDB(FileNum)
-                            LastTexture = FileNum
-                        End If
-                    End If
-                
-                    'Set shadowed settings - shadows only change on the top 2 points
-                    If Shadow Then
-                
-                        SrcWidth = SrcWidth - 1
-                
-                        'Set the top-left corner
-                        VertexArray(0).X = X + (GrhData(CurrGrhIndex).pixelWidth * 0.5)
-                        VertexArray(0).Y = Y - (GrhData(CurrGrhIndex).pixelHeight * 0.5)
-                
-                        'Set the top-right corner
-                        VertexArray(1).X = X + GrhData(CurrGrhIndex).pixelWidth + (GrhData(CurrGrhIndex).pixelWidth * 0.5)
-                        VertexArray(1).Y = Y - (GrhData(CurrGrhIndex).pixelHeight * 0.5)
-                
-                    Else
-
-                        SrcWidth = SrcWidth + 1
-                        SrcHeight = SrcHeight + 1
-                
-                        'Set the top-left corner
-                        VertexArray(0).X = X
-                        VertexArray(0).Y = Y
-                
-                        'Set the top-right corner
-                        VertexArray(1).X = X + GrhData(CurrGrhIndex).pixelWidth
-                        VertexArray(1).Y = Y
-                
-                    End If
-                
-                    'Set the top-left corner
-                    VertexArray(0).Color = Light1
-                    VertexArray(0).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(FileNum).X
-                    VertexArray(0).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(FileNum).Y
-                
-                    'Set the top-right corner
-                    VertexArray(1).Color = Light2
-                    VertexArray(1).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(FileNum).X
-                    VertexArray(1).tv = GrhData(CurrGrhIndex).SY / SurfaceSize(FileNum).Y
-                
-                    'Set the bottom-left corner
-                    VertexArray(2).X = X
-                    VertexArray(2).Y = Y + GrhData(CurrGrhIndex).pixelHeight
-                    VertexArray(2).Color = Light3
-                    VertexArray(2).tu = GrhData(CurrGrhIndex).SX / SurfaceSize(FileNum).X
-                    VertexArray(2).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(FileNum).Y
-                
-                    'Set the bottom-right corner
-                    VertexArray(3).X = X + GrhData(CurrGrhIndex).pixelWidth
-                    VertexArray(3).Y = Y + GrhData(CurrGrhIndex).pixelHeight
-                    VertexArray(3).Color = Light4
-                    VertexArray(3).tu = (GrhData(CurrGrhIndex).SX + SrcWidth) / SurfaceSize(FileNum).X
-                    VertexArray(3).tv = (GrhData(CurrGrhIndex).SY + SrcHeight) / SurfaceSize(FileNum).Y
-
-                    'Render the texture to the device
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
-                
-                End If
-            End If
-        End If
+    'Draw the sprite
+    If TextureNum > 0 Then
+        Sprite.Draw SurfaceDB(TextureNum), SrcRect, SpriteScaleVector, v2, Degrees, v3, Light
+    Else
+        Sprite.Draw Nothing, SrcRect, SpriteScaleVector, v2, 0, v3, Light
     End If
-
+    
 End Sub
 
 Private Sub Engine_Render_ChatBubble(ByVal Text As String, ByVal X As Integer, ByVal Y As Integer)
@@ -5601,6 +5729,7 @@ Private Sub Engine_Render_ChatBubble(ByVal Text As String, ByVal X As Integer, B
 '*****************************************************************
 'Renders a chat bubble and the text for the given text and co-ordinates
 '*****************************************************************
+Const BubbleSectionSize As Long = 6 'The width/height of each "sector" of the bubble in the graphic file
 Const RenderColor As Long = -1761607681
 Dim TempGrh As Grh
 Dim BubbleWidth As Long
@@ -5633,14 +5762,14 @@ Dim j As Long
         
     End If
     
-    'Round the width and height to the nearest 10 (the size of each chat bubble side section)
-    BubbleWidth = BubbleWidth + 10
-    If BubbleWidth Mod 10 Then BubbleWidth = BubbleWidth + (10 - (BubbleWidth Mod 10))
-    If BubbleHeight Mod 10 Then BubbleHeight = BubbleHeight + (10 - (BubbleHeight Mod 10))
-    
+    'Round the width and height to the nearest BubbleSectionSize (the size of each chat bubble side section)
+    BubbleWidth = BubbleWidth + BubbleSectionSize
+    If BubbleWidth Mod BubbleSectionSize Then BubbleWidth = BubbleWidth + (BubbleSectionSize - (BubbleWidth Mod BubbleSectionSize))
+    If BubbleHeight Mod BubbleSectionSize Then BubbleHeight = BubbleHeight + (BubbleSectionSize - (BubbleHeight Mod BubbleSectionSize))
+
     'Modify the X and Y values the center the bubble
-    X = X - (BubbleWidth * 0.5) + 16
-    Y = Y - BubbleHeight - 20
+    X = X - (BubbleWidth * 0.5) + 16    'Center
+    Y = Y - BubbleHeight - 20           'Align above the head
     
     '*** Draw the bubble ***
     
@@ -5650,50 +5779,50 @@ Dim j As Long
     
     'Top-right corner
     TempGrh.GrhIndex = 111
-    Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Engine_Render_Grh TempGrh, X + BubbleWidth + BubbleSectionSize, Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     
     'Bottom-left corner
     TempGrh.GrhIndex = 115
-    Engine_Render_Grh TempGrh, X, Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Engine_Render_Grh TempGrh, X, Y + BubbleHeight + BubbleSectionSize, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     
     'Bottom-right corner
     TempGrh.GrhIndex = 117
-    Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Engine_Render_Grh TempGrh, X + BubbleWidth + BubbleSectionSize, Y + BubbleHeight + BubbleSectionSize, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     
     'Top side
     TempGrh.GrhIndex = 110
-    For i = 0 To (BubbleWidth \ 10) - 1
-        Engine_Render_Grh TempGrh, X + 5 + (i * 10), Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    For i = 0 To (BubbleWidth \ BubbleSectionSize) - 1
+        Engine_Render_Grh TempGrh, X + ((i + 1) * BubbleSectionSize), Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     Next i
     
     'Left side
     TempGrh.GrhIndex = 112
-    For i = 0 To (BubbleHeight \ 10) - 1
-        Engine_Render_Grh TempGrh, X, Y + 5 + (i * 10), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    For i = 0 To (BubbleHeight \ BubbleSectionSize) - 1
+        Engine_Render_Grh TempGrh, X, Y + ((i + 1) * BubbleSectionSize), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     Next i
     
     'Right side
     TempGrh.GrhIndex = 114
-    For i = 0 To (BubbleHeight \ 10) - 1
-        Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y + 5 + (i * 10), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    For i = 0 To (BubbleHeight \ BubbleSectionSize) - 1
+        Engine_Render_Grh TempGrh, X + BubbleWidth + BubbleSectionSize, Y + ((i + 1) * BubbleSectionSize), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     Next i
     
     'Bottom side
     TempGrh.GrhIndex = 116
-    For i = 0 To (BubbleWidth \ 10) - 1
-        Engine_Render_Grh TempGrh, X + 5 + (i * 10), Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    For i = 0 To (BubbleWidth \ BubbleSectionSize) - 1
+        Engine_Render_Grh TempGrh, X + ((i + 1) * BubbleSectionSize), Y + BubbleHeight + BubbleSectionSize, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
     Next i
     
     'Middle
     TempGrh.GrhIndex = 113
-    For i = 1 To (BubbleWidth \ 10)
-        For j = 1 To (BubbleHeight \ 10)
-            Engine_Render_Grh TempGrh, X + (i * 10) - 5, Y + (j * 10) - 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    For i = 1 To (BubbleWidth \ BubbleSectionSize)
+        For j = 1 To (BubbleHeight \ BubbleSectionSize)
+            Engine_Render_Grh TempGrh, X + (i * BubbleSectionSize), Y + (j * BubbleSectionSize), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
         Next j
     Next i
     
     'Render the text (finally!)
-    Engine_Render_Text Text, X + 5, Y + 5, D3DColorARGB(255, 0, 0, 0)
+    Engine_Render_Text Text, X + BubbleSectionSize, Y + BubbleSectionSize, D3DColorARGB(255, 0, 0, 0)
 
 End Sub
 
@@ -5741,10 +5870,12 @@ Dim i As Byte
     End If
 
     'Render the cursor
-    TempGrh.FrameCounter = 1
-    TempGrh.GrhIndex = 69
-    Engine_Render_Grh TempGrh, MousePos.X, MousePos.Y, 0, 0, False
-
+    If Not Windowed Then
+        TempGrh.FrameCounter = 1
+        TempGrh.GrhIndex = 69
+        Engine_Render_Grh TempGrh, MousePos.X, MousePos.Y, 0, 0, False
+    End If
+    
     'Draw item description
     Engine_Render_ItemDesc
 
@@ -5991,9 +6122,9 @@ Dim i As Byte
     X = MousePos.X
     Y = MousePos.Y
     If X < 0 Then X = 0
-    If X + ItemDescWidth > 800 Then X = 800 - ItemDescWidth
+    If X + ItemDescWidth > ScreenWidth Then X = ScreenWidth - ItemDescWidth
     If Y < 0 Then Y = 0
-    If Y + (ItemDescLines * Font_Default.CharHeight) > 600 Then Y = 600 - (ItemDescLines * Font_Default.CharHeight)
+    If Y + (ItemDescLines * Font_Default.CharHeight) > ScreenHeight Then Y = ScreenHeight - (ItemDescLines * Font_Default.CharHeight)
 
     'Draw backdrop
     Engine_Render_Rectangle X - 5, Y - 5, ItemDescWidth + 10, (Font_Default.CharHeight * ItemDescLines) + 10, 1, 1, 1, 1, 1, 1, 0, 0, -1761607681, -1761607681, -1761607681, -1761607681
@@ -6002,6 +6133,40 @@ Dim i As Byte
     For i = 1 To ItemDescLines
         Engine_Render_Text ItemDescLine(i), X, Y + ((i - 1) * Font_Default.CharHeight), -16777216
     Next i
+
+End Sub
+
+Private Sub Engine_ReadyTexture(ByVal TextureNum As Long)
+
+'************************************************************
+'Gets a texture ready to for usage
+'************************************************************
+
+    'Load the surface into memory if it is not in memory and reset the timer
+    If TextureNum > 0 Then
+        If SurfaceTimer(TextureNum) = 0 Then Engine_Init_Texture TextureNum
+        SurfaceTimer(TextureNum) = SurfaceTimerMax
+    End If
+    
+    'Check what render method we're using
+    If AlternateRender Then
+    
+        'Set the texture
+        LastTexture = TextureNum
+    
+    Else
+    
+        'Set the texture
+        If TextureNum <= 0 Then
+            D3DDevice.SetTexture 0, Nothing
+        Else
+            If LastTexture <> TextureNum Then
+                D3DDevice.SetTexture 0, SurfaceDB(TextureNum)
+                LastTexture = TextureNum
+            End If
+        End If
+        
+    End If
 
 End Sub
 
@@ -6020,21 +6185,8 @@ Dim NewY As Single
 Dim SinRad As Single
 Dim CosRad As Single
 
-    'Load the surface into memory if it is not in memory and reset the timer
-    If TextureNum > 0 Then
-        If SurfaceTimer(TextureNum) = 0 Then Engine_Init_Texture TextureNum
-        SurfaceTimer(TextureNum) = SurfaceTimerMax
-    End If
-
-    'Set the texture
-    If TextureNum <= 0 Then
-        D3DDevice.SetTexture 0, Nothing
-    Else
-        If LastTexture <> TextureNum Then
-            D3DDevice.SetTexture 0, SurfaceDB(TextureNum)
-            LastTexture = TextureNum
-        End If
-    End If
+    'Ready the texture
+    Engine_ReadyTexture TextureNum
 
     'Set the bitmap dimensions if needed
     If SrcBitmapWidth = -1 Then SrcBitmapWidth = SurfaceSize(TextureNum).X
@@ -6062,10 +6214,6 @@ Dim CosRad As Single
         VertexArray(1).Y = Y
 
     End If
-    
-    'Subtract one from the width/height to get it to display correctly
-    SrcWidth = SrcWidth - 1
-    SrcHeight = SrcHeight - 1
 
     'Set the top-left corner
     VertexArray(0).Color = Color0
@@ -6125,6 +6273,96 @@ Dim CosRad As Single
 
 End Sub
 
+Public Sub Engine_CreateTileLayers()
+
+'************************************************************
+'Creates the tile layers used for rendering the tiles so they can be drawn faster
+'Has to happen every time the user warps or moves a whole tile
+'************************************************************
+Dim Layer As Byte
+Dim ScreenX As Byte
+Dim ScreenY As Byte
+Dim tBuf As Integer
+Dim pX As Integer
+Dim pY As Integer
+Dim X As Long
+Dim Y As Long
+    
+    'Raise the buffer up + 1 to prevent graphical errors
+    tBuf = TileBufferSize '+ 1
+    
+    'Loop through each layer and check which tiles there are that will need to be drawn
+    For Layer = 1 To 6
+        
+        'Clear the number of tiles
+        TileLayer(Layer).NumTiles = 0
+        
+        'Allocate enough memory for all the tiles
+        ReDim TileLayer(Layer).Tile(1 To ((maxY - minY + 1) * (maxX - minX + 1)))
+        
+        'Loop through all the tiles within the buffer's range
+        ScreenY = (10 - tBuf)
+        For Y = minY To maxY
+            ScreenX = (10 - tBuf)
+            For X = minX To maxX
+            
+                'Check that the tile is in the range of the map
+                If X >= XMinMapSize Then
+                    If Y >= YMinMapSize Then
+                        If X <= XMaxMapSize Then
+                            If Y <= YMaxMapSize Then
+                        
+                                'Check if the tile even has a graphic on it
+                                If MapData(X, Y).Graphic(Layer).GrhIndex Then
+                                
+                                    'Calculate the pixel values
+                                    pX = Engine_PixelPosX(ScreenX) - 288
+                                    pY = Engine_PixelPosY(ScreenY) - 288
+                                    
+                                    'Check that the tile is in the screen
+                                    With GrhData(MapData(X, Y).Graphic(Layer).GrhIndex)
+                                        If pX >= -.pixelWidth Then
+                                            If pX <= ScreenWidth + .pixelWidth Then
+                                                If pY >= -.pixelHeight Then
+                                                    If pY <= ScreenHeight + .pixelHeight Then
+                                                        
+                                                        'The tile is valid to be used, so raise the count
+                                                        TileLayer(Layer).NumTiles = TileLayer(Layer).NumTiles + 1
+                                                        
+                                                        'Store the needed information
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileX = X
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).TileY = Y
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).PixelPosX = pX + 288
+                                                        TileLayer(Layer).Tile(TileLayer(Layer).NumTiles).PixelPosY = pY + 288
+    
+                                                    End If
+                                                End If
+                                            End If
+                                        End If
+                                    End With
+    
+                                End If
+                                
+                            End If
+                        End If
+                    End If
+                End If
+                ScreenX = ScreenX + 1
+            Next X
+            ScreenY = ScreenY + 1
+        Next Y
+    
+        'We got all the information we need, now resize the array as small as possible to save RAM, then do the same for every other layer :o
+        If TileLayer(Layer).NumTiles > 0 Then
+            ReDim Preserve TileLayer(Layer).Tile(1 To TileLayer(Layer).NumTiles)
+        Else
+            Erase TileLayer(Layer).Tile
+        End If
+        
+    Next Layer
+        
+End Sub
+
 Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal PixelOffsetX As Integer, ByVal PixelOffsetY As Integer)
 
 '***********************************************
@@ -6143,66 +6381,43 @@ Dim Y As Long           'Keeps track of where on map we are
 Dim X As Long
 Dim j As Long
 Dim Angle As Single
+Dim Layer As Byte
+Dim tX As Single
+Dim tY As Single
+Dim bX As Single
+Dim bY As Single
 
     'Check for valid positions
     If UserPos.X = 0 Then Exit Sub
     If UserPos.Y = 0 Then Exit Sub
     
-    'Clear the offset variables
-    minXOffset = 0
-    minYOffset = 0
-
-    'Figure out Ends and Starts of screen
-    ScreenMinY = TileY - WindowTileHeight \ 2
-    ScreenMaxY = TileY + WindowTileHeight \ 2
-    ScreenMinX = TileX - WindowTileWidth \ 2
-    ScreenMaxX = TileX + WindowTileWidth \ 2
-    minY = ScreenMinY - TileBufferSize
-    maxY = ScreenMaxY + TileBufferSize
-    minX = ScreenMinX - TileBufferSize
-    maxX = ScreenMaxX + TileBufferSize
-
+    'Check if we need to update the graphics
+    If TileX <> LastTileX Or TileY <> LastTileY Then
+    
+        'Figure out Ends and Starts of screen
+        ScreenMinY = TileY - (WindowTileHeight \ 2)
+        ScreenMaxY = TileY + (WindowTileHeight \ 2)
+        ScreenMinX = TileX - (WindowTileWidth \ 2)
+        ScreenMaxX = TileX + (WindowTileWidth \ 2)
+        minY = ScreenMinY - TileBufferSize
+        maxY = ScreenMaxY + TileBufferSize
+        minX = ScreenMinX - TileBufferSize
+        maxX = ScreenMaxX + TileBufferSize
+        
+        'Update the last position
+        LastTileX = TileX
+        LastTileY = TileY
+        
+        'Re-create the tile layers
+        Engine_CreateTileLayers
+        
+    End If
+    
     'Calculate the particle offset values
     'Do NOT move this any farther down in the module or you will get "jumps" as the left/top borders on particles
     ParticleOffsetX = (Engine_PixelPosX(ScreenMinX) - PixelOffsetX)
     ParticleOffsetY = (Engine_PixelPosY(ScreenMinY) - PixelOffsetY)
-
-    'Make sure mins and maxs are allways in map bounds
-    If minY < XMinMapSize Then
-        minYOffset = YMinMapSize - minY
-        minY = YMinMapSize
-    End If
-    If maxY > YMaxMapSize Then
-        maxY = YMaxMapSize
-    End If
-    If minX < XMinMapSize Then
-        minXOffset = XMinMapSize - minX
-        minX = XMinMapSize
-    End If
-    If maxX > XMaxMapSize Then
-        maxX = XMaxMapSize
-    End If
-
-    'If we can we render around the view area to make it smoother
-    If ScreenMinY > YMinMapSize Then
-        ScreenMinY = ScreenMinY - 1
-    Else
-        ScreenMinY = 1
-        ScreenY = 1
-    End If
-    If ScreenMaxY < YMaxMapSize Then
-        ScreenMaxY = ScreenMaxY + 1
-    End If
-    If ScreenMinX > XMinMapSize Then
-        ScreenMinX = ScreenMinX - 1
-    Else
-        ScreenMinX = 1
-        ScreenX = 1
-    End If
-    If ScreenMaxX < XMaxMapSize Then
-        ScreenMaxX = ScreenMaxX + 1
-    End If
-
+    
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then
 
@@ -6224,31 +6439,27 @@ Dim Angle As Single
         'We have to bypass the present the first time through here or else we get an error
         If NotFirstRender = 1 Then
         
-            'End the device rendering
-            D3DDevice.EndScene
-            
-            'Get the zooming information
-            If ZoomLevel > 0 Then
-                TempRect.Right = 800 - (800 * ZoomLevel)
-                TempRect.Left = 800 * ZoomLevel
-                TempRect.bottom = 600 - (600 * ZoomLevel)
-                TempRect.Top = 600 * ZoomLevel
+            'Check if using alternate rendering
+            If AlternateRender Then
                 
-                'Display the textures drawn to the device with a zoom
-                D3DDevice.Present TempRect, ByVal 0, 0, ByVal 0
-                
-            Else
-            
-                TempRect.Right = 800
-                TempRect.Left = 0
-                TempRect.bottom = 600
-                TempRect.Top = 0
-        
-                'Display the textures drawn to the device normally
-                D3DDevice.Present TempRect, TempRect, 0, ByVal 0
+                'Close off the last sprite
+                If SpriteBegun Then
+                    Sprite.End
+                    SpriteBegun = 0
+                End If
             
             End If
-            
+
+            With D3DDevice
+                
+                'End the rendering (scene)
+                .EndScene
+                
+                'Flip the backbuffer to the screen
+                .Present ScreenSrcRect, ScreenDestRect, 0, ByVal 0
+                
+            End With
+                
         Else
         
             'Set NotFirstRender to 1 so we can start displaying
@@ -6257,72 +6468,63 @@ Dim Angle As Single
         End If
     
     End If
-
-    D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-    D3DDevice.BeginScene
-
-    '************** Layer 1 **************
-    For Y = ScreenMinY To ScreenMaxY
-        For X = ScreenMinX To ScreenMaxX
-            If MapData(X, Y).Shadow(1) = 1 Then
-                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 0, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
-            Else
-                Engine_Render_Grh MapData(X, Y).Graphic(1), Engine_PixelPosX(ScreenX) + PixelOffsetX + ((TileBufferSize - 1) * TilePixelWidth), Engine_PixelPosY(ScreenY) + PixelOffsetY + ((TileBufferSize - 1) * TilePixelHeight), 0, 1, True, MapData(X, Y).Light(1), MapData(X, Y).Light(2), MapData(X, Y).Light(3), MapData(X, Y).Light(4)
-            End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenX = ScreenX - X + ScreenMinX
-        ScreenY = ScreenY + 1
-    Next Y
-
-    '************** Layer 2 **************
-    ScreenY = minYOffset
-    For Y = minY To maxY
-        ScreenX = minXOffset
-        For X = minX To maxX
-            If MapData(X, Y).Graphic(2).GrhIndex Then
-                If MapData(X, Y).Shadow(2) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
-                Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(2), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(5), MapData(X, Y).Light(6), MapData(X, Y).Light(7), MapData(X, Y).Light(8)
-                End If
-            End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenY = ScreenY + 1
-    Next Y
     
-    '************** Layer 3 **************
-    ScreenY = minYOffset
-    For Y = minY To maxY
-        ScreenX = minXOffset
-        For X = minX To maxX
-            If MapData(X, Y).Graphic(3).GrhIndex Then
-                If MapData(X, Y).Shadow(3) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
-                Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(3), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(9), MapData(X, Y).Light(10), MapData(X, Y).Light(11), MapData(X, Y).Light(12)
-                End If
+    'Check if running (turn on motion blur)
+    If UseMotionBlur = 1 Then
+        If CharList(UserCharIndex).Moving = 1 And GetAsyncKeyState(vbKeyShift) Then
+            BlurIntensity = 65
+        Else
+            If BlurIntensity < 255 Then
+                BlurIntensity = BlurIntensity + (ElapsedTime * 0.8)
+                If BlurIntensity > 255 Then BlurIntensity = 255
             End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenY = ScreenY + 1
-    Next Y
+        End If
+    End If
+    
+    'Set the motion blur if needed
+    If UseMotionBlur Then
+        D3DDevice.SetRenderTarget BlurSurf, BlurStencil, 0
+    End If
+
+    'Begin the scene
+    D3DDevice.BeginScene
+    
+    'Clear the screen with a solid color (to prevent artifacts)
+    D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
+    
+    '************** Layer 1 to 3 **************
+    
+    'Loop through the lower 3 layers
+    For Layer = 1 To 3
+        
+        'Loop through all the tiles we know we will draw for this layer
+        For j = 1 To TileLayer(Layer).NumTiles
+            With TileLayer(Layer).Tile(j)
+                
+                'Check if we have to draw with a shadow or not (slighty changes because we have to animate on the shadow, not the main render)
+                If MapData(.TileX, .TileY).Shadow(Layer) = 1 Then
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                Else
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
+                End If
+                
+            End With
+        Next j
+        
+    Next Layer
 
     '************** Objects **************
     For j = 1 To LastObj
         If OBJList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(minXOffset + (OBJList(j).Pos.X - minX)) + PixelOffsetX + OBJList(j).Offset.X
-            Y = Engine_PixelPosY(minYOffset + (OBJList(j).Pos.Y - minY)) + PixelOffsetY + OBJList(j).Offset.Y
+            X = Engine_PixelPosX(OBJList(j).Pos.X - minX) + PixelOffsetX + OBJList(j).Offset.X + ((10 - TileBufferSize) * 32)
+            Y = Engine_PixelPosY(OBJList(j).Pos.Y - minY) + PixelOffsetY + OBJList(j).Offset.Y + ((10 - TileBufferSize) * 32)
             If Y >= -32 Then
-                If Y <= 632 Then
+                If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
-                        If X <= 832 Then
-                            x2 = minXOffset + (OBJList(j).Pos.X - minX)
-                            Y2 = minYOffset + (OBJList(j).Pos.Y - minY)
+                        If X <= (ScreenWidth + 32) Then
+                            x2 = (OBJList(j).Pos.X - minX)
+                            Y2 = (OBJList(j).Pos.Y - minY)
                             Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
                             Engine_Render_Grh OBJList(j).Grh, X, Y, 1, 1, True, MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(1), _
                                 MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(2), MapData(OBJList(j).Pos.X, OBJList(j).Pos.Y).Light(3), _
@@ -6351,9 +6553,9 @@ Dim Angle As Single
     'Loop through the sorted characters
     For j = 1 To LastChar
         If CharList(ChrID(j)).Active Then
-            X = Engine_PixelPosX(minXOffset + (CharList(ChrID(j)).Pos.X - minX)) + PixelOffsetX
-            Y = Engine_PixelPosY(minYOffset + (CharList(ChrID(j)).Pos.Y - minY)) + PixelOffsetY
-            If Y >= -32 And Y <= 632 And X >= -32 And X <= 832 Then
+            X = Engine_PixelPosX(CharList(ChrID(j)).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
+            Y = Engine_PixelPosY(CharList(ChrID(j)).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
+            If Y >= -32 And Y <= (ScreenHeight + 32) And X >= -32 And X <= (ScreenWidth + 32) Then
                         
                 'Update the NPC chat
                 Engine_NPCChat_Update ChrID(j)
@@ -6371,76 +6573,37 @@ Dim Angle As Single
         End If
     Next j
 
-    '************** Layer 4 **************
-    ScreenY = minYOffset
-    For Y = minY To maxY
-        ScreenX = minXOffset
-        For X = minX To maxX
-            If MapData(X, Y).Graphic(4).GrhIndex Then
-                If MapData(X, Y).Shadow(4) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
+    '************** Layer 4 to 6 **************
+    For Layer = 4 To 6
+        For j = 1 To TileLayer(Layer).NumTiles
+            With TileLayer(Layer).Tile(j)
+                If MapData(.TileX, .TileY).Shadow(Layer) = 1 Then
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 0, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
                 Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(4), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(13), MapData(X, Y).Light(14), MapData(X, Y).Light(15), MapData(X, Y).Light(16)
+                    Engine_Render_Grh MapData(.TileX, .TileY).Graphic(Layer), .PixelPosX + PixelOffsetX, .PixelPosY + PixelOffsetY, 0, 1, True, MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 1), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 2), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 3), MapData(.TileX, .TileY).Light(((Layer - 1) * 4) + 4)
                 End If
-            End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenY = ScreenY + 1
-    Next Y
-
-    '************** Layer 5 **************
-    ScreenY = minYOffset
-    For Y = minY To maxY
-        ScreenX = minXOffset
-        For X = minX To maxX
-            If MapData(X, Y).Graphic(5).GrhIndex Then
-                If MapData(X, Y).Shadow(5) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
-                Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(5), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(17), MapData(X, Y).Light(18), MapData(X, Y).Light(19), MapData(X, Y).Light(20)
-                End If
-            End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenY = ScreenY + 1
-    Next Y
-    
-    '************** Layer 6 **************
-    ScreenY = minYOffset
-    For Y = minY To maxY
-        ScreenX = minXOffset
-        For X = minX To maxX
-            If MapData(X, Y).Graphic(6).GrhIndex Then
-                If MapData(X, Y).Shadow(6) = 1 Then
-                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
-                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 0, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
-                Else
-                    Engine_Render_Grh MapData(X, Y).Graphic(6), Engine_PixelPosX(ScreenX) + PixelOffsetX, Engine_PixelPosY(ScreenY) + PixelOffsetY, 0, 1, True, MapData(X, Y).Light(21), MapData(X, Y).Light(22), MapData(X, Y).Light(23), MapData(X, Y).Light(24)
-                End If
-            End If
-            ScreenX = ScreenX + 1
-        Next X
-        ScreenY = ScreenY + 1
-    Next Y
+            End With
+        Next j
+    Next Layer
 
     '************** Effects **************
+    
     'Loop to do drawing
     If LastEffect > 0 Then
         For j = 1 To LastEffect
             If EffectList(j).Grh.GrhIndex Then
-                X = Engine_PixelPosX(minXOffset + (EffectList(j).Pos.X - minX)) + PixelOffsetX
-                Y = Engine_PixelPosY(minYOffset + (EffectList(j).Pos.Y - minY)) + PixelOffsetY
+                X = Engine_PixelPosX(EffectList(j).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
+                Y = Engine_PixelPosY(EffectList(j).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
                 If EffectList(j).Time <> 0 And EffectList(j).Time < timeGetTime Then
                 
                     'Timer ran out
                     Engine_Effect_Erase j
                     
-                ElseIf Y >= -32 And Y <= 632 And X >= -32 And X <= 832 Then
+                ElseIf Y >= -32 And Y <= (ScreenHeight + 32) And X >= -32 And X <= (ScreenWidth + 32) Then
                 
                     'Timer or animation going, render
-                    Engine_Render_GrhEX EffectList(j).Grh, X, Y, 1, 1, 0, , , , , EffectList(j).Angle
+                    Engine_Render_Grh EffectList(j).Grh, X, Y, 1, 1, 0, , , , , , EffectList(j).Angle
                     
                     'Check if the animation is still running
                     If EffectList(j).Animated = 1 Then
@@ -6471,8 +6634,8 @@ Dim Angle As Single
                 
                 'Update the position
                 Angle = DegreeToRadian * Engine_GetAngle(ProjectileList(j).X, ProjectileList(j).Y, ProjectileList(j).tX, ProjectileList(j).tY)
-                ProjectileList(j).X = ProjectileList(j).X + Sin(Angle) * 10
-                ProjectileList(j).Y = ProjectileList(j).Y - Cos(Angle) * 10
+                ProjectileList(j).X = ProjectileList(j).X + (Sin(Angle) * 10)
+                ProjectileList(j).Y = ProjectileList(j).Y - (Cos(Angle) * 10)
                 
                 'Update the rotation
                 If ProjectileList(j).RotateSpeed > 0 Then
@@ -6483,18 +6646,18 @@ Dim Angle As Single
                 End If
 
                 'Draw if within range
-                X = ((minXOffset - minX - 1) * 32) + ProjectileList(j).X + PixelOffsetX
-                Y = ((minYOffset - minY - 1) * 32) + ProjectileList(j).Y + PixelOffsetY
+                X = ((-minX - 1) * 32) + ProjectileList(j).X + PixelOffsetX + ((10 - TileBufferSize) * 32)
+                Y = ((-minY - 1) * 32) + ProjectileList(j).Y + PixelOffsetY + ((10 - TileBufferSize) * 32)
                 If Y >= -32 Then
-                    If Y <= 632 Then
+                    If Y <= (ScreenHeight + 32) Then
                         If X >= -32 Then
-                            If X <= 832 Then
+                            If X <= (ScreenWidth + 32) Then
                                 If ProjectileList(j).Rotate = 0 Then
                                     Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 1, 1, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1
                                     Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 0, 1
                                 Else
-                                    Engine_Render_GrhEX ProjectileList(j).Grh, X, Y, 0, 0, 1, ShadowColor, ShadowColor, ShadowColor, ShadowColor, ProjectileList(j).Rotate, 1
-                                    Engine_Render_GrhEX ProjectileList(j).Grh, X, Y, 0, 1, 1, , , , , ProjectileList(j).Rotate
+                                    Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 0, 1, ShadowColor, ShadowColor, ShadowColor, ShadowColor, 1, ProjectileList(j).Rotate
+                                    Engine_Render_Grh ProjectileList(j).Grh, X, Y, 0, 1, 1, , , , , , ProjectileList(j).Rotate
                                 End If
                             End If
                         End If
@@ -6521,12 +6684,12 @@ Dim Angle As Single
     'Loop to do drawing
     For j = 1 To LastBlood
         If BloodList(j).Grh.GrhIndex Then
-            X = Engine_PixelPosX(minXOffset + (BloodList(j).Pos.X - minX)) + PixelOffsetX
-            Y = Engine_PixelPosY(minYOffset + (BloodList(j).Pos.Y - minY)) + PixelOffsetY
+            X = Engine_PixelPosX(BloodList(j).Pos.X - minX) + PixelOffsetX + ((10 - TileBufferSize) * 32)
+            Y = Engine_PixelPosY(BloodList(j).Pos.Y - minY) + PixelOffsetY + ((10 - TileBufferSize) * 32)
             If Y >= -32 Then
-                If Y <= 632 Then
+                If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
-                        If X <= 832 Then
+                        If X <= (ScreenWidth + 32) Then
                             Engine_Render_Grh BloodList(j).Grh, X, Y, 1, 1, False
                         End If
                     End If
@@ -6562,9 +6725,9 @@ Dim Angle As Single
         If CharList(j).Active Then
             If LenB(CharList(j).BubbleStr) Then
                 If CharList(j).RealPos.X > -25 Then
-                    If CharList(j).RealPos.X < 825 Then
+                    If CharList(j).RealPos.X < ScreenWidth + 25 Then
                         If CharList(j).RealPos.Y > -25 Then
-                            If CharList(j).RealPos.Y < 625 Then
+                            If CharList(j).RealPos.Y < ScreenHeight + 25 Then
                                 Engine_Render_ChatBubble CharList(j).BubbleStr, CharList(j).RealPos.X, CharList(j).RealPos.Y
                                 CharList(j).BubbleTime = CharList(j).BubbleTime - ElapsedTime
                                 If CharList(j).BubbleTime <= 0 Then
@@ -6584,12 +6747,12 @@ Dim Angle As Single
     For j = 1 To LastDamage
         If DamageList(j).Counter > 0 Then
             DamageList(j).Counter = DamageList(j).Counter - ElapsedTime
-            X = ((minXOffset + (DamageList(j).Pos.X - minX) - 1) * TilePixelWidth) + PixelOffsetX
-            Y = ((minYOffset + (DamageList(j).Pos.Y - minY) - 1) * TilePixelHeight) + PixelOffsetY
+            X = (((DamageList(j).Pos.X - minX) - 1) * TilePixelWidth) + PixelOffsetX + ((10 - TileBufferSize) * 32)
+            Y = (((DamageList(j).Pos.Y - minY) - 1) * TilePixelHeight) + PixelOffsetY + ((10 - TileBufferSize) * 32)
             If Y >= -32 Then
-                If Y <= 632 Then
+                If Y <= (ScreenHeight + 32) Then
                     If X >= -32 Then
-                        If X <= 832 Then
+                        If X <= (ScreenWidth + 32) Then
                             Engine_Render_Text DamageList(j).Value, X, Y, D3DColorARGB(255, 255, 0, 0)
                         End If
                     End If
@@ -6615,6 +6778,40 @@ Dim Angle As Single
     LastOffsetX = ParticleOffsetX
     LastOffsetY = ParticleOffsetY
 
+    With D3DDevice
+    
+        'Check if using motion blur
+        If UseMotionBlur Then
+
+            '//BROKEN! :(
+            tX = ZoomLevel
+            tY = ZoomLevel
+            bX = 1 - (ZoomLevel * (1 + (ScreenWidth / 1024)))
+            bY = 1 - (ZoomLevel * (1 + (ScreenHeight / 1024)))
+            
+            'Calculate the zooming values
+            BlurTA(0).tu = tX
+            BlurTA(0).tv = tY
+            BlurTA(1).tu = bX
+            BlurTA(1).tv = tY
+            BlurTA(2).tu = tX
+            BlurTA(2).tv = bY
+            BlurTA(3).tu = bX
+            BlurTA(3).tv = bY
+            
+            'Draw what we have drawn thus far since the last .Clear
+            LastTexture = -100
+            .SetRenderTarget DeviceBuffer, DeviceStencil, 0
+            .SetTexture 0, BlurTexture
+            .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
+            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR
+            .DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, BlurTA(0), FVF_Size
+            .SetTextureStageState 0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE
+
+        End If
+        
+    End With
+
     'Render the GUI
     Engine_Render_GUI
     
@@ -6634,7 +6831,7 @@ Dim Angle As Single
     '************** Mini-map **************
     Const tS As Single = 5  'Size of the mini-map dots
     
-    'Check if the mini-map is being shown
+    'Check if the mini-map is being shownquit
     If ShowMiniMap Then
     
         'Make sure the mini-map vertex buffer is valid
@@ -6650,14 +6847,45 @@ Dim Angle As Single
   
             'Draw the characters
             For X = 1 To LastChar
-                If CharList(X).Pos.X > ScreenMinX Then
-                    If CharList(X).Pos.X < ScreenMaxX Then
-                        If CharList(X).Pos.Y > ScreenMinY Then
-                            If CharList(X).Pos.Y < ScreenMaxY Then
-                                If X = UserCharIndex Then j = D3DColorARGB(200, 0, 255, 0) Else j = D3DColorARGB(200, 0, 255, 255)
-                                Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                If CharList(X).Active Then
+                    
+                    If CharList(X).CharType = ClientCharType_Grouped Then
+                        If X <> UserCharIndex Then
+                            
+                            'Part of the user's group
+                            j = D3DColorARGB(200, 0, 150, 0)
+                            Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                        
+                        End If
+                    Else
+                    
+                        'Check if the character is in screen, since the only characters drawn outside of the screen are grouped characters
+                        If CharList(X).Pos.X > ScreenMinX Then
+                            If CharList(X).Pos.X < ScreenMaxX Then
+                                If CharList(X).Pos.Y > ScreenMinY Then
+                                    If CharList(X).Pos.Y < ScreenMaxY Then
+                                        
+                                        If X = UserCharIndex Then
+                                            'Character is the user
+                                            j = D3DColorARGB(200, 0, 255, 0)
+                                        Else
+                                            'Character is a PC
+                                            If CharList(X).CharType = ClientCharType_PC Then
+                                                j = D3DColorARGB(200, 0, 255, 255)
+                                            'Character is a NPC
+                                            Else
+                                                j = D3DColorARGB(200, 0, 150, 150)
+                                            End If
+                                        End If
+                                        
+                                        'Any character but one part of the user's group
+                                        Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
+                                    
+                                    End If
+                                End If
                             End If
                         End If
+                        
                     End If
                 End If
             Next X
@@ -6667,8 +6895,8 @@ Dim Angle As Single
     End If
 
     'Show FPS & Lag
-    Engine_Render_Text "FPS: " & FPS, 720, 2, -1
-    Engine_Render_Text "PTD: " & PTD & " ms", 720, 15, -1
+    Engine_Render_Text "FPS: " & FPS, ScreenWidth - 80, 2, -1
+    Engine_Render_Text "PTD: " & PTD & " ms", ScreenWidth - 80, 15, -1
     
 End Sub
 
@@ -6678,7 +6906,7 @@ Public Sub Engine_BuildMiniMap()
 'Builds the array for the minimap. Theres multiple styles available, but only one
 'is used in the demo, so experiment with them and check which one you like!
 '***************************************************
-Dim NumMiniMapTiles As Integer      'UBound of the MiniMapTile array
+Dim NumMiniMapTiles As Long         'UBound of the MiniMapTile array
 Dim MiniMapTile() As MiniMapTile    'Color of each tile and their position
 Dim MMC_Blocked As Long
 Dim MMC_Exit As Long
@@ -7027,7 +7255,7 @@ Dim j As Byte
                 If .NPCChatIndex > 0 Then
     
                     'Check for a valid distance
-                    If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - 350, .RealPos.Y - 250, 351, 251) Then
+                    If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - ((ScreenWidth - 50) \ 2), .RealPos.Y - ((ScreenHeight - 50) \ 2), ((ScreenWidth - 50) \ 2) + 1, ((ScreenHeight - 50) \ 2) + 1) Then
                     
                         'Get the next line to use
                         j = Engine_NPCChat_NextLine(i, ChatTxt)
@@ -7070,7 +7298,7 @@ Dim i As Byte
         If .NPCChatIndex > 0 Then
             
             'Check for a valid distance
-            If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - 350, .RealPos.Y - 250, 351, 251) Then
+            If Engine_RectDistance(.RealPos.X, .RealPos.Y, .RealPos.X - ((ScreenWidth - 50) \ 2), .RealPos.Y - ((ScreenHeight - 50) \ 2), ((ScreenWidth - 50) \ 2) + 1, ((ScreenHeight - 50) \ 2) + 1) Then
             
                 'Update the delay time
                 If .NPCChatDelay > 0 Then
@@ -7507,12 +7735,26 @@ Dim Count As Integer
 Dim Ascii As Byte
 Dim Row As Integer
 Dim u As Single
-Dim V As Single
+Dim v As Single
 Dim i As Long
 Dim j As Long
 Dim KeyPhrase As Byte
 Dim TempColor As Long
 Dim ResetColor As Byte
+Dim SrcRect As RECT
+Dim v2 As D3DVECTOR2
+Dim v3 As D3DVECTOR2
+
+    'Check if using alternate rendering
+    If AlternateRender Then
+        
+        'Close off the last sprite
+        If SpriteBegun Then
+            Sprite.End
+            SpriteBegun = 0
+        End If
+    
+    End If
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
@@ -7531,6 +7773,22 @@ Dim ResetColor As Byte
     
     'Set the temp color (or else the first character has no color)
     TempColor = Color
+    
+    'Check for alternate rendering
+    If AlternateRender Then
+        
+        'Check if the texture is no longer the font texture
+        If LastTexture <> Font_Default_TextureNum Then
+        
+            'End the old sprite we had going
+            If SpriteBegun = 1 Then
+                Sprite.End
+                Sprite.Begin
+            End If
+            
+        End If
+
+    End If
 
     'Loop through each line if there are line breaks (vbCrLf)
     For i = 0 To UBound(TempStr)
@@ -7552,36 +7810,59 @@ Dim ResetColor As Byte
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
                     u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                    V = Row * Font_Default.RowFactor
+                    v = Row * Font_Default.RowFactor
                 
-                    'Set up the verticies
-                    VertexArray(0).Color = TempColor
-                    VertexArray(0).X = X + Count
-                    VertexArray(0).Y = Y + (Font_Default.CharHeight * i)
-                    VertexArray(0).tu = u
-                    VertexArray(0).tv = V
-                    
-                    VertexArray(1).Color = TempColor
-                    VertexArray(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
-                    VertexArray(1).Y = Y + (Font_Default.CharHeight * i)
-                    VertexArray(1).tu = u + Font_Default.ColFactor
-                    VertexArray(1).tv = V
-                    
-                    VertexArray(2).Color = TempColor
-                    VertexArray(2).X = X + Count
-                    VertexArray(2).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                    VertexArray(2).tu = u
-                    VertexArray(2).tv = V + Font_Default.RowFactor
+                    'Render with triangles
+                    If AlternateRender = 0 Then
                 
-                    VertexArray(3).Color = TempColor
-                    VertexArray(3).X = X + Count + Font_Default.HeaderInfo.CellWidth
-                    VertexArray(3).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
-                    VertexArray(3).tu = u + Font_Default.ColFactor
-                    VertexArray(3).tv = V + Font_Default.RowFactor
-                
-                    'Render
-                    D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
+                        'Set up the verticies
+                        VertexArray(0).Color = TempColor
+                        VertexArray(0).X = X + Count
+                        VertexArray(0).Y = Y + (Font_Default.CharHeight * i)
+                        VertexArray(0).tu = u
+                        VertexArray(0).tv = v
+                        
+                        VertexArray(1).Color = TempColor
+                        VertexArray(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        VertexArray(1).Y = Y + (Font_Default.CharHeight * i)
+                        VertexArray(1).tu = u + Font_Default.ColFactor
+                        VertexArray(1).tv = v
+                        
+                        VertexArray(2).Color = TempColor
+                        VertexArray(2).X = X + Count
+                        VertexArray(2).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        VertexArray(2).tu = u
+                        VertexArray(2).tv = v + Font_Default.RowFactor
                     
+                        VertexArray(3).Color = TempColor
+                        VertexArray(3).X = X + Count + Font_Default.HeaderInfo.CellWidth
+                        VertexArray(3).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
+                        VertexArray(3).tu = u + Font_Default.ColFactor
+                        VertexArray(3).tv = v + Font_Default.RowFactor
+                    
+                        'Render
+                        D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
+                        
+                    'Render with D3DXSprite
+                    Else
+
+                        'Create the source rectangle
+                        With SrcRect
+                            .Left = u * Font_Default.TextureSize.X
+                            .Top = v * Font_Default.TextureSize.Y
+                            .Right = .Left + (Font_Default.ColFactor * Font_Default.TextureSize.X)
+                            .bottom = .Top + (Font_Default.RowFactor * Font_Default.TextureSize.Y)
+                        End With
+                        
+                        'Set the translation (location on the screen)
+                        v3.X = X + Count
+                        v3.Y = Y + (Font_Default.CharHeight * i)
+                    
+                        'Draw the sprite
+                        Sprite.Draw Font_Default.Texture, SrcRect, SpriteScaleVector, v2, 0, v3, Color
+  
+                    End If
+  
                     'Shift over the the position to render the next character
                     Count = Count + Font_Default.HeaderInfo.CharWidth(Ascii)
                 
@@ -7667,7 +7948,7 @@ Sub Engine_ShowNextFrame()
 
         '****** Update screen ******
         Call Engine_Render_Screen(UserPos.X - AddtoUserPos.X, UserPos.Y - AddtoUserPos.Y, OffsetCounterX - 288, OffsetCounterY - 288)
-
+        
         'Get timing info
         ElapsedTime = Engine_ElapsedTime()
         If ElapsedTime > 200 Then ElapsedTime = 200
@@ -7992,7 +8273,7 @@ Public Sub Engine_Music_Play(ByVal BufferNumber As Long)
 'Plays the mp3 in the specified buffer
 '************************************************************
     On Error GoTo Error_Handler
-
+    'Exit Sub '//TEMP
     DirectShow_Control(BufferNumber).Run
 
 Error_Handler:

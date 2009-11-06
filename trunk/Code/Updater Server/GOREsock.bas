@@ -1,7 +1,20 @@
 Attribute VB_Name = "GOREsock"
 Option Explicit
 
-Private Const BufferSize As Long = 8192
+'This is the maximum size of data we will handle at once
+'If there is more data then this, we won't get it, which can be very, very bad
+'This is only used for receiving, not sending!
+'Because we never receive anything but "***GET***" followed by a number, this can be very small. :)
+Private Const BufferSize As Long = 32
+
+'This is the maximum number of connections allowed per IP
+'Change to 0 to remove the limit
+'This is intended for two things:
+' - Prevent DOS attack by socket connection flooding from a single computer
+' - Prevent multi-logging (not a recommended reason)
+'Note that multiple people may play that are on the same network, so try to keep this
+' value at a decent height for those people
+Private Const MaxConnectionsPerIP As Long = 5
 
 Private WindowhWnd As Long
 Public Loaded As Byte   'Whether the socket is loaded or not
@@ -111,23 +124,23 @@ Private Const FD_CONNECTLISTEN As Long = FD_ACCEPT Or FD_CLOSE Or FD_CONNECT Or 
 Private Declare Function apiWSAStartup Lib "WS2_32" Alias "WSAStartup" (ByVal wVersionRequired As Long, lpWSADATA As typWSAData) As Long
 Private Declare Function apiWSACleanup Lib "WS2_32" Alias "WSACleanup" () As Long
 Private Declare Function apiSocket Lib "WS2_32" Alias "socket" (ByVal af As Long, ByVal s_type As Long, ByVal protocol As Long) As Long
-Private Declare Function apiCloseSocket Lib "WS2_32" Alias "closesocket" (ByVal S As Long) As Long
-Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal S As Long, addr As typSocketAddr, ByVal namelen As Long) As Long
-Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal S As Long, ByVal backlog As Long) As Long
-Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal S As Long, name As typSocketAddr, ByVal namelen As Long) As Long
-Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal S As Long, addr As typSocketAddr, addrlen As Long) As Long
-Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal S As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
-Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal S As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
-Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal S As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
-Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
-Private Declare Function apiSetSockOpt Lib "WS2_32" Alias "setsockopt" (ByVal S As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long
+Private Declare Function apiCloseSocket Lib "WS2_32" Alias "closesocket" (ByVal s As Long) As Long
+Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal s As Long, addr As typSocketAddr, ByVal namelen As Long) As Long
+Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal s As Long, ByVal backlog As Long) As Long
+Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, name As typSocketAddr, ByVal namelen As Long) As Long
+Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal s As Long, addr As typSocketAddr, addrlen As Long) As Long
+Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
+Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
+Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
+Private Declare Function apiSetSockOpt Lib "WS2_32" Alias "setsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, ByVal optlen As Long) As Long
 Private Declare Function apiHToNS Lib "WS2_32" Alias "htons" (ByVal hostshort As Long) As Integer 'Host To Network Short
 Private Declare Function apiNToHS Lib "WS2_32" Alias "ntohs" (ByVal netshort As Long) As Integer 'Network To Host Short
 Private Declare Function apiIPToNL Lib "WS2_32" Alias "inet_addr" (ByVal cp As String) As Long
 Private Declare Function apiNLToIP Lib "WS2_32" Alias "inet_ntoa" (ByVal inn As Long) As Long
-Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal S As Long, ByVal how As Long) As Long
-Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal s As Long, ByVal how As Long) As Long
+Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function apiLStrLen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long
 Private Declare Function apiLstrCpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Private Declare Sub apiCopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, pSrc As Any, ByVal ByteLen As Long)
@@ -737,6 +750,30 @@ Public Function GOREsock_State(inSox As Long) As enmSoxState
 
 End Function
 
+Private Sub GOREsock_ValidateAccept(ByVal inSox As Long)
+Dim Count As Long
+Dim i As Long
+
+    For i = 0 To Portal.Sockets
+        If i <> inSox Then
+            If Sockets(i).GOREsock_State <> soxDisconnected Then
+                If Sockets(i).GOREsock_State <> soxERROR Then
+                    If Sockets(i).GOREsock_State <> soxClosing Then
+                        If Sockets(i).SocketAddr.sin_addr = Sockets(i).SocketAddr.sin_addr Then
+                            Count = Count + 1
+                            If Count > MaxConnectionsPerIP Then
+                                GOREsock_Shut inSox
+                                Exit Sub
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next i
+            
+End Sub
+
 Private Function GOREsock_StringFromPointer(ByVal lPointer As Long) As String
 
     Let GOREsock_StringFromPointer = Space$(apiLStrLen(ByVal lPointer))
@@ -761,9 +798,9 @@ Public Sub GOREsock_UnHook() ' Once the Control is UnHooked, we will not be able
 
 End Sub
 
-Sub GOREsock_Initialize(ByVal hWnd As Long)
+Sub GOREsock_Initialize(ByVal hwnd As Long)
 
-    WindowhWnd = hWnd
+    WindowhWnd = hwnd
 
     If apiWSAStartup(&H101, WSAData) = GOREsock_ERROR Then
         Call MsgBox("WinSock failed to initialize properly - Error#: " & Err.LastDllError, vbApplicationModal + vbCritical, "Critical Error")  'Creates an 'application instance' and memory space in the WinSock DLL (MUST be cleaned up later)
@@ -802,13 +839,15 @@ Private Function GOREsock_WinSockEvent(ByVal lParam As Long) As Integer 'WSAGETS
 
 End Function
 
-Public Function GOREsock_WndProc(ByVal hWnd As Long, ByVal GOREsock_uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Function GOREsock_WndProc(ByVal hwnd As Long, ByVal GOREsock_uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 
     Select Case GOREsock_uMsg
     Case soxSERVER
         Select Case GOREsock_WinSockEvent(lParam)
         Case FD_ACCEPT
-            If GOREsock_WinSockError(lParam) = 0 Then Call GOREsock_Accept(wParam)
+            If GOREsock_WinSockError(lParam) = 0 Then
+                GOREsock_ValidateAccept GOREsock_Accept(wParam)
+            End If
         Case FD_CLOSE
             Select Case GOREsock_WinSockError(lParam)
             Case 0
@@ -864,7 +903,7 @@ Public Function GOREsock_WndProc(ByVal hWnd As Long, ByVal GOREsock_uMsg As Long
             End If
         End Select
     Case Else
-        Let GOREsock_WndProc = apiCallWindowProc(Portal.GOREsock_WndProc, hWnd, GOREsock_uMsg, wParam, lParam)
+        Let GOREsock_WndProc = apiCallWindowProc(Portal.GOREsock_WndProc, hwnd, GOREsock_uMsg, wParam, lParam)
     End Select
 
 End Function

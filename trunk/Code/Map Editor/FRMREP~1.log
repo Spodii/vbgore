@@ -1,7 +1,0 @@
-Line 18: Class MapEditor.cForm of control cForm was not a loaded control class.
-Line 24: The property name _ExtentX in cForm is invalid.
-Line 25: The property name _ExtentY in cForm is invalid.
-Line 26: The property name MaximizeBtn in cForm is invalid.
-Line 27: The property name MinimizeBtn in cForm is invalid.
-Line 28: The property name CaptionTop in cForm is invalid.
-Line 29: The property name AllowResizing in cForm is invalid.

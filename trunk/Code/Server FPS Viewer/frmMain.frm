@@ -331,11 +331,15 @@ Private Sub LoadData()
 Dim FileNum As Byte
 Dim i As Long
 
-    On Error GoTo ErrOut
+    'On Error GoTo ErrOut
 
     'Get the data
     FileNum = FreeFile
-    Open LogPath & "serverfps.txt" For Binary As #FileNum
+    If Len(Command$) < 4 Then
+        Open LogPath & "1\serverfps.txt" For Binary As #FileNum
+    Else
+        Open Mid$(Command$, 2, Len(Command$) - 2) For Binary As #FileNum
+    End If
         Get #FileNum, , NumData
         ReDim Data(1 To NumData)
         ReDim ClickArea(1 To NumData)
@@ -362,6 +366,7 @@ ErrOut:
 
     MsgBox "Error loading the server FPS logs!", vbOKOnly
     Unload Me
+    End
         
 End Sub
 

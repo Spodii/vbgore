@@ -123,7 +123,7 @@ Begin VB.Form frmMain
       Caption         =   "0%"
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   1560
+      Left            =   1320
       TabIndex        =   1
       Top             =   1200
       Width           =   210
@@ -131,13 +131,13 @@ Begin VB.Form frmMain
    Begin VB.Label Label1 
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
-      Caption         =   "Download Status:"
+      Caption         =   "Downloaded :"
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Left            =   240
       TabIndex        =   0
       Top             =   1200
-      Width           =   1260
+      Width           =   990
    End
 End
 Attribute VB_Name = "frmMain"
@@ -147,22 +147,12 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-'The update server works in the following manner:
-'Step 1:
-'-Server starts up, loads files and file information, the listens for connections
-'-Client connects to server
-'-Server recieves connection
-'Step 2:
-'-Server sends information of first file
-'-Client reads first file's information, checks if the file is up to date
-'*If file up to date, the client requests the next file's information (start of Step 2)
-'*If file is not up to date, the client requests for the update
-' -Server sends file to client
-' -When client recieves the end of file, the client changes the file's information to match the server's
-' -Client requests the next file (start of Step 2)
-'Step 3:
-'-Server loops through Step 2 until every file has been checked and updated
-'-Server disconnects client
+'The update works in the following manner:
+' - Server creates overall update list and MD5 hashes for each list, list & hashes is compressed and stored in memory
+' - Client connects to the server and downloads the list off the server
+' - Client decompresses the list, checks which files it needs to update
+' - For every file the client needs to update, it sends a request to the server
+' - After each download, the MD5 hash is compared with the one from the server to varify file contents
 
 Private Sub Connect()
 
@@ -171,7 +161,7 @@ Private Sub Connect()
     StatusLbl.Caption = "Connecting..."
 
     'Set up the socket
-    LocalID = GOREsock_Connect("127.0.0.1", 10201)
+    LocalID = GOREsock_Connect("24.16.43.254", 10201)
     
      'Check for invalid LocalID (did not connect)
     If LocalID = -1 Then

@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.1            ************
+'************            Official Release: Version 0.4.3            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -126,11 +126,13 @@ Public Const ForceUpdateCheck As Boolean = False
 'Running speed - make sure you have the same value on the server!
 Public Const RunningSpeed As Byte = 5
 
-'If we are in windowed mode or not
-Public Const Windowed As Boolean = False
-
 'Max chat bubble width
 Public Const BubbleMaxWidth As Long = 140
+
+'Word filter - use by "word-filterto,nextword-nextfilterto"... etc
+Public Const FilterString As String = "fuck-****,shit-****,ass-***,bitch-*****"
+Public FilterFind() As String
+Public FilterReplace() As String
 
 '********** NPC chat info ************
 Public Type NPCChatLineCondition
@@ -170,6 +172,11 @@ Public Const NPCCHAT_FORMAT_LINEAR As Byte = 1
 Public Const NPCCHAT_STYLE_BOTH As Byte = 0
 Public Const NPCCHAT_STYLE_BOX As Byte = 1
 Public Const NPCCHAT_STYLE_BUBBLE As Byte = 2
+
+'Client character types
+Public Const ClientCharType_PC As Byte = 1
+Public Const ClientCharType_NPC As Byte = 2
+Public Const ClientCharType_Grouped As Byte = 3
 
 '********** Object info ************
 Public Type ObjData
@@ -258,6 +265,7 @@ Public SoxID As Long
 Public SocketOpen As Byte
 Public TargetCharIndex As Integer
 Public Const DegreeToRadian As Single = 0.01745329251994 'Pi / 180
+Public Const RadianToDegree As Single = 57.2958279087977 '180 / Pi
 
 'Mail sending spam prevention
 Public LastMailSendTime As Long
@@ -292,10 +300,13 @@ Public DisableInput As Byte
 
 'Zoom level - 0 = No Zoom, > 0 = Zoomed
 Public ZoomLevel As Single
-Public Const MaxZoomLevel As Single = 0.4
+Public Const MaxZoomLevel As Single = 0.3
 
 'Cursor flash rate
 Public Const CursorFlashRate As Long = 450
+
+'If click-warping is on or not (can only be used by GMs)
+Public UseClickWarp As Byte
 
 'Emoticon delay
 Public EmoticonDelay As Long

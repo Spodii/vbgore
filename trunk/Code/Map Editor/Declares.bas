@@ -29,10 +29,13 @@ Public stBoxID As Byte
 'Dummy for the MySQL module
 Public ServerID As Byte
 
+'These values aren't used by the map editor, so ignore them
+Public Const ScreenWidth As Long = 800
+Public Const ScreenHeight As Long = 600
+
 '********** Map display variables **********
 Public WeatherChkValue As Byte
 Public CharsChkValue As Byte
-Public ObjChkValue As Byte
 Public BrightChkValue As Byte
 Public GridChkValue As Byte
 Public InfoChkValue As Byte
@@ -48,12 +51,7 @@ Public ExitsChkValue As Byte
 Public BlocksChkValue As Byte
 Public SfxChkValue As Byte
 
-Public L1ChkValue As Byte
-Public L2ChkValue As Byte
-Public L3ChkValue As Byte
-Public L4ChkValue As Byte
-Public L5ChkValue As Byte
-Public L6ChkValue As Byte
+Public DrawLayer As Byte
 
 '********** Map optimization variables **********
 Public Enum MapOptType

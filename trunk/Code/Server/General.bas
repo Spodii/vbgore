@@ -147,6 +147,7 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
                 'Do the dummy query to keep the connection alive
                 DB_RS.Open "SELECT * FROM mail_lastid WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
                 DB_RS.Close
+                
             End If
             
         End If
@@ -360,13 +361,13 @@ Dim UserIndex As Integer
             If RecoverUserStats Then    'HP
                 With UserList(UserIndex).Stats
                     If .BaseStat(SID.MinHP) < .ModStat(SID.MaxHP) Then
-                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.Str) * 0.5)
+                        .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + 1 + (.ModStat(SID.Str) \ 2)
                     End If                  'SP
                     If .BaseStat(SID.MinSTA) < .ModStat(SID.MaxSTA) Then
-                        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) * 0.5)
+                        .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + 1 + (.ModStat(SID.Agi) \ 2)
                     End If                  'MP
                     If .BaseStat(SID.MinMAN) < .ModStat(SID.MaxMAN) Then
-                        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + 1 + (.ModStat(SID.Mag) * 0.5)
+                        .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + 1 + (.ModStat(SID.Mag) \ 2)
                     End If
                 End With
             End If
@@ -429,22 +430,16 @@ Dim UserIndex As Integer
             If SendUserBuffer Then
 
                 'Check if the packet wait time has passed
-                If UserList(UserIndex).HasBuffer Then
-                    If UserList(UserIndex).PacketWait < timeGetTime Then
-    
-                        'Send the packet buffer to the user
-                        If UserList(UserIndex).PPValue = PP_High Then
+                If UserList(UserIndex).HasBuffer Then   'Check that we have a buffer
+                    If UserList(UserIndex).PacketWait < timeGetTime Then    'Check if the master wait time has elapsed
+                        If UserList(UserIndex).PPCount > 0 Then 'Check that we don't only have None priority packets
+                            If UserList(UserIndex).PPCount <= timeGetTime Then  'Check that enough time has passed for the packet prioritizing
+                                
+                                'Everything checks out, send the packet!
+                                Data_Send_Buffer UserIndex
                             
-                            'High priority - send asap
-                            Data_Send_Buffer UserIndex
-                            
-                        ElseIf UserList(UserIndex).PPValue = PP_Low Then
-                            
-                            'Low priority - check counter for sending
-                            If UserList(UserIndex).PPCount < timeGetTime Then Data_Send_Buffer UserIndex
-                        
+                            End If
                         End If
-                        
                     End If
                 End If
                 
@@ -486,9 +481,9 @@ Dim Y As Byte
             'Make sure the map is in memory
             If MapInfo(MapIndex).DataLoaded = 1 Then
                 
-                'The map has users on it, so check through the tiles in-bounds
-                For X = MinXBorder To MaxXBorder
-                    For Y = MinYBorder To MaxYBorder
+                'The map has users on it, so check through the tiles
+                For X = XMinMapSize To XMaxMapSize
+                    For Y = YMinMapSize To YMaxMapSize
                         
                         '*** Removing old objects ***
                         'Check if an object exists on the tile - loop through all on there
@@ -704,10 +699,8 @@ Dim Y As Long
             Engine_ClearPath = 1
             Exit Function
         End If
-    End If
-    
-    'Check if the target is directly below the user
-    If CharX = TargetX Then
+
+        'Check if the target is directly below the user
         If CharY < TargetY Then
             For Y = CharY + 1 To TargetY - 1
                 If MapInfo(Map).Data(CharX, Y).Blocked And 128 Then
@@ -732,10 +725,8 @@ Dim Y As Long
             Engine_ClearPath = 1
             Exit Function
         End If
-    End If
-    
+
     'Check if the target is directly to the right of the user
-    If CharY = TargetY Then
         If CharX < TargetX Then
             For X = CharX + 1 To TargetX - 1
                 If MapInfo(Map).Data(X, CharY).Blocked And 128 Then
@@ -751,7 +742,6 @@ Dim Y As Long
     '*******************************************************************
     '***** Target is directly vertical or horizontal from the user *****
     '*******************************************************************
-    
     
     If CharY > TargetY Then
     
@@ -1164,7 +1154,7 @@ Public Function Server_RectDistance(ByVal x1 As Long, ByVal Y1 As Long, ByVal x2
 
     If Abs(x1 - x2) < MaxXDist + 1 Then
         If Abs(Y1 - Y2) < MaxYDist + 1 Then
-            Server_RectDistance = True
+            Server_RectDistance = 1
         End If
     End If
     

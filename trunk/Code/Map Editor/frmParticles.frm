@@ -1,49 +1,24 @@
 VERSION 5.00
 Begin VB.Form frmParticles 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
-   Caption         =   "Particle Effects"
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Particle Effects"
    ClientHeight    =   3720
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   3270
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   3015
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
    ScaleHeight     =   248
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   218
+   ScaleWidth      =   201
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cButton RefreshBtn 
-      Height          =   375
-      Left            =   1920
-      TabIndex        =   17
-      ToolTipText     =   "Refresh the list of effects in play"
-      Top             =   2880
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
-      Caption         =   "Refresh"
-   End
-   Begin MapEditor.cForm cForm 
-      Height          =   375
-      Left            =   0
-      TabIndex        =   16
-      Top             =   0
-      Width           =   375
-      _ExtentX        =   661
-      _ExtentY        =   661
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Particle Effects"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.TextBox DirTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   600
       MaxLength       =   3
       TabIndex        =   6
@@ -54,9 +29,7 @@ Begin VB.Form frmParticles
    End
    Begin VB.TextBox YTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1320
       MaxLength       =   4
       TabIndex        =   4
@@ -67,9 +40,7 @@ Begin VB.Form frmParticles
    End
    Begin VB.TextBox XTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   480
       MaxLength       =   4
       TabIndex        =   3
@@ -80,9 +51,7 @@ Begin VB.Form frmParticles
    End
    Begin VB.TextBox ParticlesTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1080
       MaxLength       =   3
       TabIndex        =   5
@@ -93,9 +62,7 @@ Begin VB.Form frmParticles
    End
    Begin VB.TextBox GfxTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   1680
       MaxLength       =   3
       TabIndex        =   2
@@ -106,9 +73,7 @@ Begin VB.Form frmParticles
    End
    Begin VB.TextBox IndexTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
+      Height          =   285
       Left            =   600
       MaxLength       =   3
       TabIndex        =   1
@@ -119,25 +84,50 @@ Begin VB.Form frmParticles
    End
    Begin VB.ListBox ParticlesList 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   1590
-      Left            =   240
+      Left            =   120
       TabIndex        =   12
       ToolTipText     =   "The list of particle effect slots, whether used or unused"
       Top             =   360
-      Width           =   2895
+      Width           =   2775
    End
-   Begin MapEditor.cButton CreateBtn 
-      Height          =   375
-      Left            =   1920
-      TabIndex        =   18
-      ToolTipText     =   "Create an effect with the values entered to the left"
-      Top             =   3240
-      Width           =   1215
-      _ExtentX        =   2143
-      _ExtentY        =   661
+   Begin VB.Label CreateBtnl 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
       Caption         =   "Create"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   2160
+      TabIndex        =   17
+      Top             =   3360
+      Width           =   570
+   End
+   Begin VB.Label RefreshBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Refresh"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   2160
+      TabIndex        =   16
+      Top             =   3000
+      Width           =   675
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -152,13 +142,13 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   8
       Left            =   1200
       TabIndex        =   15
       ToolTipText     =   "Help on what the *s mean"
-      Top             =   3360
+      Top             =   3390
       Width           =   240
    End
    Begin VB.Label MiscLbl 
@@ -174,12 +164,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   7
       Left            =   240
       TabIndex        =   14
-      Top             =   3360
+      Top             =   3390
       Width           =   315
    End
    Begin VB.Label MiscLbl 
@@ -195,12 +185,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   6
       Left            =   1080
       TabIndex        =   13
-      Top             =   2640
+      Top             =   2670
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -216,12 +206,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   5
       Left            =   240
       TabIndex        =   11
-      Top             =   2640
+      Top             =   2670
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -237,12 +227,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   4
       Left            =   240
       TabIndex        =   10
-      Top             =   3000
+      Top             =   3030
       Width           =   810
    End
    Begin VB.Label MiscLbl 
@@ -258,12 +248,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
-      Left            =   1320
+      Left            =   1290
       TabIndex        =   9
-      Top             =   2280
+      Top             =   2295
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -279,12 +269,12 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   240
       TabIndex        =   8
-      Top             =   2280
+      Top             =   2295
       Width           =   270
    End
    Begin VB.Label MiscLbl 
@@ -300,7 +290,7 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   120
@@ -321,7 +311,7 @@ Begin VB.Form frmParticles
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   120
@@ -369,6 +359,10 @@ ErrOut:
 
 End Sub
 
+Private Sub CreateLbl_Click()
+
+End Sub
+
 Private Sub DirTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -380,10 +374,6 @@ End Sub
 
 Private Sub Form_Load()
 
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
     'Update list
     UpdateEffectList
 

@@ -815,8 +815,10 @@ Public Sub Effect_Render(ByVal EffectIndex As Byte)
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
 
-    'Set the render state to point blitting
+    'Set the render state for the size of the particle
     D3DDevice.SetRenderState D3DRS_POINTSIZE, Effect(EffectIndex).FloatSize
+    
+    'Set the render state to point blitting
     D3DDevice.SetRenderState D3DRS_DESTBLEND, D3DBLEND_ONE
 
     'Set the texture
@@ -877,15 +879,15 @@ Private Sub Effect_Snow_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Op
     If FirstReset = 1 Then
 
         'The very first reset
-        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * 1200), Rnd * 650, Rnd * 5, 5 + Rnd * 3, 0, 0
+        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * (ScreenWidth + 400)), Rnd * (ScreenHeight + 50), Rnd * 5, 5 + Rnd * 3, 0, 0
 
     Else
 
         'Any reset after first
-        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * 1200), -15 - Rnd * 185, Rnd * 5, 5 + Rnd * 3, 0, 0
-        If Effect(EffectIndex).Particles(Index).sngX < -20 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * 650
-        If Effect(EffectIndex).Particles(Index).sngX > 800 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * 650
-        If Effect(EffectIndex).Particles(Index).sngY > 600 Then Effect(EffectIndex).Particles(Index).sngX = Rnd * 850
+        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * (ScreenWidth + 400)), -15 - Rnd * 185, Rnd * 5, 5 + Rnd * 3, 0, 0
+        If Effect(EffectIndex).Particles(Index).sngX < -20 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * (ScreenHeight + 50)
+        If Effect(EffectIndex).Particles(Index).sngX > ScreenWidth Then Effect(EffectIndex).Particles(Index).sngY = Rnd * (ScreenHeight + 50)
+        If Effect(EffectIndex).Particles(Index).sngY > ScreenHeight Then Effect(EffectIndex).Particles(Index).sngX = Rnd * (ScreenWidth + 50)
 
     End If
 
@@ -914,8 +916,8 @@ Dim LoopC As Long
 
             'Check if to reset the particle
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Effect(EffectIndex).Particles(LoopC).sngX > 1200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Effect(EffectIndex).Particles(LoopC).sngY > 800 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
+            If Effect(EffectIndex).Particles(LoopC).sngX > (ScreenWidth + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
+            If Effect(EffectIndex).Particles(LoopC).sngY > (ScreenHeight + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Apply shift values
             Effect(EffectIndex).Particles(LoopC).sngX = Effect(EffectIndex).Particles(LoopC).sngX + Effect(EffectIndex).ShiftX
@@ -1179,15 +1181,15 @@ Private Sub Effect_Rain_Reset(ByVal EffectIndex As Byte, ByVal Index As Long, Op
     If FirstReset = 1 Then
 
         'The very first reset
-        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * 1200), Rnd * 650, Rnd * 5, 25 + Rnd * 12, 0, 0
+        Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * (ScreenWidth + 400)), Rnd * (ScreenHeight + 50), Rnd * 5, 25 + Rnd * 12, 0, 0
 
     Else
 
         'Any reset after first
         Effect(EffectIndex).Particles(Index).ResetIt -200 + (Rnd * 1200), -15 - Rnd * 185, Rnd * 5, 25 + Rnd * 12, 0, 0
-        If Effect(EffectIndex).Particles(Index).sngX < -20 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * 650
-        If Effect(EffectIndex).Particles(Index).sngX > 800 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * 650
-        If Effect(EffectIndex).Particles(Index).sngY > 600 Then Effect(EffectIndex).Particles(Index).sngX = Rnd * 850
+        If Effect(EffectIndex).Particles(Index).sngX < -20 Then Effect(EffectIndex).Particles(Index).sngY = Rnd * (ScreenHeight + 50)
+        If Effect(EffectIndex).Particles(Index).sngX > ScreenWidth Then Effect(EffectIndex).Particles(Index).sngY = Rnd * (ScreenHeight + 50)
+        If Effect(EffectIndex).Particles(Index).sngY > ScreenHeight Then Effect(EffectIndex).Particles(Index).sngX = Rnd * (ScreenWidth + 50)
 
     End If
 
@@ -1220,8 +1222,8 @@ Dim LoopC As Long
 
             'Check if to reset the particle
             If Effect(EffectIndex).Particles(LoopC).sngX < -200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Effect(EffectIndex).Particles(LoopC).sngX > 1200 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
-            If Effect(EffectIndex).Particles(LoopC).sngY > 800 Then Effect(EffectIndex).Particles(LoopC).sngA = 0
+            If Effect(EffectIndex).Particles(LoopC).sngX > (ScreenWidth + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
+            If Effect(EffectIndex).Particles(LoopC).sngY > (ScreenHeight + 200) Then Effect(EffectIndex).Particles(LoopC).sngA = 0
 
             'Time for a reset, baby!
             If Effect(EffectIndex).Particles(LoopC).sngA <= 0 Then

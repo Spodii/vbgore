@@ -104,7 +104,7 @@ Public Sub Compression_Compress(SrcFile As String, DestFile As String, Compressi
 
 Dim Dummy As Boolean
 
-    Compression_File_Load SrcFile
+    If Compression_File_Load(SrcFile) = 0 Then Exit Sub
     Select Case Compression
     Case RLE
         Compression_Compress_RLE CompressArray(), Dummy
@@ -322,7 +322,7 @@ End Sub
 
 Public Sub Compression_DeCompress(SrcFile As String, DestFile As String, Compression As CompressMethods)
 
-    Compression_File_Load SrcFile
+    If Compression_File_Load(SrcFile) = 0 Then Exit Sub
     Select Case Compression
     Case RLE
         Compression_DeCompress_RLE CompressArray()
@@ -472,7 +472,7 @@ Dim TimesRLE As Integer
 
 End Sub
 
-Private Sub Compression_File_Load(FilePath As String)
+Private Function Compression_File_Load(FilePath As String) As Byte
 
 Dim FreeNum As Integer
 
@@ -481,20 +481,23 @@ Dim FreeNum As Integer
         Open FilePath For Binary As #FreeNum
         If LOF(FreeNum) = 0 Then
             Close #FreeNum
-            Exit Sub
+            Compression_File_Load = 0
+            Exit Function
         End If
         ReDim CompressArray(0 To LOF(FreeNum) - 1)
         Get #FreeNum, , CompressArray()
         Close #FreeNum
     End If
+    Compression_File_Load = 1
 
-End Sub
+End Function
 
 Private Sub Compression_File_Save(FilePath As String)
 
 Dim FreeNum As Integer
 
-    If Not Len(FilePath) = 0 Then
+    If LenB(FilePath) Then
+        If LenB(Dir$(FilePath, vbNormal)) Then Kill FilePath
         FreeNum = FreeFile
         Open FilePath For Binary As #FreeNum
         Put #FreeNum, , CompressArray()

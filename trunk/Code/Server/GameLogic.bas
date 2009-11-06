@@ -11,7 +11,7 @@ Public Function Obj_ValidObjForClass(ByVal Class As Byte, ByVal ObjIndex As Inte
     If ObjData.ClassReq(ObjIndex) > 0 Then
         
         'If Class AND ClassReq is true, then we meet the requirements
-        If Not Class And ObjData.ClassReq(ObjIndex) Then Exit Function
+        If Not (Class And ObjData.ClassReq(ObjIndex)) Then Exit Function
         
     End If
     
@@ -86,10 +86,10 @@ Dim lY As Byte
         If Y > 0 Then
             For lX = X - 1 To X + 1
                 For lY = Y - 1 To Y + 1
-                    If lX > MinXBorder Then
-                        If lX < MaxXBorder Then
-                            If lY > MinYBorder Then
-                                If lY < MaxYBorder Then
+                    If lX > XMinMapSize Then
+                        If lX < XMaxMapSize Then
+                            If lY > YMinMapSize Then
+                                If lY < YMaxMapSize Then
                                     If MapInfo(Map).Data(lX, lY).Blocked = 0 Then
                                         If MapInfo(Map).ObjTile(lX, lY).NumObjs < MaxObjsPerTile Then
                                             
@@ -574,17 +574,17 @@ Dim tY As Long
 
     Log "Call Server_ClosestLegalPos([M:" & Pos.Map & " X:" & Pos.X & " Y:" & Pos.Y & "],N/A)", CodeTracker '//\\LOGLINE//\\
 
+    'Check for a starting legal position
+    If Server_LegalPos(Pos.Map, Pos.X, Pos.Y, 0) Then
+        nPos = Pos
+        Exit Sub
+    End If
+
     'Set the new map
     nPos.Map = Pos.Map
 
     'Keep looping while the position is not legal
-    Do While Not Server_LegalPos(Pos.Map, nPos.X, nPos.Y, 0)
-
-        'If we have checked too much, then just leave
-        If LoopC > 3 Then   'How many tiles in all directions to search
-            Notfound = True
-            Exit Do
-        End If
+    Do
 
         'Loop through the tiles
         For tY = Pos.Y - LoopC To Pos.Y + LoopC
@@ -593,11 +593,12 @@ Dim tY As Long
                 Log "Server_ClosestLegalPos: Checking map tile (" & nPos.Map & "," & tX & "," & tY & ")", CodeTracker '//\\LOGLINE//\\
 
                 'Check if the position is legal
-                If Server_LegalPos(nPos.Map, tX, tY, 0) = True Then
+                If Server_LegalPos(nPos.Map, tX, tY, 0) Then
                     nPos.X = tX
                     nPos.Y = tY
                     tX = Pos.X + LoopC
                     tY = Pos.Y + LoopC
+                    Exit Sub
                 End If
 
             Next tX
@@ -605,6 +606,12 @@ Dim tY As Long
 
         'Check the next set of tiles
         LoopC = LoopC + 1
+        
+        'If we have checked too much, then just leave
+        If LoopC > 5 Then   'How many tiles in all directions to search
+            Notfound = True
+            Exit Do
+        End If
 
     Loop
 
@@ -796,10 +803,10 @@ Private Function Server_InMapBounds(ByVal X As Integer, ByVal Y As Integer) As B
 
     Log "Call Server_InMapBounds(" & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
-    If X > MinXBorder Then
-        If X < MaxXBorder Then
-            If Y > MinYBorder Then
-                If Y < MaxYBorder Then Server_InMapBounds = True
+    If X > XMinMapSize Then
+        If X < XMaxMapSize Then
+            If Y > YMinMapSize Then
+                If Y < YMaxMapSize Then Server_InMapBounds = True
             End If
         End If
     End If
@@ -813,6 +820,7 @@ Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal 
 '*****************************************************************
 'Checks to see if a tile position is legal
 '*****************************************************************
+Dim tmpBlocked As Byte
 
     Log "Call Server_LegalPos(" & Map & "," & X & "," & Y & "," & Heading & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -827,19 +835,19 @@ Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal 
     End If
 
     'Check to see if its out of bounds
-    If X < MinXBorder Then
+    If X < XMinMapSize Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If X > MaxXBorder Then
+    If X > XMaxMapSize Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If Y < MinYBorder Then
+    If Y < YMinMapSize Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If Y > MaxYBorder Then
+    If Y > YMaxMapSize Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
@@ -855,74 +863,78 @@ Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal 
             Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
+        
+        'Set the temp blocked variable
+        tmpBlocked = .Blocked
+        If tmpBlocked > 128 Then tmpBlocked = tmpBlocked - 128 'Remove the Blocked Attack flag
     
         'Check to see if its blocked
-        If .Blocked = BlockedAll Then
+        If tmpBlocked = BlockedAll Then
             Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
             Exit Function
         End If
     
-        'Check the heading for directional blocking
-        If Heading > 0 Then
-            If .Blocked And BlockedNorth Then
-                If Heading = NORTH Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = NORTHEAST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = NORTHWEST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
+    End With
+
+    'Check the heading for directional blocking
+    If Heading > 0 Then
+        If tmpBlocked And BlockedNorth Then
+            If Heading = NORTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
             End If
-            If .Blocked And BlockedEast Then
-                If Heading = EAST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = NORTHEAST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = SOUTHEAST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
             End If
-            If .Blocked And BlockedSouth Then
-                If Heading = SOUTH Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = SOUTHEAST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = SOUTHWEST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-            End If
-            If .Blocked And BlockedWest Then
-                If Heading = WEST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = NORTHWEST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
-                If Heading = SOUTHWEST Then
-                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-                    Exit Function
-                End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
             End If
         End If
-
-    End With
+        If tmpBlocked And BlockedEast Then
+            If Heading = EAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+        If tmpBlocked And BlockedSouth Then
+            If Heading = SOUTH Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHEAST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+        If tmpBlocked And BlockedWest Then
+            If Heading = WEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = NORTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+            If Heading = SOUTHWEST Then
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
+        End If
+    End If
 
     'If we are still in this routine, then it must be a legal position
     Server_LegalPos = True
@@ -1296,15 +1308,15 @@ Dim NewSlot As Byte
     Log "User_AddObjToInv: Starting loop (1 to " & MAX_INVENTORY_SLOTS & ")", CodeTracker '//\\LOGLINE//\\
     For LoopC = 1 To MAX_INVENTORY_SLOTS
         If UserList(UserIndex).Object(LoopC).ObjIndex = Object.ObjIndex Then
-            If UserList(UserIndex).Object(LoopC).Amount + Object.Amount <= MAX_INVENTORY_OBJS Then
+            If UserList(UserIndex).Object(LoopC).Amount + Object.Amount <= ObjData.Stacking(Object.ObjIndex) Then
                 UserList(UserIndex).Object(LoopC).Amount = UserList(UserIndex).Object(LoopC).Amount + Object.Amount
                 Object.Amount = 0
                 'Update this slot
                 User_UpdateInv False, UserIndex, LoopC
                 Exit Sub
             Else
-                Object.Amount = Object.Amount - (MAX_INVENTORY_OBJS - UserList(UserIndex).Object(LoopC).Amount)
-                UserList(UserIndex).Object(LoopC).Amount = MAX_INVENTORY_OBJS
+                Object.Amount = Object.Amount - (ObjData.Stacking(Object.ObjIndex) - UserList(UserIndex).Object(LoopC).Amount)
+                UserList(UserIndex).Object(LoopC).Amount = ObjData.Stacking(Object.ObjIndex)
                 'Update this slot
                 User_UpdateInv False, UserIndex, LoopC
             End If
@@ -1349,22 +1361,35 @@ Dim NewHeading As Byte
 Dim TargetPos As WorldPos
 Dim TargetIndex As Integer
 
+    'Check for a valid cached target
+    If UserList(UserIndex).flags.TargetIndex < 1 Then Exit Sub
+    If UserList(UserIndex).flags.TargetIndex > LastChar Then Exit Sub
+    
     'Get the target index based on the NPCList() or UserList() arrays instead of CharList() value
     TargetIndex = CharList(UserList(UserIndex).flags.TargetIndex).Index
+    
+    'Check for a valid target index
+    If TargetIndex = 0 Then Exit Sub
 
     'Check if a NPC or PC
     Select Case UserList(UserIndex).flags.Target
-        Case 1  'PC
+        Case CharType_PC  'PC
+        
+            'Check for a valid PC
+            If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+            If UserList(TargetIndex).flags.Disconnecting = 1 Then Exit Sub
+            
             With UserList(TargetIndex).Pos
                 TargetPos.Map = .Map
                 TargetPos.X = .X
                 TargetPos.Y = .Y
             End With
             
-        Case 2  'NPC
+        Case CharType_NPC  'NPC
             
             'Check for a valid NPC
             If NPCList(TargetIndex).Attackable = 0 Then Exit Sub
+            If NPCList(TargetIndex).flags.NPCAlive = 0 Then Exit Sub
             
             With NPCList(TargetIndex).Pos
                 TargetPos.Map = .Map
@@ -1416,7 +1441,7 @@ Dim TargetIndex As Integer
         Select Case UserList(UserIndex).flags.Target
         
             'Attacking user
-            Case 1
+            Case CharType_PC
 
                 'Send the data
                 If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
@@ -1436,7 +1461,7 @@ Dim TargetIndex As Integer
                 User_AttackUser UserIndex, TargetIndex
             
             'Attacking NPC
-            Case 2
+            Case CharType_NPC
                 If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) Then
                     ConBuf.PreAllocate 14
                     ConBuf.Put_Byte DataCode.Server_MakeProjectile
@@ -1619,7 +1644,7 @@ Private Sub User_AttackNPC(ByVal UserIndex As Integer, ByVal NPCIndex As Integer
 'Have a User attack a NPC
 '*****************************************************************
 Dim HitRate As Long 'User hit skill
-Dim Hit As Integer  'Hit damage
+Dim Hit As Long  'Hit damage
 
     Log "Call User_AttackNPC(" & UserIndex & "," & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1630,7 +1655,7 @@ Dim Hit As Integer  'Hit damage
     Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
     
     'Update the hit rate
-    HitRate = UserList(UserIndex).Stats.ModStat(SID.Agi) + (UserList(UserIndex).Stats.ModStat(SID.Str) * 0.25) + 50
+    HitRate = UserList(UserIndex).Stats.ModStat(SID.Agi) + (UserList(UserIndex).Stats.ModStat(SID.Str) \ 4) + 50
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= (HitRate - NPCList(NPCIndex).ModStat(SID.Agi)) Then
@@ -1656,7 +1681,7 @@ Dim Hit As Integer  'Hit damage
 
     'Calculate hit
     Hit = Server_RandomNumber(UserList(UserIndex).Stats.ModStat(SID.MinHIT), UserList(UserIndex).Stats.ModStat(SID.MaxHIT))
-    Hit = Hit - (NPCList(NPCIndex).ModStat(SID.DEF) * 0.5)
+    Hit = Hit - (NPCList(NPCIndex).ModStat(SID.DEF) \ 2)
     If Hit < 1 Then Hit = 1
     Log "User_AttackNPC: Hit (damage) value calculated (" & Hit & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1671,7 +1696,7 @@ Private Sub User_AttackUser(ByVal AttackerIndex As Integer, ByVal VictimIndex As
 'Have a user attack a user
 '*****************************************************************
 Dim HitRate As Long
-Dim Hit As Integer
+Dim Hit As Long
 
     Log "Call User_AttackUser(" & AttackerIndex & "," & VictimIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1682,7 +1707,7 @@ Dim Hit As Integer
     Data_Send ToPCArea, AttackerIndex, ConBuf.Get_Buffer
     
     'Update the hit rate
-    HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.Str) * 0.25) + 50
+    HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.Str) \ 4) + 50
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= (HitRate - UserList(VictimIndex).Stats.ModStat(SID.Agi)) Then
@@ -1708,7 +1733,7 @@ Dim Hit As Integer
     
     'Calculate hit
     Hit = Server_RandomNumber(UserList(AttackerIndex).Stats.ModStat(SID.MinHIT), UserList(AttackerIndex).Stats.ModStat(SID.MaxHIT))
-    Hit = Hit - (UserList(VictimIndex).Stats.ModStat(SID.DEF) * 0.5)
+    Hit = Hit - (UserList(VictimIndex).Stats.ModStat(SID.DEF) \ 2)
     If Hit < 1 Then Hit = 1
     
     'Hit User
@@ -2164,13 +2189,17 @@ Dim i As Long
     
     'Check to see if User already has the object type
     Slot = 1
-    Do Until UserList(UserIndex).Object(Slot).ObjIndex = MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex
-        Slot = Slot + 1
-        If Slot > MAX_INVENTORY_SLOTS Then
-            Log "User_GetObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
-            Exit Do
-        End If
-    Loop
+    If ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) > 1 Then
+        Do Until UserList(UserIndex).Object(Slot).ObjIndex = MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex
+            Slot = Slot + 1
+            If Slot > MAX_INVENTORY_SLOTS Then
+                Log "User_GetObj: Slot > MAX_INVENTORY_SLOTS", CodeTracker '//\\LOGLINE//\\
+                Exit Do
+            End If
+        Loop
+    Else
+        Slot = MAX_INVENTORY_SLOTS + 1  'Override to force to check the next slot
+    End If
 
     'Else check if there is a empty slot
     If Slot > MAX_INVENTORY_SLOTS Then
@@ -2186,7 +2215,7 @@ Dim i As Long
     End If
 
     'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount <= MAX_INVENTORY_OBJS Then
+    If UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount <= ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) Then
 
         'Tell the user they recieved the items
         ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex))
@@ -2203,26 +2232,26 @@ Dim i As Long
 
     Else
         'Over MAX_INV_OBJS
-        If MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount < UserList(UserIndex).Object(Slot).Amount Then
+        If MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).Amount < UserList(UserIndex).Object(Slot).Amount Then
             'Tell the user they recieved the items
-            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex))
+            ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
+            ConBuf.Put_Integer Abs(ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
             ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
+            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs(ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount))
         Else
             'Tell the user they recieved the items
             ConBuf.PreAllocate 5 + Len(ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 27
-            ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
+            ConBuf.Put_Integer Abs((ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
             ConBuf.Put_String ObjData.Name(MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
+            MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount = Abs((ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - MapInfo(Map).ObjTile(X, Y).ObjInfo(Slot).Amount)
         End If
-        UserList(UserIndex).Object(Slot).Amount = MAX_INVENTORY_OBJS
+        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(MapInfo(Map).ObjTile(X, Y).ObjInfo(ObjSlot).ObjIndex)
     End If
 
     'Update the user's inventory
@@ -2250,7 +2279,10 @@ Public Function User_CorrectServer(ByVal UserName As String, ByVal UserIndex As 
     'Check if this is the right server for the map
     If ServerID <> ServerMap(UserMap) Then
     
-        'Incorrect server, tell the user to change
+        'Incorrect server, tell the user to change after saving their character
+        Save_User UserList(UserIndex), UserIndex
+        UserList(UserIndex).flags.DoNotSave = 1
+        
         ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_ChangeServer
         ConBuf.Put_Integer ServerInfo(ServerMap(UserMap)).Port
@@ -2318,7 +2350,7 @@ Dim Slot As Byte
     End If
 
     'Fill object slot
-    If UserList(UserIndex).Object(Slot).Amount + Amount <= MAX_INVENTORY_OBJS Then
+    If UserList(UserIndex).Object(Slot).Amount + Amount <= ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) Then
 
         'Tell the user they recieved the items
         ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
@@ -2339,7 +2371,7 @@ Dim Slot As Byte
             ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs(MAX_INVENTORY_OBJS - (UserList(UserIndex).Object(Slot).Amount + Amount))
+            ConBuf.Put_Integer Abs(ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) - (UserList(UserIndex).Object(Slot).Amount + Amount))
             ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Else
@@ -2347,41 +2379,17 @@ Dim Slot As Byte
             ConBuf.PreAllocate 5 + Len(ObjData.Name(ObjIndex))
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 28
-            ConBuf.Put_Integer Abs((MAX_INVENTORY_OBJS + UserList(UserIndex).Object(Slot).Amount) - Amount)
+            ConBuf.Put_Integer Abs((ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex) + UserList(UserIndex).Object(Slot).Amount) - Amount)
             ConBuf.Put_String ObjData.Name(ObjIndex)
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         End If
-        UserList(UserIndex).Object(Slot).Amount = MAX_INVENTORY_OBJS
+        UserList(UserIndex).Object(Slot).Amount = ObjData.Stacking(UserList(UserIndex).Object(Slot).ObjIndex)
     End If
 
     'Update the user's inventory
     User_UpdateInv False, UserIndex, Slot
 
 End Sub
-
-Public Function User_IndexFromSox(inSox As Long) As Integer
-
-'*****************************************************************
-'Find UserIndex from given inSox ID
-'*****************************************************************
-
-Dim i As Long
-
-    Log "Call User_IndexFromSox(" & inSox & ")", CodeTracker '//\\LOGLINE//\\
-
-    Do
-        i = i + 1
-        If i > LastUser Then
-            User_IndexFromSox = -1
-            Log "Rtrn User_IndexFromSox = " & User_IndexFromSox, CodeTracker '//\\LOGLINE//\\
-            Exit Function
-        End If
-    Loop While UserList(i).ConnID <> inSox
-    User_IndexFromSox = i
-    
-    Log "Rtrn User_IndexFromSox = " & User_IndexFromSox, CodeTracker '//\\LOGLINE//\\
-
-End Function
 
 Public Sub User_Kill(ByVal UserIndex As Integer)
 
@@ -2726,7 +2734,7 @@ Dim CharIndex As Integer
     End If
 
     'Send make character command to clients
-    ConBuf.PreAllocate 41 + Len(UserList(UserIndex).Name)   '21 for below, 20 for icons
+    ConBuf.PreAllocate 22 + Len(UserList(UserIndex).Name)
     ConBuf.Put_Byte DataCode.Server_MakeChar
     ConBuf.Put_Integer UserList(UserIndex).Char.Body
     ConBuf.Put_Integer UserList(UserIndex).Char.Head
@@ -2742,29 +2750,39 @@ Dim CharIndex As Integer
     ConBuf.Put_Byte UserList(UserIndex).Stats.LastHPPercent
     ConBuf.Put_Byte UserList(UserIndex).Stats.LastMPPercent
     ConBuf.Put_Byte 0
+    If UserList(UserIndex).GroupIndex > 0 And UserList(sndIndex).GroupIndex = UserList(UserIndex).GroupIndex Then
+        ConBuf.Put_Byte ClientCharType_Grouped
+    Else
+        ConBuf.Put_Byte ClientCharType_PC
+    End If
     
     '*** Status icons ***
     If UserList(UserIndex).Skills.Bless > 0 Then
+        ConBuf.Allocate 4
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     End If
     If UserList(UserIndex).Skills.Protect > 0 Then
+        ConBuf.Allocate 4
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     End If
     If UserList(UserIndex).Skills.IronSkin > 0 Then
+        ConBuf.Allocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     End If
     If UserList(UserIndex).Skills.Strengthen > 0 Then
+        ConBuf.Allocate 4
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     End If
     If UserList(UserIndex).Skills.WarCurse > 0 Then
+        ConBuf.Allocate 4
         ConBuf.Put_Byte DataCode.Server_IconWarCursed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -2839,11 +2857,6 @@ Dim i As Long
         UserList(UserIndex).Char.HeadHeading = nHeading
         MapInfo(UserList(UserIndex).Pos.Map).Data(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = UserIndex
 
-        'If the user has movement packets in their buffer, force them to be sent asap since they could be queued packets
-        ' from distant movements. If they are not queued packets, then they are going to be high priority anyways
-        ' (unless you have changed the packet priorities lower, which for local movement, is not a good idea)
-        If UserList(UserIndex).HasMovePacket Then UserList(UserIndex).PPValue = PP_High
-
         'Do tile events
         Server_DoTileEvents UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
 
@@ -2871,15 +2884,18 @@ Dim UserIndex As Integer
     Log "Call User_NameToIndex(" & strName & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for bad name
-    If LenB(strName) Then
+    If LenB(strName) = 0 Then
         User_NameToIndex = 0
         Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
     
+    'Force the name to UCase
+    strName = UCase$(strName)
+    
     'Find the user
     UserIndex = 1
-    Do Until UCase$(UserList(UserIndex).Name) = UCase$(strName)
+    Do Until UCase$(UserList(UserIndex).Name) = strName
         UserIndex = UserIndex + 1
         If UserIndex > LastUser Then
             Log "User_NameToIndex: UserIndex > LastUser", CodeTracker '//\\LOGLINE//\\
@@ -2893,51 +2909,6 @@ Dim UserIndex As Integer
     User_NameToIndex = UserIndex
     
     Log "Rtrn User_NameToIndex = " & User_NameToIndex, CodeTracker '//\\LOGLINE//\\
-
-End Function
-
-Public Function User_NextOpen() As Integer
-
-'*****************************************************************
-'Finds the next open UserIndex in UserList
-'*****************************************************************
-
-    Log "Call User_NextOpen", CodeTracker '//\\LOGLINE//\\
-
-    'Check if a user is logging into an empty server
-    If LastUser = 0 Then
-        User_NextOpen = 1
-        LastUser = 1
-        ReDim UserList(1 To 1)
-        Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
-        Exit Function
-    End If
-
-    'Start with the first index
-    User_NextOpen = 1
-
-    'Find the next free user slot
-    Do Until UserList(User_NextOpen).flags.UserLogged = 0
-        
-        'Raise the value to check the next index
-        User_NextOpen = User_NextOpen + 1
-        
-        'Check if we have gone over the maximum users allowed
-        If User_NextOpen > MaxUsers Then
-            Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
-            Exit Do
-        End If
-        
-        'Check if we have exceeded the current array size (every slot is used)
-        If User_NextOpen > UBound(UserList()) Then
-            LastUser = User_NextOpen
-            ReDim Preserve UserList(1 To User_NextOpen)
-            Exit Do
-        End If
-        
-    Loop
-
-    Log "Rtrn User_NextOpen = " & User_NextOpen, CodeTracker '//\\LOGLINE//\\
 
 End Function
 
@@ -3127,7 +3098,7 @@ Dim LoopC As Integer
         Log "User_TradeWithNPC: NumVendItems = " & NPCList(NPCIndex).NumVendItems, CodeTracker '//\\LOGLINE//\\
 
         'Check if close enough to trade with
-        If Not Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, 6, 6) Then
+        If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, 6, 6) = 0 Then
             Log "User_TradeWithNPC: Can not trade - user too far away", CodeTracker '//\\LOGLINE//\\
             Data_Send ToIndex, UserIndex, cMessage(36).Data
             Exit Sub
@@ -3294,12 +3265,12 @@ Dim i As Integer
         'War curse
         If UserList(UserIndex).Skills.WarCurse > 0 Then
             Log "User_UpdateModStats: Updating effects of skill/spell WarCurse", CodeTracker '//\\LOGLINE//\\
-            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.Str) = .ModStat(SID.Str) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
-            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (UserList(UserIndex).Skills.WarCurse * 0.25)
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) - (UserList(UserIndex).Skills.WarCurse \ 4)
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) - (UserList(UserIndex).Skills.WarCurse \ 4)
+            .ModStat(SID.Str) = .ModStat(SID.Str) - (UserList(UserIndex).Skills.WarCurse \ 4)
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) - (UserList(UserIndex).Skills.WarCurse \ 4)
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) - (UserList(UserIndex).Skills.WarCurse \ 4)
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) - (UserList(UserIndex).Skills.WarCurse \ 4)
         End If
         
         'Strengthen
@@ -3318,12 +3289,12 @@ Dim i As Integer
         'Bless
         If UserList(UserIndex).Skills.Bless > 0 Then
             Log "User_UpdateModStats: Updating effects of skill/spell Bless", CodeTracker '//\\LOGLINE//\\
-            .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless * 0.5
-            .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless * 0.5
-            .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless * 0.5
-            .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Bless * 0.25
-            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Bless * 0.25
-            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Bless * 0.25
+            .ModStat(SID.Agi) = .ModStat(SID.Agi) + UserList(UserIndex).Skills.Bless \ 2
+            .ModStat(SID.Mag) = .ModStat(SID.Mag) + UserList(UserIndex).Skills.Bless \ 2
+            .ModStat(SID.Str) = .ModStat(SID.Str) + UserList(UserIndex).Skills.Bless \ 2
+            .ModStat(SID.DEF) = .ModStat(SID.DEF) + UserList(UserIndex).Skills.Bless \ 4
+            .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + UserList(UserIndex).Skills.Bless \ 4
+            .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + UserList(UserIndex).Skills.Bless \ 4
         End If
         
         'Iron skin
@@ -3335,12 +3306,59 @@ Dim i As Integer
         End If
         
         'Min/max hit (damage) modification from strength and agility
-        .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) * 0.25)
-        .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) * 0.25)
+        .ModStat(SID.MinHIT) = .ModStat(SID.MinHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) \ 4)
+        .ModStat(SID.MaxHIT) = .ModStat(SID.MaxHIT) + .ModStat(SID.Str) + (.ModStat(SID.Agi) \ 4)
 
     End With
     
 End Sub
+
+Public Function User_NearBankNPC(ByVal UserIndex As Integer) As Byte
+
+'*****************************************************************
+'Checks if the user is near enough to a banking NPC to use the banking
+'*****************************************************************
+Dim MinX As Integer
+Dim MinY As Integer
+Dim MaxX As Integer
+Dim MaxY As Integer
+Dim X As Byte
+Dim Y As Byte
+
+    'Set the tiles we will search through
+    MinX = (UserList(UserIndex).Pos.X - MaxServerDistanceX)
+    MaxX = (UserList(UserIndex).Pos.X + MaxServerDistanceX)
+    MinY = (UserList(UserIndex).Pos.Y - MaxServerDistanceY)
+    MaxY = (UserList(UserIndex).Pos.Y + MaxServerDistanceY)
+    If MinX < XMinMapSize Then MinX = XMinMapSize
+    If MinY < YMinMapSize Then MinY = YMinMapSize
+    If MaxX > XMaxMapSize Then MaxX = XMaxMapSize
+    If MaxY > YMaxMapSize Then MaxY = YMaxMapSize
+
+    'Loop through the tiles near the user
+    For X = MinX To MaxX
+        For Y = MinY To MaxY
+            
+            'Check for a NPC index
+            If MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
+                
+                'NPC was found, check if it is a banker NPC AI
+                If NPCList(MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex).AI = 6 Then
+                
+                    'Banker NPC found! Screw the rest of the loops, we got what we wanted
+                    User_NearBankNPC = 1
+                    Exit Function
+                    
+                End If
+                
+            End If
+        
+        Next Y
+    Next X
+    
+    'If we got this far, no banker was found :(
+            
+End Function
 
 Public Sub User_UseInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte)
 
@@ -3385,14 +3403,37 @@ Dim ObjIndex As Integer
     
     ObjIndex = UserList(UserIndex).Object(Slot).ObjIndex
     
-    'Check if the user can use the item
-    If Obj_ValidObjForClass(UserList(UserIndex).Class, ObjIndex) = 0 Then Exit Sub
+    'Check if the user can use the item due to class restrictions
+    If Obj_ValidObjForClass(UserList(UserIndex).Class, ObjIndex) = 0 Then
+        Data_Send ToIndex, UserIndex, cMessage(125).Data()
+        Exit Sub
+    End If
 
-    'Apply the replenish values
     With UserList(UserIndex).Stats
+    
+        'Check if the user can use the item due to stat restrictions
+        If .BaseStat(SID.Agi) < ObjData.ReqAgi(ObjIndex) Then
+            Data_Send ToIndex, UserIndex, cMessage(125).Data()
+            Exit Sub
+        End If
+        If .BaseStat(SID.Mag) < ObjData.ReqMag(ObjIndex) Then
+            Data_Send ToIndex, UserIndex, cMessage(125).Data()
+            Exit Sub
+        End If
+        If .BaseStat(SID.Str) < ObjData.ReqStr(ObjIndex) Then
+            Data_Send ToIndex, UserIndex, cMessage(125).Data()
+            Exit Sub
+        End If
+        If .BaseStat(SID.ELV) < ObjData.ReqLvl(ObjIndex) Then
+            Data_Send ToIndex, UserIndex, cMessage(125).Data()
+            Exit Sub
+        End If
+    
+        'Apply the replenish values
         .BaseStat(SID.MinHP) = .BaseStat(SID.MinHP) + (.ModStat(SID.MaxHP) * ObjData.RepHPP(ObjIndex)) + ObjData.RepHP(ObjIndex)
         .BaseStat(SID.MinMAN) = .BaseStat(SID.MinMAN) + (.ModStat(SID.MaxMAN) * ObjData.RepMPP(ObjIndex)) + ObjData.RepMP(ObjIndex)
         .BaseStat(SID.MinSTA) = .BaseStat(SID.MinSTA) + (.ModStat(SID.MaxSTA) * ObjData.RepSPP(ObjIndex)) + ObjData.RepSP(ObjIndex)
+    
     End With
 
     Select Case ObjData.ObjType(ObjIndex)
@@ -3652,6 +3693,231 @@ Dim LoopC As Long
     End If
 
 End Sub
+
+Public Sub Group_AddUser(ByVal UserIndex As Integer, ByVal GroupIndex As Byte)
+
+'*****************************************************************
+'Adds a user to an existing group
+'*****************************************************************
+
+    'Check for valid group information
+    If GroupIndex > NumGroups Then Exit Sub
+    If GroupIndex < 1 Then Exit Sub
+    If GroupData(GroupIndex).NumUsers = 0 Then Exit Sub
+    If GroupData(GroupIndex).NumUsers >= Group_MaxUsers Then
+        ConBuf.PreAllocate 3 + Len(UserList(GroupData(GroupIndex).Users(1)).Name)
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 106
+        ConBuf.Put_String UserList(GroupData(GroupIndex).Users(1)).Name
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Exit Sub
+    End If
+    
+    'Add the user to the group
+    GroupData(GroupIndex).NumUsers = GroupData(GroupIndex).NumUsers + 1
+    ReDim Preserve GroupData(GroupIndex).Users(1 To GroupData(GroupIndex).NumUsers)
+    GroupData(GroupIndex).Users(GroupData(GroupIndex).NumUsers) = UserIndex
+    UserList(UserIndex).GroupIndex = GroupIndex
+    
+    'Join group message
+    ConBuf.PreAllocate 3 + Len(UserList(GroupData(GroupIndex).Users(1)).Name)
+    ConBuf.Put_Byte DataCode.Server_Message
+    ConBuf.Put_Byte 107
+    ConBuf.Put_String UserList(GroupData(GroupIndex).Users(1)).Name
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+    'Tell the group members the user joined
+    ConBuf.PreAllocate 3 + Len(UserList(UserIndex).Name)
+    ConBuf.Put_Byte DataCode.Server_Message
+    ConBuf.Put_Byte 108
+    ConBuf.Put_String UserList(UserIndex).Name
+    Data_Send ToGroupButIndex, UserIndex, ConBuf.Get_Buffer
+    
+End Sub
+
+Public Sub Group_EXPandGold(ByVal UserIndex As Integer, ByVal GroupIndex As Integer, ByVal EXP As Long, ByVal Gold As Long)
+
+'*****************************************************************
+'Splits up the EXP and Gold gained among group users in range
+'*****************************************************************
+Dim GiveUsers() As Integer
+Dim NumUsersInRange As Byte
+Dim tIndex As Integer
+Dim i As Byte
+
+    'Check for a valid group
+    If GroupIndex = 0 Then Exit Sub
+
+    'Default to give to all users
+    ReDim GiveUsers(1 To GroupData(GroupIndex).NumUsers)
+
+    'Loop through and find the users to give the exp to
+    For i = 1 To GroupData(GroupIndex).NumUsers
+    
+        'Hold the index in a smaller variable
+        tIndex = GroupData(GroupIndex).Users(i)
+    
+        'Confirm that it is a valid index
+        If tIndex > 0 Then
+        
+            'Check if the user is on the same map
+            If UserList(UserIndex).Pos.Map = UserList(tIndex).Pos.Map Then
+            
+                'Check the distance
+                If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(tIndex).Pos.X, UserList(tIndex).Pos.Y, Group_MaxDistanceX, Group_MaxDistanceY) Then
+                    
+                    'The user is in range, set them in the array to get the exp
+                    NumUsersInRange = NumUsersInRange + 1
+                    GiveUsers(NumUsersInRange) = tIndex
+                    
+                End If
+                
+            End If
+        
+        End If
+        
+    Next i
+    
+    'Divide the gold and exp among the users
+    EXP = (EXP \ NumUsersInRange) + 1
+    Gold = (Gold \ NumUsersInRange) + 1
+    
+    'Give the exp to all the users
+    For i = 1 To NumUsersInRange
+        User_RaiseExp GiveUsers(i), EXP
+        UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + Gold
+    Next i
+    
+    'Clear the GiveUsers array
+    Erase GiveUsers()
+
+End Sub
+
+Public Sub Group_RemoveUser(ByVal UserIndex As Integer, ByVal GroupIndex As Integer)
+
+'*****************************************************************
+'Removes a user from an existing group
+'*****************************************************************
+Dim i As Byte
+Dim j As Byte
+
+    'Check for valid group information
+    If GroupIndex > NumGroups Then Exit Sub
+    If GroupIndex < 1 Then Exit Sub
+    If GroupData(GroupIndex).NumUsers = 0 Then Exit Sub 'Group deleted
+
+    'Tell the user they have left the group
+    Data_Send ToIndex, UserIndex, cMessage(109).Data()
+    
+    'Check how many people are left in the group
+    If GroupData(GroupIndex).NumUsers > 1 Then
+    
+        'Tell everyone else they have left
+        ConBuf.PreAllocate 3 + Len(UserList(UserIndex).Name)
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 110
+        ConBuf.Put_String UserList(UserIndex).Name
+        Data_Send ToGroupButIndex, UserIndex, ConBuf.Get_Buffer
+        
+        'Clear the user's group flag
+        UserList(UserIndex).GroupIndex = 0
+    
+    Else
+    
+        'This is the last person, so just empty the group out
+        GroupData(GroupIndex).NumUsers = 0
+        Erase GroupData(GroupIndex).Users
+        
+        'Raise the empty group count
+        NumEmptyGroups = NumEmptyGroups + 1
+        
+        'Clear the user's group flag
+        UserList(UserIndex).GroupIndex = 0
+        
+        Exit Sub
+        
+    End If
+    
+    'Update everyone in the map that is part of the gorup that the user has changed out of the group
+    ConBuf.PreAllocate 4
+    ConBuf.Put_Byte DataCode.Server_ChangeCharType
+    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+    ConBuf.Put_Byte ClientCharType_PC
+    Data_Send ToMapGroupButIndex, UserIndex, ConBuf.Get_Buffer
+    
+    'Find the slot the user has in the group
+    For i = 1 To GroupData(GroupIndex).NumUsers
+    
+        'Index found
+        If GroupData(GroupIndex).Users(i) = UserIndex Then
+
+            'If the user is the last one in the group, just resize the array
+            If GroupData(GroupIndex).NumUsers = i Then
+                GroupData(GroupIndex).NumUsers = GroupData(GroupIndex).NumUsers - 1
+                ReDim Preserve GroupData(GroupIndex).Users(1 To GroupData(GroupIndex).NumUsers)
+                Exit Sub
+            End If
+            
+            'The user is not at the end of the array, and theres more then one user
+            For j = i To GroupData(GroupIndex).NumUsers - 1
+                
+                'Move all the users in the group down in the array to fill the now empty slow
+                GroupData(GroupIndex).Users(j) = GroupData(GroupIndex).Users(j + 1)
+                
+            Next j
+            
+            'Remove the left-over slot at the end
+            GroupData(GroupIndex).NumUsers = GroupData(GroupIndex).NumUsers - 1
+            ReDim Preserve GroupData(GroupIndex).Users(1 To GroupData(GroupIndex).NumUsers)
+            Exit Sub
+            
+        End If
+        
+    Next i
+    
+End Sub
+
+Public Function Group_Create(ByVal UserIndex As Integer) As Byte
+
+'*****************************************************************
+'Find the next free group index and return it
+'*****************************************************************
+Dim i As Byte
+
+    'Check if theres any groups yet
+    If NumGroups = 0 Then
+        NumGroups = 1
+        Group_Create = 1
+        ReDim GroupData(1 To 1) As GroupData
+        Exit Function
+    End If
+    
+    'Check if there are any empty groups - if so, find out which index it is
+    If NumEmptyGroups > 0 Then
+        For i = 1 To NumGroups
+            If GroupData(i).NumUsers = 0 Then
+                
+                'Found a group not in use, use it
+                NumEmptyGroups = NumEmptyGroups - 1 'We took one of the empty groups
+                Group_Create = i
+                Exit Function
+                
+            End If
+        Next i
+    End If
+    
+    'No groups found, check if we can make a new one
+    If NumGroups + 1 >= Group_MaxGroups Then
+        Data_Send ToIndex, UserIndex, cMessage(111).Data()
+        Exit Function
+    End If
+    
+    'Add the new group
+    NumGroups = NumGroups + 1
+    ReDim Preserve GroupData(1 To NumGroups)
+    Group_Create = NumGroups
+
+End Function
 
 Public Sub Quest_SendText(ByVal UserIndex As Integer, Optional ByVal QuestIndex As Byte = 0)
 

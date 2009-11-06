@@ -1,37 +1,23 @@
 VERSION 5.00
 Begin VB.Form frmMapInfo 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
-   Caption         =   "Map Info"
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Map Info"
    ClientHeight    =   1215
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   45
+   ClientTop       =   345
    ClientWidth     =   3120
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
    ScaleHeight     =   81
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   208
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   8
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Map Information"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.TextBox MusicTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   3
@@ -42,8 +28,6 @@ Begin VB.Form frmMapInfo
    End
    Begin VB.TextBox WeatherTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   2520
       TabIndex        =   2
@@ -54,8 +38,6 @@ Begin VB.Form frmMapInfo
    End
    Begin VB.TextBox VersionTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   840
       TabIndex        =   1
@@ -66,8 +48,6 @@ Begin VB.Form frmMapInfo
    End
    Begin VB.TextBox MapNameTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   300
       Left            =   1200
       TabIndex        =   0
@@ -89,7 +69,7 @@ Begin VB.Form frmMapInfo
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   120
@@ -110,7 +90,7 @@ Begin VB.Form frmMapInfo
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   2
       Left            =   1680
@@ -131,7 +111,7 @@ Begin VB.Form frmMapInfo
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   1
       Left            =   120
@@ -152,7 +132,7 @@ Begin VB.Form frmMapInfo
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   120
@@ -167,14 +147,6 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
-End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 

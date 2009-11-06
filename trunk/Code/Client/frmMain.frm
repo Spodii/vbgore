@@ -54,12 +54,14 @@ Option Explicit
 Implements DirectXEvent8
 
 Private NC As Byte
+Private Declare Function GetCursorPos Lib "user32.dll" (ByRef lpPoint As POINTAPI) As Long
 
 Private Sub DirectXEvent8_DXCallback(ByVal eventid As Long)
 Dim DevData(1 To BufferSize) As DIDEVICEOBJECTDATA
 Dim NumEvents As Long
 Dim LoopC As Long
 Dim Moved As Byte
+Dim OldMousePos As POINTAPI
 
     On Error GoTo ErrOut
 
@@ -75,18 +77,36 @@ Dim Moved As Byte
 
             'Move on X axis
         Case DIMOFS_X
-            MousePosAdd.X = (DevData(LoopC).lData * MouseSpeed)
-            MousePos.X = MousePos.X + MousePosAdd.X
-            If MousePos.X < 0 Then MousePos.X = 0
-            If MousePos.X > frmMain.ScaleWidth Then MousePos.X = frmMain.ScaleWidth
+            If Windowed Then
+                OldMousePos = MousePos
+                GetCursorPos MousePos
+                MousePos.X = MousePos.X - (Me.Left \ Screen.TwipsPerPixelX)
+                MousePos.Y = MousePos.Y - (Me.Top \ Screen.TwipsPerPixelY)
+                MousePosAdd.X = -(OldMousePos.X - MousePos.X)
+                MousePosAdd.Y = -(OldMousePos.Y - MousePos.Y)
+            Else
+                MousePosAdd.X = (DevData(LoopC).lData * MouseSpeed)
+                MousePos.X = MousePos.X + MousePosAdd.X
+                If MousePos.X < 0 Then MousePos.X = 0
+                If MousePos.X > frmMain.ScaleWidth Then MousePos.X = frmMain.ScaleWidth
+            End If
             Moved = 1
 
             'Move on Y axis
         Case DIMOFS_Y
-            MousePosAdd.Y = (DevData(LoopC).lData * MouseSpeed)
-            MousePos.Y = MousePos.Y + MousePosAdd.Y
-            If MousePos.Y < 0 Then MousePos.Y = 0
-            If MousePos.Y > frmMain.ScaleHeight Then MousePos.Y = frmMain.ScaleHeight
+            If Windowed Then
+                OldMousePos = MousePos
+                GetCursorPos MousePos
+                MousePos.X = MousePos.X - (Me.Left \ Screen.TwipsPerPixelX)
+                MousePos.Y = MousePos.Y - (Me.Top \ Screen.TwipsPerPixelY)
+                MousePosAdd.X = -(OldMousePos.X - MousePos.X)
+                MousePosAdd.Y = -(OldMousePos.Y - MousePos.Y)
+            Else
+                MousePosAdd.Y = (DevData(LoopC).lData * MouseSpeed)
+                MousePos.Y = MousePos.Y + MousePosAdd.Y
+                If MousePos.Y < 0 Then MousePos.Y = 0
+                If MousePos.Y > frmMain.ScaleHeight Then MousePos.Y = frmMain.ScaleHeight
+            End If
             Moved = 1
 
             'Left button pressed
@@ -413,6 +433,9 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.Comm_Shout
                         sndBuf.Put_String s
                         
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/GINFO" Or UCase$(Left$(EnterTextBuffer, 7)) = "/GROUPI" Then
+                        sndBuf.Put_Byte DataCode.User_Group_Info
+                        
                     ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/TELL" Then
                         s = Trim$(SplitCommandFromString(EnterTextBuffer))
                         If s = vbNullString Then Exit Sub
@@ -422,6 +445,44 @@ Dim j As Long
                         sndBuf.Put_Byte DataCode.Comm_Whisper
                         sndBuf.Put_String Trim$(TempS(0))
                         sndBuf.Put_String Trim$(TempS(1))
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/DEP" Then
+                        j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
+                        If j <= 0 Then Exit Sub
+                        sndBuf.Put_Byte DataCode.User_Bank_Deposit
+                        sndBuf.Put_Long j
+                        'We will assume that the deposit was successful
+                        Engine_AddToChatTextBuffer Replace$(Message(118), "<amount>", Str(j)), FontColor_Info
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/WITH" Then
+                        j = Val(Trim$(SplitCommandFromString(EnterTextBuffer)))
+                        If j <= 0 Then Exit Sub
+                        sndBuf.Put_Byte DataCode.User_Bank_Withdraw
+                        sndBuf.Put_Long j
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/BALAN" Then
+                        sndBuf.Put_Byte DataCode.User_Bank_Balance
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 2)) = "/G" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
+                        sndBuf.Put_Byte DataCode.Comm_GroupTalk
+                        sndBuf.Put_String s
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 8)) = "/CREATEG" Or UCase$(Left$(EnterTextBuffer, 6)) = "/MAKEG" Or UCase$(Left$(EnterTextBuffer, 5)) = "/NEWG" Then
+                        sndBuf.Put_Byte DataCode.User_Group_Make
+                    
+                    ElseIf UCase$(Left$(EnterTextBuffer, 7)) = "/INVITE" Then
+                        s = Trim$(SplitCommandFromString(EnterTextBuffer))
+                        If s = vbNullString Then Exit Sub
+                        sndBuf.Put_Byte DataCode.User_Group_Invite
+                        sndBuf.Put_String s
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 7)) = "/LEAVEG" Or UCase$(Left$(EnterTextBuffer, 6)) = "/EXITG" Then
+                        sndBuf.Put_Byte DataCode.User_Group_Leave
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/JOING" Then
+                        sndBuf.Put_Byte DataCode.User_Group_Join
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/ME" Then
                         s = Trim$(SplitCommandFromString(EnterTextBuffer))
@@ -540,6 +601,10 @@ Dim j As Long
                                 sndBuf.Put_Byte CByte(TempS(1))
                             End If
                         End If
+                        
+                    ElseIf UCase$(Left$(EnterTextBuffer, 10)) = "/CLICKWARP" Then
+                        If UseClickWarp = 1 Then UseClickWarp = 0 Else UseClickWarp = 1
+                        Engine_AddToChatTextBuffer Replace$(Message(124), "<value>", UseClickWarp), FontColor_Info
                         
                     ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/BANIP" Then
                         s = SplitCommandFromString(EnterTextBuffer) 'Remove the command
@@ -661,6 +726,7 @@ Dim j As Long
 End Sub
 
 Private Sub Form_KeyPress(KeyAscii As Integer)
+Dim i As Long
 Dim b As Boolean
 
     '*************************
@@ -746,11 +812,20 @@ Dim b As Boolean
         Else
             'Auto-write a reply to the last person to whisper to us
             If KeyAscii = 114 Then  'Key R
-                If LastWhisperName <> "" Then
+                If LenB(LastWhisperName) Then
                     EnterText = True
                     EnterTextBuffer = "/tell " & LastWhisperName & " "
                     EnterTextBufferWidth = Engine_GetTextWidth(EnterTextBuffer)
                     LastClickedWindow = 0
+                End If
+            End If
+            'Target the closest character
+            If KeyAscii = 116 Then   'Key T
+                i = Game_ClosestTargetNPC
+                If i > 0 Then
+                    sndBuf.Allocate 3
+                    sndBuf.Put_Byte DataCode.User_Target
+                    sndBuf.Put_Integer i
                 End If
             End If
         End If
@@ -870,9 +945,9 @@ End Sub
 Private Sub ShutdownTimer_Timer()
 
     On Error Resume Next    'Who cares about an error if we are closing down
-    
-    'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
 
+    'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
+    
     'Close down the socket
     GOREsock_ShutDown
     GOREsock_UnHook

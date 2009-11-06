@@ -642,6 +642,7 @@ Dim j As Byte
             .Char.Wings = Val(DB_RS!char_wings)
             .Char.Heading = Val(DB_RS!char_heading)
             .Char.HeadHeading = Val(DB_RS!char_headheading)
+            .BaseStat(SID.Agi) = Val(DB_RS!stat_hitrate)
             .BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
             .BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
             .BaseStat(SID.DEF) = Val(DB_RS!stat_def)
@@ -910,6 +911,12 @@ Dim FileNum As Byte
             .AddStat(SID.MaxHP) = Val(DB_RS!stat_hp)
             .AddStat(SID.MaxMAN) = Val(DB_RS!stat_mp)
             .AddStat(SID.MaxSTA) = Val(DB_RS!stat_sp)
+            .ReqAgi = Val(DB_RS!req_agi)
+            .ReqStr = Val(DB_RS!req_str)
+            .ReqLvl = Val(DB_RS!req_lvl)
+            .ReqMag = Val(DB_RS!req_mag)
+            .Stacking = Val(DB_RS!Stacking)
+            If .Stacking < 1 Then .Stacking = MaxObjAmount
         End With
         
         'Save the file
@@ -1100,7 +1107,8 @@ Dim i As Long
         KSStr = !KnownSkills
         CompQStr = Trim$(!CompletedQuests)
         CurQStr = Trim$(!currentquest)
-        UserChar.Class = !Class
+        UserChar.BankGold = Val(!BankGold)
+        UserChar.Class = Val(!Class)
         UserChar.Pos.X = Val(!pos_x)
         UserChar.Pos.Y = Val(!pos_y)
         UserChar.Pos.Map = Val(!pos_map)
@@ -1288,7 +1296,7 @@ Dim i As Long
 
 End Sub
 
-Public Sub Save_User(UserChar As User, Optional ByVal Password As String, Optional ByVal NewUser As Byte)
+Public Sub Save_User(UserChar As User, ByVal UserIndex As Integer, Optional ByVal Password As String, Optional ByVal NewUser As Byte)
 
 '*****************************************************************
 'Saves a user's data to a .chr file
@@ -1301,7 +1309,10 @@ Dim CurQStr As String
 Dim CompQStr As String
 Dim i As Long
 
-    Log "Call Save_User(N/A," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call Save_User(N/A," & UserIndex & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
+
+    'On special occasions, we want to the typical saving routine and save before the user is even disconnected
+    If UserChar.flags.DoNotSave = 1 Then Exit Sub
 
     With UserChar
     
@@ -1401,12 +1412,13 @@ Dim i As Long
         If NewUser Then
             DB_RS!date_create = Date$
             DB_RS!Name = .Name
-            DB_RS!IP = GOREsock_Address(UserChar.ConnID)
+            DB_RS!IP = GOREsock_Address(UserIndex)
         End If
         DB_RS!date_lastlogin = Date$
         DB_RS!gm = .flags.GMLevel
         DB_RS!Class = .Class
         DB_RS!Descr = .Desc
+        DB_RS!BankGold = .BankGold
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr
         DB_RS!KnownSkills = KSStr
@@ -1475,11 +1487,11 @@ Dim s As String
     MakeSureDirectoryPathExists LogPath
     
     'Delete the old file if it exists
-    If Server_FileExist(LogPath & "packetsin.txt", vbNo) Then Kill LogPath & "packetsin.txt"
+    If Server_FileExist(LogPath & ServerID & "\packetsin.txt", vbNo) Then Kill LogPath & ServerID & "\packetsin.txt"
     
     'Write to the file
     FileNum = FreeFile
-    Open LogPath & "packetsin.txt" For Binary Access Write As #FileNum
+    Open LogPath & ServerID & "\packetsin.txt" For Binary Access Write As #FileNum
         Put #FileNum, , s
     Close #FileNum
 
@@ -1504,11 +1516,11 @@ Dim s As String
     MakeSureDirectoryPathExists LogPath
     
     'Delete the old file if it exists
-    If Server_FileExist(LogPath & "packetsout.txt", vbNo) Then Kill LogPath & "packetsout.txt"
+    If Server_FileExist(LogPath & ServerID & "\packetsout.txt", vbNo) Then Kill LogPath & ServerID & "\packetsout.txt"
     
     'Write to the file
     FileNum = FreeFile
-    Open LogPath & "packetsout.txt" For Binary Access Write As #FileNum
+    Open LogPath & ServerID & "\packetsout.txt" For Binary Access Write As #FileNum
         Put #FileNum, , s
     Close #FileNum
 
@@ -1525,11 +1537,11 @@ Dim FileNum As Byte
     MakeSureDirectoryPathExists LogPath
     
     'Delete the old file if it exists
-    If Server_FileExist(LogPath & "serverfps.txt", vbNo) Then Kill LogPath & "serverfps.txt"
+    If Server_FileExist(LogPath & ServerID & "\serverfps.txt", vbNo) Then Kill LogPath & ServerID & "\serverfps.txt"
     
     'Write to the file
     FileNum = FreeFile
-    Open LogPath & "serverfps.txt" For Binary Access Write As #FileNum
+    Open LogPath & ServerID & "\serverfps.txt" For Binary Access Write As #FileNum
         Put #FileNum, , FPSIndex
         Put #FileNum, , ServerFPS()
     Close #FileNum

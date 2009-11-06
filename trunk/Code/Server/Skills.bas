@@ -40,7 +40,7 @@ Public Function Skill_ValidSkillForClass(ByVal Class As Byte, ByVal SkillID As B
     
     'Sort by skill id
     Select Case SkillID
-        Case SkID.Heal: If Not Heal_ClassReq And Class Then Exit Function
+        Case SkID.Heal: If Not (Heal_ClassReq And Class) Then Exit Function
     End Select
 
     'If we haven't aborted then it is valid
@@ -1205,7 +1205,7 @@ Public Function Skill_SpikeField(ByVal CasterIndex As Integer) As Byte
 Dim aMap As Integer
 Dim aX As Integer
 Dim aY As Integer
-Dim Damage As Integer
+Dim Damage As Long
 
     'Check for spell exhaustion
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
@@ -1217,11 +1217,11 @@ Dim Damage As Integer
     End If
 
     'Check for enough mana
-    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 2) Then
         Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
-    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
+    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 2)
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + 3000

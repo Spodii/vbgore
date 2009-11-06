@@ -190,27 +190,27 @@ Private Sub mnufps_Click()
     
 End Sub
 
-Private Sub mnubrowselog_Click()                                                                        '//\\LOGLINE//\\
-    Shell "explorer " & LogPath, vbMaximizedFocus                                                       '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnucritical_Click()                                                                         '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CriticalError.log", vbMaximizedFocus         '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnucodetracker_Click()                                                                      '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CodeTracker.log", vbMaximizedFocus           '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnugeneral_Click()                                                                          '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "General.log", vbMaximizedFocus               '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnuin_Click()                                                                               '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketIn.log", vbMaximizedFocus              '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnuout_Click()                                                                              '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketOut.log", vbMaximizedFocus             '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
-Private Sub mnupacket_Click()                                                                           '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "InvalidPacketData.log", vbMaximizedFocus     '//\\LOGLINE//\\
-End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnubrowselog_Click()                                                                                    '//\\LOGLINE//\\
+    Shell "explorer " & LogPath, vbMaximizedFocus                                                                   '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnucritical_Click()                                                                                     '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\CriticalError.log", vbMaximizedFocus         '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnucodetracker_Click()                                                                                  '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\CodeTracker.log", vbMaximizedFocus           '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnugeneral_Click()                                                                                      '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\General.log", vbMaximizedFocus               '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnuin_Click()                                                                                           '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\PacketIn.log", vbMaximizedFocus              '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnuout_Click()                                                                                          '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\PacketOut.log", vbMaximizedFocus             '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
+Private Sub mnupacket_Click()                                                                                       '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & ServerID & "\InvalidPacketData.log", vbMaximizedFocus     '//\\LOGLINE//\\
+End Sub                                                                                                             '//\\LOGLINE//\\
 
 Private Sub mnupacketin_Click()
 
@@ -218,7 +218,7 @@ Private Sub mnupacketin_Click()
     Save_PacketsIn
     
     'Display the file
-    Shell "notepad " & LogPath & "packetsin.txt", vbMaximizedFocus
+    Shell "notepad " & LogPath & ServerID & "\packetsin.txt", vbMaximizedFocus
 
 End Sub
 
@@ -228,7 +228,7 @@ Private Sub mnupacketout_Click()
     Save_PacketsOut
     
     'Display the file
-    Shell "notepad " & LogPath & "packetsout.txt", vbMaximizedFocus
+    Shell "notepad " & LogPath & ServerID & "\packetsout.txt", vbMaximizedFocus
 
 End Sub
 
@@ -255,7 +255,7 @@ Dim i As Long
     
     'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
     Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
-        "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102"
+        "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102,109,111,112,113,114,116,119,121,123,125"
     
     'Make the server temp path
     MakeSureDirectoryPathExists ServerTempPath
@@ -282,12 +282,6 @@ Dim i As Long
     
     'How many bytes we need to fit all of our skills
     NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
-    
-    'Setup Map borders
-    MinXBorder = XMinMapSize + (XWindow \ 2)
-    MaxXBorder = XMaxMapSize - (XWindow \ 2)
-    MinYBorder = YMinMapSize + (YWindow \ 2)
-    MaxYBorder = YMaxMapSize - (YWindow \ 2)
     
     'Load Data Commands
     InitDataCommands

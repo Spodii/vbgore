@@ -97,6 +97,3 @@ Dim i As Integer, j As Integer
     On Error GoTo 0
 
 End Function
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:47)  Decl: 1  Code: 98  Total: 99 Lines
-':) CommentOnly: 0 (0%)  Commented: 0 (0%)  Empty: 26 (26.3%)  Max Logic Depth: 6

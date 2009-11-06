@@ -441,6 +441,3 @@ Public Sub Encryption_XOR_SetKey(New_Value As String)
     m_XORKey() = StrConv(m_XORKeyValue, vbFromUnicode)
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:46)  Decl: 138  Code: 5343  Total: 5481 Lines
-':) CommentOnly: 650 (11.9%)  Commented: 7 (0.1%)  Empty: 806 (14.7%)  Max Logic Depth: 8

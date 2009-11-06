@@ -1,37 +1,23 @@
 VERSION 5.00
 Begin VB.Form frmSfx 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
-   Caption         =   "Add Sfx"
-   ClientHeight    =   540
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   1860
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Add Sfx"
+   ClientHeight    =   510
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   1800
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   36
+   ScaleHeight     =   34
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   124
+   ScaleWidth      =   120
    ShowInTaskbar   =   0   'False
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   2
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Add Sfx"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.TextBox SfxTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
       Height          =   285
       Left            =   720
       TabIndex        =   0
@@ -53,12 +39,12 @@ Begin VB.Form frmSfx
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   0
       Left            =   120
       TabIndex        =   1
-      Top             =   120
+      Top             =   135
       Width           =   540
    End
 End
@@ -75,13 +61,6 @@ Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     Var_Write Data2Path & "MapEditor.ini", "SFX", "X", Me.Left
     Var_Write Data2Path & "MapEditor.ini", "SFX", "Y", Me.Top
     HideFrmSfx
-
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
 
 End Sub
 

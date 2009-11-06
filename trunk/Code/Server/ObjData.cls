@@ -290,6 +290,51 @@ Public Property Get RepSPP(ByVal Index As Integer) As Integer
     End If
 End Property
 
+Public Property Get ReqStr(ByVal Index As Integer) As Long
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            ReqStr = cData(ObjIndexToDataIndex(Index)).ReqStr
+        End If
+    End If
+End Property
+
+Public Property Get ReqAgi(ByVal Index As Integer) As Long
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            ReqAgi = cData(ObjIndexToDataIndex(Index)).ReqAgi
+        End If
+    End If
+End Property
+
+Public Property Get ReqMag(ByVal Index As Integer) As Long
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            ReqMag = cData(ObjIndexToDataIndex(Index)).ReqMag
+        End If
+    End If
+End Property
+
+Public Property Get ReqLvl(ByVal Index As Integer) As Long
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            ReqLvl = cData(ObjIndexToDataIndex(Index)).ReqLvl
+        End If
+    End If
+End Property
+
+Public Property Get Stacking(ByVal Index As Integer) As Integer
+    If Index > 0 Then
+        If Index <= MaxDatas Then
+            ReadyObj Index
+            Stacking = cData(ObjIndexToDataIndex(Index)).Stacking
+        End If
+    End If
+End Property
+
 Public Property Get UseSfx(ByVal Index As Integer) As Byte
     If Index > 0 Then
         If Index <= MaxDatas Then

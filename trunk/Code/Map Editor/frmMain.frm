@@ -1,573 +1,264 @@
 VERSION 5.00
 Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "Comdlg32.ocx"
-Begin VB.Form frmMain 
-   BackColor       =   &H00000000&
-   BorderStyle     =   0  'None
+Begin VB.MDIForm frmMain 
+   Appearance      =   0  'Flat
+   BackColor       =   &H8000000C&
    Caption         =   "vbGORE Map Editor"
-   ClientHeight    =   10440
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   12000
+   ClientHeight    =   11040
+   ClientLeft      =   60
+   ClientTop       =   450
+   ClientWidth     =   15390
    Icon            =   "frmMain.frx":0000
-   KeyPreview      =   -1  'True
    LinkTopic       =   "Form1"
-   MaxButton       =   0   'False
-   MinButton       =   0   'False
-   ScaleHeight     =   10440
-   ScaleWidth      =   12000
-   Begin VB.PictureBox L2Pic 
+   WindowState     =   2  'Maximized
+   Begin VB.PictureBox picInfo 
+      Align           =   2  'Align Bottom
       Appearance      =   0  'Flat
-      BackColor       =   &H00404040&
-      BorderStyle     =   0  'None
+      BackColor       =   &H80000005&
       ForeColor       =   &H80000008&
-      Height          =   150
-      Left            =   4380
-      ScaleHeight     =   10
+      Height          =   225
+      Left            =   0
+      ScaleHeight     =   13
       ScaleMode       =   3  'Pixel
-      ScaleWidth      =   8
-      TabIndex        =   23
-      Top             =   1245
-      Width           =   120
+      ScaleWidth      =   1024
+      TabIndex        =   1
+      Top             =   10815
+      Width           =   15390
+      Begin VB.Label InfoLbl 
+         BackStyle       =   0  'Transparent
+         Caption         =   "Information"
+         ForeColor       =   &H00000000&
+         Height          =   195
+         Left            =   120
+         TabIndex        =   6
+         ToolTipText     =   "Random information of goodie-ness!"
+         Top             =   0
+         Width           =   930
+      End
+      Begin VB.Line LineName 
+         X1              =   560
+         X2              =   560
+         Y1              =   0
+         Y2              =   16
+      End
+      Begin VB.Label MapNameLbl 
+         Alignment       =   2  'Center
+         BackStyle       =   0  'Transparent
+         Caption         =   "Map Name"
+         ForeColor       =   &H00000000&
+         Height          =   195
+         Left            =   8520
+         TabIndex        =   5
+         ToolTipText     =   "Name of your currently loaded map"
+         Top             =   0
+         Width           =   2010
+      End
+      Begin VB.Line LineTile 
+         X1              =   704
+         X2              =   704
+         Y1              =   0
+         Y2              =   16
+      End
+      Begin VB.Line LineMouse 
+         X1              =   768
+         X2              =   768
+         Y1              =   0
+         Y2              =   16
+      End
+      Begin VB.Line LineFPS 
+         X1              =   856
+         X2              =   856
+         Y1              =   0
+         Y2              =   16
+      End
+      Begin VB.Label TileLbl 
+         Alignment       =   2  'Center
+         BackStyle       =   0  'Transparent
+         Caption         =   "(0,0)"
+         ForeColor       =   &H00000000&
+         Height          =   195
+         Left            =   10680
+         TabIndex        =   4
+         ToolTipText     =   "Tile the cursor is hovering over"
+         Top             =   0
+         Width           =   675
+      End
+      Begin VB.Label MouseLbl 
+         Alignment       =   2  'Center
+         BackStyle       =   0  'Transparent
+         Caption         =   "(0,0)"
+         ForeColor       =   &H00000000&
+         Height          =   195
+         Left            =   11640
+         TabIndex        =   3
+         ToolTipText     =   "Pixel the cursor is hovering over"
+         Top             =   0
+         Width           =   1035
+      End
+      Begin VB.Label FPSLbl 
+         BackStyle       =   0  'Transparent
+         Caption         =   "FPS: 0"
+         ForeColor       =   &H00000000&
+         Height          =   195
+         Left            =   12960
+         TabIndex        =   2
+         ToolTipText     =   "Frames per second"
+         Top             =   0
+         Width           =   780
+      End
+   End
+   Begin VB.PictureBox picToolbar 
+      Align           =   1  'Align Top
+      BackColor       =   &H00FFFFFF&
+      BorderStyle     =   0  'None
+      Height          =   480
+      Left            =   0
+      ScaleHeight     =   32
+      ScaleMode       =   3  'Pixel
+      ScaleWidth      =   1026
+      TabIndex        =   0
+      Top             =   0
+      Width           =   15390
+      Begin VB.Image BlocksPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   5760
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image SaveAsPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   1920
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image SavePic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   1440
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image LoadPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   960
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image PartPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   8160
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image ShowNPCsPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   7680
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image ExitsPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   7200
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image ViewTilesPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   6720
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image FloodsPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   6240
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image SetTilesPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   5280
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image InfoPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   4560
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image GridPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   4080
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image BrightPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   3600
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image CharsPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   3120
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image WeatherPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   2640
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image OptimizePic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   480
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image NewPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   0
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image SetSfxPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   8640
+         Top             =   0
+         Width           =   480
+      End
+      Begin VB.Image ShowMapInfoPic 
+         Appearance      =   0  'Flat
+         Height          =   480
+         Left            =   9120
+         Top             =   0
+         Width           =   480
+      End
    End
    Begin MSComDlg.CommonDialog CD 
-      Left            =   11400
-      Top             =   9840
+      Left            =   12360
+      Top             =   0
       _ExtentX        =   847
       _ExtentY        =   847
       _Version        =   393216
-   End
-   Begin VB.PictureBox ScreenPic 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      BorderStyle     =   0  'None
-      ForeColor       =   &H80000008&
-      Height          =   9000
-      Left            =   0
-      ScaleHeight     =   600
-      ScaleMode       =   3  'Pixel
-      ScaleWidth      =   800
-      TabIndex        =   1
-      Top             =   1440
-      Width           =   12000
-   End
-   Begin VB.PictureBox ToolbarPic 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00E0E0E0&
-      BorderStyle     =   0  'None
-      ForeColor       =   &H80000008&
-      Height          =   1440
-      Left            =   0
-      ScaleHeight     =   96
-      ScaleMode       =   3  'Pixel
-      ScaleWidth      =   800
-      TabIndex        =   0
-      Top             =   0
-      Width           =   12000
-      Begin VB.PictureBox NewPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   9120
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   34
-         ToolTipText     =   "New: Clear the current map and make it a new map"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox L6Pic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   150
-         Left            =   5340
-         ScaleHeight     =   10
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   8
-         TabIndex        =   27
-         Top             =   1245
-         Width           =   120
-      End
-      Begin VB.PictureBox L5Pic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   150
-         Left            =   5340
-         ScaleHeight     =   10
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   8
-         TabIndex        =   26
-         Top             =   1020
-         Width           =   120
-      End
-      Begin VB.PictureBox L4Pic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   150
-         Left            =   4860
-         ScaleHeight     =   10
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   8
-         TabIndex        =   25
-         Top             =   1245
-         Width           =   120
-      End
-      Begin VB.PictureBox L3Pic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   150
-         Left            =   4860
-         ScaleHeight     =   10
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   8
-         TabIndex        =   24
-         Top             =   1020
-         Width           =   120
-      End
-      Begin VB.PictureBox L1Pic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   150
-         Left            =   4380
-         ScaleHeight     =   10
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   8
-         TabIndex        =   22
-         Top             =   1020
-         Width           =   120
-      End
-      Begin VB.PictureBox ExitPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   11520
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   21
-         ToolTipText     =   "Quit: Exit vbGORE Map Editor"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox OptimizePic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   9600
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   20
-         ToolTipText     =   "Optimize: Perform automatic map performance/size optimization check algorithm"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox LoadPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   10080
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   19
-         ToolTipText     =   "Load: Load an existing map file"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox SavePic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   10560
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   18
-         ToolTipText     =   "Save: Save currently displayed map as the current map number"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox SaveAsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   11040
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   17
-         ToolTipText     =   "Save As: Save currently displayed map as a different map number (new number or overwrite existing map)"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox WeatherPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   0
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   16
-         ToolTipText     =   "Hide/Show weather effects"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox CharsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   480
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   15
-         ToolTipText     =   "Hide/Show NPCs placed on the map"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox ObjPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   960
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   14
-         ToolTipText     =   "Hide/Show objects placed on the map"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox BrightPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   1440
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   13
-         ToolTipText     =   $"frmMain.frx":17D2A
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox GridPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   1920
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   12
-         ToolTipText     =   "Hide/Show the 32x32 grid"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox InfoPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   480
-         Left            =   2400
-         ScaleHeight     =   32
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   32
-         TabIndex        =   11
-         ToolTipText     =   "Hide/Show information flag squares on tiles"
-         Top             =   960
-         Width           =   480
-      End
-      Begin VB.PictureBox SetTilesPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   3360
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   10
-         ToolTipText     =   "Hide/Show tile placement form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox ViewTilesPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   6240
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   9
-         ToolTipText     =   "Hide/Show selected tile information form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox ShowMapInfoPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   11040
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   8
-         ToolTipText     =   "Hide/Show map information form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox ShowNPCsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   8160
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   7
-         ToolTipText     =   "Hide/Show NPC placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox PartPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   9120
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   6
-         ToolTipText     =   "Hide/Show particle effect placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox FloodsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   4320
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   5
-         ToolTipText     =   "Hide/Show map flooding form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox ExitsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   7200
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   4
-         ToolTipText     =   "Hide/Show exit placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox BlocksPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   5280
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   3
-         ToolTipText     =   "Hide/Show blocked tile placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox SetSfxPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   10080
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   2
-         ToolTipText     =   "Hide/Show map-based sound effects placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.Label FPSLbl 
-         Alignment       =   1  'Right Justify
-         BackStyle       =   0  'Transparent
-         Caption         =   "FPS: "
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   255
-         Left            =   7920
-         TabIndex        =   33
-         Top             =   1200
-         Width           =   1095
-      End
-      Begin VB.Label YLbl 
-         AutoSize        =   -1  'True
-         BackStyle       =   0  'Transparent
-         Caption         =   "Y: 0"
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   195
-         Left            =   7080
-         TabIndex        =   32
-         Top             =   1200
-         Width           =   360
-      End
-      Begin VB.Label XLbl 
-         AutoSize        =   -1  'True
-         BackStyle       =   0  'Transparent
-         Caption         =   "X: 0"
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   195
-         Left            =   6120
-         TabIndex        =   31
-         Top             =   1200
-         Width           =   360
-      End
-      Begin VB.Label TileYLbl 
-         AutoSize        =   -1  'True
-         BackStyle       =   0  'Transparent
-         Caption         =   "TileY: 0"
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   195
-         Left            =   7080
-         TabIndex        =   30
-         Top             =   960
-         Width           =   675
-      End
-      Begin VB.Label TileXLbl 
-         AutoSize        =   -1  'True
-         BackStyle       =   0  'Transparent
-         Caption         =   "TileX: 0"
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   195
-         Left            =   6120
-         TabIndex        =   29
-         Top             =   960
-         Width           =   675
-      End
-      Begin VB.Label MapLbl 
-         Alignment       =   1  'Right Justify
-         BackStyle       =   0  'Transparent
-         Caption         =   "Map: 0"
-         BeginProperty Font 
-            Name            =   "MS Sans Serif"
-            Size            =   8.25
-            Charset         =   0
-            Weight          =   700
-            Underline       =   0   'False
-            Italic          =   0   'False
-            Strikethrough   =   0   'False
-         EndProperty
-         ForeColor       =   &H00606060&
-         Height          =   255
-         Left            =   7920
-         TabIndex        =   28
-         Top             =   960
-         Width           =   1095
-      End
    End
 End
 Attribute VB_Name = "frmMain"
@@ -589,26 +280,6 @@ Private Sub CharsPic_DblClick()
     CharsPic_Click
 End Sub
 
-Private Sub ExitPic_Click()
-    
-    'Ask if they want to save
-    Select Case MsgBox("Are you sure you wish to quit?" & vbCrLf & "All unsaved changes will be lost!", vbYesNo)
-        Case vbNo
-        
-            'Cancel the quitting
-            Exit Sub
-            
-    End Select
-    
-    'Unload the engine
-    IsUnloading = 1
-    
-    'Save positions
-    Var_Write Data2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
-    Var_Write Data2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
-
-End Sub
-
 Private Sub ExitsPic_DblClick()
     ExitsPic_Click
 End Sub
@@ -617,7 +288,20 @@ Private Sub FloodsPic_DblClick()
     FloodsPic_Click
 End Sub
 
-Private Sub Form_Load()
+Private Sub FPSLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    SetInfo FPSLbl.ToolTipText
+End Sub
+
+Private Sub Image5_Click()
+
+End Sub
+
+Private Sub MapNameLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    SetInfo MapNameLbl.ToolTipText
+End Sub
+
+Private Sub MDIForm_Load()
+Dim F As Form
 
     GrhMapPath = App.Path & "\FormSkins\" & Skin_GetCurrent & "\mapeditor\"
 
@@ -646,16 +330,11 @@ Private Sub Form_Load()
     tsTileHeight = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H"))
     tsStart = Val(Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "S"))
     
-    'Set the toolbar
-    ToolbarPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\toolbar.*"))
-    
     'Set the tools
     WeatherChkValue = 0
     WeatherPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\weatherg.*"))
     CharsChkValue = 1
     CharsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\shownpc.*"))
-    ObjChkValue = 1
-    ObjPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\showobj.*"))
     BrightChkValue = 0
     BrightPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\brightg.*"))
     GridChkValue = 0
@@ -669,22 +348,21 @@ Private Sub Form_Load()
     LoadPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\load.*"))
     SavePic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\save.*"))
     SaveAsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\saveas.*"))
-    ExitPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\exitbutton.*"))
     NewPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\newbutton.*"))
     
-    'Set the layer checks
-    L1ChkValue = 1
-    L2ChkValue = 1
-    L3ChkValue = 1
-    L4ChkValue = 1
-    L5ChkValue = 1
-    L6ChkValue = 1
-    L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
-    L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
-    L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
+    SetLayer 1
+    
+    'Skin settings
+    Skin_InitStructure Var_Get(App.Path & "\FormSkins\CurrentSkin.ini", "INIT", "CurrentSkin")
+    For Each F In VB.Forms
+        Skin_SetForm F
+    Next F
+    
+    'Override settings
+    Me.BackColor = &H8000000C
+    frmPreview.BackColor = vbBlack
+    frmPreview.Width = 128 * Screen.TwipsPerPixelX
+    frmPreview.Height = 128 * Screen.TwipsPerPixelY
     
     'Show/hide all the other forms
     HideFrmTile
@@ -695,7 +373,61 @@ Private Sub Form_Load()
     HideFrmFloods
     HideFrmExit
     HideFrmBlock
+    HideFrmSfx
+    frmPreview.Show
     
+    '//TEMP
+    MsgBox "This map editor is far from complete, so either wait for it to be finished or use a copy from an older version.", vbOKOnly
+    
+End Sub
+
+Private Sub MDIForm_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    SetInfo vbNullString
+End Sub
+
+Private Sub MDIForm_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    If IsUnloading = 0 Then
+    
+        'Ask if they want to save
+        Select Case MsgBox("Are you sure you wish to quit?" & vbCrLf & "All unsaved changes will be lost!", vbYesNo)
+            Case vbNo
+            
+                'Cancel the quitting
+                Cancel = 1
+                Exit Sub
+                
+        End Select
+        
+        'Unload the engine
+        IsUnloading = 1
+        
+        'Save positions
+        Var_Write Data2Path & "MapEditor.ini", "MAIN", "X", frmMain.Left
+        Var_Write Data2Path & "MapEditor.ini", "MAIN", "Y", frmMain.Top
+
+    End If
+
+End Sub
+
+Private Sub MDIForm_Resize()
+
+    If picInfo.ScaleWidth < 380 Then Exit Sub
+    
+    FPSLbl.Left = picInfo.ScaleWidth - 56
+    LineFPS.X1 = picInfo.ScaleWidth - 64
+    LineFPS.X2 = picInfo.ScaleWidth - 64
+    MouseLbl.Left = picInfo.ScaleWidth - 144
+    LineMouse.X1 = picInfo.ScaleWidth - 152
+    LineMouse.X2 = picInfo.ScaleWidth - 152
+    TileLbl.Left = picInfo.ScaleWidth - 208
+    LineTile.X1 = picInfo.ScaleWidth - 216
+    LineTile.X2 = picInfo.ScaleWidth - 216
+    MapNameLbl.Left = picInfo.ScaleWidth - 350
+    LineName.X1 = picInfo.ScaleWidth - 358
+    LineName.X2 = picInfo.ScaleWidth - 358
+    InfoLbl.Width = picInfo.ScaleWidth - 374
+
 End Sub
 
 Private Sub GridPic_DblClick()
@@ -706,100 +438,8 @@ Private Sub InfoPic_DblClick()
     InfoPic_Click
 End Sub
 
-Private Sub L1Pic_Click()
-
-    If L1ChkValue = 1 Then
-        L1ChkValue = 0
-        L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
-    Else
-        L1ChkValue = 1
-        L1Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    End If
-
-End Sub
-
-Private Sub L1Pic_DblClick()
-    L1Pic_Click
-End Sub
-
-Private Sub L2Pic_Click()
-
-    If L2ChkValue = 1 Then
-        L2ChkValue = 0
-        L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
-    Else
-        L2ChkValue = 1
-        L2Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
-    End If
-    
-End Sub
-
-Private Sub L2Pic_DblClick()
-    L2Pic_Click
-End Sub
-
-Private Sub L3Pic_Click()
-
-    If L3ChkValue = 1 Then
-        L3ChkValue = 0
-        L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
-    Else
-        L3ChkValue = 1
-        L3Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    End If
-
-End Sub
-
-Private Sub L3Pic_DblClick()
-    L3Pic_Click
-End Sub
-
-Private Sub L4Pic_Click()
-
-    If L4ChkValue = 1 Then
-        L4ChkValue = 0
-        L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
-    Else
-        L4ChkValue = 1
-        L4Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
-    End If
-    
-End Sub
-
-Private Sub L4Pic_DblClick()
-    L4Pic_Click
-End Sub
-
-Private Sub L5Pic_Click()
-
-    If L5ChkValue = 1 Then
-        L5ChkValue = 0
-        L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselectedg.*"))
-    Else
-        L5ChkValue = 1
-        L5Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\topbuttonselected.*"))
-    End If
-
-End Sub
-
-Private Sub L5Pic_DblClick()
-    L5Pic_Click
-End Sub
-
-Private Sub L6Pic_Click()
-
-    If L6ChkValue = 1 Then
-        L6ChkValue = 0
-        L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselectedg.*"))
-    Else
-        L6ChkValue = 1
-        L6Pic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\bottombuttonselected.*"))
-    End If
-    
-End Sub
-
-Private Sub L6Pic_DblClick()
-    L6Pic_Click
+Private Sub MouseLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    SetInfo MouseLbl.ToolTipText
 End Sub
 
 Private Sub NewPic_Click()
@@ -883,35 +523,6 @@ End Sub
 
 Private Sub PartPic_DblClick()
     PartPic_Click
-End Sub
-
-Private Sub ScreenPic_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    'Call the MouseMove event
-    ScreenPic_MouseMove Button, Shift, X, Y
-
-End Sub
-
-Private Sub ScreenPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-Dim tX As Integer
-Dim tY As Integer
-
-    'Convert the click position to tile position
-    Engine_ConvertCPtoTP 0, 0, X, Y, tX, tY
-    HovertX = tX
-    HovertY = tY
-
-    'Update caption
-    HoverX = X + ParticleOffsetX - 288
-    HoverY = Y + ParticleOffsetY - 288
-    XLbl.Caption = "X: " & HoverX
-    YLbl.Caption = "Y: " & HoverY
-    TileXLbl.Caption = "TileX: " & HovertX
-    TileYLbl.Caption = "TileY: " & HovertY
-
-    'Click the tile
-    SetTile tX, tY, Button, Shift
-             
 End Sub
 
 Private Sub SaveAsPic_Click()
@@ -1119,14 +730,13 @@ Private Sub ShowNPCsPic_Click()
 End Sub
 
 Private Sub ShowNPCsPic_DblClick()
+
     ShowNPCsPic_Click
+    
 End Sub
 
-Private Sub ToolbarPic_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
+Private Sub TileLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    SetInfo TileLbl.ToolTipText
 End Sub
 
 Private Sub ViewTilesPic_Click()

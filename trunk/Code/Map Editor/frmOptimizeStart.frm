@@ -1,49 +1,26 @@
 VERSION 5.00
 Begin VB.Form frmOptimizeStart 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
-   Caption         =   "Optimize Map"
-   ClientHeight    =   1860
-   ClientLeft      =   0
-   ClientTop       =   0
-   ClientWidth     =   2760
+   Appearance      =   0  'Flat
+   BackColor       =   &H80000005&
+   BorderStyle     =   4  'Fixed ToolWindow
+   Caption         =   " Optimize Map"
+   ClientHeight    =   1725
+   ClientLeft      =   45
+   ClientTop       =   345
+   ClientWidth     =   2670
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
+   MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   124
+   ScaleHeight     =   115
    ScaleMode       =   3  'Pixel
-   ScaleWidth      =   184
+   ScaleWidth      =   178
    ShowInTaskbar   =   0   'False
-   StartUpPosition =   2  'CenterScreen
-   Begin MapEditor.cButton OptBtn 
-      Height          =   375
-      Left            =   120
-      TabIndex        =   6
-      Top             =   1440
-      Width           =   2415
-      _ExtentX        =   4260
-      _ExtentY        =   661
-      Caption         =   "Begin Optimization Check"
-   End
-   Begin MapEditor.cForm cForm 
-      Height          =   255
-      Left            =   0
-      TabIndex        =   5
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      MinimizeBtn     =   0   'False
-      Caption         =   "Map Optimizations"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
-   End
    Begin VB.CheckBox DuplicateGrhChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Duplicate Grh Layers"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
       TabIndex        =   1
@@ -54,9 +31,9 @@ Begin VB.Form frmOptimizeStart
    End
    Begin VB.CheckBox BlockedNPCChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "NPCs On Blocked Tiles"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
       TabIndex        =   3
@@ -67,9 +44,9 @@ Begin VB.Form frmOptimizeStart
    End
    Begin VB.CheckBox BlockedObjChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Objects On Blocked Tiles"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
       TabIndex        =   2
@@ -80,9 +57,9 @@ Begin VB.Form frmOptimizeStart
    End
    Begin VB.CheckBox EmptyLightsChk 
       Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
+      BackColor       =   &H80000005&
       Caption         =   "Lighted Empty Layers"
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
       TabIndex        =   4
@@ -90,6 +67,25 @@ Begin VB.Form frmOptimizeStart
       Top             =   360
       Value           =   1  'Checked
       Width           =   1815
+   End
+   Begin VB.Label OptBtn 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Begin Optimization Check"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   195
+      Left            =   240
+      TabIndex        =   5
+      Top             =   1440
+      Width           =   2190
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -104,7 +100,7 @@ Begin VB.Form frmOptimizeStart
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   195
       Index           =   3
       Left            =   240
@@ -144,14 +140,6 @@ Dim c As Control
         End If
     Next c
     Set c = Nothing
-    
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
     
 End Sub
 

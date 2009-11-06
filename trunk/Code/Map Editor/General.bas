@@ -1,13 +1,33 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Sub SetInfo(ByVal s As String)
+
+    frmMain.InfoLbl.Caption = s
+
+End Sub
+
+Sub SetLayer(ByVal Layer As Byte)
+Dim i As Long
+
+    For i = 1 To 6
+        If i = Layer Then
+            frmSetTile.LayerPic(i).Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\layer" & i & "s.*"))
+        Else
+            frmSetTile.LayerPic(i).Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\layer" & i & ".*"))
+        End If
+    Next i
+    DrawLayer = Layer
+    
+End Sub
+
 Sub Server_Unload()
     'Dummy sub
 End Sub
 
 Sub ShowFrmSetTile()
     frmSetTile.Visible = True
-    frmSetTile.Show , frmMain
+    frmSetTile.Show
     SetTilesChkValue = 1
     frmMain.SetTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\settile.*"))
 End Sub
@@ -21,7 +41,7 @@ End Sub
 
 Sub ShowFrmTile()
     frmTile.Visible = True
-    frmTile.Show , frmMain
+    frmTile.Show
     ViewTilesChkValue = 1
     frmMain.ViewTilesPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\viewtiles.*"))
 End Sub
@@ -35,7 +55,7 @@ End Sub
 
 Sub ShowFrmNPCs()
     frmNPCs.Visible = True
-    frmNPCs.Show , frmMain
+    frmNPCs.Show
     ShowNPCsChkValue = 1
     frmMain.ShowNPCsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\npc.*"))
 End Sub
@@ -49,7 +69,7 @@ End Sub
 
 Sub ShowFrmMapInfo()
     frmMapInfo.Visible = True
-    frmMapInfo.Show , frmMain
+    frmMapInfo.Show
     ShowMapInfoChkValue = 1
     frmMain.ShowMapInfoPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\mapinfo.*"))
 End Sub
@@ -63,7 +83,7 @@ End Sub
 
 Sub ShowFrmParticles()
     frmParticles.Visible = True
-    frmParticles.Show , frmMain
+    frmParticles.Show
     PartChkValue = 1
     frmMain.PartPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\particles.*"))
 End Sub
@@ -77,7 +97,7 @@ End Sub
 
 Sub ShowFrmFloods()
     frmFloods.Visible = True
-    frmFloods.Show , frmMain
+    frmFloods.Show
     FloodsChkValue = 1
     frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\floods.*"))
 End Sub
@@ -91,7 +111,7 @@ End Sub
 
 Sub ShowFrmOptimizeStart()
     frmOptimizeStart.Visible = True
-    frmOptimizeStart.Show , frmMain
+    frmOptimizeStart.Show
 End Sub
 
 Sub HideFrmOptimizeStart()
@@ -101,7 +121,7 @@ End Sub
 
 Sub ShowFrmReport()
     frmReport.Visible = True
-    frmReport.Show , frmMain
+    frmReport.Show
 End Sub
 
 Sub HideFrmReport()
@@ -111,7 +131,7 @@ End Sub
 
 Sub ShowFrmSfx()
     frmSfx.Visible = True
-    frmSfx.Show , frmMain
+    frmSfx.Show
     SfxChkValue = 1
     frmMain.SetSfxPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\sounds.*"))
 End Sub
@@ -125,7 +145,7 @@ End Sub
 
 Sub ShowFrmExit()
     frmExit.Visible = True
-    frmExit.Show , frmMain
+    frmExit.Show
     ExitsChkValue = 1
     frmMain.ExitsPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\exits.*"))
 End Sub
@@ -139,7 +159,7 @@ End Sub
 
 Sub ShowFrmBlock()
     frmBlock.Visible = True
-    frmBlock.Show , frmMain
+    frmBlock.Show
     BlocksChkValue = 1
     frmMain.BlocksPic.Picture = LoadPicture(GrhMapPath & Dir$(GrhMapPath & "\blocks.*"))
 End Sub
@@ -153,7 +173,7 @@ End Sub
 
 Sub ShowFrmARGB(ByRef tTxtBox As TextBox)
     frmARGB.Visible = True
-    frmARGB.Show , frmMain
+    frmARGB.Show
     frmARGB.LongTxt.Text = tTxtBox.Text
 End Sub
 
@@ -183,7 +203,7 @@ End Sub
 
 Sub ShowFrmTSOpt()
     frmTSOpt.Visible = True
-    frmTSOpt.Show , frmMain
+    frmTSOpt.Show , frmTileSelect
     frmTileSelect.Enabled = False
     frmTSOpt.WidthTxt.Text = Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "W")
     frmTSOpt.HeightTxt.Text = Var_Get(Data2Path & "MapEditor.ini", "TSOPT", "H")
@@ -225,28 +245,33 @@ Dim Y As Byte
     If frmSetTile.Visible = True Then
         If Button = vbLeftButton Then
             With MapData(tX, tY)
-                For i = 1 To 6
-                    If frmSetTile.LayerChk(i).Value = 1 Then    'Graphic layer
-                        If Val(frmSetTile.GrhTxt(i).Text) > 0 Then
-                            Engine_Init_Grh .Graphic(i), Val(frmSetTile.GrhTxt(i).Text)
-                        Else
-                            .Graphic(i).GrhIndex = 0
-                        End If
+            
+                'Graphics
+                If frmSetTile.LayerChk.Value = 1 Then
+                    If Val(frmSetTile.GrhTxt.Text) > 0 Then
+                        Engine_Init_Grh .Graphic(DrawLayer), Val(frmSetTile.GrhTxt.Text)
+                    Else
+                        .Graphic(i).GrhIndex = 0
                     End If
-                    If frmSetTile.LightChk(i).Value = 1 Then    'Light layer
-                        .Light((i - 1) * 4 + 1) = Val(frmSetTile.LightTxt((i - 1) * 4 + 1).Text)
-                        .Light((i - 1) * 4 + 2) = Val(frmSetTile.LightTxt((i - 1) * 4 + 2).Text)
-                        .Light((i - 1) * 4 + 3) = Val(frmSetTile.LightTxt((i - 1) * 4 + 3).Text)
-                        .Light((i - 1) * 4 + 4) = Val(frmSetTile.LightTxt((i - 1) * 4 + 4).Text)
-                        SaveLightBuffer(tX, tY).Light((i - 1) * 4 + 1) = .Light((i - 1) * 4 + 1)
-                        SaveLightBuffer(tX, tY).Light((i - 1) * 4 + 2) = .Light((i - 1) * 4 + 2)
-                        SaveLightBuffer(tX, tY).Light((i - 1) * 4 + 3) = .Light((i - 1) * 4 + 3)
-                        SaveLightBuffer(tX, tY).Light((i - 1) * 4 + 4) = .Light((i - 1) * 4 + 4)
-                    End If
-                    If frmSetTile.ShadowChk(i).Value = 1 Then   'Shadow layer
-                        .Shadow(i) = Val(frmSetTile.ShadowTxt(i).Text)
-                    End If
-                Next i
+                End If
+                
+                'Lights
+                If frmSetTile.LightChk.Value = 1 Then
+                    .Light((DrawLayer - 1) * 4 + 1) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 1).Text)
+                    .Light((DrawLayer - 1) * 4 + 2) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 2).Text)
+                    .Light((DrawLayer - 1) * 4 + 3) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 3).Text)
+                    .Light((DrawLayer - 1) * 4 + 4) = Val(frmSetTile.LightTxt((DrawLayer - 1) * 4 + 4).Text)
+                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 1) = .Light((DrawLayer - 1) * 4 + 1)
+                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 2) = .Light((DrawLayer - 1) * 4 + 2)
+                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 3) = .Light((DrawLayer - 1) * 4 + 3)
+                    SaveLightBuffer(tX, tY).Light((DrawLayer - 1) * 4 + 4) = .Light((DrawLayer - 1) * 4 + 4)
+                End If
+                
+                'Shadows
+                If frmSetTile.ShadowChk.Value = 1 Then
+                    .Shadow(DrawLayer) = Val(frmSetTile.ShadowTxt.Text)
+                End If
+                
             End With
         End If
     End If
@@ -255,11 +280,7 @@ Dim Y As Byte
     If (Shift <> 0) Or (GetAsyncKeyState(vbKeyControl) <> 0) Then
         If frmSetTile.Visible = True Then
             If Button = vbRightButton Then
-                For i = 1 To 6
-                    If frmSetTile.LayerChk(i).Value = 1 Then
-                        MapData(tX, tY).Graphic(i).GrhIndex = 0
-                    End If
-                Next i
+                If frmSetTile.LayerChk.Value = 1 Then MapData(tX, tY).Graphic(DrawLayer).GrhIndex = 0
             End If
         End If
     End If
@@ -313,17 +334,15 @@ Dim Y As Byte
     If frmBlock.Visible = True Then
         If Button = vbLeftButton Then
             If Not Shift Then
-                If Not (tX < MinXBorder Or tX > MaxXBorder Or tY < MinYBorder Or tY > MaxYBorder) Then  'Worthless to block in the border, waste of map space
-                    If frmBlock.SetWalkChk.Value = 1 Then
-                        b = 0   'Build the blocked value
-                        If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
-                        If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
-                        If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
-                        If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
-                        MapData(tX, tY).Blocked = b
-                    End If
-                    If frmBlock.SetAttackChk.Value = 1 Then MapData(tX, tY).BlockedAttack = frmBlock.BlockAttackChk.Value
+                If frmBlock.SetWalkChk.Value = 1 Then
+                    b = 0   'Build the blocked value
+                    If frmBlock.BlockChk(1).Value = 1 Then b = b Or 1
+                    If frmBlock.BlockChk(2).Value = 1 Then b = b Or 2
+                    If frmBlock.BlockChk(3).Value = 1 Then b = b Or 4
+                    If frmBlock.BlockChk(4).Value = 1 Then b = b Or 8
+                    MapData(tX, tY).Blocked = b
                 End If
+                If frmBlock.SetAttackChk.Value = 1 Then MapData(tX, tY).BlockedAttack = frmBlock.BlockAttackChk.Value
             End If
         End If
     End If
@@ -419,9 +438,6 @@ Dim X As Byte
     ParticleOffsetY = 0
     LastOffsetX = 0
     LastOffsetY = 0
-    
-    'Change caption
-    frmMain.MapLbl.Caption = "Map: " & Map
     
     '*** Misc ***
 
@@ -624,6 +640,9 @@ Dim X As Byte
         .WeatherTxt.Text = MapInfo.Weather
         .MusicTxt.Text = MapInfo.Music
     End With
+    
+    'Change caption
+    frmMain.MapNameLbl.Caption = MapInfo.Name & " (" & Map & ")"
 
     'Set current map
     CurMap = Map
@@ -656,9 +675,6 @@ Dim i As Integer
         MsgBox "Error! Can not save a map while in Bright Mode!", vbOKOnly
         Exit Sub
     End If
-    
-    'Change caption
-    frmMain.MapLbl.Caption = "Current Map: " & MapNum
 
     'Erase old files if the exist
     If Engine_FileExist(MapPath & MapNum & ".map", vbNormal) Then Kill MapPath & MapNum & ".map"
@@ -888,6 +904,9 @@ Dim i As Integer
     Var_Write MapEXPath & MapNum & ".dat", "1", "Name", MapInfo.Name
     Var_Write MapEXPath & MapNum & ".dat", "1", "Weather", Str$(MapInfo.Weather)
     Var_Write MapEXPath & MapNum & ".dat", "1", "Music", Str$(MapInfo.Music)
+    
+    'Change caption
+    frmMain.MapNameLbl.Caption = MapInfo.Name & " (" & MapNum & ")"
 
     'Map saved
     MsgBox "Map #" & MapNum & " (" & MapInfo.Name & ") successfully saved!", vbOKOnly
@@ -912,8 +931,10 @@ Dim i As Integer
     frmMain.Show
     DoEvents
     
+    DrawLayer = 1
+    
     'Load DirectX
-    Engine_Init_TileEngine frmMain.ScreenPic.hwnd, 32, 32, 18, 25, 10, 0.011
+    Engine_Init_TileEngine frmScreen.hwnd, 32, 32, 18, 25, 10, 0.011
     
     'Check for the first map
     If Command$ = "" Then

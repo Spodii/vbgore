@@ -15,7 +15,6 @@ Begin VB.Form frmTileSelect
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   353
    ShowInTaskbar   =   0   'False
-   StartUpPosition =   2  'CenterScreen
    WindowState     =   2  'Maximized
    Begin VB.PictureBox RightPic 
       AutoRedraw      =   -1  'True
@@ -63,7 +62,7 @@ Dim RetVal As Long
             Case 0
                 frmTile.GrhTxt.Text = RetVal
             Case Else
-                frmSetTile.GrhTxt(stBoxID).Text = RetVal
+                frmSetTile.GrhTxt.Text = RetVal
         End Select
         HideFrmTileSelect
         

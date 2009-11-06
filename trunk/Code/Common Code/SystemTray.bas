@@ -80,6 +80,3 @@ Public Sub TrayModify(Item As ModifyItemEnum, vNewValue As Variant)
     Shell_NotifyIcon NIM_MODIFY, TrayIcon
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 42  Code: 42  Total: 84 Lines
-':) CommentOnly: 4 (4.8%)  Commented: 18 (21.4%)  Empty: 13 (15.5%)  Max Logic Depth: 2
