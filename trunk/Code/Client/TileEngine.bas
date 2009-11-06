@@ -142,8 +142,8 @@ End Type
 'Holds data about where a png can be found,
 'How big it is and animation info
 Public Type GrhData
-    sX As Integer
-    sY As Integer
+    SX As Integer
+    SY As Integer
     FileNum As Long
     pixelWidth As Integer
     pixelHeight As Integer
@@ -1902,10 +1902,10 @@ Dim Frame As Long
             ReDim GrhData(Grh).Frames(1 To 1)
             Get #FileNum, , GrhData(Grh).FileNum
             If GrhData(Grh).FileNum <= 0 Then GoTo ErrorHandler
-            Get #FileNum, , GrhData(Grh).sX
-            If GrhData(Grh).sX < 0 Then GoTo ErrorHandler
-            Get #FileNum, , GrhData(Grh).sY
-            If GrhData(Grh).sY < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).SX
+            If GrhData(Grh).SX < 0 Then GoTo ErrorHandler
+            Get #FileNum, , GrhData(Grh).SY
+            If GrhData(Grh).SY < 0 Then GoTo ErrorHandler
             Get #FileNum, , GrhData(Grh).pixelWidth
             If GrhData(Grh).pixelWidth <= 0 Then GoTo ErrorHandler
             Get #FileNum, , GrhData(Grh).pixelHeight
@@ -3830,32 +3830,32 @@ Dim IX As Single
     
 End Function
 
-Public Function Engine_Collision_LineRect(ByVal sX As Long, ByVal sY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
+Public Function Engine_Collision_LineRect(ByVal SX As Long, ByVal SY As Long, ByVal SW As Long, ByVal SH As Long, ByVal x1 As Long, ByVal Y1 As Long, ByVal x2 As Long, ByVal Y2 As Long) As Byte
 
 '*****************************************************************
 'Check if a line intersects with a rectangle (returns 1 if true)
 '*****************************************************************
 
     'Top line
-    If Engine_Collision_Line(sX, sY, sX + SW, sY, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY, SX + SW, SY, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
     
     'Right line
-    If Engine_Collision_Line(sX + SW, sY, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX + SW, SY, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Bottom line
-    If Engine_Collision_Line(sX, sY + SH, sX + SW, sY + SH, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY + SH, SX + SW, SY + SH, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
 
     'Left line
-    If Engine_Collision_Line(sX, sY, sX, sY + SW, x1, Y1, x2, Y2) Then
+    If Engine_Collision_Line(SX, SY, SX, SY + SW, x1, Y1, x2, Y2) Then
         Engine_Collision_LineRect = 1
         Exit Function
     End If
@@ -4384,13 +4384,13 @@ Dim FileNum As Integer
                     If AlternateRender = 0 Then
                     
                         'Render the texture with 2 triangles on a triangle strip
-                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, _
-                            GrhData(CurrGrhIndex).sY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, False
+                        Engine_Render_Rectangle X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, _
+                            GrhData(CurrGrhIndex).SY, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, , , Angle, FileNum, Light1, Light2, Light3, Light4, Shadow, False
                         
                     Else
                         
                         'Render the texture as a D3DXSprite
-                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).sX, GrhData(CurrGrhIndex).sY, Light1, FileNum, Angle
+                        Engine_Render_D3DXSprite X, Y, GrhData(CurrGrhIndex).pixelWidth, GrhData(CurrGrhIndex).pixelHeight, GrhData(CurrGrhIndex).SX, GrhData(CurrGrhIndex).SY, Light1, FileNum, Angle
                         
                     End If
                     
@@ -5013,40 +5013,41 @@ Dim L As Single
 
     Else
         
+        '------------------------------------------------------------------------------------------------------
+        '------------------------------------------------------------------------------------------------------
         'If the image is partially outside of the screen, it is trimmed so only that which is in the screen is drawn
         'This provides for quite a decent FPS boost if you have lots of tiles that stretch outside of the view area
+        'Important: Something about this doesn't seem to be functioning correctly. It is supposed to crop down the
+        'image and only draw that which is going to be in the screen, but it doesn't work right and I have no
+        'idea why. Uncomment the lines to see what happens. I have given up on this since the FPS boost really isn't
+        'significant for me to put any more work into it, but if someone could fix it, it would definitely be
+        'added back into the engine.
         '------------------------------------------------------------------------------------------------------
-        'Important: Something about this doesn't seem to be functioning correctly. If you remove the + 32 from the
-        'ScreenWidth and ScreenHeight, you will get a very slightly distorted image for some tiles (usually 32x32 ones)
-        'To help hide this up, only those images more than 32 pixels outside of the viewing area will be trimmed
-        'If you want to help and try to fix this, change the TrimOffset to 0. On most graphic cards, you should notice
-        'some "cuts" in tiles being trimmed. If you can find out how to get rid of this "cut", contact me (Spodi)
-        'with what you did to fix it and I'll get it updated. :D It is easiest to see the cuts on the main map, on the
-        'bottom of the screen, in the water.
         '------------------------------------------------------------------------------------------------------
-        Const TrimOffset As Single = 32
-        If X < 0 Then
-            SrcX = SrcX - X
-            SrcWidth = SrcWidth + X
-            Width = Width + X
-            X = 0
-        End If
-        If Y < 0 Then
-            SrcY = SrcY - Y
-            SrcHeight = SrcHeight + Y
-            Height = Height + Y
-            Y = 0
-        End If
-        If X + Width > ScreenWidth Then
-            L = X + Width - ScreenWidth
-            Width = Width - L
-            SrcWidth = SrcWidth - L
-        End If
-        If Y + Height > ScreenHeight Then
-            L = Y + Height - ScreenHeight
-            Height = Height - L
-            SrcHeight = SrcHeight - L
-        End If
+        'If X < 0 Then
+        '    SrcX = SrcX - X
+        '    SrcWidth = SrcWidth + X
+        '    Width = Width + X
+        '    X = 0
+        'End If
+        'If Y < 0 Then
+        '    SrcY = SrcY - Y
+        '    SrcHeight = SrcHeight + Y
+        '    Height = Height + Y
+        '    Y = 0
+        'End If
+        'If X + Width > ScreenWidth Then
+        '    L = X + Width - ScreenWidth
+        '    Width = Width - L
+        '    SrcWidth = SrcWidth - L
+        'End If
+        'If Y + Height > ScreenHeight Then
+        '    L = Y + Height - ScreenHeight
+        '    Height = Height - L
+        '    SrcHeight = SrcHeight - L
+        'End If
+        '------------------------------------------------------------------------------------------------------
+        '------------------------------------------------------------------------------------------------------
         
         'If we are NOT using shadows, then we add +1 to the width/height (trust me, just do it)
         ShadowAdd = 1

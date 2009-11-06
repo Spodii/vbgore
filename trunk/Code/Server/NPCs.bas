@@ -1352,7 +1352,6 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
     NPCList(NPCIndex).Flags.NPCAlive = 0
-    NPCList(NPCIndex).Flags.NPCActive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map

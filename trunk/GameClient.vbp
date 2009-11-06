@@ -1,6 +1,6 @@
 Type=Exe
-Reference=*\G{E1211242-8E94-11D1-8808-00C04FC2C603}#1.0#0#..\..\..\..\WINDOWS\system32\dx8vb.dll#DirectX 8 for Visual Basic Type Library
-Reference=*\G{56A868B0-0AD4-11CE-B03A-0020AF0BA770}#1.0#0#..\..\..\..\WINDOWS\system32\quartz.dll#ActiveMovie control type library
+Reference=*\G{E1211242-8E94-11D1-8808-00C04FC2C603}#1.0#0#..\..\..\..\..\WINDOWS\system32\dx8vb.dll#DirectX 8 for Visual Basic Type Library
+Reference=*\G{56A868B0-0AD4-11CE-B03A-0020AF0BA770}#1.0#0#..\..\..\..\..\WINDOWS\system32\quartz.dll#ActiveMovie control type library
 Module=Declares; Code\Client\Declares.bas
 Form=Code\Client\frmConnect.frm
 Form=Code\Client\frmMain.frm
