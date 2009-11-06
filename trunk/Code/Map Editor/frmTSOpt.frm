@@ -15,6 +15,7 @@ Begin VB.Form frmTSOpt
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   176
    ShowInTaskbar   =   0   'False
+   StartUpPosition =   2  'CenterScreen
    Begin VB.CheckBox CatChk 
       Appearance      =   0  'Flat
       BackColor       =   &H80000005&
@@ -337,7 +338,7 @@ End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
+    If IsUnloading = 0 Then Cancel = 1
     HideFrmTSOpt
     ShowFrmTileSelect stBoxID
 

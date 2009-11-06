@@ -141,6 +141,12 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
+Private Sub EraseOpt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to toggle erasing exits."
+
+End Sub
+
 Private Sub MapTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -148,6 +154,12 @@ Private Sub MapTxt_KeyPress(KeyAscii As Integer)
             Exit Sub
         End If
     End If
+End Sub
+
+Private Sub MapTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Map which the user will warp to when stepping on the tile."
+
 End Sub
 
 Private Sub SetOpt_Click()
@@ -166,10 +178,14 @@ End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "EXIT", "X", Me.Left
-    Var_Write Data2Path & "MapEditor.ini", "EXIT", "Y", Me.Top
-    HideFrmExit
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
+
+End Sub
+
+Private Sub SetOpt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to toggle placing exits."
 
 End Sub
 
@@ -182,6 +198,12 @@ Private Sub XTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub XTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "X co-ordinate which the user will warp to when stepping on the tile."
+
+End Sub
+
 Private Sub YTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -189,4 +211,10 @@ Private Sub YTxt_KeyPress(KeyAscii As Integer)
             Exit Sub
         End If
     End If
+End Sub
+
+Private Sub YTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Y co-ordinate which the user will warp to when stepping on the tile."
+
 End Sub

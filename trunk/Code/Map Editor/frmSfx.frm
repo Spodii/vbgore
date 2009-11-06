@@ -57,10 +57,8 @@ Option Explicit
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "SFX", "X", Me.Left
-    Var_Write Data2Path & "MapEditor.ini", "SFX", "Y", Me.Top
-    HideFrmSfx
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
 
 End Sub
 
@@ -86,4 +84,10 @@ Private Sub SfxTxt_KeyPress(KeyAscii As Integer)
             Exit Sub
         End If
     End If
+End Sub
+
+Private Sub SfxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The number of the .wav file that will be looped on the tile for sounds of waterfalls, birds, etc. Set to 0 for nothing."
+
 End Sub

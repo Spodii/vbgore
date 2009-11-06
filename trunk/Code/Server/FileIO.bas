@@ -265,8 +265,8 @@ Dim i As Long
     MapInfo(MapNum).DataLoaded = 1
 
     'Create the data arrays
-    ReDim MapInfo(MapNum).Data(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
-    ReDim MapInfo(MapNum).ObjTile(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
+    ReDim MapInfo(MapNum).Data(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
+    ReDim MapInfo(MapNum).ObjTile(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
 
     'Open the file
     FileNum = FreeFile
@@ -306,7 +306,7 @@ Dim i As Long
                 CharList(CharIndex).CharType = CharType_NPC
                 
                 'Set the NPC as used
-                .flags.NPCActive = 1
+                .Flags.NPCActive = 1
             
             End With
         Next i
@@ -330,8 +330,8 @@ Dim Y As Long
     If Server_FileExist(ServerTempPath & "m" & MapNum & ".temp", vbNormal) Then Kill ServerTempPath & "m" & MapNum & ".temp"
 
     'Count and store the NPCs (then clear them off)
-    For X = XMinMapSize To XMaxMapSize
-        For Y = YMinMapSize To YMaxMapSize
+    For X = 1 To MapInfo(MapNum).Width
+        For Y = 1 To MapInfo(MapNum).Height
             If MapInfo(MapNum).Data(X, Y).NPCIndex > 0 Then
                 
                 'Raise the NPC count and store the information
@@ -384,9 +384,6 @@ Dim Y As Long
 Dim i As Long
 
     Log "Call Load_Maps_Data(" & MapNum & ")", CodeTracker '//\\LOGLINE//\\
-        
-    'Create the array
-    ReDim MapInfo(MapNum).Data(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
     
     'Load the files
     'Map
@@ -401,10 +398,15 @@ Dim i As Long
 
     'Map header
     Get #FileNumMap, , MapInfo(MapNum).MapVersion
+    Get #FileNumMap, , MapInfo(MapNum).Width
+    Get #FileNumMap, , MapInfo(MapNum).Height
+    
+    'Create the array
+    ReDim MapInfo(MapNum).Data(1 To MapInfo(MapNum).Width, 1 To MapInfo(MapNum).Height)
 
     'Load arrays
-    For Y = YMinMapSize To YMaxMapSize
-        For X = XMinMapSize To XMaxMapSize
+    For Y = 1 To MapInfo(MapNum).Height
+        For X = 1 To MapInfo(MapNum).Width
 
             'Get tile's flags
             Get #FileNumMap, , ByFlags
@@ -511,7 +513,7 @@ Dim i As Long
         End If
         
         'Check if to remove the map
-        If MapInfo(MapNum).UnloadTimer + EmptyMapLife > timeGetTime Then
+        If MapInfo(MapNum).UnloadTimer + EmptyMapLife < timeGetTime Then
 
             'Set the map as unloaded
             MapInfo(MapNum).DataLoaded = 0
@@ -523,7 +525,7 @@ Dim i As Long
                     If .Pos.Map = MapNum Then
                         CharList(.Char.CharIndex).Index = 0
                         CharList(.Char.CharIndex).CharType = 0
-                        .flags.NPCActive = 0
+                        .Flags.NPCActive = 0
                         NPC_Close i, 0
                     End If
                 End With
@@ -655,7 +657,7 @@ Dim j As Byte
             .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
             .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
             .NPCNumber = DB_RS!id
-            .flags.NPCActive = 1
+            .Flags.NPCActive = 1
             ShopStr = Trim$(DB_RS!objs_shop)
             DropStr = Trim$(DB_RS!drops)
 
@@ -776,7 +778,7 @@ Dim i As Long
         
 End Sub
 
-Public Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0) As Integer
+Public Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0, Optional ByVal ThralledTime As Long = -1) As Integer
 
 '*****************************************************************
 'Loads a NPC and returns its index
@@ -846,8 +848,13 @@ Dim b As Byte
             Get #FileNum, , NPCList(NPCIndex)
         
             'Set the NPC's thralled value
-            .flags.Thralled = Thralled
-
+            .Flags.Thralled = Thralled
+            If ThralledTime <> -1 Then
+                .Counters.RespawnCounter = timeGetTime + ThralledTime
+            Else
+                .Counters.RespawnCounter = -1
+            End If
+            
         Close #FileNum
 
     End With
@@ -1100,7 +1107,7 @@ Dim i As Long
     'Loop through every field - match up the names then set the data accordingly
     With DB_RS
         UserChar.Desc = Trim$(!Descr)
-        UserChar.flags.GMLevel = !gm
+        UserChar.Flags.GMLevel = !gm
         InvStr = !inventory
         MailStr = !mail
         BankStr = !Bank
@@ -1312,7 +1319,7 @@ Dim i As Long
     Log "Call Save_User(N/A," & UserIndex & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
     'On special occasions, we want to the typical saving routine and save before the user is even disconnected
-    If UserChar.flags.DoNotSave = 1 Then Exit Sub
+    If UserChar.Flags.DoNotSave = 1 Then Exit Sub
 
     With UserChar
     
@@ -1415,7 +1422,7 @@ Dim i As Long
             DB_RS!IP = GOREsock_Address(UserIndex)
         End If
         DB_RS!date_lastlogin = Date$
-        DB_RS!gm = .flags.GMLevel
+        DB_RS!gm = .Flags.GMLevel
         DB_RS!Class = .Class
         DB_RS!Descr = .Desc
         DB_RS!BankGold = .BankGold

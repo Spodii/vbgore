@@ -86,10 +86,10 @@ Dim lY As Byte
         If Y > 0 Then
             For lX = X - 1 To X + 1
                 For lY = Y - 1 To Y + 1
-                    If lX > XMinMapSize Then
-                        If lX < XMaxMapSize Then
-                            If lY > YMinMapSize Then
-                                If lY < YMaxMapSize Then
+                    If lX > 1 Then
+                        If lX < MapInfo(Map).Width Then
+                            If lY > 1 Then
+                                If lY < MapInfo(Map).Height Then
                                     If MapInfo(Map).Data(lX, lY).Blocked = 0 Then
                                         If MapInfo(Map).ObjTile(lX, lY).NumObjs < MaxObjsPerTile Then
                                             
@@ -275,7 +275,7 @@ Dim i As Long
     ConBuf.Put_Byte DataCode.Comm_Talk
     ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk
-    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
     'The user is done, give them the rewards
     'EXP reward
@@ -429,7 +429,7 @@ Dim i As Integer
     ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(NPCList(NPCIndex).Quest).StartTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk Or DataCode.Comm_UseBubble
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
     'Give the quest requirements
     Data_Send ToIndex, UserIndex, cMessage(8).Data
@@ -455,7 +455,7 @@ Private Sub Quest_SayIncomplete(ByVal UserIndex As Integer, ByVal NPCIndex As In
     ConBuf.Put_String NPCList(NPCIndex).Name & ": " & QuestData(NPCList(NPCIndex).Quest).IncompleteTxt
     ConBuf.Put_Byte DataCode.Comm_FontType_Talk Or DataCode.Comm_UseBubble
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
     'Requirements text
     Quest_SendReqString UserIndex, NPCIndex
@@ -772,30 +772,30 @@ Public Sub Server_HeadToPos(ByVal Head As Byte, ByRef Pos As WorldPos)
 
     Select Case Head
         Case NORTH
-            Pos.Y = Pos.Y - 1
+            If Pos.Y > 0 Then Pos.Y = Pos.Y - 1
         Case SOUTH
-            Pos.Y = Pos.Y + 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
         Case EAST
-            Pos.X = Pos.X + 1
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
         Case WEST
-            Pos.X = Pos.X - 1
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
         Case NORTHEAST
-            Pos.X = Pos.X + 1
-            Pos.Y = Pos.Y - 1
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
+            If Pos.Y > 0 Then Pos.Y = Pos.Y - 1
         Case SOUTHEAST
-            Pos.X = Pos.X + 1
-            Pos.Y = Pos.Y + 1
+            If Pos.X < 255 Then Pos.X = Pos.X + 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
         Case SOUTHWEST
-            Pos.X = Pos.X - 1
-            Pos.Y = Pos.Y + 1
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y + 1
         Case NORTHWEST
-            Pos.X = Pos.X - 1
-            Pos.Y = Pos.Y - 1
+            If Pos.X > 0 Then Pos.X = Pos.X - 1
+            If Pos.Y < 255 Then Pos.Y = Pos.Y - 1
     End Select
 
 End Sub
 
-Private Function Server_InMapBounds(ByVal X As Integer, ByVal Y As Integer) As Boolean
+Private Function Server_InMapBounds(ByVal Map As Long, ByVal X As Integer, ByVal Y As Integer) As Boolean
 
 '*****************************************************************
 'Checks to see if a tile position is in the maps bounds
@@ -803,10 +803,10 @@ Private Function Server_InMapBounds(ByVal X As Integer, ByVal Y As Integer) As B
 
     Log "Call Server_InMapBounds(" & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
-    If X > XMinMapSize Then
-        If X < XMaxMapSize Then
-            If Y > YMinMapSize Then
-                If Y < YMaxMapSize Then Server_InMapBounds = True
+    If X >= 1 Then
+        If X <= MapInfo(Map).Width Then
+            If Y >= 1 Then
+                If Y <= MapInfo(Map).Height Then Server_InMapBounds = True
             End If
         End If
     End If
@@ -835,19 +835,19 @@ Dim tmpBlocked As Byte
     End If
 
     'Check to see if its out of bounds
-    If X < XMinMapSize Then
+    If X < 1 Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If X > XMaxMapSize Then
+    If X > MapInfo(Map).Width Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If Y < YMinMapSize Then
+    If Y < 1 Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    If Y > YMaxMapSize Then
+    If Y > MapInfo(Map).Height Then
         Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
@@ -1525,7 +1525,7 @@ Dim AttackPos As WorldPos
     Server_HeadToPos Heading, AttackPos
 
     'Exit if not legal
-    If AttackPos.X < XMinMapSize Or AttackPos.X > XMaxMapSize Or AttackPos.Y <= YMinMapSize Or AttackPos.Y > YMaxMapSize Then
+    If AttackPos.X < 1 Or AttackPos.X > MapInfo(UserList(UserIndex).Pos.Map).Width Or AttackPos.Y <= 1 Or AttackPos.Y > MapInfo(UserList(UserIndex).Pos.Map).Height Then
         Log "User_Attack: Trying to attack an illegal position - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -1896,19 +1896,19 @@ Dim NewSlot As Byte
         Log "User_DropObj: Map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.X < XMinMapSize Then
-        Log "User_DropObj: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If UserList(UserIndex).Pos.X < 1 Then
+        Log "User_DropObj: User X < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.X > XMaxMapSize Then
+    If UserList(UserIndex).Pos.X > MapInfo(UserList(UserIndex).Pos.Map).Width Then
         Log "User_DropObj: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.Y < YMinMapSize Then
-        Log "User_DropObj: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If UserList(UserIndex).Pos.Y < 1 Then
+        Log "User_DropObj: User Y < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.Y > YMaxMapSize Then
+    If UserList(UserIndex).Pos.Y > MapInfo(UserList(UserIndex).Pos.Map).Height Then
         Log "User_DropObj: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2008,19 +2008,19 @@ Public Sub User_EraseChar(ByVal UserIndex As Integer)
     'Update userlist
     UserList(UserIndex).Char.CharIndex = 0
     
-    If UserList(UserIndex).Pos.X < XMinMapSize Then
-        Log "User_EraseChar: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If UserList(UserIndex).Pos.X < 1 Then
+        Log "User_EraseChar: User X < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.X > XMaxMapSize Then
+    If UserList(UserIndex).Pos.X > MapInfo(UserList(UserIndex).Pos.Map).Width Then
         Log "User_EraseChar: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.Y < YMinMapSize Then
-        Log "User_EraseChar: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If UserList(UserIndex).Pos.Y < 1 Then
+        Log "User_EraseChar: User Y < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If UserList(UserIndex).Pos.Y > YMaxMapSize Then
+    If UserList(UserIndex).Pos.Y > MapInfo(UserList(UserIndex).Pos.Map).Height Then
         Log "User_EraseChar: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2140,19 +2140,19 @@ Dim i As Long
         Log "User_GetObj: User map > NumMaps - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If X < XMinMapSize Then
-        Log "User_GetObj: User X < XMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If X < 1 Then
+        Log "User_GetObj: User X < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If X > XMaxMapSize Then
+    If X > MapInfo(Map).Width Then
         Log "User_GetObj: User X > XMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If Y < YMinMapSize Then
-        Log "User_GetObj: User Y < YMinMapSize - aborting", CodeTracker '//\\LOGLINE//\\
+    If Y < 1 Then
+        Log "User_GetObj: User Y < 1 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
-    If Y > YMaxMapSize Then
+    If Y > MapInfo(Map).Height Then
         Log "User_GetObj: User Y > YMaxMapSize - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2444,7 +2444,7 @@ Dim MsgData As MailData
 
     'Check for invalid values
     On Error GoTo ErrOut
-    If Not Server_InMapBounds(X, Y) Then
+    If Not Server_InMapBounds(Map, X, Y) Then
         Log "User_LookAtTile: Invalid tile looked at (X:" & X & " Y:" & Y & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2514,7 +2514,7 @@ Dim MsgData As MailData
         End If
 
         '*** Check for Characters ***
-        If Y + 1 <= YMaxMapSize Then
+        If Y + 1 <= MapInfo(Map).Height Then
             If MapInfo(Map).Data(X, Y + 1).UserIndex > 0 Then
                 TempIndex = MapInfo(Map).Data(X, Y + 1).UserIndex
                 FoundChar = 1
@@ -2631,7 +2631,7 @@ Dim MsgData As MailData
     ElseIf Button = vbLeftButton Then
 
         '*** Look for NPC/Player to target ***
-        If Y + 1 <= YMaxMapSize Then
+        If Y + 1 <= MapInfo(Map).Height Then
             If MapInfo(Map).Data(X, Y + 1).UserIndex > 0 Then
                 TempCharIndex = UserList(MapInfo(Map).Data(X, Y + 1).UserIndex).Char.CharIndex
                 TempIndex = MapInfo(Map).Data(X, Y + 1).UserIndex
@@ -3206,8 +3206,8 @@ Dim i As Long
     Next X
 
     'Place chars and objects
-    For Y = YMinMapSize To YMaxMapSize
-        For X = XMinMapSize To XMaxMapSize
+    For Y = 1 To MapInfo(Map).Height
+        For X = 1 To MapInfo(Map).Width
             
             'NPC update
             If MapInfo(Map).Data(X, Y).NPCIndex Then NPC_MakeChar ToIndex, UserIndex, MapInfo(Map).Data(X, Y).NPCIndex, Map, X, Y
@@ -3330,10 +3330,10 @@ Dim Y As Byte
     MaxX = (UserList(UserIndex).Pos.X + MaxServerDistanceX)
     MinY = (UserList(UserIndex).Pos.Y - MaxServerDistanceY)
     MaxY = (UserList(UserIndex).Pos.Y + MaxServerDistanceY)
-    If MinX < XMinMapSize Then MinX = XMinMapSize
-    If MinY < YMinMapSize Then MinY = YMinMapSize
-    If MaxX > XMaxMapSize Then MaxX = XMaxMapSize
-    If MaxY > YMaxMapSize Then MaxY = YMaxMapSize
+    If MinX < 1 Then MinX = 1
+    If MinY < 1 Then MinY = 1
+    If MaxX > MapInfo(UserList(UserIndex).Pos.Map).Width Then MaxX = MapInfo(UserList(UserIndex).Pos.Map).Width
+    If MaxY > MapInfo(UserList(UserIndex).Pos.Map).Height Then MaxY = MapInfo(UserList(UserIndex).Pos.Map).Height
 
     'Loop through the tiles near the user
     For X = MinX To MaxX
@@ -3655,6 +3655,32 @@ Dim LoopC As Long
             'Show Character to others
             User_MakeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
             
+            'Move the user's slaves
+            For LoopC = 1 To UserList(UserIndex).NumSlaves
+            
+                With NPCList(UserList(UserIndex).SlaveNPCIndex(LoopC))
+
+                    'Erase the NPC from the old map
+                    MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
+                
+                    'Send erase command to clients
+                    ConBuf.PreAllocate 3
+                    ConBuf.Put_Byte DataCode.Server_EraseChar
+                    ConBuf.Put_Integer .Char.CharIndex
+                    Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                    
+                    'Set the new position
+                    Server_ClosestLegalPos UserList(UserIndex).Pos, .Pos
+                    If Not Server_LegalPos(.Pos.Map, .Pos.X, .Pos.Y, 0) Then
+                        NPC_Close UserList(UserIndex).SlaveNPCIndex(LoopC)
+                    Else
+                        NPC_MakeChar ToMap, UserIndex, UserList(UserIndex).SlaveNPCIndex(LoopC), .Pos.Map, .Pos.X, .Pos.Y
+                    End If
+                    
+                End With
+                
+            Next LoopC
+                
             'Check to update the database
             If MySQLUpdate_UserMap Then
                 Log "User_WarpChar: Updating database with new map", CodeTracker '//\\LOGLINE//\\
@@ -3689,6 +3715,32 @@ Dim LoopC As Long
         ConBuf.Put_Byte DataCode.Server_UserCharIndex
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+    
+        'Move the user's slaves
+        For LoopC = 1 To UserList(UserIndex).NumSlaves
+        
+            With NPCList(UserList(UserIndex).SlaveNPCIndex(LoopC))
+
+                'Erase the NPC from the old map
+                MapInfo(.Pos.Map).Data(.Pos.X, .Pos.Y).NPCIndex = 0
+            
+                'Send erase command to clients
+                ConBuf.PreAllocate 3
+                ConBuf.Put_Byte DataCode.Server_EraseChar
+                ConBuf.Put_Integer .Char.CharIndex
+                Data_Send ToMap, 0, ConBuf.Get_Buffer, .Pos.Map
+                
+                'Set the new position
+                Server_ClosestLegalPos UserList(UserIndex).Pos, .Pos
+                If Not Server_LegalPos(.Pos.Map, .Pos.X, .Pos.Y, 0) Then
+                    NPC_Close UserList(UserIndex).SlaveNPCIndex(LoopC)
+                Else
+                    NPC_MakeChar ToMap, UserIndex, UserList(UserIndex).SlaveNPCIndex(LoopC), .Pos.Map, .Pos.X, .Pos.Y
+                End If
+                
+            End With
+            
+        Next LoopC
         
     End If
 

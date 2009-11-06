@@ -1,11 +1,10 @@
 VERSION 5.00
 Begin VB.Form frmMain 
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
+   BackColor       =   &H80000005&
    Caption         =   "Free Number Finder"
    ClientHeight    =   2610
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   60
+   ClientTop       =   450
    ClientWidth     =   4455
    FillColor       =   &H00FFFFFF&
    ForeColor       =   &H00FFFFFF&
@@ -15,28 +14,13 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   297
    StartUpPosition =   2  'CenterScreen
-   Begin ToolFreeNumber.cButton cButton 
-      Height          =   375
-      Left            =   2880
-      TabIndex        =   5
-      Top             =   2160
-      Width           =   1455
-      _ExtentX        =   2566
-      _ExtentY        =   661
+   Begin VB.CommandButton cButton 
       Caption         =   "Recalculate"
-   End
-   Begin ToolFreeNumber.cForm cForm 
-      Height          =   255
-      Left            =   0
+      Height          =   375
+      Left            =   3000
       TabIndex        =   4
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      Caption         =   "Free Number Finder"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
+      Top             =   2160
+      Width           =   1335
    End
    Begin VB.Label GrhValuesLbl 
       BackStyle       =   0  'Transparent
@@ -50,7 +34,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFF00&
+      ForeColor       =   &H8000000D&
       Height          =   600
       Left            =   240
       TabIndex        =   3
@@ -70,7 +54,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFF00&
+      ForeColor       =   &H8000000D&
       Height          =   600
       Left            =   240
       TabIndex        =   2
@@ -91,7 +75,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   240
       Left            =   240
       TabIndex        =   1
@@ -111,7 +95,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00FFFFFF&
+      ForeColor       =   &H80000008&
       Height          =   240
       Left            =   240
       TabIndex        =   0
@@ -128,8 +112,8 @@ Option Explicit
 Private Const CheckNum As Long = 15
 Private GrhValues(1 To CheckNum) As Long
 Private GrhFiles(1 To CheckNum) As Long
-Private Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpDefault As String, ByVal lpReturnedString As String, ByVal nSize As Long, ByVal lpFileName As String) As Long
-Private Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationName As String, ByVal lpKeyName As Any, ByVal lpString As String, ByVal lpFileName As String) As Long
+Private Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Private Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 
 Private Sub cButton_Click()
 Dim Ret As String
@@ -176,9 +160,6 @@ Dim c As Long
 End Sub
 
 Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
 
     InitFilePaths
     cButton_Click
@@ -229,7 +210,7 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
     sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
 
-    GetPrivateProfileString Main, Var, szReturn, sSpaces, Len(sSpaces), File
+    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
 
     Var_Get = RTrim$(sSpaces)
     Var_Get = Left$(Var_Get, Len(Var_Get) - 1)

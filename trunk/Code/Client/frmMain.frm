@@ -178,20 +178,6 @@ Dim s As String
 Dim s2 As String
 Dim i As Byte
 Dim j As Long
-
-    'Disable / enable input (for debugging)
-    If KeyCode = vbKeyF11 Then
-        If GetAsyncKeyState(vbKeyShift) Then
-            DisableInput = 1
-            Engine_AddToChatTextBuffer "Input disabled", FontColor_Info
-        End If
-    End If
-    If KeyCode = vbKeyF10 Then
-        If GetAsyncKeyState(vbKeyShift) Then
-            DisableInput = 0
-            Engine_AddToChatTextBuffer "Input enabled", FontColor_Info
-        End If
-    End If
     
     '*************************
     '***** General input *****
@@ -931,6 +917,14 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
         NC = 0
         MousePos.X = X
         MousePos.Y = Y
+    End If
+    
+End Sub
+
+Private Sub Form_Resize()
+
+    If Not DIDevice Is Nothing Then
+        If Windowed = False Then DIDevice.Acquire
     End If
     
 End Sub

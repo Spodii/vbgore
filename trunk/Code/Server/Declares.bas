@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.3            ************
+'************            Official Release: Version 0.4.4            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -121,14 +121,14 @@ Public Const DEBUG_RecordPacketsIn As Boolean = True
 '********** Public CONSTANTS ***********
 
 'Change to 1 to enable database optimization on runtime
-Public Const OptimizeDatabase As Byte = 0
+Public Const OptimizeDatabase As Byte = 1
 
 'If we run the server in high priority (recommended to use unless)
 Public Const RunHighPriority As Byte = 1
 
 'Screen resolution (must be identical to the values on the client!)
-Public Const ScreenWidth As Long = 1024
-Public Const ScreenHeight As Long = 768
+Public Const ScreenWidth As Long = 800
+Public Const ScreenHeight As Long = 600
 
 'How long objects can be on the ground (in miliseconds) before being removed
 Public Const GroundObjLife As Long = 300000 '5 minutes
@@ -137,7 +137,7 @@ Public Const GroundObjLife As Long = 300000 '5 minutes
 Public Const ObjMemoryLife As Long = 300000 '5 minutes
 
 'How long the maps last in memory when no users are on it
-Public Const EmptyMapLife As Long = 1800    '3 minutes
+Public Const EmptyMapLife As Long = 180000  '3 minutes
 
 'Amount of time that must elapse for certain user events (in miliseconds)
 Public Const DelayTimeMail As Long = 3000   'Sending messages (has to be updated client-side, too)
@@ -194,6 +194,7 @@ Public Const CharType_NPC As Byte = 2
 Public Const ClientCharType_PC As Byte = 1
 Public Const ClientCharType_NPC As Byte = 2
 Public Const ClientCharType_Grouped As Byte = 3
+Public Const ClientCharType_Slave As Byte = 4
 
 'Max distance for two chars being on the same screen (for the rect distance) - values defined in tiles
 Public Const MaxServerDistanceX As Long = ((ScreenWidth \ 32) \ 2) + 1
@@ -219,7 +220,7 @@ Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of inventory
 Public Type udtObjData
     Name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
-    ClassReq As Byte                'Class requirement
+    ClassReq As Integer             'Class requirement
     GrhIndex As Long                'Graphic index
     SpriteBody As Integer           'Index of the body sprite to change to
     SpriteWeapon As Integer         'Index of the weapon sprite to change to
@@ -278,6 +279,8 @@ Type MapInfo    'Map information
     NumUsers As Integer     'Number of users on the map
     Name As String          'Name of the map
     MapVersion As Integer   'Version of the map
+    Width As Byte           'Dimensions of the map
+    Height As Byte
     Weather As Byte         'What weather effects the map has going
     Music As Byte           'The music file number of the map
     DataLoaded As Byte      'If the map data is loaded
@@ -416,7 +419,7 @@ Type User   'Holds data for a user
     Desc As String          'User's description
     Pos As WorldPos         'User's current position
     Gold As Long            'How much gold the user has
-    Class As Byte           'User's class
+    Class As Integer        'User's class
     BankGold As Long        'Amount of gold the user has in the bank
     GroupIndex As Integer   'The index of the group the user is part of (if any)
     SendBuffer() As Byte    'Buffer for sending data
@@ -437,6 +440,8 @@ Type User   'Holds data for a user
     Stats As UserStats              'Declares the user stats
     flags As UserFlags              'Declares the user Flags
     Skills As Skills                'Declares the skills casted on the user
+    NumSlaves As Byte               'Number of "slave" (ie summoned or pet) NPCs the user has
+    SlaveNPCIndex() As Integer      'NPC index of the slaves (not CharIndex since you can't slave a PC)
     KnownSkills(1 To NumSkills) As Byte         'Declares the skills known by the user
     NumCompletedQuests As Integer               'The total number of quests that were completed by the user (Ubound of CompletedQuests)
     CompletedQuests() As Integer                'Each index of the byte contains the ID of a quest completed
@@ -453,7 +458,7 @@ Type NPCFlags   'Flags for a NPC
     UpdateStats As Byte     'If to update the mod stats
 End Type
 Type NPCCounters    'Counters for a NPC
-    RespawnCounter As Long      'Stores the death time to respawn later
+    RespawnCounter As Long      'Stores the death time to respawn later (if a summoned/thralled NPC, its how long until they die off)
     AggressiveCounter As Long   'How long the NPC will remain aggressive-faced
     SpellExhaustion As Long     'Time until another spell can be casted
     BlessCounter As Long        'Time left on bless
@@ -480,6 +485,7 @@ Type NPC    'Holds all the NPC variables
     AttackRange As Byte     'The NPC's attack range
     AttackGrh As Long       'Grh used when the NPC attacks
     AttackSfx As Byte       'Sound effect played when the NPC attacks
+    OwnerIndex As Integer   'The user index the NPC is bound to (ie summoned or a pet)
     ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
     flags As NPCFlags               'Declares the NPC's Flags
@@ -548,12 +554,6 @@ Public Const NORTHEAST As Byte = 5
 Public Const SOUTHEAST As Byte = 6
 Public Const SOUTHWEST As Byte = 7
 Public Const NORTHWEST As Byte = 8
-
-'Map sizes
-Public Const XMaxMapSize As Byte = 100  'Maximum width of the map in tiles
-Public Const XMinMapSize As Byte = 1    'Minimum width of the map in tiles
-Public Const YMaxMapSize As Byte = 100  'Maximum height of the map in tiles
-Public Const YMinMapSize As Byte = 1    'Minimum height of the map in tiles
 
 'Window size in tiles
 Public Const XWindow As Byte = ScreenWidth \ 32     'Size of the window's width in tiles

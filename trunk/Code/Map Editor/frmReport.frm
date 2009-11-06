@@ -157,12 +157,24 @@ Dim i As Long
 
 End Sub
 
+Private Sub AllBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Fix all the problems in the list."
+
+End Sub
+
 Private Sub DeleteBtn_Click()
     
     MapOpt(OptList.ListIndex + 1).Type = None
     
     UpdateReport
     
+End Sub
+
+Private Sub DeleteBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Delete the selected problem from the list - this will NOT fix or remove the problem, just hide it from the list."
+
 End Sub
 
 Private Sub FixBtn_Click()
@@ -172,6 +184,12 @@ Private Sub FixBtn_Click()
     
     'Show results
     UpdateReport
+
+End Sub
+
+Private Sub FixBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Fixes the selected entry only."
 
 End Sub
 
@@ -248,6 +266,12 @@ ErrOut:
     
 End Sub
 
+Private Sub OptList_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "List of found potential optimizations."
+
+End Sub
+
 Private Sub SimBtn_Click()
 Dim ProblemType As MapOptType
 Dim i As Long
@@ -271,5 +295,11 @@ Dim i As Long
 ErrOut:
 
     MsgBox "Error fixing all similar types to " & OptList.ListIndex + 1 & "! Stopped at " & i & ".", vbOKOnly
+
+End Sub
+
+Private Sub SimBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Fixes all problems similar to the selected entry."
 
 End Sub

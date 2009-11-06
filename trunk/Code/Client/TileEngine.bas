@@ -15,6 +15,9 @@ Public EnterTextBuffer As String        'The text in the text buffer
 Public EnterTextBufferWidth As Long     'Width of the text buffer
 
 Public AlternateRender As Byte
+Public AlternateRenderDefault As Byte
+Public AlternateRenderMap As Byte
+Public AlternateRenderText As Byte
 
 '********** CONSTANTS ***********
 'Keep window in the game screen - dont let them move outside of the window bounds
@@ -24,10 +27,8 @@ Public Const WindowsInScreen As Boolean = True
 Public Bit32 As Byte        'If 32-bit format is used (0 = 16-bit)
 Public UseVSync As Byte     'If vertical synchronization copy is used
 Public Windowed As Boolean  'If the screen is windowed or fullscreen
-Public UseWidescreen As Byte    'If we are using widescreen or not
-Public ScreenWidthWide As Long  'The screen size if it was widescreen
-Public Const ScreenWidth As Long = 1024 'Keep this identical to the value on the server!
-Public Const ScreenHeight As Long = 768 'Keep this identical to the value on the server!
+Public Const ScreenWidth As Long = 800  'Keep this identical to the value on the server!
+Public Const ScreenHeight As Long = 600 'Keep this identical to the value on the server!
 
 'Heading constants
 Public Const NORTH As Byte = 1
@@ -38,12 +39,6 @@ Public Const NORTHEAST As Byte = 5
 Public Const SOUTHEAST As Byte = 6
 Public Const SOUTHWEST As Byte = 7
 Public Const NORTHWEST As Byte = 8
-
-'Map sizes in tiles
-Public Const XMaxMapSize As Byte = 100
-Public Const XMinMapSize As Byte = 1
-Public Const YMaxMapSize As Byte = 100
-Public Const YMinMapSize As Byte = 1
 
 'Font colors
 Public Const FontColor_Talk As Long = -1
@@ -96,20 +91,6 @@ End Type
 
 Public Const Font_Default_TextureNum As Long = -1   'The texture number used to represent this font - only used for AlternateRendering - keep negative to prevent interfering with game textures
 Public Font_Default As CustomFont   'Describes our custom font "default"
-
-'********** WEATHER ***********
-Public Type LightType
-    Light(1 To 24) As Long
-End Type
-Public SaveLightBuffer(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As LightType
-Public WeatherEffectIndex As Long   'Index returned by the weather effect initialization
-Public DoLightning As Byte          'Are we using lightning? 1 = Yes, 2 = No
-Public LightningTimer As Single     'How long until our next lightning bolt strikes
-Public FlashTimer As Single         'How long until the flash goes away (being > 0 states flash is happening)
-Public LightningX As Integer        'Position of the lightning (top-left corner)
-Public LightningY As Integer
-Public WeatherSfx1 As DirectSoundSecondaryBuffer8   'Weather buffers - dont add more unless you need more for
-Public WeatherSfx2 As DirectSoundSecondaryBuffer8   ' one weather effect (ie rain, wind, lightning)
 
 '********** TYPES ***********
 'Text buffer
@@ -212,6 +193,7 @@ Public Type Char
     Heading As Byte
     HeadHeading As Byte
     CharType As Byte
+    OwnerChar As Integer        'If CharType = Slave then this is the index of the owner (used for summoned NPCs to display on the mini-map)
     Pos As Position             'Tile position on the map
     RealPos As Position         'Position on the game screen
     Body As BodyData
@@ -264,6 +246,8 @@ Public Type MapInfo
     MapVersion As Integer
     Weather As Byte
     Music As Byte
+    Width As Byte
+    Height As Byte
 End Type
 
 'Describes the return from a texture init
@@ -545,8 +529,6 @@ Public SoundBufferTimer() As Long               'How long until the sound buffer
 Public LastTexture As Long                      'The last texture used
 Public D3DWindow As D3DPRESENT_PARAMETERS       'Describes the viewport and used to restore when in fullscreen
 Public UsedCreateFlags As CONST_D3DCREATEFLAGS  'The flags we used to create the device when it first succeeded
-Public ScreenDestRect As RECT                   'Destination draw area
-Public ScreenSrcRect As RECT                    'Source draw area
 Public DispMode As D3DDISPLAYMODE               'Describes the display mode
 
 'Texture for particle effects - this is handled differently then the rest of the graphics
@@ -630,9 +612,6 @@ Public Type TexInfo
     BmpFormat As Long
 End Type
 
-'If to use the sounds or not
-Public UseSounds As Byte
-
 'Used to hold the graphic layers in a quick-to-draw format
 Public Type Tile
     TileX As Byte
@@ -645,6 +624,26 @@ Public Type TileLayer
     NumTiles As Integer
 End Type
 Public TileLayer(1 To 6) As TileLayer
+
+'********** WEATHER ***********
+Public Type LightType
+    Light(1 To 24) As Long
+End Type
+Public SaveLightBuffer() As LightType
+Public WeatherEffectIndex As Long   'Index returned by the weather effect initialization
+Public WeatherDoLightning As Byte   'Are we using lightning? >1 = Yes, 0 = No
+Public WeatherFogX1 As Single       'Fog 1 position
+Public WeatherFogY1 As Single       'Fog 1 position
+Public WeatherFogX2 As Single       'Fog 2 position
+Public WeatherFogY2 As Single       'Fog 2 position
+Public WeatherDoFog As Byte         'Are we using fog? >1 = Yes, 0 = No
+Public WeatherFogCount As Byte      'How many fog effects there are
+Public LightningTimer As Single     'How long until our next lightning bolt strikes
+Public FlashTimer As Single         'How long until the flash goes away (being > 0 states flash is happening)
+Public LightningX As Integer        'Position of the lightning (top-left corner)
+Public LightningY As Integer
+Public WeatherSfx1 As DirectSoundSecondaryBuffer8   'Weather buffers - dont add more unless you need more for
+Public WeatherSfx2 As DirectSoundSecondaryBuffer8   ' one weather effect (ie rain, wind, lightning)
 
 '********** Public ARRAYS ***********
 Public GrhData() As GrhData             'Holds data for the graphic structure
@@ -865,7 +864,7 @@ Dim Ascii As Byte
 Dim Row As Long
 Dim Pos As Long
 Dim u As Single
-Dim v As Single
+Dim V As Single
 Dim X As Single
 Dim Y As Single
 Dim Y2 As Single
@@ -876,6 +875,8 @@ Dim Size As Integer
 Dim KeyPhrase As Byte
 Dim ResetColor As Byte
 Dim TempColor As Long
+
+    On Error Resume Next
 
     'Set the position
     If ChatBufferChunk <= 1 Then ChatBufferChunk = 1
@@ -895,6 +896,7 @@ Dim TempColor As Long
     Next LoopC
     Size = Size - j
     ChatArrayUbound = Size * 6 - 1
+    If ChatArrayUbound < 0 Then Exit Sub
     ReDim ChatVA(0 To ChatArrayUbound) 'Size our array to fix the 6 verticies of each character
 
     'Set the base position
@@ -931,7 +933,7 @@ Dim TempColor As Long
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
                     u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                    v = Row * Font_Default.RowFactor
+                    V = Row * Font_Default.RowFactor
 
                     'Set up the verticies
                     '    4____5
@@ -948,7 +950,7 @@ Dim TempColor As Long
                         .X = X + Count
                         .Y = Y2
                         .tu = u
-                        .tv = v
+                        .tv = V
                         .Rhw = 1
                     End With
                     With ChatVA(1 + (6 * Pos))   'Bottom-left corner
@@ -956,7 +958,7 @@ Dim TempColor As Long
                         .X = X + Count
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u
-                        .tv = v + Font_Default.RowFactor
+                        .tv = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
                     With ChatVA(2 + (6 * Pos))   'Bottom-right corner
@@ -964,7 +966,7 @@ Dim TempColor As Long
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2 + Font_Default.HeaderInfo.CellHeight
                         .tu = u + Font_Default.ColFactor
-                        .tv = v + Font_Default.RowFactor
+                        .tv = V + Font_Default.RowFactor
                         .Rhw = 1
                     End With
                     
@@ -975,7 +977,7 @@ Dim TempColor As Long
                         .X = X + Count + Font_Default.HeaderInfo.CellWidth
                         .Y = Y2
                         .tu = u + Font_Default.ColFactor
-                        .tv = v
+                        .tv = V
                         .Rhw = 1
                     End With
                     ChatVA(5 + (6 * Pos)) = ChatVA(2 + (6 * Pos))
@@ -999,9 +1001,11 @@ Dim TempColor As Long
         End If
 
     Next LoopC
+    
+    On Error GoTo 0
 
     'Check what rendering method we're using
-    If AlternateRender = 0 Then
+    If AlternateRenderText = 0 Then
     
         'Set the vertex array to the vertex buffer
         If Pos <= 0 Then Pos = 1
@@ -1175,6 +1179,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
     'Check for targeted character
     If TargetCharIndex = CharIndex Then TargetCharIndex = 0
     If CharIndex = 0 Then Exit Sub
+    If CharIndex > LastChar Then Exit Sub
     
     'Make inactive
     CharList(CharIndex).Active = 0
@@ -1848,7 +1853,9 @@ Private Sub Engine_Init_Sound()
     If IsUnloading Then Exit Sub
     
     On Error GoTo ErrOut
-    'GoTo ErrOut '//TEMP
+    
+    If UseSfx = 0 Then Exit Sub
+    
     'Create the DirectSound device (with the default device)
     Set DS = DX.DirectSoundCreate("")
     DS.SetCooperativeLevel frmMain.hWnd, DSSCL_PRIORITY
@@ -1875,15 +1882,13 @@ Private Sub Engine_Init_Sound()
     
     On Error GoTo 0
     
-    'All successful, use sounds
-    UseSounds = 1
-    
     Exit Sub
     
 ErrOut:
 
     'Failure loading sounds, so we won't use them
-    UseSounds = 0
+    UseSfx = 0
+    UseMusic = 0
 
 End Sub
 
@@ -1893,8 +1898,8 @@ Public Sub Engine_Sound_SetToMap(ByVal SoundID As Integer, ByVal TileX As Byte, 
 'Create a looping sound on the tile
 '************************************************************
 
-    If UseSounds = 0 Then Exit Sub
-    
+    If UseSfx = 0 Then Exit Sub
+
     'Make sure the sound isn't already going
     If Not MapData(TileX, TileY).Sfx Is Nothing Then
         MapData(TileX, TileY).Sfx.Stop
@@ -1926,15 +1931,15 @@ Dim X As Byte
 Dim Y As Byte
 Dim L As Long
 
-    If UseSounds = 0 Then Exit Sub
+    If UseSfx = 0 Then Exit Sub
 
     'Set the user's position to sX/sY
     sX = CharList(UserCharIndex).Pos.X
     sY = CharList(UserCharIndex).Pos.Y
     
     'Loop through all the map tiles
-    For X = XMinMapSize To XMaxMapSize
-        For Y = YMinMapSize To YMaxMapSize
+    For X = 1 To MapInfo.Width
+        For Y = 1 To MapInfo.Height
             
             'Only update used tiles
             If Not MapData(X, Y).Sfx Is Nothing Then
@@ -1967,6 +1972,8 @@ Public Sub Engine_Sound_Play(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, O
 'Used for non area-specific sound effects, such as weather
 '************************************************************
 
+    If UseSfx = 0 Then Exit Sub
+
     'Play the sound
     If Not SoundBuffer Is Nothing Then SoundBuffer.Play flags
     
@@ -1977,6 +1984,8 @@ Public Sub Engine_Sound_Erase(ByRef SoundBuffer As DirectSoundSecondaryBuffer8)
 '************************************************************
 'Erase the sound buffer
 '************************************************************
+
+    If UseSfx = 0 Then Exit Sub
     
     'Make sure the object exists
     If Not SoundBuffer Is Nothing Then
@@ -1997,7 +2006,7 @@ Public Sub Engine_Sound_Set(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, By
 'Set the SoundID to the sound buffer
 '************************************************************
 
-    If UseSounds = 0 Then Exit Sub
+    If UseSfx = 0 Then Exit Sub
 
     'Check if the sound buffer is in use
     Engine_Sound_Erase SoundBuffer
@@ -2015,7 +2024,7 @@ Public Sub Engine_Sound_Play3D(ByVal SoundID As Integer, TileX As Integer, TileY
 Dim sX As Integer
 Dim sY As Integer
 
-    If UseSounds = 0 Then Exit Sub
+    If UseSfx = 0 Then Exit Sub
 
     'Make sure we have the UserCharIndex, or else we cant play the sound! :o
     If UserCharIndex = 0 Then Exit Sub
@@ -2055,6 +2064,8 @@ Public Function Engine_Sound_CalcPan(ByVal x1 As Integer, ByVal x2 As Integer) A
 'Calculate the panning for 3D sound based on the user's position and the sound's position
 '************************************************************
 
+    If UseSfx = 0 Then Exit Function
+
     Engine_Sound_CalcPan = (x1 - x2) * 75
     
 End Function
@@ -2067,6 +2078,8 @@ Public Function Engine_Sound_CalcVolume(ByVal x1 As Integer, ByVal Y1 As Integer
 ' volume loss during panning (since one speaker gets muted to create the panning)
 '************************************************************
 Dim Dist As Single
+
+    If UseSfx = 0 Then Exit Function
 
     'Store the distance
     Dist = Sqr(((Y1 - Y2) * (Y1 - Y2)) + ((x1 - x2) * (x1 - x2)))
@@ -2085,6 +2098,8 @@ Private Sub Engine_Sound_Pan(ByRef SoundBuffer As DirectSoundSecondaryBuffer8, B
 'Pan the selected SoundID (-10,000 to 10,000)
 '************************************************************
 
+    If UseSfx = 0 Then Exit Sub
+
     If SoundBuffer Is Nothing Then Exit Sub
     SoundBuffer.SetPan Value
 
@@ -2096,7 +2111,7 @@ Private Sub Engine_Sound_Volume(ByRef SoundBuffer As DirectSoundSecondaryBuffer8
 'Pan the selected SoundID (-10,000 to 0)
 '************************************************************
 
-    If UseSounds = 0 Then Exit Sub
+    If UseSfx = 0 Then Exit Sub
 
     If SoundBuffer Is Nothing Then Exit Sub
     If Value > 0 Then Value = 0
@@ -2112,73 +2127,40 @@ Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS)
 'best settings and move to the worst until one works
 '************************************************************
 Dim i As Byte
-Dim t As Long
-    
+
     'When there is an error, destroy the D3D device and get ready to make a new one
     On Error GoTo ErrOut
 
     'Retrieve current display mode
     D3D.GetAdapterDisplayMode D3DADAPTER_DEFAULT, DispMode
-    
-    'If UseWidescreen > 1, autocalculate if we will be using widescreen or not
-    If UseWidescreen > 1 Then
-        If DispMode.Width / DispMode.Height > 1.4 Then UseWidescreen = 1 Else UseWidescreen = 0
-    End If
-    
-    'Create the destination rectangle
-    If Windowed = False And UseWidescreen = 1 Then
-        
-        'Find out the widescreen value
-        Select Case ScreenWidth
-            Case 800: ScreenWidthWide = 960
-            Case 1024: ScreenWidthWide = 1280
-        End Select
 
-        'Figure out how much white-space on each side
-        t = (ScreenWidthWide - ScreenWidth) \ 2
-
-        'Wide screen (16:9 aspect ratio) - only use if fullscreen, too
-        ScreenDestRect.Right = t + ScreenWidth
-        ScreenDestRect.Left = t
-        ScreenDestRect.bottom = ScreenHeight
-        ScreenDestRect.Top = 0
-        
-    Else
-        
-        'Normal screen (4:3 aspect ratio)
-        ScreenDestRect.Right = ScreenWidth
-        ScreenDestRect.Left = 0
-        ScreenDestRect.bottom = ScreenHeight
-        ScreenDestRect.Top = 0
-        
-    End If
-    
-    ScreenSrcRect.Left = 0
-    ScreenSrcRect.Top = 0
-    ScreenSrcRect.Right = ScreenWidth
-    ScreenSrcRect.bottom = ScreenHeight
-    
     'Set format for windowed mode
     If Windowed Then
         D3DWindow.Windowed = 1  'State that using windowed mode
         D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
         D3DWindow.BackBufferFormat = DispMode.Format    'Use format just retrieved
-        D3DWindow.EnableAutoDepthStencil = 1
-        D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
     Else
         If Bit32 = 1 Then DispMode.Format = D3DFMT_X8R8G8B8 Else DispMode.Format = D3DFMT_R5G6B5
-        If UseWidescreen = 0 Then DispMode.Width = ScreenWidth Else DispMode.Width = ScreenWidthWide
-        DispMode.Height = ScreenHeight
         If UseVSync = 1 Then D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC Else D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
+        DispMode.Width = ScreenWidth
+        DispMode.Height = ScreenHeight
+        D3DWindow.SwapEffect = D3DWindow.SwapEffect
         D3DWindow.BackBufferCount = 1
         D3DWindow.BackBufferFormat = DispMode.Format
-        D3DWindow.BackBufferWidth = DispMode.Width
-        D3DWindow.BackBufferHeight = DispMode.Height
+        D3DWindow.BackBufferWidth = ScreenWidth
+        D3DWindow.BackBufferHeight = ScreenHeight
         D3DWindow.hDeviceWindow = frmMain.hWnd
-        D3DWindow.EnableAutoDepthStencil = 1
-        D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
     End If
 
+    If UseMotionBlur Then
+        D3DWindow.EnableAutoDepthStencil = 1
+        If Bit32 = 1 Then
+            D3DWindow.AutoDepthStencilFormat = D3DFMT_D32
+        Else
+            D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
+        End If
+    End If
+    
     'Set the D3DDevices
     If Not D3DDevice Is Nothing Then Set D3DDevice = Nothing
     Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hWnd, D3DCREATEFLAGS, D3DWindow)
@@ -2673,6 +2655,7 @@ Public Sub Engine_Init_NPCChat(ByVal Language As String)
 'Loads the NPC messages according to the language
 '*****************************************************************
 Dim Conditions() As NPCChatLineCondition
+Dim Distance As Long
 Dim NumConditions As Byte   'The number of conditions
 Dim ConditionFlags As Long  'States what conditions are currently used (so we don't have to loop through the Conditions() array)
 Dim ChatLine As Byte    'The chat line for the current index
@@ -2778,14 +2761,14 @@ Dim i As Long
                 End Select
                 
             End If
-            
+
             '*** Look for a new condition ***
             If Left$(ln, 1) = "!" Then
                 
                 'Figure out what condition it is
                 ln = Trim$(ln)  'Trim off spaces
                 TempSplit = Split(UCase$(Right$(ln, Len(ln) - 1)), " ") 'Remove the ! and turn to uppercase
-                Select Case TempSplit(0)
+                Select Case UCase$(TempSplit(0))
                     Case "CLEAR"
                         Erase Conditions
                         NumConditions = 0
@@ -3100,11 +3083,15 @@ Dim t As Long
     frmMain.Height = ScreenHeight * Screen.TwipsPerPixelY
     
     'Get some engine settings
+    UseSfx = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseSfx"))
+    If UseSfx <> 0 Then UseSfx = 1      'Force to 1 or 0
+    
+    UseMusic = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseMusic"))
+    If UseMusic <> 0 Then UseMusic = 1  'Force to 1 or 0
+    
     UseVSync = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "VSync"))
     If UseVSync <> 0 Then UseVSync = 1  'Force to 1 or 0
-    
-    UseWidescreen = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Widescreen"))
-    
+
     t = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Windowed"))
     If t = 0 Then Windowed = False Else Windowed = True
     
@@ -3113,6 +3100,9 @@ Dim t As Long
     
     UseWeather = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseWeather"))
     If UseWeather <> 0 Then UseWeather = 1
+    
+    UseMotionBlur = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseMotionBlur"))
+    If UseMotionBlur <> 0 Then UseMotionBlur = 1
     
     '****** INIT DirectX ******
     ' Create the root D3D objects
@@ -3127,14 +3117,10 @@ Dim t As Long
         If Engine_Init_D3DDevice(D3DCREATE_HARDWARE_VERTEXPROCESSING) = 0 Then
             If Engine_Init_D3DDevice(D3DCREATE_MIXED_VERTEXPROCESSING) = 0 Then
                 If Engine_Init_D3DDevice(D3DCREATE_SOFTWARE_VERTEXPROCESSING) = 0 Then
-                    If Engine_Init_D3DDevice(D3DCREATE_FPU_PRESERVE) = 0 Then
-                        If Engine_Init_D3DDevice(D3DCREATE_MULTITHREADED) = 0 Then
-                            MsgBox "Could not init D3DDevice. Exiting..."
-                            Engine_Init_UnloadTileEngine
-                            Engine_UnloadAllForms
-                            End
-                        End If
-                    End If
+                    MsgBox "Could not init D3DDevice. Exiting..."
+                    Engine_Init_UnloadTileEngine
+                    Engine_UnloadAllForms
+                    End
                 End If
             End If
         End If
@@ -3146,9 +3132,7 @@ Dim t As Long
     Engine_Init_ParticleEngine
     
     'Create the needed information for the motion bluring
-    UseMotionBlur = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "UseMotionBlur"))
-    If UseMotionBlur <> 0 Then UseMotionBlur = 1
-    If UseMotionBlur = 1 Then
+    If UseMotionBlur Then
         Set DeviceBuffer = D3DDevice.GetRenderTarget
         Set DeviceStencil = D3DDevice.GetDepthStencilSurface
         Set BlurStencil = D3DDevice.CreateDepthStencilSurface(1024, 1024, D3DFMT_D16, D3DMULTISAMPLE_NONE)
@@ -3160,14 +3144,10 @@ Dim t As Long
             BlurTA(t).Color = D3DColorXRGB(255, 255, 255)
             BlurTA(t).Rhw = 1
         Next t
-        BlurTA(1).X = 1024
-        BlurTA(2).Y = 1024
-        BlurTA(3).X = 1024
-        BlurTA(3).Y = 1024
-        BlurTA(1).tu = 1
-        BlurTA(2).tv = 1
-        BlurTA(3).tu = 1
-        BlurTA(3).tv = 1
+        BlurTA(1).X = ScreenWidth
+        BlurTA(2).Y = ScreenHeight
+        BlurTA(3).X = ScreenWidth
+        BlurTA(3).Y = ScreenHeight
         
     End If
 
@@ -3185,11 +3165,17 @@ Dim t As Long
     
     'Get the AlternateRender flag
     AlternateRender = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "AlternateRender"))
+    AlternateRenderMap = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "AlternateRenderMap"))
+    AlternateRenderText = Val(Engine_Var_Get(DataPath & "Game.ini", "INIT", "AlternateRenderText"))
+    If AlternateRender <> 0 Then AlternateRender = 1
+    If AlternateRenderMap <> 0 Then AlternateRenderMap = 1
+    If AlternateRenderText <> 0 Then AlternateRenderText = 1
+    AlternateRenderDefault = AlternateRender
     
     'Set the blur to off
     BlurIntensity = 255
 
-    If AlternateRender Then
+    If AlternateRender = 1 Or AlternateRenderMap = 1 Then
 
         'If using alternate rendering, create the sprite object
         Set Sprite = D3DX.CreateSprite(D3DDevice)
@@ -3237,8 +3223,8 @@ Dim Y As Long
     Next LoopC
     
     'Clear map sound buffers
-    For X = XMinMapSize To XMaxMapSize
-        For Y = YMinMapSize To YMaxMapSize
+    For X = 1 To MapInfo.Width
+        For Y = 1 To MapInfo.Height
             If Not MapData(X, Y).Sfx Is Nothing Then Set MapData(X, Y).Sfx = Nothing
         Next Y
     Next X
@@ -3320,14 +3306,144 @@ Dim LoopC As Long
 
 End Sub
 
-Sub Engine_Init_Weather()
+Sub Engine_Weather_UpdateFog()
+
+'*****************************************************************
+'Update the fog effects
+'*****************************************************************
+Dim TempGrh As Grh
+Dim i As Long
+Dim X As Long
+Dim Y As Long
+Dim c As Long
+
+    'Make sure we have the fog value
+    If WeatherFogCount = 0 Then WeatherFogCount = 13
+    
+    'Update the fog's position
+    WeatherFogX1 = WeatherFogX1 + (ElapsedTime * (0.018 + Rnd * 0.01)) + (LastOffsetX - ParticleOffsetX)
+    WeatherFogY1 = WeatherFogY1 + (ElapsedTime * (0.013 + Rnd * 0.01)) + (LastOffsetY - ParticleOffsetY)
+    Do While WeatherFogX1 < -512
+        WeatherFogX1 = WeatherFogX1 + 512
+    Loop
+    Do While WeatherFogY1 < -512
+        WeatherFogY1 = WeatherFogY1 + 512
+    Loop
+    Do While WeatherFogX1 > 0
+        WeatherFogX1 = WeatherFogX1 - 512
+    Loop
+    Do While WeatherFogY1 > 0
+        WeatherFogY1 = WeatherFogY1 - 512
+    Loop
+    
+    WeatherFogX2 = WeatherFogX2 - (ElapsedTime * (0.037 + Rnd * 0.01)) + (LastOffsetX - ParticleOffsetX)
+    WeatherFogY2 = WeatherFogY2 - (ElapsedTime * (0.021 + Rnd * 0.01)) + (LastOffsetY - ParticleOffsetY)
+    Do While WeatherFogX2 < -512
+        WeatherFogX2 = WeatherFogX2 + 512
+    Loop
+    Do While WeatherFogY2 < -512
+        WeatherFogY2 = WeatherFogY2 + 512
+    Loop
+    Do While WeatherFogX2 > 0
+        WeatherFogX2 = WeatherFogX2 - 512
+    Loop
+    Do While WeatherFogY2 > 0
+        WeatherFogY2 = WeatherFogY2 - 512
+    Loop
+
+    TempGrh.FrameCounter = 1
+    
+    'Render fog 2
+    TempGrh.GrhIndex = 4
+    X = 2
+    Y = -1
+    c = D3DColorARGB(100, 255, 255, 255)
+    For i = 1 To WeatherFogCount
+        Engine_Render_Grh TempGrh, (X * 512) + WeatherFogX2, (Y * 512) + WeatherFogY2, 0, 0, False, c, c, c, c
+        X = X + 1
+        If X > (1 + (ScreenWidth \ 512)) Then
+            X = 0
+            Y = Y + 1
+        End If
+    Next i
+            
+    'Render fog 1
+    TempGrh.GrhIndex = 3
+    X = 0
+    Y = 0
+    c = D3DColorARGB(75, 255, 255, 255)
+    For i = 1 To WeatherFogCount
+        Engine_Render_Grh TempGrh, (X * 512) + WeatherFogX1, (Y * 512) + WeatherFogY1, 0, 0, False, c, c, c, c
+        X = X + 1
+        If X > (2 + (ScreenWidth \ 512)) Then
+            X = 0
+            Y = Y + 1
+        End If
+    Next i
+
+End Sub
+
+Sub Engine_Weather_UpdateLightning()
+
+'*****************************************************************
+'Updates the lightning count-down and creates the flash if its ready
+'*****************************************************************
+Dim X As Long
+Dim Y As Long
+Dim i As Long
+
+    'Check if we are in the middle of a flash
+    If FlashTimer > 0 Then
+        FlashTimer = FlashTimer - ElapsedTime
+        
+        'The flash has run out
+        If FlashTimer <= 0 Then
+        
+            'Change the light of all the tiles back
+            For X = 1 To MapInfo.Width
+                For Y = 1 To MapInfo.Height
+                    For i = 1 To 24
+                        MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
+                    Next i
+                Next Y
+            Next X
+        
+        End If
+        
+    'Update the timer, see if it is time to flash
+    Else
+        LightningTimer = LightningTimer - ElapsedTime
+        
+        'Flash me, baby!
+        If LightningTimer <= 0 Then
+            LightningTimer = 15000 + (Rnd * 15000)  'Reset timer (flash every 15 to 30 seconds)
+            FlashTimer = 250    'How long the flash is (miliseconds)
+            
+            'Randomly place the lightning
+            LightningX = 50 + Rnd * 700
+            LightningY = Rnd * -200
+            Engine_Sound_Play WeatherSfx2, DSBPLAY_DEFAULT  'BAM!
+            
+            'Change the light of all the tiles to white
+            For X = 1 To MapInfo.Width
+                For Y = 1 To MapInfo.Height
+                    For i = 1 To 24
+                        MapData(X, Y).Light(i) = -1
+                    Next i
+                Next Y
+            Next X
+            
+        End If
+        
+    End If
+
+End Sub
+
+Sub Engine_Weather_Update()
 
 '*****************************************************************
 'Initializes the weather effects
 '*****************************************************************
-Dim X As Byte
-Dim Y As Byte
-Dim i As Byte
 
     'Check if we're using weather
     If UseWeather = 0 Then Exit Sub
@@ -3353,7 +3469,8 @@ Dim i As Byte
             ElseIf Not Effect(WeatherEffectIndex).Used Then
                 WeatherEffectIndex = Effect_Snow_Begin(1, 400)
             End If
-            DoLightning = 0
+            WeatherDoLightning = 0
+            WeatherDoFog = 0
             
         Case 2  'Rain Storm (heavy rain + lightning)
             If WeatherEffectIndex <= 0 Then
@@ -3364,16 +3481,28 @@ Dim i As Byte
             ElseIf Not Effect(WeatherEffectIndex).Used Then
                 WeatherEffectIndex = Effect_Rain_Begin(9, 300)
             End If
-            DoLightning = 1 'We take our rain with a bit of lightning on top >:D
+            WeatherDoLightning = 1  'We take our rain with a bit of lightning on top >:D
+            WeatherDoFog = 0
             Engine_Sound_Set WeatherSfx1, 3
             Engine_Sound_Set WeatherSfx2, 2
             Engine_Sound_Play WeatherSfx1, DSBPLAY_LOOPING
             
-        Case 3  'Inside of a cave/house in a storm (lightning + cave rain sound)
+        Case 3  'Inside of a house in a storm (lightning + muted rain sound)
             If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
                 If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
             End If
-            DoLightning = 1
+            WeatherDoLightning = 1
+            WeatherDoFog = 0
+            Engine_Sound_Set WeatherSfx1, 4
+            Engine_Sound_Set WeatherSfx2, 6
+            Engine_Sound_Play WeatherSfx1, DSBPLAY_LOOPING
+            
+        Case 4  'Inside of a cave in a storm (lightning + muted rain sound + fog)
+            If WeatherEffectIndex > 0 Then  'Kill the weather effect if used
+                If Effect(WeatherEffectIndex).Used Then Effect_Kill WeatherEffectIndex
+            End If
+            WeatherDoLightning = 1
+            WeatherDoFog = 10    'This will make it nice and spooky! >:D
             Engine_Sound_Set WeatherSfx1, 4
             Engine_Sound_Set WeatherSfx2, 6
             Engine_Sound_Play WeatherSfx1, DSBPLAY_LOOPING
@@ -3384,60 +3513,18 @@ Dim i As Byte
                 Engine_Sound_Erase WeatherSfx1  'Remove the sounds
                 Engine_Sound_Erase WeatherSfx2
             End If
+            WeatherDoLightning = 0
+            WeatherDoFog = 0
             
         End Select
         
     End If
     
+    'Update fog
+    If WeatherDoFog Then Engine_Weather_UpdateFog
+
     'Update lightning
-    If DoLightning Then
-        
-        'Check if we are in the middle of a flash
-        If FlashTimer > 0 Then
-            FlashTimer = FlashTimer - ElapsedTime
-            
-            'The flash has run out
-            If FlashTimer <= 0 Then
-            
-                'Change the light of all the tiles back
-                For X = XMinMapSize To XMaxMapSize
-                    For Y = YMinMapSize To YMaxMapSize
-                        For i = 1 To 24
-                            MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
-                        Next i
-                    Next Y
-                Next X
-            
-            End If
-            
-        'Update the timer, see if it is time to flash
-        Else
-            LightningTimer = LightningTimer - ElapsedTime
-            
-            'Flash me, baby!
-            If LightningTimer <= 0 Then
-                LightningTimer = 15000 + (Rnd * 15000)  'Reset timer (flash every 15 to 30 seconds)
-                FlashTimer = 250    'How long the flash is (miliseconds)
-                
-                'Randomly place the lightning
-                LightningX = 50 + Rnd * 700
-                LightningY = Rnd * -200
-                Engine_Sound_Play WeatherSfx2, DSBPLAY_DEFAULT  'BAM!
-                
-                'Change the light of all the tiles to white
-                For X = XMinMapSize To XMaxMapSize
-                    For Y = YMinMapSize To YMaxMapSize
-                        For i = 1 To 24
-                            MapData(X, Y).Light(i) = -1
-                        Next i
-                    Next Y
-                Next X
-                
-            End If
-            
-        End If
-        
-    End If
+    If WeatherDoLightning Then Engine_Weather_UpdateLightning
 
 End Sub
 
@@ -3446,8 +3533,8 @@ Sub Engine_Input_CheckKeys()
 '*****************************************************************
 'Checks keys and respond
 '*****************************************************************
-    
-    If DisableInput = 1 Then Exit Sub
+
+    If GetActiveWindow = 0 Then Exit Sub
     
     'Dont move when Control is pressed
     If GetAsyncKeyState(vbKeyControl) Then Exit Sub
@@ -4677,10 +4764,10 @@ Function Engine_LegalPos(ByVal X As Integer, ByVal Y As Integer, ByVal Heading A
 Dim i As Integer
 
     'Check that it is in the map
-    If X < XMinMapSize Then Exit Function
-    If X > XMaxMapSize Then Exit Function
-    If Y < YMinMapSize Then Exit Function
-    If Y > YMaxMapSize Then Exit Function
+    If X < 1 Then Exit Function
+    If X > MapInfo.Width Then Exit Function
+    If Y < 1 Then Exit Function
+    If Y > MapInfo.Height Then Exit Function
 
     'Check to see if its blocked
     If MapData(X, Y).Blocked = BlockedAll Then Exit Function
@@ -4762,17 +4849,17 @@ Dim tY As Integer
     tX = UserPos.X + X
     tY = UserPos.Y + Y
     
-    'Check to see if its out of bounds
-    If Not (tX < XMinMapSize Or tX > XMaxMapSize Or tY < YMinMapSize Or tY > YMaxMapSize) Then
-    
-        'Start moving... MainLoop does the rest
-        AddtoUserPos.X = X
-        UserPos.X = tX
-        AddtoUserPos.Y = Y
-        UserPos.Y = tY
-        UserMoving = True
-        
-    End If
+    If tX < 1 Then tX = 1: If X < 0 Then X = 0
+    If tX > MapInfo.Width Then tX = MapInfo.Width: If X > 0 Then X = 0
+    If tY < 1 Then tY = 1: If Y < 0 Then Y = 0
+    If tY > MapInfo.Height Then tY = MapInfo.Height: If Y > 0 Then Y = 0
+
+    'Start moving... MainLoop does the rest
+    AddtoUserPos.X = X
+    UserPos.X = tX
+    AddtoUserPos.Y = Y
+    UserPos.Y = tY
+    UserMoving = True
 
 End Sub
 
@@ -4782,8 +4869,8 @@ Sub Engine_MoveUser(ByVal Direction As Byte)
 'Move user in appropriate direction
 '*****************************************************************
 Dim Running As Byte
-Dim aX As Integer
-Dim aY As Integer
+Dim ax As Integer
+Dim ay As Integer
 Dim aX2 As Integer
 Dim aY2 As Integer
 Dim aX3 As Integer
@@ -4807,8 +4894,8 @@ Dim b As Byte
     'Figure out the AddX and AddY values
     Select Case Direction
         Case NORTHEAST
-            aX = 1
-            aY = -1
+            ax = 1
+            ay = -1
             aX2 = 0
             aY2 = -1
             aX3 = 1
@@ -4816,8 +4903,8 @@ Dim b As Byte
             Direction2 = NORTH
             Direction3 = EAST
         Case NORTHWEST
-            aX = -1
-            aY = -1
+            ax = -1
+            ay = -1
             aX2 = 0
             aY2 = -1
             aX3 = -1
@@ -4825,8 +4912,8 @@ Dim b As Byte
             Direction2 = NORTH
             Direction3 = WEST
         Case SOUTHEAST
-            aX = 1
-            aY = 1
+            ax = 1
+            ay = 1
             aX2 = 0
             aY2 = 1
             aX3 = 1
@@ -4834,8 +4921,8 @@ Dim b As Byte
             Direction2 = SOUTH
             Direction3 = EAST
         Case SOUTHWEST
-            aX = -1
-            aY = 1
+            ax = -1
+            ay = 1
             aX2 = 0
             aY2 = 1
             aX3 = -1
@@ -4843,17 +4930,17 @@ Dim b As Byte
             Direction2 = SOUTH
             Direction3 = WEST
         Case NORTH
-            aX = 0
-            aY = -1
+            ax = 0
+            ay = -1
         Case EAST
-            aX = 1
-            aY = 0
+            ax = 1
+            ay = 0
         Case SOUTH
-            aX = 0
-            aY = 1
+            ax = 0
+            ay = 1
         Case WEST
-            aX = -1
-            aY = 0
+            ax = -1
+            ay = 0
     End Select
 
     'If the shop, mailbox or read mail window are showing, hide them
@@ -4867,7 +4954,7 @@ Dim b As Byte
     AmountWindowValue = ""
 
     'Try the first movement
-    If Engine_LegalPos(UserPos.X + aX, UserPos.Y + aY, Direction) Then
+    If Engine_LegalPos(UserPos.X + ax, UserPos.Y + ay, Direction) Then
         Engine_SendMovePacket Direction
         Exit Sub
     End If
@@ -5212,7 +5299,7 @@ Dim WingsGrh As Grh
     
     'Set the map block the char is on to the TempBlock, and the block above the user as TempBlock2
     TempBlock = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y)
-    If CharList(CharIndex).Pos.Y > YMinMapSize Then
+    If CharList(CharIndex).Pos.Y > 1 Then
         TempBlock2 = MapData(CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y - 1)
     Else
         TempBlock2 = TempBlock
@@ -5522,6 +5609,9 @@ Dim i As Long
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
+    
+    'Assign the alternate rendering value
+    AlternateRender = AlternateRenderText
 
     'Check if using alternate rendering
     If AlternateRender Then
@@ -5572,6 +5662,9 @@ Dim i As Long
         End If
     
     End If
+    
+    'Retreive the default alternate render value
+    AlternateRender = AlternateRenderDefault
 
 End Sub
 
@@ -6153,7 +6246,8 @@ Private Sub Engine_ReadyTexture(ByVal TextureNum As Long)
     
         'Set the texture
         LastTexture = TextureNum
-    
+        If TextureNum <= 0 Then D3DDevice.SetTexture 0, Nothing
+        
     Else
     
         'Set the texture
@@ -6307,10 +6401,10 @@ Dim Y As Long
             For X = minX To maxX
             
                 'Check that the tile is in the range of the map
-                If X >= XMinMapSize Then
-                    If Y >= YMinMapSize Then
-                        If X <= XMaxMapSize Then
-                            If Y <= YMaxMapSize Then
+                If X >= 1 Then
+                    If Y >= 1 Then
+                        If X <= MapInfo.Width Then
+                            If Y <= MapInfo.Height Then
                         
                                 'Check if the tile even has a graphic on it
                                 If MapData(X, Y).Graphic(Layer).GrhIndex Then
@@ -6390,6 +6484,7 @@ Dim bY As Single
     'Check for valid positions
     If UserPos.X = 0 Then Exit Sub
     If UserPos.Y = 0 Then Exit Sub
+    If UserCharIndex = 0 Then Exit Sub
     
     'Check if we need to update the graphics
     If TileX <> LastTileX Or TileY <> LastTileY Then
@@ -6417,37 +6512,67 @@ Dim bY As Single
     'Do NOT move this any farther down in the module or you will get "jumps" as the left/top borders on particles
     ParticleOffsetX = (Engine_PixelPosX(ScreenMinX) - PixelOffsetX)
     ParticleOffsetY = (Engine_PixelPosY(ScreenMinY) - PixelOffsetY)
-    
+
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then
-
+        
+        'The worst we can do at this point is avoid an error we can't fix!
+        'On Error Resume Next
+        
         'Do a loop while device is lost
         If D3DDevice.TestCooperativeLevel = D3DERR_DEVICELOST Then Exit Sub
-
+            
+        'Clear all the textures
+        LastTexture = -999
+        For j = 1 To NumGrhFiles
+            Set SurfaceDB(j) = Nothing
+            SurfaceTimer(j) = 0
+            SurfaceSize(j).X = 0
+            SurfaceSize(j).Y = 0
+            SurfaceSize(j).BmpFormat = 0
+            SurfaceSize(j).MipLevels = 0
+        Next j
+        
+        'Clear the D3DXSprite
+        If AlternateRenderDefault = 1 Or AlternateRenderMap = 1 Or AlternateRenderText = 1 Then
+            SpriteBegun = 0
+            Set Sprite = Nothing
+            Set Sprite = D3DX.CreateSprite(D3DDevice)
+        End If
+        
+        Set DeviceBuffer = Nothing
+        Set DeviceStencil = Nothing
+        Set BlurStencil = Nothing
+        Set BlurTexture = Nothing
+        Set BlurSurf = Nothing
+        
+        'Make sure the scene is ended
+        D3DDevice.EndScene
+        
         'Reset the device
         D3DDevice.Reset D3DWindow
-
-        'Reset the device and states
-        If DX Is Nothing Then Set DX = New DirectX8
-        If D3D Is Nothing Then Set D3D = DX.Direct3DCreate()
-        If D3DX Is Nothing Then Set D3DX = New D3DX8
         
+        Set DeviceBuffer = D3DDevice.GetRenderTarget
+        Set DeviceStencil = D3DDevice.GetDepthStencilSurface
+        Set BlurStencil = D3DDevice.CreateDepthStencilSurface(1024, 1024, D3DFMT_D16, D3DMULTISAMPLE_NONE)
+        Set BlurTexture = D3DX.CreateTexture(D3DDevice, 1024, 1024, 1, D3DUSAGE_RENDERTARGET, DispMode.Format, D3DPOOL_DEFAULT)
+        Set BlurSurf = BlurTexture.GetSurfaceLevel(0)
+        
+        'Reset the render states
         Engine_Init_RenderStates
+        
+        'On Error GoTo 0
 
     Else
     
         'We have to bypass the present the first time through here or else we get an error
         If NotFirstRender = 1 Then
         
-            'Check if using alternate rendering
-            If AlternateRender Then
-                
-                'Close off the last sprite
-                If SpriteBegun Then
-                    Sprite.End
-                    SpriteBegun = 0
-                End If
-            
+            'Close off the last sprite
+            If SpriteBegun Then
+                Sprite.End
+                SpriteBegun = 0
+                LastTexture = -101
             End If
 
             With D3DDevice
@@ -6455,8 +6580,8 @@ Dim bY As Single
                 'End the rendering (scene)
                 .EndScene
                 
-                'Flip the backbuffer to the screen
-                .Present ScreenSrcRect, ScreenDestRect, 0, ByVal 0
+                'Flip the backbuffer to the scree
+                .Present ByVal 0, ByVal 0, 0, ByVal 0
                 
             End With
                 
@@ -6470,13 +6595,15 @@ Dim bY As Single
     End If
     
     'Check if running (turn on motion blur)
-    If UseMotionBlur = 1 Then
-        If CharList(UserCharIndex).Moving = 1 And GetAsyncKeyState(vbKeyShift) Then
-            BlurIntensity = 65
-        Else
-            If BlurIntensity < 255 Then
-                BlurIntensity = BlurIntensity + (ElapsedTime * 0.8)
-                If BlurIntensity > 255 Then BlurIntensity = 255
+    If UseMotionBlur Then
+        If UserCharIndex > 0 Then
+            If CharList(UserCharIndex).Moving = 1 And GetAsyncKeyState(vbKeyShift) Then
+                BlurIntensity = 65
+            Else
+                If BlurIntensity < 255 Then
+                    BlurIntensity = BlurIntensity + (ElapsedTime * 0.8)
+                    If BlurIntensity > 255 Then BlurIntensity = 255
+                End If
             End If
         End If
     End If
@@ -6493,6 +6620,9 @@ Dim bY As Single
     D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
     
     '************** Layer 1 to 3 **************
+    
+    'Set the alternate rendering for the map on / off
+    AlternateRender = AlternateRenderMap
     
     'Loop through the lower 3 layers
     For Layer = 1 To 3
@@ -6513,6 +6643,9 @@ Dim bY As Single
         Next j
         
     Next Layer
+    
+    'Set the alternate rendering back to what it was before
+    AlternateRender = AlternateRenderDefault
 
     '************** Objects **************
     For j = 1 To LastObj
@@ -6574,6 +6707,7 @@ Dim bY As Single
     Next j
 
     '************** Layer 4 to 6 **************
+    AlternateRender = AlternateRenderMap
     For Layer = 4 To 6
         For j = 1 To TileLayer(Layer).NumTiles
             With TileLayer(Layer).Tile(j)
@@ -6586,7 +6720,8 @@ Dim bY As Single
             End With
         Next j
     Next Layer
-
+    AlternateRender = AlternateRenderDefault
+    
     '************** Effects **************
     
     'Loop to do drawing
@@ -6706,10 +6841,11 @@ Dim bY As Single
     Next j
 
     '************** Update weather **************
-    'Make sure the right weather is going on
-    Engine_Init_Weather
+    
+    'Do the general weather updating
+    Engine_Weather_Update
 
-    'Update the weather
+    'Update the weather's particle effect's position if one is used
     If WeatherEffectIndex Then
         If ParticleOffsetX <> 0 Then
             If ParticleOffsetY <> 0 Then
@@ -6780,27 +6916,24 @@ Dim bY As Single
 
     With D3DDevice
     
-        'Check if using motion blur
+        'Check if using motion blur / zooming
         If UseMotionBlur Then
-
-            '//BROKEN! :(
-            tX = ZoomLevel
-            tY = ZoomLevel
-            bX = 1 - (ZoomLevel * (1 + (ScreenWidth / 1024)))
-            bY = 1 - (ZoomLevel * (1 + (ScreenHeight / 1024)))
             
-            'Calculate the zooming values
-            BlurTA(0).tu = tX
-            BlurTA(0).tv = tY
-            BlurTA(1).tu = bX
-            BlurTA(1).tv = tY
-            BlurTA(2).tu = tX
-            BlurTA(2).tv = bY
-            BlurTA(3).tu = bX
-            BlurTA(3).tv = bY
+            'Perform the zooming calculations
+            ' * 1.333... maintains the aspect ratio
+            ' ... / 1024 is to factor in the buffer size
+            BlurTA(0).tu = ZoomLevel * 1.333333333
+            BlurTA(0).tv = ZoomLevel
+            BlurTA(1).tu = (ScreenWidth / 1024) - (ZoomLevel * 1.333333333)
+            BlurTA(1).tv = ZoomLevel
+            BlurTA(2).tu = ZoomLevel * 1.333333333
+            BlurTA(2).tv = (ScreenHeight / 1024) - ZoomLevel
+            BlurTA(3).tu = BlurTA(1).tu
+            BlurTA(3).tv = BlurTA(2).tv
             
             'Draw what we have drawn thus far since the last .Clear
             LastTexture = -100
+            
             .SetRenderTarget DeviceBuffer, DeviceStencil, 0
             .SetTexture 0, BlurTexture
             .SetRenderState D3DRS_TEXTUREFACTOR, D3DColorARGB(BlurIntensity, 255, 255, 255)
@@ -6849,11 +6982,11 @@ Dim bY As Single
             For X = 1 To LastChar
                 If CharList(X).Active Then
                     
-                    If CharList(X).CharType = ClientCharType_Grouped Then
+                    If CharList(X).CharType = ClientCharType_Grouped Or (CharList(X).CharType = ClientCharType_Slave And UserCharIndex = CharList(X).OwnerChar) Then
                         If X <> UserCharIndex Then
                             
                             'Part of the user's group
-                            j = D3DColorARGB(200, 0, 150, 0)
+                            j = D3DColorARGB(200, 100, 220, 100)
                             Engine_Render_Rectangle CharList(X).Pos.X * tS, CharList(X).Pos.Y * tS, tS, tS, 1, 1, 1, 1, 1, 1, 0, 0, j, j, j, j
                         
                         End If
@@ -6928,7 +7061,7 @@ Dim j As Long
     MMC_Sign = D3DColorARGB(125, 255, 255, 0)       'Tiles with a sign
     
     'Clear the old array by resizing to the largest array we can possibly use
-    ReDim MiniMapTile(1 To CInt(XMaxMapSize) * CInt(YMaxMapSize)) As MiniMapTile
+    ReDim MiniMapTile(1 To CLng(MapInfo.Width) * CLng(MapInfo.Height)) As MiniMapTile
     NumMiniMapTiles = 0
     
     Select Case UseOption
@@ -6936,8 +7069,8 @@ Dim j As Long
         '***** Option 1 *****
         Case 1
 
-            For Y = YMinMapSize To YMaxMapSize
-                For X = XMinMapSize To XMaxMapSize
+            For Y = 1 To MapInfo.Height
+                For X = 1 To MapInfo.Width
                     
                     'Check for signs
                     If MapData(X, Y).Sign > 1 Then
@@ -6971,9 +7104,9 @@ Dim j As Long
         '***** Option 2 *****
         Case 2
 
-            For Y = YMinMapSize To YMaxMapSize
+            For Y = 1 To MapInfo.Height
                 j = 0   'Clear the row settings
-                For X = XMinMapSize To XMaxMapSize
+                For X = 1 To MapInfo.Width
                     
                     'Check if there is a sign
                     If MapData(X, Y).Sign > 1 Then
@@ -7006,7 +7139,7 @@ Dim j As Long
         
                                     'If the next tile is not blocked, this one will be (to draw an outline)
                                     If j = 0 Then
-                                        If X + 1 <= XMaxMapSize Then
+                                        If X + 1 <= MapInfo.Width Then
                                             If MapData(X + 1, Y).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
                                                 MiniMapTile(NumMiniMapTiles).X = X
@@ -7019,7 +7152,7 @@ Dim j As Long
                                     
                                     'If the tile above or below is blocked, draw the tile
                                     If j = 0 Then
-                                        If Y > YMinMapSize Then
+                                        If Y > 1 Then
                                             If MapData(X, Y - 1).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
                                                 MiniMapTile(NumMiniMapTiles).X = X
@@ -7030,7 +7163,7 @@ Dim j As Long
                                         End If
                                     End If
                                     If j = 0 Then
-                                        If Y < YMaxMapSize Then
+                                        If Y < MapInfo.Height Then
                                             If MapData(X, Y + 1).Blocked = 0 Then
                                                 NumMiniMapTiles = NumMiniMapTiles + 1
                                                 MiniMapTile(NumMiniMapTiles).X = X
@@ -7043,10 +7176,10 @@ Dim j As Long
                                     
                                     'If we STILL haven't drawn the tile, check to the diagonals (this makes corners smoothed)
                                     If j = 0 Then
-                                        If Y > YMinMapSize Then
-                                            If Y < YMaxMapSize Then
-                                                If X > XMinMapSize Then
-                                                    If X < XMaxMapSize Then
+                                        If Y > 1 Then
+                                            If Y < MapInfo.Height Then
+                                                If X > 1 Then
+                                                    If X < MapInfo.Width Then
                                                         If MapData(X - 1, Y - 1).Blocked = 0 Or MapData(X - 1, Y + 1).Blocked = 0 Or MapData(X + 1, Y - 1).Blocked = 0 Or MapData(X + 1, Y + 1).Blocked = 0 Then
                                                             NumMiniMapTiles = NumMiniMapTiles + 1
                                                             MiniMapTile(NumMiniMapTiles).X = X
@@ -7064,7 +7197,7 @@ Dim j As Long
                                 
                                 'If the next tile isn't blocked, we remove the row drawing
                                 If j = 1 Then
-                                    If X < XMaxMapSize Then
+                                    If X < MapInfo.Width Then
                                         If MapData(X + 1, Y).Blocked > 0 Then j = 0
                                     End If
                                 End If
@@ -7735,7 +7868,7 @@ Dim Count As Integer
 Dim Ascii As Byte
 Dim Row As Integer
 Dim u As Single
-Dim v As Single
+Dim V As Single
 Dim i As Long
 Dim j As Long
 Dim KeyPhrase As Byte
@@ -7744,6 +7877,9 @@ Dim ResetColor As Byte
 Dim SrcRect As RECT
 Dim v2 As D3DVECTOR2
 Dim v3 As D3DVECTOR2
+
+    'Assign the alternate rendering value
+    AlternateRender = AlternateRenderText
 
     'Check if using alternate rendering
     If AlternateRender Then
@@ -7810,7 +7946,7 @@ Dim v3 As D3DVECTOR2
                     'tU and tV value (basically tU = BitmapXPosition / BitmapWidth, and height for tV)
                     Row = (Ascii - Font_Default.HeaderInfo.BaseCharOffset) \ Font_Default.RowPitch
                     u = ((Ascii - Font_Default.HeaderInfo.BaseCharOffset) - (Row * Font_Default.RowPitch)) * Font_Default.ColFactor
-                    v = Row * Font_Default.RowFactor
+                    V = Row * Font_Default.RowFactor
                 
                     'Render with triangles
                     If AlternateRender = 0 Then
@@ -7820,25 +7956,25 @@ Dim v3 As D3DVECTOR2
                         VertexArray(0).X = X + Count
                         VertexArray(0).Y = Y + (Font_Default.CharHeight * i)
                         VertexArray(0).tu = u
-                        VertexArray(0).tv = v
+                        VertexArray(0).tv = V
                         
                         VertexArray(1).Color = TempColor
                         VertexArray(1).X = X + Count + Font_Default.HeaderInfo.CellWidth
                         VertexArray(1).Y = Y + (Font_Default.CharHeight * i)
                         VertexArray(1).tu = u + Font_Default.ColFactor
-                        VertexArray(1).tv = v
+                        VertexArray(1).tv = V
                         
                         VertexArray(2).Color = TempColor
                         VertexArray(2).X = X + Count
                         VertexArray(2).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
                         VertexArray(2).tu = u
-                        VertexArray(2).tv = v + Font_Default.RowFactor
+                        VertexArray(2).tv = V + Font_Default.RowFactor
                     
                         VertexArray(3).Color = TempColor
                         VertexArray(3).X = X + Count + Font_Default.HeaderInfo.CellWidth
                         VertexArray(3).Y = Y + Font_Default.HeaderInfo.CellHeight + (Font_Default.CharHeight * i)
                         VertexArray(3).tu = u + Font_Default.ColFactor
-                        VertexArray(3).tv = v + Font_Default.RowFactor
+                        VertexArray(3).tv = V + Font_Default.RowFactor
                     
                         'Render
                         D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, VertexArray(0), FVF_Size
@@ -7849,7 +7985,7 @@ Dim v3 As D3DVECTOR2
                         'Create the source rectangle
                         With SrcRect
                             .Left = u * Font_Default.TextureSize.X
-                            .Top = v * Font_Default.TextureSize.Y
+                            .Top = V * Font_Default.TextureSize.Y
                             .Right = .Left + (Font_Default.ColFactor * Font_Default.TextureSize.X)
                             .bottom = .Top + (Font_Default.RowFactor * Font_Default.TextureSize.Y)
                         End With
@@ -7878,6 +8014,9 @@ Dim v3 As D3DVECTOR2
             
         End If
     Next i
+    
+    'Retreive the default alternate render value
+    AlternateRender = AlternateRenderDefault
 
 End Sub
 
@@ -7986,6 +8125,7 @@ Public Function Engine_SkillIDtoGRHID(ByVal SkillID As Byte) As Integer
         Case SkID.Protection: Engine_SkillIDtoGRHID = 50
         Case SkID.SpikeField: Engine_SkillIDtoGRHID = 62
         Case SkID.Heal: Engine_SkillIDtoGRHID = 63
+        Case SkID.SummonBandit: Engine_SkillIDtoGRHID = 1
     End Select
 
 End Function
@@ -8232,30 +8372,32 @@ Public Function Engine_Music_Load(ByVal FilePath As String, ByVal BufferNumber A
 'Loads a mp3 by the specified path
 '************************************************************
 
+    If UseMusic = 0 Then Exit Function
+
     On Error GoTo Error_Handler
                 
-        If Right(FilePath, 4) = ".mp3" Then
+    If Right(FilePath, 4) = ".mp3" Then
+    
+        Set DirectShow_Control(BufferNumber) = New FilgraphManager
+        DirectShow_Control(BufferNumber).RenderFile FilePath
+    
+        Set DirectShow_Audio(BufferNumber) = DirectShow_Control(BufferNumber)
         
-            Set DirectShow_Control(BufferNumber) = New FilgraphManager
-            DirectShow_Control(BufferNumber).RenderFile FilePath
+        DirectShow_Audio(BufferNumber).Volume = 0
+        DirectShow_Audio(BufferNumber).Balance = 0
+    
+        Set DirectShow_Event(BufferNumber) = DirectShow_Control(BufferNumber)
+        Set DirectShow_Position(BufferNumber) = DirectShow_Control(BufferNumber)
         
-            Set DirectShow_Audio(BufferNumber) = DirectShow_Control(BufferNumber)
-            
-            DirectShow_Audio(BufferNumber).Volume = 0
-            DirectShow_Audio(BufferNumber).Balance = 0
+        DirectShow_Position(BufferNumber).Rate = 1
         
-            Set DirectShow_Event(BufferNumber) = DirectShow_Control(BufferNumber)
-            Set DirectShow_Position(BufferNumber) = DirectShow_Control(BufferNumber)
-            
-            DirectShow_Position(BufferNumber).Rate = 1
-            
-            DirectShow_Position(BufferNumber).CurrentPosition = 0
-                            
-        Else
-        
-            GoTo Error_Handler
-        
-        End If
+        DirectShow_Position(BufferNumber).CurrentPosition = 0
+                        
+    Else
+    
+        GoTo Error_Handler
+    
+    End If
 
     Engine_Music_Load = True
     
@@ -8272,8 +8414,11 @@ Public Sub Engine_Music_Play(ByVal BufferNumber As Long)
 '************************************************************
 'Plays the mp3 in the specified buffer
 '************************************************************
+    
     On Error GoTo Error_Handler
-    'Exit Sub '//TEMP
+    
+    If UseMusic = 0 Then Exit Sub
+    
     DirectShow_Control(BufferNumber).Run
 
 Error_Handler:
@@ -8287,6 +8432,8 @@ Public Sub Engine_Music_Stop(ByVal BufferNumber As Long)
 '************************************************************
 
     On Error GoTo Error_Handler
+    
+    If UseMusic = 0 Then Exit Sub
     
     DirectShow_Control(BufferNumber).Stop
     
@@ -8306,6 +8453,8 @@ Public Sub Engine_Music_Pause(ByVal BufferNumber As Long)
 
     On Error GoTo Error_Handler
     
+    If UseMusic = 0 Then Exit Sub
+    
     DirectShow_Control(BufferNumber).Stop
     
 Error_Handler:
@@ -8319,6 +8468,8 @@ Public Sub Engine_Music_Volume(ByVal Volume As Long, ByVal BufferNumber As Long)
 '************************************************************
 
     On Error GoTo Error_Handler
+    
+    If UseMusic = 0 Then Exit Sub
     
     If Volume >= Music_MaxVolume Then Volume = Music_MaxVolume
     
@@ -8338,6 +8489,8 @@ Public Sub Engine_Music_Balance(ByVal Balance As Long, ByVal BufferNumber As Lon
 
     On Error GoTo Error_Handler
     
+    If UseMusic = 0 Then Exit Sub
+    
     If Balance >= Music_MaxBalance Then Balance = Music_MaxBalance
     
     If Balance <= -Music_MaxBalance Then Balance = -Music_MaxBalance
@@ -8355,6 +8508,8 @@ Public Sub Engine_Music_Speed(ByVal Speed As Single, ByVal BufferNumber As Long)
 '************************************************************
 
     On Error GoTo Error_Handler
+    
+    If UseMusic = 0 Then Exit Sub
 
     If Speed >= Music_MaxSpeed Then Speed = Music_MaxSpeed
     
@@ -8380,12 +8535,12 @@ Public Sub Engine_Music_SetPosition(ByVal Hours As Long, ByVal Minutes As Long, 
     
     Dim Decimal_Milliseconds As Single
     
-    'Keep minutes within range
+    If UseMusic = 0 Then Exit Sub
     
+    'Keep minutes within range
     Minutes = Minutes Mod 60
         
     'Keep seconds within range
-    
     Seconds = Seconds Mod 60
         
     'Keep milliseconds within range and keep decimal
@@ -8422,6 +8577,8 @@ Public Sub Engine_Music_End(ByVal BufferNumber As Long)
 
     On Error GoTo Error_Handler
     
+    If UseMusic = 0 Then Exit Sub
+    
     'Check if the buffer is looping
     If Not Engine_Music_Loop(BufferNumber) Then
     
@@ -8441,6 +8598,8 @@ Public Function Engine_Music_Loop(ByVal Media_Number As Long) As Boolean
 '************************************************************
 
     On Error GoTo Error_Handler
+    
+    If UseMusic = 0 Then Exit Function
     
     'Check if the current position is past the stop time - if so, reset it
     If DirectShow_Position(Media_Number).CurrentPosition >= DirectShow_Position(Media_Number).StopTime Then

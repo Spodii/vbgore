@@ -34,7 +34,7 @@ Begin VB.Form frmParticles
       MaxLength       =   4
       TabIndex        =   4
       Text            =   "0"
-      ToolTipText     =   "Y co-ordinate of the effect"
+      ToolTipText     =   "Y co-ordinate of the effect (in pixels)"
       Top             =   2640
       Width           =   495
    End
@@ -45,7 +45,7 @@ Begin VB.Form frmParticles
       MaxLength       =   4
       TabIndex        =   3
       Text            =   "0"
-      ToolTipText     =   "X co-ordinate of the effect"
+      ToolTipText     =   "X co-ordinate of the effect (in pixels)"
       Top             =   2640
       Width           =   495
    End
@@ -106,7 +106,7 @@ Begin VB.Form frmParticles
       EndProperty
       Height          =   195
       Left            =   2160
-      TabIndex        =   17
+      TabIndex        =   16
       Top             =   3360
       Width           =   570
    End
@@ -125,31 +125,9 @@ Begin VB.Form frmParticles
       EndProperty
       Height          =   195
       Left            =   2160
-      TabIndex        =   16
+      TabIndex        =   15
       Top             =   3000
       Width           =   675
-   End
-   Begin VB.Label MiscLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "(?)"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H80000008&
-      Height          =   195
-      Index           =   8
-      Left            =   1200
-      TabIndex        =   15
-      ToolTipText     =   "Help on what the *s mean"
-      Top             =   3390
-      Width           =   240
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -363,6 +341,12 @@ Private Sub CreateLbl_Click()
 
 End Sub
 
+Private Sub CreateBtnl_Click()
+
+    SetInfo "Create a particle effect with the defined values."
+
+End Sub
+
 Private Sub DirTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -372,6 +356,12 @@ Private Sub DirTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub DirTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Direction the effect is animating. Only applies to certain effects."
+
+End Sub
+
 Private Sub Form_Load()
 
     'Update list
@@ -379,31 +369,10 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-    ReleaseCapture
-    SendMessage Me.hwnd, &HA1, 2, 0&
-
-    'Close form
-    If Button = vbLeftButton Then
-        If X >= Me.ScaleWidth - 23 Then
-            If X <= Me.ScaleWidth - 10 Then
-                If Y <= 26 Then
-                    If Y >= 11 Then
-                        Unload Me
-                    End If
-                End If
-            End If
-        End If
-    End If
-
-End Sub
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "PART", "X", Me.Left
-    Var_Write Data2Path & "MapEditor.ini", "PART", "Y", Me.Top
-    HideFrmParticles
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
 
 End Sub
 
@@ -416,6 +385,12 @@ Private Sub GfxTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub GfxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The particle graphic index, based off of the p#.bmp number."
+
+End Sub
+
 Private Sub IndexTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -425,14 +400,10 @@ Private Sub IndexTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
-Private Sub MiscLbl_Click(Index As Integer)
+Private Sub IndexTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    'Display help on the *
-    If Index = 8 Then
-        MsgBox "Items marked with a * are optional. Whether or not they are applicable to the effect" & vbCrLf _
-         & " you are using can be found by checking if that variable is set on the effect in sub Effect_Begin.", vbOKOnly
-    End If
-    
+    SetInfo "The ID of the effect, based off the EffectNum_ value in Particles module."
+
 End Sub
 
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
@@ -467,6 +438,12 @@ ErrOut:
     
 End Sub
 
+Private Sub ParticlesList_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "List of currently active particle effects on this map. Shift + RightClick on the screen to move the selected effect."
+
+End Sub
+
 Private Sub ParticlesTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -476,9 +453,21 @@ Private Sub ParticlesTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub ParticlesTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Number of particles the effect has."
+
+End Sub
+
 Private Sub RefreshBtn_Click()
 
     UpdateEffectList
+
+End Sub
+
+Private Sub RefreshBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Refresh the active particle effects list."
 
 End Sub
 
@@ -491,6 +480,12 @@ Private Sub XTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub XTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "X co-ordinate of the effect (in pixels)."
+
+End Sub
+
 Private Sub YTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -498,4 +493,10 @@ Private Sub YTxt_KeyPress(KeyAscii As Integer)
             Exit Sub
         End If
     End If
+End Sub
+
+Private Sub YTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Y co-ordinate of the effect (in pixels)."
+
 End Sub

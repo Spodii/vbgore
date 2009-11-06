@@ -66,7 +66,6 @@ Begin VB.Form frmTile
       Left            =   600
       TabIndex        =   49
       Text            =   "0"
-      ToolTipText     =   "The graphic index of the layer"
       Top             =   4200
       Width           =   975
    End
@@ -951,7 +950,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Public Sub SetInfo(ByVal tX As Byte, ByVal tY As Byte)
+Public Sub SetTileInfo(ByVal tX As Byte, ByVal tY As Byte)
 
     'Check for valid selected layer value
     If SelectedLayer < 1 Then SelectedLayer = 1
@@ -1019,18 +1018,28 @@ Private Sub BlockedTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub BlockedTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    
+    SetInfo "The blocked value of tile - reccomended you set this value with the Block form unless you know the correct values you want."
+
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "TILE", "X", frmTile.Left
-    Var_Write Data2Path & "MapEditor.ini", "TILE", "Y", frmTile.Top
-    HideFrmTile
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
     
 End Sub
 
 Private Sub GrhSelectLbl_Click(Index As Integer)
 
     ShowFrmTileSelect 0
+
+End Sub
+
+Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to view the grh selection sheet."
 
 End Sub
 
@@ -1057,10 +1066,10 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     'Avoid invalid numbers
     If GrhTxt.Text < 0 Then Exit Sub
     If GrhTxt.Text > UBound(GrhData) Then Exit Sub
-    If XLbl.Caption < XMinMapSize Then Exit Sub
-    If XLbl.Caption > XMaxMapSize Then Exit Sub
-    If YLbl.Caption < YMinMapSize Then Exit Sub
-    If YLbl.Caption > YMaxMapSize Then Exit Sub
+    If XLbl.Caption < 1 Then Exit Sub
+    If XLbl.Caption > MapInfo.Width Then Exit Sub
+    If YLbl.Caption < 1 Then Exit Sub
+    If YLbl.Caption > MapInfo.Height Then Exit Sub
     
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -1074,14 +1083,20 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     
 End Sub
 
+Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+    
+    SetInfo "The grh index of the layer."
+
+End Sub
+
 Private Sub LayerLbl_Click(Index As Integer)
 Dim i As Byte
 
     'Avoid invalid numbers
-    If XLbl.Caption < XMinMapSize Then Exit Sub
-    If XLbl.Caption > XMaxMapSize Then Exit Sub
-    If YLbl.Caption < YMinMapSize Then Exit Sub
-    If YLbl.Caption > YMaxMapSize Then Exit Sub
+    If XLbl.Caption < 1 Then Exit Sub
+    If XLbl.Caption > MapInfo.Width Then Exit Sub
+    If YLbl.Caption < 1 Then Exit Sub
+    If YLbl.Caption > MapInfo.Height Then Exit Sub
     
     'Set the layer
     SelectedLayer = Index
@@ -1106,9 +1121,21 @@ Dim i As Byte
     
 End Sub
 
+Private Sub LayerLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to view information for layer " & Index & "."
+
+End Sub
+
 Private Sub LightLbl_Click(Index As Integer)
 
     ShowFrmARGB LightTxt(Index)
+
+End Sub
+
+Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to view the ARGB<->LONG conversion tool."
 
 End Sub
 
@@ -1157,6 +1184,20 @@ ErrOut:
     
 End Sub
 
+Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim s As String
+
+    Select Case Index
+        Case 1: s = "top-left"
+        Case 2: s = "top-right"
+        Case 3: s = "bottom-left"
+        Case 4: s = "bottom-right"
+    End Select
+    
+    SetInfo "Light value in the tile's " & s & " corner."
+
+End Sub
+
 Private Sub MailboxTxt_Change()
 Dim i As Integer
 On Error GoTo ErrOut
@@ -1187,6 +1228,12 @@ Private Sub MailboxTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub MailboxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "If the tile has a mailbox, 1 for yes, 0 for no - this will not change the looks of the tile, only allow users to check their mail while clicking the tile."
+
+End Sub
+
 Private Sub NPCTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
@@ -1205,6 +1252,18 @@ Private Sub ObjTxt_KeyPress(KeyAscii As Integer)
             Exit Sub
         End If
     End If
+End Sub
+
+Private Sub NPCTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The index of the NPC placed on the tile by the *.npc file number."
+
+End Sub
+
+Private Sub OldGLbl_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The graphic index that used to be on the layer."
+
 End Sub
 
 Private Sub SfxTxt_Change()
@@ -1233,9 +1292,21 @@ Private Sub SfxTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub SfxTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The number of the .wav file that will be looped on the tile for stuff like waterfalls, birds, etc - set to 0 for nothing."
+
+End Sub
+
 Private Sub ShadowChk_Click()
 
     MapData(XLbl.Caption, YLbl.Caption).Shadow(SelectedLayer) = ShadowChk.Value
+
+End Sub
+
+Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Whether or not a shadow is placed on this layer."
 
 End Sub
 
@@ -1267,6 +1338,12 @@ Private Sub SignTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub SignTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The number of the sign from the Signs.dat file."
+
+End Sub
+
 Private Sub WMapTxt_Change()
 Dim i As Integer
 On Error GoTo ErrOut
@@ -1295,13 +1372,19 @@ Private Sub WMapTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub WMapTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The map the user will warp to when stepping on the tile."
+
+End Sub
+
 Private Sub WXTxt_Change()
 Dim i As Byte
 On Error GoTo ErrOut
 
     i = CByte(WXTxt.Text)
     If i < 0 Then i = 0
-    If i > XMaxMapSize Then i = XMaxMapSize
+    If i > MapInfo.Width Then i = MapInfo.Width
     
     'Set the sign value
     MapData(XLbl.Caption, YLbl.Caption).TileExit.X = i
@@ -1325,13 +1408,19 @@ Private Sub WXTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub WXTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The X co-ordinate the user will warp to when stepping on the tile."
+
+End Sub
+
 Private Sub WYTxt_Change()
 Dim i As Byte
 On Error GoTo ErrOut
 
     i = CByte(WYTxt.Text)
     If i < 0 Then i = 0
-    If i > YMaxMapSize Then i = YMaxMapSize
+    If i > MapInfo.Height Then i = MapInfo.Height
     
     'Set the sign value
     MapData(XLbl.Caption, YLbl.Caption).TileExit.Y = i
@@ -1355,3 +1444,8 @@ Private Sub WYTxt_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub WYTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "The Y co-ordinate the user will warp to when stepping on the tile."
+
+End Sub

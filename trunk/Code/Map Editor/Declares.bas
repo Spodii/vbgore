@@ -8,6 +8,13 @@ Public Const DegreeToRadian As Single = 0.0174532925
 
 Public GrhCatFlags() As Long
 
+Public SearchTextureFileNum As Integer
+
+Public TextureDesc() As String
+Public NumTextureDesc As Long
+Public DescResults() As Long
+Public NumDescResults As Long
+
 'Position displayed in the form's caption
 Public HoverX As Long
 Public HoverY As Long
@@ -39,17 +46,6 @@ Public CharsChkValue As Byte
 Public BrightChkValue As Byte
 Public GridChkValue As Byte
 Public InfoChkValue As Byte
-
-Public SetTilesChkValue As Byte
-Public ViewTilesChkValue As Byte
-Public ShowMapInfoChkValue As Byte
-Public ShowNPCsChkValue As Byte
-Public PartChkValue As Byte
-Public FloodsChkValue As Byte
-Public ObjEditChkValue As Byte
-Public ExitsChkValue As Byte
-Public BlocksChkValue As Byte
-Public SfxChkValue As Byte
 
 Public DrawLayer As Byte
 
@@ -160,12 +156,11 @@ End Type
 '********** OUTSIDE FUNCTIONS ***********
 'For Get and Write Var
 Public Declare Function GetKeyState Lib "user32" (ByVal nVirtKey As Long) As Integer
-Public Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32A" (ByVal hdc As Long, ByVal lpsz As String, ByVal cbString As Long, lpSize As POINTAPI) As Long
+Public Declare Function GetTextExtentPoint32 Lib "gdi32" Alias "GetTextExtentPoint32A" (ByVal hDC As Long, ByVal lpsz As String, ByVal cbString As Long, lpSize As POINTAPI) As Long
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32.dll" Alias "RtlMoveMemory" (ByRef Destination As Any, ByRef Source As Any, ByVal Length As Long)
-Public Declare Sub ReleaseCapture Lib "user32" ()
-Public Declare Function SendMessage Lib "user32" Alias "SendMessageA" (ByVal hwnd As Long, ByVal wMsg As Long, ByVal wParam As Long, lparam As Any) As Long
+Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+Public Declare Function GetActiveWindow Lib "user32" () As Long
+Public Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (ByRef Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 285  Code: 0  Total: 285 Lines
-':) CommentOnly: 72 (25.3%)  Commented: 45 (15.8%)  Empty: 18 (6.3%)  Max Logic Depth: 1

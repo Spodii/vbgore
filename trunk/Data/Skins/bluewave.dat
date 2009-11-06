@@ -1,6 +1,6 @@
 [CHATWINDOW] 
 ScreenX= 0 
-ScreenY= 568 
+ScreenY= 401 
 
 [MENU]
 ScreenX= 340
@@ -36,7 +36,7 @@ ScreenY= 0
 
 [QUICKBAR]
 ScreenX= 0
-ScreenY= 721
+ScreenY= 553
 [BANK]
 ScreenX= 0
 ScreenY= 0

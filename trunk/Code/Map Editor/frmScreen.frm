@@ -45,14 +45,30 @@ Dim tY As Integer
     HoverY = Y + ParticleOffsetY - 288
     frmMain.MouseLbl.Caption = "(" & HoverX & "," & HoverY & ")"
     frmMain.TileLbl.Caption = "(" & HovertX & "," & HovertY & ")"
-
+    If tX < 0 Then Exit Sub
+    If tY < 0 Then Exit Sub
+    If tX > MapInfo.Width Then Exit Sub
+    If tY > MapInfo.Height Then Exit Sub
+    
     'Click the tile
     SetTile tX, tY, Button, Shift
+    
+    LastSetTileX = tX
+    LastSetTileY = tY
              
+End Sub
+
+Private Sub Form_MouseUp(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    LastSetTileX = 0
+    LastSetTileY = 0
+
+    UpdateEffectList
+
 End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
+    If IsUnloading = 0 Then Cancel = 1
 
 End Sub

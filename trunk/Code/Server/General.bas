@@ -299,6 +299,13 @@ Dim NPCIndex As Integer
                                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
                                     Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
                                 End If
+                            End If                  'Update thralled NPC dispell (unsummon) time
+                            If NPCList(NPCIndex).flags.Thralled Then
+                                If NPCList(NPCIndex).Counters.RespawnCounter <> -1 Then
+                                    If NPCList(NPCIndex).Counters.RespawnCounter < timeGetTime Then
+                                        NPC_Kill NPCIndex
+                                    End If
+                                End If
                             End If
                         End If
     
@@ -482,8 +489,8 @@ Dim Y As Byte
             If MapInfo(MapIndex).DataLoaded = 1 Then
                 
                 'The map has users on it, so check through the tiles
-                For X = XMinMapSize To XMaxMapSize
-                    For Y = YMinMapSize To YMaxMapSize
+                For X = 1 To MapInfo(MapIndex).Width
+                    For Y = 1 To MapInfo(MapIndex).Height
                         
                         '*** Removing old objects ***
                         'Check if an object exists on the tile - loop through all on there

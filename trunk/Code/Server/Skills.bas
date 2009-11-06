@@ -1,6 +1,9 @@
 Attribute VB_Name = "Skills"
 Option Explicit
 
+'General
+Private Const MaxSummons As Byte = 3        'Maximum number of characters on player can summon
+
 'Bless
 Private Const Bless_Cost As Single = 0.5    'Magic * Bless_Cost
 Private Const Bless_Length As Long = 300000 'How long the skill lasts
@@ -28,20 +31,129 @@ Private Const Warcry_Exhaust As Long = 1500
 Private Const Heal_Cost As Single = 0.5     'Magic * Heal_Cost
 Private Const Heal_Value As Single = 1.5    'Magic * Heal_Value = MinHP Raised
 Public Const Heal_Exhaust As Long = 1000
-Public Const Heal_ClassReq As Byte = 0      'Class requirements (0 or 255 for none)
+Public Const Heal_ClassReq As Integer = -1   'Class requirements - unfortunately, since its a constant, you can't use ClassID, but have to use the value directly
 
-Public Function Skill_ValidSkillForClass(ByVal Class As Byte, ByVal SkillID As Byte) As Byte
+'Summon bandit
+Private Const SumBandit_Cost As Single = 1       'Magic * SummonBandit_Cost
+Private Const SumBandit_Exhaust As Long = 3000
+Private Const SumBandit_Length As Long = 600000000   'Summoned NPC automatically dispells (dies) after this time goes by
+
+Public Function Skill_SummonBandit_PC(ByVal CasterIndex As Integer) As Byte
+
+'*****************************************************************
+'Summon a bandit to fight with you
+'*****************************************************************
+Dim CharIndex As Integer
+Dim tIndex As Integer
+Dim i As Byte
+
+    'Check for invalid values
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
+
+    'Check if the caster knows the skill
+    If UserList(CasterIndex).KnownSkills(SkID.SummonBandit) = 0 Then
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
+        Exit Function
+    End If
+    
+    'Check for enough mana to cast
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * SumBandit_Cost) Then
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
+        Exit Function
+    End If
+
+    'Make sure the user doesn't have too many summons already
+    If UserList(CasterIndex).NumSlaves >= MaxSummons Then
+        Data_Send ToIndex, CasterIndex, cMessage(127).Data
+        Exit Function
+    End If
+
+    'Summon the NPC
+    tIndex = Load_NPC(2, 1, SumBandit_Length)
+    
+    'Check for an invalid index (load failed)
+    If tIndex < 1 Then Exit Function
+    
+    'Find a legal position
+    Server_ClosestLegalPos UserList(CasterIndex).Pos, NPCList(tIndex).Pos
+    
+    'Check if the position is legal
+    If Not Server_LegalPos(NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y, 0) Then
+        NPC_Close tIndex
+        Exit Function
+    End If
+    
+    'Set up the NPC's information
+    NPCList(tIndex).ChatID = 0
+    NPCList(tIndex).Attackable = 1
+    NPCList(tIndex).Hostile = 1
+    NPCList(tIndex).AI = 7
+    NPCList(tIndex).Name = "Summoned " & NPCList(tIndex).Name
+    NPCList(tIndex).BaseStat(SID.Agi) = NPCList(tIndex).BaseStat(SID.Agi) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 10)
+    NPCList(tIndex).BaseStat(SID.DEF) = NPCList(tIndex).BaseStat(SID.DEF) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 10)
+    NPCList(tIndex).BaseStat(SID.MinHIT) = NPCList(tIndex).BaseStat(SID.MinHIT) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 10)
+    NPCList(tIndex).BaseStat(SID.MaxHIT) = NPCList(tIndex).BaseStat(SID.MaxHIT) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 10)
+    NPCList(tIndex).BaseStat(SID.Speed) = NPCList(tIndex).BaseStat(SID.Speed) + (UserList(CasterIndex).Stats.ModStat(SID.Mag) \ 20)
+    NPCList(tIndex).BaseStat(SID.MaxHP) = NPCList(tIndex).BaseStat(SID.MaxHP) + UserList(CasterIndex).Stats.ModStat(SID.Mag)
+    NPCList(tIndex).BaseStat(SID.MinHP) = NPCList(tIndex).BaseStat(SID.MaxHP)
+    NPCList(tIndex).ModStat(SID.MaxHP) = NPCList(tIndex).BaseStat(SID.MaxHP)
+    NPC_UpdateModStats tIndex
+    
+    'Set up the NPC on the map / char array
+    MapInfo(NPCList(tIndex).Pos.Map).Data(NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y).NPCIndex = tIndex
+    CharIndex = Server_NextOpenCharIndex
+    NPCList(tIndex).Char.CharIndex = CharIndex
+    CharList(CharIndex).Index = tIndex
+    CharList(CharIndex).CharType = CharType_NPC
+    
+    'Bind the NPC to the user
+    UserList(CasterIndex).NumSlaves = UserList(CasterIndex).NumSlaves + 1
+    ReDim Preserve UserList(CasterIndex).SlaveNPCIndex(1 To UserList(CasterIndex).NumSlaves)
+    UserList(CasterIndex).SlaveNPCIndex(UserList(CasterIndex).NumSlaves) = tIndex
+    NPCList(tIndex).OwnerIndex = CasterIndex
+    
+    'Display the NPC
+    NPC_Spawn tIndex
+    NPC_MakeChar ToMap, CasterIndex, tIndex, NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y
+    
+    'Add the spell exhaustion and display it
+    UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + SumBandit_Exhaust
+    ConBuf.PreAllocate 4
+    ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+    ConBuf.Put_Byte 1
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+
+    'Reduce the user's mana
+    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost)
+    
+End Function
+
+Public Function Skill_ValidSkillForClass(ByVal Class As Integer, ByVal SkillID As Byte) As Byte
 
 '*****************************************************************
 'Check if the SkillID can be used by the class
 'For skills with no defined requirements, theres no requirements
 'Heal only has a requirement as an example
 '*****************************************************************
-    
+Dim ClassReq As Integer
+
     'Sort by skill id
     Select Case SkillID
-        Case SkID.Heal: If Not (Heal_ClassReq And Class) Then Exit Function
+        Case SkID.Heal: ClassReq = Heal_ClassReq
     End Select
+    
+    'Treat 0 as "all classes can use"
+    If ClassReq <> 0 Then
+    
+        'Check the ClassReq VS the passed class
+        If Class And ClassReq Then
+        Else
+        Exit Function
+        End If
+        
+    End If
 
     'If we haven't aborted then it is valid
     Skill_ValidSkillForClass = 1

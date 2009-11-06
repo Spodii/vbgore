@@ -1,41 +1,25 @@
 VERSION 5.00
 Begin VB.Form frmMain 
    AutoRedraw      =   -1  'True
-   BackColor       =   &H00C0C0C0&
-   BorderStyle     =   0  'None
+   BackColor       =   &H80000005&
    Caption         =   "Grh Categorizer"
    ClientHeight    =   4935
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   60
+   ClientTop       =   450
    ClientWidth     =   5205
    LinkTopic       =   "Form1"
+   MaxButton       =   0   'False
    ScaleHeight     =   329
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   347
-   ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
-   Begin ToolGrhCategorizer.cButton NextBtn 
-      Height          =   375
-      Left            =   4200
-      TabIndex        =   13
-      Top             =   4440
-      Width           =   735
-      _ExtentX        =   1296
-      _ExtentY        =   661
+   Begin VB.CommandButton NextBtn 
       Caption         =   "Next"
-   End
-   Begin ToolGrhCategorizer.cForm cForm 
-      Height          =   255
-      Left            =   0
+      Height          =   315
+      Left            =   4200
       TabIndex        =   12
-      Top             =   0
-      Width           =   255
-      _ExtentX        =   450
-      _ExtentY        =   450
-      MaximizeBtn     =   0   'False
-      Caption         =   "Grh Categorizer"
-      CaptionTop      =   0
-      AllowResizing   =   0   'False
+      Top             =   4440
+      Width           =   855
    End
    Begin VB.Timer RenderTmr 
       Interval        =   50
@@ -237,6 +221,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   3360
       TabIndex        =   11
@@ -258,6 +243,7 @@ Begin VB.Form frmMain
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
       Caption         =   "Value: 0"
+      ForeColor       =   &H80000008&
       Height          =   195
       Left            =   4305
       TabIndex        =   9
@@ -284,7 +270,7 @@ Private Sub ClearColors()
 Dim i As Long
 
     For i = CatChk.lbound To CatChk.UBound
-        CatChk(i).ForeColor = pSkin.LabelColor
+        CatChk(i).ForeColor = &H80000008
     Next i
 
 End Sub
@@ -345,13 +331,6 @@ Dim s As String
     'Move on if a right-click
     If Button = vbRightButton Then NextBtn_Click
     
-End Sub
-
-Private Sub Form_Load()
-    
-    cForm.LoadSkin Me
-    Skin_Set Me
-
 End Sub
 
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)

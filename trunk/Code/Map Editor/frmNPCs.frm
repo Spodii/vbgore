@@ -63,6 +63,12 @@ Private Sub EraseOpt_Click()
 
 End Sub
 
+Private Sub EraseOpt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to toggle erasing NPCs."
+
+End Sub
+
 Private Sub Form_Load()
 Dim NumNPCs As Integer
 Dim NPC As Long
@@ -100,10 +106,8 @@ End Sub
 
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "NPCS", "X", Me.Left
-    Var_Write Data2Path & "MapEditor.ini", "NPCS", "Y", Me.Top
-    HideFrmNPCs
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
 
 End Sub
 
@@ -114,9 +118,21 @@ Private Sub NPCList_Click()
 
 End Sub
 
+Private Sub NPCList_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Select which NPC you want to place when using Set NPC."
+
+End Sub
+
 Private Sub SetOpt_Click()
 
     SetOpt.Value = True
     EraseOpt.Value = False
+
+End Sub
+
+Private Sub SetOpt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to toggle placing NPCs. The NPC placed is the one selected in the NPCs list box."
 
 End Sub

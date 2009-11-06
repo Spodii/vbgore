@@ -1,47 +1,53 @@
 VERSION 5.00
 Begin VB.Form frmMain 
-   BackColor       =   &H00FFFFFF&
-   BorderStyle     =   0  'None
+   BackColor       =   &H80000005&
    Caption         =   "Color Conversion"
    ClientHeight    =   1170
-   ClientLeft      =   0
-   ClientTop       =   -105
+   ClientLeft      =   60
+   ClientTop       =   345
    ClientWidth     =   6045
    FillColor       =   &H00FFFFFF&
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   MinButton       =   0   'False
    ScaleHeight     =   78
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   403
    StartUpPosition =   2  'CenterScreen
-   Begin ColorCon.cButton cButton1 
+   Begin VB.CommandButton cButton3 
+      Caption         =   "Long -> ARGB"
       Height          =   375
-      Left            =   1560
+      Left            =   4560
+      TabIndex        =   10
+      Top             =   720
+      Width           =   1335
+   End
+   Begin VB.CommandButton cButton4 
+      Caption         =   "Long -> RGB"
+      Height          =   375
+      Left            =   3120
+      TabIndex        =   9
+      Top             =   720
+      Width           =   1335
+   End
+   Begin VB.CommandButton cButton1 
+      Caption         =   "ARGB -> Long"
+      Height          =   375
+      Left            =   1680
       TabIndex        =   8
       Top             =   720
-      Width           =   1455
-      _ExtentX        =   2778
-      _ExtentY        =   661
-      Caption         =   "ARGB -> Long"
+      Width           =   1335
    End
-   Begin ColorCon.cForm cForm 
+   Begin VB.CommandButton cButton2 
+      Caption         =   "RGB -> Long"
       Height          =   375
-      Left            =   5160
+      Left            =   240
       TabIndex        =   7
-      Top             =   600
-      Width           =   375
-      _ExtentX        =   661
-      _ExtentY        =   661
-      MaximizeBtn     =   0   'False
-      Caption         =   "Color Conversion"
-      CaptionTop      =   0
+      Top             =   720
+      Width           =   1335
    End
    Begin VB.TextBox LongTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   3960
       TabIndex        =   5
@@ -51,8 +57,8 @@ Begin VB.Form frmMain
    End
    Begin VB.PictureBox PreviewPic 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
+      BackColor       =   &H80000005&
+      ForeColor       =   &H80000008&
       Height          =   285
       Left            =   2880
       ScaleHeight     =   255
@@ -63,8 +69,6 @@ Begin VB.Form frmMain
    End
    Begin VB.TextBox BTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   2040
       MaxLength       =   3
@@ -75,8 +79,6 @@ Begin VB.Form frmMain
    End
    Begin VB.TextBox GTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   1440
       MaxLength       =   3
@@ -87,8 +89,6 @@ Begin VB.Form frmMain
    End
    Begin VB.TextBox RTxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   840
       MaxLength       =   3
@@ -99,8 +99,6 @@ Begin VB.Form frmMain
    End
    Begin VB.TextBox ATxt 
       Appearance      =   0  'Flat
-      BackColor       =   &H00FFFFFF&
-      ForeColor       =   &H00000000&
       Height          =   285
       Left            =   240
       MaxLength       =   3
@@ -108,36 +106,6 @@ Begin VB.Form frmMain
       Text            =   "0"
       Top             =   360
       Width           =   495
-   End
-   Begin ColorCon.cButton cButton2 
-      Height          =   375
-      Left            =   120
-      TabIndex        =   9
-      Top             =   720
-      Width           =   1455
-      _ExtentX        =   2778
-      _ExtentY        =   661
-      Caption         =   "RGB -> Long"
-   End
-   Begin ColorCon.cButton cButton3 
-      Height          =   375
-      Left            =   4440
-      TabIndex        =   10
-      Top             =   720
-      Width           =   1455
-      _ExtentX        =   2778
-      _ExtentY        =   661
-      Caption         =   "Long -> ARGB"
-   End
-   Begin ColorCon.cButton cButton4 
-      Height          =   375
-      Left            =   3000
-      TabIndex        =   11
-      Top             =   720
-      Width           =   1455
-      _ExtentX        =   2778
-      _ExtentY        =   661
-      Caption         =   "Long -> RGB"
    End
    Begin VB.Label Label1 
       AutoSize        =   -1  'True
@@ -152,7 +120,7 @@ Begin VB.Form frmMain
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      ForeColor       =   &H00000000&
+      ForeColor       =   &H80000008&
       Height          =   240
       Left            =   120
       TabIndex        =   0
@@ -238,14 +206,6 @@ End Sub
 Private Sub cButton4_Click()
 
     SplitRGB LongTxt.Text, RTxt.Text, GTxt.Text, BTxt.Text
-
-End Sub
-
-Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
 
 End Sub
 

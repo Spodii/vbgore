@@ -2065,6 +2065,8 @@ Dim i As Integer
                 Skill_Heal_PCtoPC UserIndex, TargetIndex
             ElseIf TargetType = CharType_NPC Then
                 Skill_Heal_PCtoNPC UserIndex, TargetIndex
+            Else
+                Skill_Heal_PCtoPC UserIndex, UserIndex
             End If
             
         Case SkID.IronSkin
@@ -2082,6 +2084,9 @@ Dim i As Integer
             
         Case SkID.Warcry
             Skill_Warcry_PC UserIndex
+            
+        Case SkID.SummonBandit
+            Skill_SummonBandit_PC UserIndex
             
     End Select
 
@@ -2236,8 +2241,7 @@ Sub Data_User_KnownSkills(ByVal UserIndex As Integer)
 
     Log "Call Data_User_KnownSkills(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-'Invalid values handled by sub
-
+    'Invalid values handled by sub
     User_SendKnownSkills UserIndex
 
 End Sub
@@ -3191,6 +3195,7 @@ Sub User_Close(ByVal UserIndex As Integer)
 '*****************************************************************
 'save user then reset user's slot
 '*****************************************************************
+Dim NPCEraseArray() As Integer
 Dim LoopC As Long
 Dim Map As Integer
 Dim Name As String
@@ -3207,6 +3212,20 @@ Dim i As Byte
     'Remove the user from their group
     If UserList(UserIndex).GroupIndex > 0 Then Group_RemoveUser UserIndex, UserList(UserIndex).GroupIndex
 
+    'Remove the user's slave NPCs
+    If UserList(UserIndex).NumSlaves > 0 Then
+        
+        'Store in a temp array or else things will get very, very dirty (and crashy)
+        ReDim NPCEraseArray(1 To UserList(UserIndex).NumSlaves)
+        CopyMemory NPCEraseArray(1), UserList(UserIndex).SlaveNPCIndex(1), 2 * UserList(UserIndex).NumSlaves
+        
+        'Loop through the NPCs - by the time this loop is done, the user's SlaveNPCIndex array should be erased
+        For LoopC = 1 To UserList(UserIndex).NumSlaves
+            If NPCEraseArray(LoopC) > 0 Then NPC_Kill NPCEraseArray(LoopC)
+        Next LoopC
+        
+    End If
+    
     'Set logged to false
     UserList(UserIndex).flags.UserLogged = 0
 
@@ -3379,12 +3398,28 @@ Dim i As Byte
         Exit Sub
     End If
     
-    'Set up the variables - we only have to do this if not a new char
     If NewUser = False Then
+    
+        'Check if the character exists (we know that those marked NewUser = True exist since we just made them)
+        If Not Server_UserExist(strName) Then
+    
+            'Tell the client we're disconnecting
+            ConBuf.PreAllocate 3 + Len(strName)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 80
+            ConBuf.Put_String strName
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            Data_Send_Buffer UserIndex
+            Exit Sub
+            
+        End If
+    
+        'Set up the variables - we only have to do this if not a new char
         ZeroMemory UserList(UserIndex), Len(UserList(UserIndex))    'Empty the character variables
         UserList(UserIndex).BufferSize = -1                         'Set the buffer start position (-1 = no buffer)
         Set UserList(UserIndex).Stats = New UserStats               'Create the stats class
         UserList(UserIndex).Stats.UserIndex = UserIndex             'Set the user index
+        
     End If
     
     'Set the user as logged in
@@ -3405,20 +3440,6 @@ Dim i As Byte
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Data_Send_Buffer UserIndex
         Exit Sub
-    End If
-    
-    'Check if the character exists
-    If Not Server_UserExist(strName) Then
-
-        'Tell the client we're disconnecting
-        ConBuf.PreAllocate 3 + Len(strName)
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 80
-        ConBuf.Put_String strName
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-        Data_Send_Buffer UserIndex
-        Exit Sub
-        
     End If
 
     'Check to see is user already logged with name
@@ -3749,14 +3770,10 @@ Dim i As Byte
     UserList(UserIndex).Object(6).Equipped = 0
     User_UseInvItem UserIndex, 6
 
-    'For testing only
-    UserList(UserIndex).KnownSkills(SkID.Bless) = 1
-    UserList(UserIndex).KnownSkills(SkID.Heal) = 1
-    UserList(UserIndex).KnownSkills(SkID.IronSkin) = 1
-    UserList(UserIndex).KnownSkills(SkID.Protection) = 1
-    UserList(UserIndex).KnownSkills(SkID.Strengthen) = 1
-    UserList(UserIndex).KnownSkills(SkID.Warcry) = 1
-    UserList(UserIndex).KnownSkills(SkID.SpikeField) = 1
+    'For testing only (gives user all the skills
+    For i = 1 To NumSkills
+        UserList(UserIndex).KnownSkills(i) = 1
+    Next i
 
     'Save the user
     Save_User UserList(UserIndex), UserIndex, MD5_String(Password), 1

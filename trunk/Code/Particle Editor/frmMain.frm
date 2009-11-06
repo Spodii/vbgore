@@ -1,40 +1,17 @@
 VERSION 5.00
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
-   BorderStyle     =   0  'None
    Caption         =   "Particle Editor"
    ClientHeight    =   7650
-   ClientLeft      =   0
-   ClientTop       =   0
+   ClientLeft      =   60
+   ClientTop       =   450
    ClientWidth     =   7500
    Icon            =   "frmMain.frx":0000
    LinkTopic       =   "Form1"
    ScaleHeight     =   510
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   500
-   ShowInTaskbar   =   0   'False
    StartUpPosition =   1  'CenterOwner
-   Begin vbGOREPE.cForm cForm 
-      Height          =   375
-      Left            =   4920
-      TabIndex        =   1
-      Top             =   600
-      Width           =   375
-      _ExtentX        =   661
-      _ExtentY        =   661
-   End
-   Begin VB.CheckBox LoopChk 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      Caption         =   "Force Loop"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   0
-      TabIndex        =   0
-      TabStop         =   0   'False
-      Top             =   0
-      Width           =   1215
-   End
 End
 Attribute VB_Name = "frmMain"
 Attribute VB_GlobalNameSpace = False
@@ -49,15 +26,7 @@ Private ResetX As Single
 Private ResetY As Single
 Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 
-
 Private Sub Form_Load()
-
-    cForm.LoadSkin Me
-    Skin_Set Me
-    Me.Refresh
-    
-    'Force the text white since the background is always black
-    LoopChk.ForeColor = &HFFFFFF
     
     'Init particle engine
     Me.Show
@@ -75,10 +44,7 @@ Private Sub Form_Load()
 
     Do While EngineRun
 
-        'Reset if effect stopped and forceloop is on
-        If Effect(DispEffect).Used = False Then
-            If LoopChk.Value Then ResetEffect
-        End If
+        If Effect(DispEffect).Used = False Then ResetEffect
 
         'Draw
         D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
@@ -111,35 +77,6 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-'Recreate the effect
-
-    If Button = vbRightButton Then
-        Effect(DispEffect).Used = False
-        ResetEffect
-        Effect(DispEffect).X = X
-        Effect(DispEffect).Y = Y
-        ResetX = X
-        ResetY = Y
-    End If
-
-End Sub
-
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
-
-'Reposition the effect
-
-    If Button = vbLeftButton Then
-        If Effect(DispEffect).Used = False Then ResetEffect
-        Effect(DispEffect).X = X
-        Effect(DispEffect).Y = Y
-        ResetX = X
-        ResetY = Y
-    End If
-
-End Sub
-
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
 'Stop the engine
@@ -164,6 +101,3 @@ Private Sub ResetEffect()
     DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 18:13)  Decl: 62  Code: 106  Total: 168 Lines
-':) CommentOnly: 71 (42.3%)  Commented: 1 (0.6%)  Empty: 30 (17.9%)  Max Logic Depth: 3

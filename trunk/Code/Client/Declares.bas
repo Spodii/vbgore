@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.4.3            ************
+'************            Official Release: Version 0.4.4            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -151,6 +151,7 @@ Public Type NPCChat
     Format As Byte              'Format of the chat (see NPCCHAT_FORMAT_)
     ChatLine() As NPCChatLine   'The information on the chat line
     NumLines As Byte            'The number of chat lines
+    Distance As Long            'The distance the user must be from the NPC to activate the chat
 End Type
 Public NPCChat() As NPCChat
 
@@ -177,6 +178,7 @@ Public Const NPCCHAT_STYLE_BUBBLE As Byte = 2
 Public Const ClientCharType_PC As Byte = 1
 Public Const ClientCharType_NPC As Byte = 2
 Public Const ClientCharType_Grouped As Byte = 3
+Public Const ClientCharType_Slave As Byte = 4
 
 '********** Object info ************
 Public Type ObjData
@@ -282,6 +284,9 @@ Public Const BlockedAll As Byte = 15
 
 Public PTDSTime As Long
 
+Public UseSfx As Byte
+Public UseMusic As Byte
+
 'States if the project is unloading (has to give Sox time to unload)
 Public IsUnloading As Byte
 
@@ -294,9 +299,6 @@ Public UserHead As Byte
 
 'Holds the name of the last person to whisper to the client
 Public LastWhisperName As String
-
-'Disable / enable input (for debugging purposes on multiple clients so all clients dont move at once)
-Public DisableInput As Byte
 
 'Zoom level - 0 = No Zoom, > 0 = Zoomed
 Public ZoomLevel As Single
@@ -322,4 +324,4 @@ Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePri
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
-
+Public Declare Function GetActiveWindow Lib "User32" () As Long

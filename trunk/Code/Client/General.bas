@@ -509,37 +509,41 @@ Dim Y As Byte
 Dim X As Byte
 Dim b() As Byte
 
-    'Clear the offset values for the particle engine
-    ParticleOffsetX = 0
-    ParticleOffsetY = 0
-    LastOffsetX = 0
-    LastOffsetY = 0
+    'Check if there was a map before this one - if so, clear it up
+    If MapInfo.Width > 0 Then
 
-    'Reset the user's position (it won't be drawn at 0,0 since it is an invalid position anyways)
-    UserPos.X = 0
-    UserPos.Y = 0
-
-    'Clear map sounds
-    For Y = YMinMapSize To YMaxMapSize
-        For X = XMinMapSize To XMaxMapSize
-            Engine_Sound_Erase MapData(X, Y).Sfx
-        Next X
-    Next Y
+        'Clear the offset values for the particle engine
+        ParticleOffsetX = 0
+        ParticleOffsetY = 0
+        LastOffsetX = 0
+        LastOffsetY = 0
     
-    'Clear the map
-    ZeroMemory MapData(1, 1), CLng(Len(MapData(1, 1))) * CLng(XMaxMapSize) * CLng(YMaxMapSize)  'Width * Height * Size
-
-    'Erase characters
-    LastChar = 0
-    Erase CharList
-
-    'Erase objects
-    LastObj = 0
-    Erase OBJList
+        'Reset the user's position (it won't be drawn at 0,0 since it is an invalid position anyways)
+        UserPos.X = 0
+        UserPos.Y = 0
     
-    'Erase particle effects
-    LastEffect = 0
-    ReDim Effect(1 To NumEffects)
+        'Erase characters
+        LastChar = 0
+        Erase CharList
+    
+        'Erase objects
+        LastObj = 0
+        Erase OBJList
+        
+        'Erase particle effects
+        LastEffect = 0
+        ReDim Effect(1 To NumEffects)
+        
+        'Clear map sounds
+        On Error Resume Next
+            For Y = 1 To MapInfo.Width
+                For X = 1 To MapInfo.Height
+                    Engine_Sound_Erase MapData(X, Y).Sfx
+                Next X
+            Next Y
+        On Error GoTo 0
+        
+    End If
 
     'Open map file
     MapNum = FreeFile
@@ -557,15 +561,26 @@ Dim b() As Byte
     Set MapBuf = New DataBuffer
     MapBuf.Set_Buffer b()
     
-    'Clear the data array
+    'Clear the data array (since its now in the buffer)
     Erase b()
 
     'Map Header
     MapInfo.MapVersion = MapBuf.Get_Integer
-
+    MapInfo.Width = MapBuf.Get_Byte
+    MapInfo.Height = MapBuf.Get_Byte
+    
+    'Resize mapdata array
+    ReDim MapData(1 To MapInfo.Width, 1 To MapInfo.Height) As MapBlock
+    
+    'Clear the map
+    ZeroMemory MapData(1, 1), CLng(Len(MapData(1, 1))) * CLng(MapInfo.Width) * CLng(MapInfo.Height)  'Width * Height * Size
+    
+    'Resize the save light buffer
+    ReDim SaveLightBuffer(1 To MapInfo.Width, 1 To MapInfo.Height)
+    
     'Load arrays
-    For Y = YMinMapSize To YMaxMapSize
-        For X = XMinMapSize To XMaxMapSize
+    For Y = 1 To MapInfo.Height
+        For X = 1 To MapInfo.Width
         
             'Clear the graphic layers
             For i = 1 To 6
@@ -879,9 +894,6 @@ Dim i As Integer
     EngineBaseSpeed = 0.011
     ReDim SkillListIDs(1 To NumSkills)
     LineBreakChr = Chr$(10)
-
-    'Resize mapdata array
-    ReDim MapData(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
 
     'Set intial user position
     UserPos.X = 1

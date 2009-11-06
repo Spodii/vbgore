@@ -341,6 +341,7 @@ Dim i As Long
         Open Mid$(Command$, 2, Len(Command$) - 2) For Binary As #FileNum
     End If
         Get #FileNum, , NumData
+        If NumData = 0 Then GoTo ErrOut
         ReDim Data(1 To NumData)
         ReDim ClickArea(1 To NumData)
         Get #FileNum, , Data()

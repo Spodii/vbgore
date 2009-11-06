@@ -85,7 +85,7 @@ Dim X As Long
                 ConBuf.Put_Byte HeadingLoop
                 ConBuf.Put_Byte DataCode.User_Attack
                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
                 'Attack
                 NPC_AttackUser NPCIndex, MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex
@@ -100,7 +100,7 @@ Dim X As Long
     Else
         
         'Check for the closest user
-        X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
+        X = NPC_AI_ClosestPC(NPCIndex, NPCList(NPCIndex).AttackRange \ 2, NPCList(NPCIndex).AttackRange \ 2)
         If X > 0 Then
             
             'Check for a valid range
@@ -119,7 +119,7 @@ Dim X As Long
                     ConBuf.Put_Byte DataCode.User_Rotate
                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
                     ConBuf.Put_Byte NewHeading
-                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
        
                     'Attack the user
                     NPC_AttackUser NPCIndex, X
@@ -128,6 +128,90 @@ Dim X As Long
                 End If
             End If
         End If
+    End If
+
+End Function
+
+Private Function NPC_AI_AttackNPC(ByVal NPCIndex As Integer, Optional ByVal NotSlaveOfUserIndex As Integer = 0) As Byte
+
+'*****************************************************************
+'Calls the NPC attack AI to attack another NPC - only call by the NPC_AI routine!
+'*****************************************************************
+Dim HeadingLoop As Long
+Dim NewHeading As Byte
+Dim nPos As WorldPos
+Dim X As Long
+
+    Log "Call NPC_AI_AttackNPC(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    '*** Melee attacking ***
+    If NPCList(NPCIndex).AttackRange <= 1 Then
+        
+        'Check in all directions
+        For HeadingLoop = NORTH To NORTHWEST
+            nPos = NPCList(NPCIndex).Pos
+            Server_HeadToPos HeadingLoop, nPos
+
+            'If a legal pos and a user is found attack
+            If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
+                If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).Attackable Then
+                    If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).Hostile Then
+                        If NPCList(MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex).OwnerIndex <> NotSlaveOfUserIndex Then
+                        
+                            'Face the NPC to the target and tell everyone in the PC area to show the attack animation
+                            ConBuf.PreAllocate 7
+                            ConBuf.Put_Byte DataCode.User_Rotate
+                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                            ConBuf.Put_Byte HeadingLoop
+                            ConBuf.Put_Byte DataCode.User_Attack
+                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                            Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+            
+                            'Attack
+                            NPC_AttackNPC NPCIndex, MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
+                            NPC_AI_AttackNPC = 1
+                            Exit Function
+                        
+                        End If
+                    End If
+                End If
+            End If
+            
+        Next HeadingLoop
+        
+    '*** Ranged attacking ***
+    Else
+        
+        'Check for the closest npc to attack
+        X = NPC_AI_ClosestNPC(NPCIndex, NPCList(NPCIndex).AttackRange \ 2, NPCList(NPCIndex).AttackRange \ 2, NotSlaveOfUserIndex)
+        If X > 0 Then
+            
+            'Check for a valid range
+            If Server_Distance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NPCList(X).Pos.X, NPCList(X).Pos.Y) <= NPCList(NPCIndex).AttackRange Then
+
+                'Check for a valid path
+                If Engine_ClearPath(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NPCList(X).Pos.X, NPCList(X).Pos.Y) Then
+    
+                    'Get the new heading
+                    NewHeading = Server_FindDirection(NPCList(NPCIndex).Pos, NPCList(X).Pos)
+                    NPCList(NPCIndex).Char.Heading = NewHeading
+                    NPCList(NPCIndex).Char.HeadHeading = NewHeading
+    
+                    'Face the NPC to the target
+                    ConBuf.PreAllocate 4
+                    ConBuf.Put_Byte DataCode.User_Rotate
+                    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                    ConBuf.Put_Byte NewHeading
+                    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+       
+                    'Attack the user
+                    NPC_AttackNPC NPCIndex, X
+                    NPC_AI_AttackNPC = 1
+                
+                End If
+            End If
+        End If
+        
     End If
 
 End Function
@@ -148,6 +232,7 @@ Dim b As Byte
 Dim tX As Long
 Dim tY As Long
 Dim i As Integer
+Dim tPos As WorldPos
 
     Log "Call NPC_AI(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -175,6 +260,9 @@ Dim i As Integer
     
             'Attack
             If NPCList(NPCIndex).Hostile Then b = NPC_AI_Attack(NPCIndex)
+            If b = 0 Then
+                If NPCList(NPCIndex).Hostile Then b = NPC_AI_AttackNPC(NPCIndex)
+            End If
             If b = 1 Then
                 NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                 Exit Sub
@@ -239,17 +327,24 @@ Dim i As Integer
             
         '*** Attack the nearest player, and run from them ***
         Case 4
+
+            'Look for a near-by character
+            i = NPC_AI_ClosestChar(NPCIndex, NPCList(NPCIndex).AttackRange \ 2, NPCList(NPCIndex).AttackRange \ 2, 0)
             
-            'Look for a user
-            X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
-            If X = 0 Then
+            If i = 0 Then
                 NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
             Else
+                
+                'Get the position of the character
+                Select Case CharList(i).CharType
+                    Case CharType_PC: tPos = UserList(CharList(i).Index).Pos
+                    Case CharType_NPC: tPos = NPCList(CharList(i).Index).Pos
+                End Select
             
                 'Run away (movement)
-                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y, 3, 3) Then
-                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
+                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, tPos.X, tPos.Y, 3, 3) Then
+                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, tPos)
                     Select Case tHeading
                         Case NORTH: tHeading = SOUTH
                         Case NORTHEAST: tHeading = SOUTHWEST
@@ -307,7 +402,10 @@ Dim i As Integer
                             If NPC_MoveChar(NPCIndex, t2) = 0 Then
                                 If NPC_MoveChar(NPCIndex, t3) = 0 Then
                                     If NPC_MoveChar(NPCIndex, t4) = 0 Then  'If this doesn't happen, then we're out of stuff to do, so attack
-                                        NPC_AI_Attack NPCIndex
+                                        Select Case CharList(i).CharType
+                                            Case CharType_PC: NPC_AI_Attack NPCIndex
+                                            Case CharType_NPC: NPC_AI_AttackNPC NPCIndex
+                                        End Select
                                         NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                                     End If
                                 End If
@@ -318,7 +416,10 @@ Dim i As Integer
                 End If
                     
                 'Attack
-                b = NPC_AI_Attack(NPCIndex)
+                Select Case CharList(i).CharType
+                    Case CharType_PC: b = NPC_AI_Attack(NPCIndex)
+                    Case CharType_NPC: b = NPC_AI_AttackNPC(NPCIndex)
+                End Select
                 If b Then
                     NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
                     Exit Sub
@@ -333,15 +434,24 @@ Dim i As Integer
         Case 5
             
             'Look for a user
-            X = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
-            If X = 0 Then
+            i = NPC_AI_ClosestPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1)
+            If i > 0 Then
+                tPos = UserList(i).Pos
+            
+            'Look for user slaves
+            Else
+                i = NPC_AI_ClosestNPC(NPCIndex, (ScreenWidth \ 64) - 1, (ScreenHeight \ 64) - 1, 0)
+                If i > 0 Then tPos = NPCList(i).Pos
+            End If
+            
+            If i = 0 Then
                 NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000
                 Exit Sub
             Else
-            
+                
                 'Run away (movement)
-                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, UserList(X).Pos.X, UserList(X).Pos.Y, 3, 3) Then
-                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
+                If Server_RectDistance(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, tPos.X, tPos.Y, 3, 3) Then
+                    tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, tPos)
                     Select Case tHeading
                         Case NORTH: tHeading = SOUTH
                         Case NORTHEAST: tHeading = SOUTHWEST
@@ -418,16 +528,18 @@ Dim i As Integer
                             For tY = 1 To MaxServerDistanceY - 1
                                 For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                                     For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
-                                        If X > XMinMapSize Then
-                                            If X < XMaxMapSize Then
-                                                If Y > YMinMapSize Then
-                                                    If Y < YMaxMapSize Then
+                                        If X > 1 Then
+                                            If X < MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
+                                                If Y > 1 Then
+                                                    If Y < MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
                                                         If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
                                                             i = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
-                                                            If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
-                                                                If Skill_Heal_NPCtoNPC(NPCIndex, i) Then
-                                                                    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Heal_Exhaust
-                                                                    Exit Sub
+                                                            If NPCList(i).OwnerIndex = 0 Then   'Don't heal summoned NPCs
+                                                                If NPCList(i).BaseStat(SID.MinHP) < NPCList(i).ModStat(SID.MaxHP) Then
+                                                                    If Skill_Heal_NPCtoNPC(NPCIndex, i) Then
+                                                                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + Heal_Exhaust
+                                                                        Exit Sub
+                                                                    End If
                                                                 End If
                                                             End If
                                                         End If
@@ -451,10 +563,153 @@ Dim i As Integer
         'Case 6
             'This NPC has no AI here - the only reference to the banker AI is in the clicking events.
             ' Just do a search for "ai = 6" to find it.
+            
+        '*** Summoned Melee Suicidal-Attacker ***
+        Case 7
+
+            'This routine is for summoned NPCs only!
+            If NPCList(NPCIndex).OwnerIndex = 0 Then
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 5000
+                Exit Sub
+            End If
+
+            'Attack
+            b = NPC_AI_AttackNPC(NPCIndex, NPCList(NPCIndex).OwnerIndex)
+            If b = 1 Then
+                NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
+                Exit Sub
+            End If
+        
+            'Check for a near-by NPC to attack
+            i = NPC_AI_ClosestNPC(NPCIndex, 5, 5, NPCList(NPCIndex).OwnerIndex)
+            If i > 0 Then tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, NPCList(i).Pos) Else tHeading = 0
+
+            'Move towards the owner if no nearby NPCs to move to to attack were found
+            If tHeading = 0 Then
+                If Abs(CInt(NPCList(NPCIndex).Pos.X) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.X)) < 2 And Abs(CInt(NPCList(NPCIndex).Pos.Y) - CInt(UserList(NPCList(NPCIndex).OwnerIndex).Pos.Y)) < 2 Then
+                    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 500
+                    Exit Sub
+                End If
+                tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(NPCList(NPCIndex).OwnerIndex).Pos)
+            End If
+
+            'Move towards the retrieved position
+            If NPC_MoveChar(NPCIndex, tHeading) = 0 Then
+            
+                'Move towards alternate positions (the two directions that surround the selected direction)
+                Select Case tHeading
+                    Case NORTH
+                        t1 = NORTHEAST
+                        t2 = NORTHWEST
+                    Case EAST
+                        t1 = NORTHEAST
+                        t2 = SOUTHEAST
+                    Case SOUTH
+                        t1 = SOUTHWEST
+                        t2 = SOUTHEAST
+                    Case WEST
+                        t1 = SOUTHWEST
+                        t2 = NORTHWEST
+                    Case NORTHEAST
+                        t1 = NORTH
+                        t2 = EAST
+                    Case SOUTHEAST
+                        t1 = EAST
+                        t2 = SOUTH
+                    Case SOUTHWEST
+                        t1 = SOUTH
+                        t2 = WEST
+                    Case NORTHWEST
+                        t1 = WEST
+                        t2 = NORTH
+                End Select
+                
+                'Do the alternate movement
+                If NPC_MoveChar(NPCIndex, t1) = 0 Then
+                    If NPC_MoveChar(NPCIndex, t2) = 0 Then
+                        NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + 1000   'Nowhere to go, so wait a while to try again
+                    End If
+                End If
+            
+            End If
 
     End Select
 
 End Sub
+
+Public Function NPC_AI_ClosestChar(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte, Optional ByVal NotSlaveOfUserIndex As Integer = 0, Optional ByVal IsAttackable As Byte = 1, Optional ByVal IsHostile As Byte = 1) As Integer
+
+'*****************************************************************
+'Return the index of the closest player character (NPC or PC)
+'Note - the char index is returned, not PC or NPC index!
+'*****************************************************************
+Dim tX As Integer
+Dim tY As Integer
+Dim X As Integer
+Dim Y As Integer
+
+    Log "Call NPC_AI_ClosestChar(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
+    
+    'Check for a valid, active NPC
+    If NPCList(NPCIndex).flags.NPCAlive = 0 Then Exit Function
+    If NPCList(NPCIndex).flags.NPCActive = 0 Then Exit Function
+    
+    'Expand the search range
+    For tX = 1 To SearchX
+        For tY = 1 To SearchY
+            'Loop through the search area (only look on the outside of the search rectangle to prevent checking the same thing multiple times)
+            For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
+                For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
+                    'Make sure tile is legal
+                    If X >= 1 Then
+                        If X <= MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
+                            If Y >= 1 Then
+                                If Y <= MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
+                                
+                                    'Look for a npc
+                                    If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
+                                        If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex <> NPCIndex Then
+ 
+                                            'Perform special checks
+                                            If IsAttackable Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).Attackable = 0 Then GoTo NextChar
+                                            End If
+                                            If IsHostile Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).Hostile = 0 Then GoTo NextChar
+                                            End If
+                                            If NotSlaveOfUserIndex > -1 Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).OwnerIndex = NotSlaveOfUserIndex Then GoTo NextChar
+                                            End If
+   
+                                            'Look for a NPC
+                                            NPC_AI_ClosestChar = NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).Char.CharIndex
+                                            Log "Rtrn NPC_AI_ClosestChar = " & NPC_AI_ClosestChar, CodeTracker '//\\LOGLINE//\\
+                                            Exit Function
+                                            
+                                        End If
+                                    
+                                    'Look for a PC
+                                    ElseIf MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex > 0 Then
+                                        NPC_AI_ClosestChar = UserList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex).Char.CharIndex
+                                        Log "Rtrn NPC_AI_ClosestChar = " & NPC_AI_ClosestChar, CodeTracker '//\\LOGLINE//\\
+                                        Exit Function
+                                    End If
+                                    
+                                End If
+                            End If
+                        End If
+                    End If
+
+NextChar:
+                    
+                Next Y
+            Next X
+        Next tY
+    Next tX
+    
+    Log "Rtrn NPC_AI_ClosestChar = " & NPC_AI_ClosestChar, CodeTracker '//\\LOGLINE//\\
+
+End Function
 
 Public Function NPC_AI_ClosestPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte) As Integer
 
@@ -468,6 +723,10 @@ Dim Y As Integer
 
     Log "Call NPC_AI_ClosestPC(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
     
+    'Check for a valid, active NPC
+    If NPCList(NPCIndex).flags.NPCAlive = 0 Then Exit Function
+    If NPCList(NPCIndex).flags.NPCActive = 0 Then Exit Function
+    
     'Expand the search range
     For tX = 1 To SearchX
         For tY = 1 To SearchY
@@ -475,10 +734,10 @@ Dim Y As Integer
             For X = NPCList(NPCIndex).Pos.X - tX To NPCList(NPCIndex).Pos.X + tX Step tX
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                     'Make sure tile is legal
-                    If X >= XMinMapSize Then
-                        If X <= XMaxMapSize Then
-                            If Y >= YMinMapSize Then
-                                If Y <= YMaxMapSize Then
+                    If X >= 1 Then
+                        If X <= MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
+                            If Y >= 1 Then
+                                If Y <= MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
                                     'Look for a user
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex > 0 Then
                                         NPC_AI_ClosestPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).UserIndex
@@ -498,7 +757,7 @@ Dim Y As Integer
 
 End Function
 
-Public Function NPC_AI_ClosestNPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte) As Integer
+Public Function NPC_AI_ClosestNPC(ByVal NPCIndex As Integer, ByVal SearchX As Byte, ByVal SearchY As Byte, Optional ByVal NotSlaveOfUserIndex As Integer = 0, Optional ByVal IsAttackable As Byte = 1, Optional ByVal IsHostile As Byte = 1) As Integer
 
 '*****************************************************************
 'Return the index of the closest player character (PC)
@@ -519,23 +778,41 @@ Dim Y As Integer
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                 
                     'Make sure tile is legal
-                    If X >= XMinMapSize Then
-                        If X <= XMaxMapSize Then
-                            If Y >= YMinMapSize Then
-                                If Y <= YMaxMapSize Then
+                    If X >= 1 Then
+                        If X <= MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
+                            If Y >= 1 Then
+                                If Y <= MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
                                 
                                     'Look for a npc
                                     If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex > 0 Then
-                                        NPC_AI_ClosestNPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
-                                        Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
-                                        Exit Function
+                                        If MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex <> NPCIndex Then
+ 
+                                            'Perform special checks
+                                            If IsAttackable Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).Attackable = 0 Then GoTo NextNPC
+                                            End If
+                                            If IsHostile Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).Hostile = 0 Then GoTo NextNPC
+                                            End If
+                                            If NotSlaveOfUserIndex > -1 Then
+                                                If NPCList(MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex).OwnerIndex = NotSlaveOfUserIndex Then GoTo NextNPC
+                                            End If
+                                            
+                                            'We found our match!
+                                            NPC_AI_ClosestNPC = MapInfo(NPCList(NPCIndex).Pos.Map).Data(X, Y).NPCIndex
+                                            Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
+                                            Exit Function
+
+                                        End If
                                     End If
                                     
                                 End If
                             End If
                         End If
                     End If
-                    
+
+NextNPC:
+
                 Next Y
             Next X
         Next tY
@@ -544,6 +821,79 @@ Dim Y As Integer
     Log "Rtrn NPC_AI_ClosestNPC = " & NPC_AI_ClosestNPC, CodeTracker '//\\LOGLINE//\\
 
 End Function
+
+Private Sub NPC_AttackNPC(ByVal NPCIndex As Integer, ByVal TargetIndex As Integer)
+
+'*****************************************************************
+'Have a NPC attack a NPC
+'*****************************************************************
+Dim HitRate As Long
+Dim Hit As Long
+
+    Log "Call NPC_AttackNPC(" & NPCIndex & "," & TargetIndex & ")", CodeTracker '//\\LOGLINE//\\
+
+    'Check for an action delay
+    If NPCList(NPCIndex).Counters.ActionDelay > timeGetTime Then
+        Log "NPC_AttackNPC: NPC action delay > timeGetTime - aborting", CodeTracker '//\\LOGLINE//\\
+        Exit Sub
+    End If
+
+    'Set the action delay
+    NPCList(NPCIndex).Counters.ActionDelay = timeGetTime + NPCDelayFight
+    
+    'Create the sound effect and make the attack grh
+    If NPCList(NPCIndex).AttackGrh > 0 Then
+        If NPCList(NPCIndex).AttackRange > 1 Then
+            'Play sound effect and make projectile
+            ConBuf.PreAllocate 14
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
+            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
+            ConBuf.Put_Byte DataCode.Server_MakeProjectile
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+            ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
+            Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
+        Else
+            'Play sound effect and make slash
+            ConBuf.PreAllocate 11
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
+            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
+            ConBuf.Put_Byte DataCode.Server_MakeSlash
+            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+            Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
+        End If
+    End If
+    
+    'Update the hit rate
+    HitRate = NPCList(NPCIndex).ModStat(SID.Agi) + 50 'Remember, AGI for NPCs is the hit rate!
+
+    'Calculate if they hit
+    If Server_RandomNumber(1, 100) >= (HitRate - NPCList(TargetIndex).ModStat(SID.Agi)) Then
+        Log "NPC_AttackNPC: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
+        ConBuf.PreAllocate 5
+        ConBuf.Put_Byte DataCode.Server_SetCharDamage
+        ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+        ConBuf.Put_Integer -1
+        Data_Send ToNPCArea, TargetIndex, ConBuf.Get_Buffer, NPCList(TargetIndex).Pos.Map
+        Exit Sub
+    End If
+
+    'Calculate hit
+    Hit = Server_RandomNumber(NPCList(NPCIndex).ModStat(SID.MinHIT), NPCList(NPCIndex).ModStat(SID.MaxHIT))
+    Hit = Hit - (NPCList(TargetIndex).ModStat(SID.DEF) \ 2)
+    If Hit < 1 Then Hit = 1
+    Log "NPC_AttackNPC: Hit value = " & Hit, CodeTracker '//\\LOGLINE//\\
+
+    'Damage the NPC
+    NPC_Damage TargetIndex, 0, Hit, NPCList(NPCIndex).Char.CharIndex
+    
+End Sub
 
 Private Sub NPC_AttackUser(ByVal NPCIndex As Integer, ByVal UserIndex As Integer)
 
@@ -747,6 +1097,12 @@ Public Sub NPC_CleanArray()
 'Cleans the NPCList array to free memory
 '*****************************************************************
 Dim t As Integer    'Holds the unaltered value of LastNPC
+    
+    'Prevent crashing
+    If LastNPC = 0 Then
+        Erase NPCList
+        Exit Sub
+    End If
 
     'Store the LastNPC value for comparison later
     t = LastNPC
@@ -802,7 +1158,7 @@ Dim HPB As Byte
 
 End Sub
 
-Public Sub NPC_Damage(NPCIndex As Integer, UserIndex As Integer, Damage As Long)
+Public Sub NPC_Damage(ByVal NPCIndex As Integer, ByVal UserIndex As Integer, ByVal Damage As Long, Optional ByVal AttackerCharIndex As Integer = 0)
 
 '*****************************************************************
 'Do damage to a NPC - ONLY USE THIS SUB TO HURT NPCS
@@ -814,7 +1170,7 @@ Dim HPA As Byte         'HP percentage before reducing hp
 Dim HPB As Byte         'HP percentage after reducing hp
 Dim i As Integer
 
-    Log "Call NPC_Damage(" & NPCIndex & "," & UserIndex & "," & Damage & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call NPC_Damage(" & NPCIndex & "," & UserIndex & "," & Damage & ")", CodeTracker  '//\\LOGLINE//\\
 
     'Check if the NPC can be attacked
     If NPCList(NPCIndex).Attackable = 0 Then
@@ -832,6 +1188,11 @@ Dim i As Integer
         Exit Sub
     End If
 
+    'Make sure the NPC isn't the user's slave (don't damage your slaves)
+    If UserIndex > 0 Then
+        If NPCList(NPCIndex).OwnerIndex = UserIndex Then Exit Sub
+    End If
+    
     'Get the pre-damage percentage
     HPA = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
 
@@ -865,7 +1226,7 @@ Dim i As Integer
     ConBuf.Put_Byte DataCode.Server_SetCharDamage
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     ConBuf.Put_Integer Damage
-    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
+    Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
     'Check if the NPC died
     If NPCList(NPCIndex).BaseStat(SID.MinHP) <= 0 Then
@@ -873,6 +1234,7 @@ Dim i As Integer
     
         'If the NPC was killed by a user
         If UserIndex > 0 Then
+        
             Log "NPC_Damage: It was a user who killed the NPC", CodeTracker '//\\LOGLINE//\\
 
             'Check on quests
@@ -918,32 +1280,48 @@ Dim i As Integer
             ConBuf.Put_Byte 75
             ConBuf.Put_String NPCList(NPCIndex).Name
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            
-            'Drop items
-            If NPCList(NPCIndex).NumDropItems > 0 Then
-                For i = 1 To NPCList(NPCIndex).NumDropItems
-                    If NPCList(NPCIndex).DropRate(i) > (Rnd * 100) Then
-                        Log "NPC_Damage: Item dropped (" & NPCList(NPCIndex).DropRate(i) & ")", CodeTracker '//\\LOGLINE//\\
-                        
-                        'Get the closest available position to put the item
-                        Obj_ClosestFreeSpot NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NewX, NewY, NewSlot
-                        
-                        'Make sure the position is valid
-                        If NewX = 0 Then
-                            
-                            'If this object is invalid, so will the rest of them be, so just skip them all :(
-                            Log "NPC_Damage: No valid item drop spot found - current and following loot will not appear", CodeTracker '//\\LOGLINE//\\
-                            Exit For
-                        
+
+        'If the NPC was attacked by a NPC slave to a user
+        Else
+            If AttackerCharIndex > 0 Then
+                If CharList(AttackerCharIndex).CharType = CharType_NPC Then
+                    If NPCList(CharList(AttackerCharIndex).Index).OwnerIndex > 0 Then
+                        'The NPC is owned by a user, so give the EXP to the user (or group) like above
+                        i = CharList(NPCList(CharList(AttackerCharIndex).Index).OwnerIndex).Index
+                        If UserList(i).GroupIndex > 0 Then
+                            Group_EXPandGold i, UserList(i).GroupIndex, NPCList(NPCIndex).GiveEXP, NPCList(NPCIndex).GiveGLD
+                        Else
+                            User_RaiseExp i, NPCList(NPCIndex).GiveEXP
+                            UserList(i).Stats.BaseStat(SID.Gold) = UserList(i).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
                         End If
+                    End If
+                End If
+            End If
+        End If
+    
+        'Drop items
+        If NPCList(NPCIndex).NumDropItems > 0 Then
+            For i = 1 To NPCList(NPCIndex).NumDropItems
+                If NPCList(NPCIndex).DropRate(i) > (Rnd * 100) Then
+                    Log "NPC_Damage: Item dropped (" & NPCList(NPCIndex).DropRate(i) & ")", CodeTracker '//\\LOGLINE//\\
                     
-                        'Create the object
-                        Obj_Make NPCList(NPCIndex).DropItems(i), NewSlot, NPCList(NPCIndex).Pos.Map, NewX, NewY
+                    'Get the closest available position to put the item
+                    Obj_ClosestFreeSpot NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y, NewX, NewY, NewSlot
+                    
+                    'Make sure the position is valid
+                    If NewX = 0 Then
+                        
+                        'If this object is invalid, so will the rest of them be, so just skip them all :(
+                        Log "NPC_Damage: No valid item drop spot found - current and following loot will not appear", CodeTracker '//\\LOGLINE//\\
+                        Exit For
                     
                     End If
-                Next i
-            End If
-            
+                
+                    'Create the object
+                    Obj_Make NPCList(NPCIndex).DropItems(i), NewSlot, NPCList(NPCIndex).Pos.Map, NewX, NewY
+                
+                End If
+            Next i
         End If
 
         'Kill off the NPC
@@ -953,7 +1331,7 @@ Dim i As Integer
 
 End Sub
 
-Private Sub NPC_EraseChar(ByVal NPCIndex As Integer)
+Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 
 '*****************************************************************
 'Erase a character
@@ -966,7 +1344,7 @@ Dim t As Long
     'Remove from list
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).CharType = 0
-
+    
     'Remove from map
     MapInfo(NPCList(NPCIndex).Pos.Map).Data(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y).NPCIndex = 0
 
@@ -992,20 +1370,52 @@ Public Sub NPC_Kill(ByVal NPCIndex As Integer)
 '*****************************************************************
 'Kill a NPC
 '*****************************************************************
-    
+Dim Slot As Byte
+Dim i As Byte
+
     Log "Call NPC_Kill(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
     
     'If thralled, remove them
-    If NPCList(NPCIndex).flags.Thralled Then NPCList(NPCIndex).flags.NPCActive = 0
+    If NPCList(NPCIndex).flags.Thralled Then
+        NPCList(NPCIndex).flags.NPCActive = 0
+        
+        'If they were bounded as a slave (summon) NPC, change the user's summon count
+        If NPCList(NPCIndex).OwnerIndex > 0 Then
+
+            With UserList(NPCList(NPCIndex).OwnerIndex)
+
+                'Find what slot the NPC was occupying
+                For i = 1 To .NumSlaves
+                    If .SlaveNPCIndex(i) = NPCIndex Then Exit For
+                Next i
+                Slot = i
+                
+                'Clean up the array
+                If .NumSlaves = 1 Then
+                    Erase .SlaveNPCIndex
+                ElseIf Slot = .NumSlaves Then
+                    ReDim Preserve .SlaveNPCIndex(1 To Slot - 1)
+                Else
+                    For i = Slot To .NumSlaves - 1
+                        .SlaveNPCIndex(i) = .SlaveNPCIndex(i + 1)
+                    Next i
+                End If
+                .NumSlaves = .NumSlaves - 1
+                
+            End With
+            
+        End If
+                
+    Else
+        'Set death time for respawn wait
+        NPCList(NPCIndex).Counters.RespawnCounter = timeGetTime + NPCList(NPCIndex).RespawnWait
+    End If
     
     'Set health back to 100%
     NPCList(NPCIndex).BaseStat(SID.MinHP) = NPCList(NPCIndex).ModStat(SID.MaxHP)
 
     'Erase it from map
     NPC_EraseChar NPCIndex
-
-    'Set death time for respawn wait
-    NPCList(NPCIndex).Counters.RespawnCounter = timeGetTime + NPCList(NPCIndex).RespawnWait
 
 End Sub
 
@@ -1050,8 +1460,13 @@ Dim SndMP As Byte
     ConBuf.Put_Byte SndHP
     ConBuf.Put_Byte SndMP
     ConBuf.Put_Byte NPCList(NPCIndex).ChatID
-    ConBuf.Put_Byte ClientCharType_NPC
-
+    If NPCList(NPCIndex).OwnerIndex > 0 Then
+        ConBuf.Put_Byte ClientCharType_Slave
+        ConBuf.Put_Integer UserList(NPCList(NPCIndex).OwnerIndex).Char.CharIndex
+    Else
+        ConBuf.Put_Byte ClientCharType_NPC
+    End If
+    
     'Send the NPC
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
 

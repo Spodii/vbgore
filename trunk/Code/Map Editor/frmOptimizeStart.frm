@@ -4,7 +4,7 @@ Begin VB.Form frmOptimizeStart
    BackColor       =   &H80000005&
    BorderStyle     =   4  'Fixed ToolWindow
    Caption         =   " Optimize Map"
-   ClientHeight    =   1725
+   ClientHeight    =   1530
    ClientLeft      =   45
    ClientTop       =   345
    ClientWidth     =   2670
@@ -12,7 +12,7 @@ Begin VB.Form frmOptimizeStart
    MaxButton       =   0   'False
    MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   115
+   ScaleHeight     =   102
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   178
    ShowInTaskbar   =   0   'False
@@ -36,24 +36,11 @@ Begin VB.Form frmOptimizeStart
       ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
-      TabIndex        =   3
-      ToolTipText     =   "Check for NPCs placed on tiles that are blocked"
-      Top             =   1080
-      Value           =   1  'Checked
-      Width           =   2055
-   End
-   Begin VB.CheckBox BlockedObjChk 
-      Appearance      =   0  'Flat
-      BackColor       =   &H80000005&
-      Caption         =   "Objects On Blocked Tiles"
-      ForeColor       =   &H80000008&
-      Height          =   255
-      Left            =   360
       TabIndex        =   2
-      ToolTipText     =   "Check for objects placed on tiles that are blocked"
+      ToolTipText     =   "Check for NPCs placed on tiles that are blocked"
       Top             =   840
       Value           =   1  'Checked
-      Width           =   2175
+      Width           =   2055
    End
    Begin VB.CheckBox EmptyLightsChk 
       Appearance      =   0  'Flat
@@ -62,7 +49,7 @@ Begin VB.Form frmOptimizeStart
       ForeColor       =   &H80000008&
       Height          =   255
       Left            =   360
-      TabIndex        =   4
+      TabIndex        =   3
       ToolTipText     =   "Check for lights placed on layers that do not have a graphic"
       Top             =   360
       Value           =   1  'Checked
@@ -83,8 +70,8 @@ Begin VB.Form frmOptimizeStart
       EndProperty
       Height          =   195
       Left            =   240
-      TabIndex        =   5
-      Top             =   1440
+      TabIndex        =   4
+      Top             =   1200
       Width           =   2190
    End
    Begin VB.Label MiscLbl 
@@ -130,6 +117,28 @@ Dim Index As Long
 
 End Sub
 
+Private Sub BlockedObjChk_Click()
+
+End Sub
+
+Private Sub BlockedNPCChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Check for NPCs placed on tiles that are blocked."
+
+End Sub
+
+Private Sub DuplicateGrhChk_Click()
+
+    SetInfo "Check for the same graphic placed on multiple layers."
+
+End Sub
+
+Private Sub EmptyLightsChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Check for lights placed on layers that do not have a grh."
+
+End Sub
+
 Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 Dim c As Control
     
@@ -153,30 +162,30 @@ Dim j As Long
     ReDim MapOpt(0)
 
     'Check for objects on blocked tiles
-    If BlockedObjChk.Value = 1 Then
-        OptBtn.Caption = "Checking Obj tiles..."
-        OptBtn.Refresh
-        For X = XMinMapSize To XMaxMapSize
-            For Y = YMinMapSize To YMaxMapSize
-                If MapData(X, Y).ObjInfo.ObjIndex > 0 Then
-                    'Check if the obj is in the border
-                    If X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder Then
-                        AddToOpt ObjOnBlocked, X, Y
-                    'Check if on a blocked tile
-                    Else
-                        If MapData(X, Y).Blocked Then AddToOpt ObjOnBlocked, X, Y
-                    End If
-                End If
-            Next Y
-        Next X
-    End If
+    'If BlockedObjChk.Value = 1 Then
+    '    OptBtn.Caption = "Checking Obj tiles..."
+    '    OptBtn.Refresh
+    '    For X = 1 To MapInfo.Width
+    '        For Y = 1 To MapInfo.Height
+    '            If MapData(X, Y).ObjInfo.ObjIndex > 0 Then
+    '                'Check if the obj is in the border
+    '                If X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder Then
+    '                    AddToOpt ObjOnBlocked, X, Y
+    '                'Check if on a blocked tile
+    '                Else
+    '                    If MapData(X, Y).Blocked Then AddToOpt ObjOnBlocked, X, Y
+    '                End If
+    '            End If
+    '        Next Y
+    '    Next X
+    'End If
     
     'Check for NPCs on blocked tiles
     If BlockedNPCChk.Value = 1 Then
         OptBtn.Caption = "Checking NPC tiles..."
         OptBtn.Refresh
-        For X = XMinMapSize To XMaxMapSize
-            For Y = YMinMapSize To YMaxMapSize
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
                 If MapData(X, Y).NPCIndex > 0 Then
                     'Check if the NPC is in the border
                     If X < MinXBorder Or X > MaxXBorder Or Y < MinYBorder Or Y > MaxYBorder Then
@@ -194,8 +203,8 @@ Dim j As Long
     If EmptyLightsChk.Value = 1 Then
         OptBtn.Caption = "Checking lights..."
         OptBtn.Refresh
-        For X = XMinMapSize To XMaxMapSize
-            For Y = YMinMapSize To YMaxMapSize
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
                 For i = 2 To 6  'Loop through layers
                     If MapData(X, Y).Graphic(i).GrhIndex = 0 Then   'Check for empty layer
                         'Check the 4 lights that correspond to the layer
@@ -218,8 +227,8 @@ Dim j As Long
     If EmptyLightsChk.Value = 1 Then
         OptBtn.Caption = "Checking grh layers..."
         OptBtn.Refresh
-        For X = XMinMapSize To XMaxMapSize
-            For Y = YMinMapSize To YMaxMapSize
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
                 For i = 1 To 6  'Loop through base layers
                     If MapData(X, Y).Graphic(i).GrhIndex > 0 Then   'We dont care if the grh = 0
                         For j = i + 1 To 6  'Loop through comparison layers
@@ -238,7 +247,14 @@ Dim j As Long
     OptBtn.Refresh
     
     'Show report
-    HideFrmOptimizeStart
-    ShowFrmReport
+    Me.Visible = False
+    frmReport.Visible = True
+    frmReport.Show
+
+End Sub
+
+Private Sub OptBtn_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Begins the optimization check routine."
 
 End Sub

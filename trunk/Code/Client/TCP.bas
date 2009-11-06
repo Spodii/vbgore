@@ -566,6 +566,8 @@ Dim Byt1 As Byte
             Engine_AddToChatTextBuffer Message(123), FontColor_Group
         Case 125
             Engine_AddToChatTextBuffer Message(125), FontColor_Info
+        Case 127
+            Engine_AddToChatTextBuffer Message(127), FontColor_Info
     End Select
 
 End Sub
@@ -1288,7 +1290,8 @@ Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Create a character and set their information
-'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)><HP%(B)><MP%(B)><ChatID(B)><CharType(B)>
+'<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)>
+' <HP%(B)><MP%(B)><ChatID(B)><CharType(B)> (<OwnerCharIndex(I)>
 '*********************************************
 
 Dim Body As Integer
@@ -1306,6 +1309,7 @@ Dim HP As Byte
 Dim MP As Byte
 Dim ChatID As Byte
 Dim CharType As Byte
+Dim OwnerChar As Integer
 
     'Retrieve all the information
     Body = rBuf.Get_Integer
@@ -1324,8 +1328,14 @@ Dim CharType As Byte
     ChatID = rBuf.Get_Byte
     CharType = rBuf.Get_Byte
     
+    'Check for the owner char index if the char is a slave NPC
+    If CharType = ClientCharType_Slave Then OwnerChar = rBuf.Get_Integer
+    
     'Create the character
     Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, name, Weapon, Hair, Wings, ChatID, CharType, HP, MP
+
+    'Apply the owner index value
+    CharList(CharIndex).OwnerChar = OwnerChar
 
 End Sub
 
@@ -1503,10 +1513,10 @@ Dim Y As Byte
     Y = rBuf.Get_Byte
 
     'Check for a valid range
-    If X < XMinMapSize Then Exit Sub
-    If X > XMaxMapSize Then Exit Sub
-    If Y < YMinMapSize Then Exit Sub
-    If Y > YMaxMapSize Then Exit Sub
+    If X < 1 Then Exit Sub
+    If X > MapInfo.Width Then Exit Sub
+    If Y < 1 Then Exit Sub
+    If Y > MapInfo.Height Then Exit Sub
     
     'Check for a valid UserCharIndex
     If UserCharIndex <= 0 Or UserCharIndex > LastChar Then

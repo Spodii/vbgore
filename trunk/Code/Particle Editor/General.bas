@@ -94,6 +94,16 @@ Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) A
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
 
+Sub Main()
+
+    InitManifest
+    
+    On Error Resume Next
+    Load frmMain
+    On Error GoTo 0
+
+End Sub
+
 Function Engine_ElapsedTime() As Long
 
 '**************************************************************

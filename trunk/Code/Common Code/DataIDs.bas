@@ -32,10 +32,10 @@ Public EmoID As EmoID
 '   User doesn't meet requirements
 'End If
 Public Type ClassID
-    Warrior As Byte
-    Mage As Byte
-    Rogue As Byte
-    NoReq As Byte
+    Warrior As Integer
+    Mage As Integer
+    Rogue As Integer
+    NoReq As Integer
 End Type
 Public ClassID As ClassID
 
@@ -153,9 +153,6 @@ End Type
 Public DataCode As DataCode
 
 '********** Character Stats/Skills ************
-Public Const NumStats As Byte = 18
-Public Const NumSkills As Byte = 7
-Public Const FirstModStat As Byte = 9   'The lowest number of the first stat that can be modded
 Public Type StatOrder
     'These can NOT be modded (theres no ModStat())
     MinMAN As Byte
@@ -179,6 +176,9 @@ Public Type StatOrder
     Speed As Byte   'Speed works as + (Speed / 2) on the client since just + Speed would be too drastic (8 would double the normal speed)
 End Type
 Public SID As StatOrder 'Stat ID
+Public Const NumStats As Byte = 18
+Public Const FirstModStat As Byte = 9   'The lowest number of the first stat that can be modded
+
 Public Type SkillID
     Bless As Byte
     Protection As Byte
@@ -187,8 +187,10 @@ Public Type SkillID
     Heal As Byte
     IronSkin As Byte
     SpikeField As Byte
+    SummonBandit As Byte
 End Type
 Public SkID As SkillID  'Skill IDs
+Public Const NumSkills As Byte = 8
 
 Public Sub InitDataCommands()
 
@@ -215,16 +217,18 @@ Public Sub InitDataCommands()
         .Strengthen = 5
         .Warcry = 6
         .SpikeField = 7
+        .SummonBandit = 8
     End With
     
     With ClassID
-        'These values must be based off of powers of 2!
+        'These values must be based off of powers of 2! (Note: The 16th bit is not 2 ^ 16, its -(2 ^ 15) because its signed)
         .Warrior = 1    '2 ^ 0
         .Mage = 2       '2 ^ 1
         .Rogue = 4      '2 ^ 2 ... etc
         
         'This sets every bit to 1, which means that it will work with every class
-        .NoReq = 255
+        .NoReq = -1 'Read up on how signed binary works if you want to figure out why this is -1
+        
     End With
 
     With SID

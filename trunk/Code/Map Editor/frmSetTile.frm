@@ -3,7 +3,7 @@ Begin VB.Form frmSetTile
    BackColor       =   &H80000005&
    BorderStyle     =   4  'Fixed ToolWindow
    Caption         =   " Set Tile"
-   ClientHeight    =   3480
+   ClientHeight    =   2385
    ClientLeft      =   45
    ClientTop       =   345
    ClientWidth     =   2880
@@ -11,7 +11,7 @@ Begin VB.Form frmSetTile
    MaxButton       =   0   'False
    MDIChild        =   -1  'True
    MinButton       =   0   'False
-   ScaleHeight     =   232
+   ScaleHeight     =   159
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   192
    ShowInTaskbar   =   0   'False
@@ -103,18 +103,6 @@ Begin VB.Form frmSetTile
    Begin VB.TextBox LightTxt 
       Appearance      =   0  'Flat
       Height          =   285
-      Index           =   3
-      Left            =   360
-      MaxLength       =   11
-      TabIndex        =   5
-      Text            =   "-1"
-      ToolTipText     =   "Light placed in the Bottom-Left corner"
-      Top             =   1200
-      Width           =   975
-   End
-   Begin VB.TextBox LightTxt 
-      Appearance      =   0  'Flat
-      Height          =   285
       Index           =   2
       Left            =   1440
       MaxLength       =   11
@@ -134,6 +122,18 @@ Begin VB.Form frmSetTile
       Text            =   "-1"
       ToolTipText     =   "Light placed in the Top-Left corner"
       Top             =   840
+      Width           =   975
+   End
+   Begin VB.TextBox LightTxt 
+      Appearance      =   0  'Flat
+      Height          =   285
+      Index           =   3
+      Left            =   360
+      MaxLength       =   11
+      TabIndex        =   5
+      Text            =   "-1"
+      ToolTipText     =   "Light placed in the Bottom-Left corner"
+      Top             =   1200
       Width           =   975
    End
    Begin VB.Image LayerPic 
@@ -218,7 +218,7 @@ Begin VB.Form frmSetTile
       Left            =   2400
       TabIndex        =   14
       ToolTipText     =   "Click to select from the large Grh selection sheet"
-      Top             =   1680
+      Top             =   1560
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -338,51 +338,22 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-Private Sub DrawPreview()
-Dim i As Byte
-Dim TempGrh As Grh
-Dim TempRect As RECT
-
-    TempGrh.FrameCounter = 1
-    
-    'Set the map set preview
-    If Val(GrhTxt.Text) < 1 Then
-        PreviewMapGrh.GrhIndex = 0
-    Else
-        If PreviewMapGrh.GrhIndex <> Val(GrhTxt.Text) Then
-            Engine_Init_Grh PreviewMapGrh, Val(GrhTxt.Text)
-        End If
-    End If
-    
-    'Set the view area
-    TempRect.bottom = frmPreview.ScaleHeight
-    TempRect.Right = frmPreview.ScaleWidth
-
-    'Draw the preview
-    D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-    D3DDevice.BeginScene
-    
-        'Draw the grhs
-        TempGrh.GrhIndex = Val(GrhTxt.Text)
-        Engine_Render_Grh TempGrh, 0, 0, 0, 0, False, Val(LightTxt(1).Text), Val(LightTxt(2).Text), Val(LightTxt(3).Text), Val(LightTxt(4).Text)
-    
-    D3DDevice.EndScene
-    D3DDevice.Present TempRect, TempRect, frmPreview.hwnd, ByVal 0
-
-End Sub
-
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
     
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "SETTILE", "X", frmSetTile.Left
-    Var_Write Data2Path & "MapEditor.ini", "SETTILE", "Y", frmSetTile.Top
-    HideFrmSetTile
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
     
 End Sub
 
 Private Sub GrhSelectLbl_Click(Index As Integer)
     
     ShowFrmTileSelect Index
+
+End Sub
+
+Private Sub GrhSelectLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to select from the large Grh selection sheet."
 
 End Sub
 
@@ -395,6 +366,8 @@ On Error GoTo ErrOut
     'Check for valid range
     If Val(GrhTxt.Text) < 0 Then GrhTxt.Text = "0"
     If Val(GrhTxt.Text) > UBound(GrhData) Then Exit Sub
+
+    Engine_Init_Grh PreviewGrh, Val(GrhTxt.Text)
 
     DrawPreview
     
@@ -419,9 +392,21 @@ Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
     
 End Sub
 
+Private Sub GrhTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Grh that will be placed on the layer."
+
+End Sub
+
 Private Sub LayerChk_Click()
 
     DrawPreview
+
+End Sub
+
+Private Sub LayerChk_KeyPress(KeyAscii As Integer)
+
+    SetInfo "Enables / disables graphic placing and modifying."
 
 End Sub
 
@@ -431,10 +416,34 @@ Private Sub LayerPic_Click(Index As Integer)
 
 End Sub
 
+Private Sub LayerPic_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to select placing graphics on layer " & Index & "."
+
+End Sub
+
+Private Sub LightChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enables / disables tile light modifying."
+
+End Sub
+
 Private Sub LightLbl_Click(Index As Integer)
 
     'Bring up info box
     ShowFrmARGB LightTxt(Index)
+
+End Sub
+
+Private Sub LightLbl_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Click to use the ARGB <-> Long tool."
+
+End Sub
+
+Private Sub LightPic_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Preview of what the light will look like for the layer."
 
 End Sub
 
@@ -459,7 +468,7 @@ On Error GoTo ErrOut
         D3DDevice.BeginScene
             Engine_Render_Rectangle 0, 0, 15, 15, 1, 1, 1, 1, 1, 1, 0, 0, Val(LightTxt((i - 1) * 4 + 1).Text), Val(LightTxt((i - 1) * 4 + 2).Text), Val(LightTxt((i - 1) * 4 + 3).Text), Val(LightTxt((i - 1) * 4 + 4).Text)
         D3DDevice.EndScene
-        D3DDevice.Present TempRect, TempRect, frmSetTile.LightPic(i).hwnd, ByVal 0
+        D3DDevice.Present TempRect, TempRect, frmSetTile.LightPic(i).hWnd, ByVal 0
     Next i
 
 Exit Sub
@@ -481,6 +490,26 @@ Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
             End If
         End If
     End If
+End Sub
+
+Private Sub LightTxt_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+Dim s As String
+
+    Select Case Index
+        Case 1: s = "top-left"
+        Case 2: s = "top-right"
+        Case 3: s = "bottom-left"
+        Case 4: s = "bottom-right"
+    End Select
+    
+    SetInfo "Sets the light value in the tile's " & s & " corner."
+
+End Sub
+
+Private Sub ShadowChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enables / disables tile graphic shadow value modifying."
+
 End Sub
 
 Private Sub ShadowTxt_Change()
@@ -506,4 +535,10 @@ Private Sub ShadowTxt_KeyPress(KeyAscii As Integer)
             End If
         End If
     End If
+End Sub
+
+Private Sub ShadowTxt_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Sets the tile to cast a shadow (1 = enables shadow, 0 = disables shadow)."
+
 End Sub

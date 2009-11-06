@@ -198,18 +198,51 @@ Dim i As Byte
 
 End Sub
 
+Private Sub BlockAllChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Disable / enable all directions at once."
+
+End Sub
+
+Private Sub BlockAttackChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enable / disable attacking with ranged attacks over this tile."
+
+End Sub
+
+Private Sub BlockChk_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    Select Case Index
+        Case 1: SetInfo "Disable walking north onto this tile."
+        Case 2: SetInfo "Disable walking east onto this tile."
+        Case 3: SetInfo "Disable walking south onto this tile."
+        Case 4: SetInfo "Disable walking west onto this tile."
+    End Select
+    
+End Sub
+
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
-    Cancel = 1
-    Var_Write Data2Path & "MapEditor.ini", "BLOCK", "X", Me.Left
-    Var_Write Data2Path & "MapEditor.ini", "BLOCK", "Y", Me.Top
-    HideFrmBlock
+    If IsUnloading = 0 Then Cancel = 1
+    Me.Visible = False
+
+End Sub
+
+Private Sub Label1_MouseMove(Index As Integer, Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enable / disable attacking with ranged attacks over this tile."
 
 End Sub
 
 Private Sub SetAttackChk_Click()
 
     BlockAttackChk.Enabled = (SetAttackChk.Value = 1)
+
+End Sub
+
+Private Sub SetAttackChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enables / disables modifying if tiles can be attacked over with ranged attacks."
 
 End Sub
 
@@ -220,5 +253,11 @@ Dim i As Long
     For i = 1 To 4
         BlockChk(i).Enabled = (SetWalkChk.Value = 1)
     Next i
+
+End Sub
+
+Private Sub SetWalkChk_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
+
+    SetInfo "Enables / disables modifying if tiles can be walked on."
 
 End Sub
