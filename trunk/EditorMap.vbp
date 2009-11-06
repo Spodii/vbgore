@@ -15,7 +15,6 @@ Form=Code\Map Editor\frmFloods.frm
 Form=Code\Map Editor\frmMain.frm
 Form=Code\Map Editor\frmMapInfo.frm
 Form=Code\Map Editor\frmNPCs.frm
-Form=Code\Map Editor\frmObj.frm
 Form=Code\Map Editor\frmOptimizeStart.frm
 Form=Code\Map Editor\frmParticles.frm
 Form=Code\Map Editor\frmReport.frm

@@ -122,8 +122,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
 
     Log "Call SendUpdatedStats", CodeTracker '//\\LOGLINE//\\
 
-'Update modstats
-
+    'Update modstats
     If Update Then
         User_UpdateModStats UserIndex
         Update = 0

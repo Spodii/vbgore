@@ -190,6 +190,7 @@ Type MapBlock
     ObjInfo As OBJ              'Information of the object on the tile
     TileExit As WorldPosEX      'Warp location when user touches the tile
     Mailbox As Byte             'If there is a mailbox on the tile
+    Sign As Integer             'The sign value, if any
     Shadow(1 To 6) As Byte      'If the surface shows a shadow
     Sfx As Integer              'Index of the .wav file to be looped
 End Type
@@ -2807,6 +2808,11 @@ Dim j As Long
                 If MapData(X, Y).Sfx > 0 Then
                     Grh.GrhIndex = 655
                     Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX + 20, Engine_PixelPosY(ScreenY) + PixelOffsetY + 2, 0, 0
+                End If
+                'Sign tiles
+                If MapData(X, Y).Sign > 0 Then
+                    Grh.GrhIndex = 13
+                    Engine_Render_Grh Grh, Engine_PixelPosX(ScreenX) + PixelOffsetX + 24, Engine_PixelPosY(ScreenY) + PixelOffsetY + 2, 0, 0
                 End If
                 ScreenX = ScreenX + 1
             Next X

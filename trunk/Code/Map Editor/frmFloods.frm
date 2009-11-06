@@ -119,8 +119,6 @@ Dim Y As Byte
     If MsgBox("Are you sure you wish to flood the whole map with the selected content?" & _
         vbCrLf & "Set NPCs: " & CBool(frmNPCs.Visible And frmNPCs.SetOpt.Value = True) & _
         vbCrLf & "Erase NPCs: " & CBool(frmNPCs.Visible And frmNPCs.EraseOpt.Value = True) & _
-        vbCrLf & "Set OBJs: " & CBool(frmObj.Visible And frmObj.SetOpt.Value = True) & _
-        vbCrLf & "Erase OBJs: " & CBool(frmObj.Visible And frmObj.EraseOpt.Value = True) & _
         vbCrLf & "Set Tiles: " & CBool(frmSetTile.Visible), vbYesNo) = vbYes Then
         For X = XMinMapSize To XMaxMapSize
             For Y = YMinMapSize To YMaxMapSize
@@ -139,8 +137,6 @@ Dim Y As Byte
     If MsgBox("Are you sure you wish to flood the map border with the selected content?" & _
         vbCrLf & "Set NPCs: " & CBool(frmNPCs.Visible And frmNPCs.SetOpt.Value = True) & _
         vbCrLf & "Erase NPCs: " & CBool(frmNPCs.Visible And frmNPCs.EraseOpt.Value = True) & _
-        vbCrLf & "Set OBJs: " & CBool(frmObj.Visible And frmObj.SetOpt.Value = True) & _
-        vbCrLf & "Erase OBJs: " & CBool(frmObj.Visible And frmObj.EraseOpt.Value = True) & _
         vbCrLf & "Set Tiles: " & CBool(frmSetTile.Visible), vbYesNo) = vbYes Then
         For X = XMinMapSize To XMaxMapSize
             For Y = YMinMapSize To YMaxMapSize
@@ -190,8 +186,6 @@ Dim Y As Byte
     If MsgBox("Are you sure you wish to flood the inner map (all but but the border) with the selected content?" & _
         vbCrLf & "Set NPCs: " & CBool(frmNPCs.Visible And frmNPCs.SetOpt.Value = True) & _
         vbCrLf & "Erase NPCs: " & CBool(frmNPCs.Visible And frmNPCs.EraseOpt.Value = True) & _
-        vbCrLf & "Set OBJs: " & CBool(frmObj.Visible And frmObj.SetOpt.Value = True) & _
-        vbCrLf & "Erase OBJs: " & CBool(frmObj.Visible And frmObj.EraseOpt.Value = True) & _
         vbCrLf & "Set Tiles: " & CBool(frmSetTile.Visible), vbYesNo) = vbYes Then
         For X = XMinMapSize To XMaxMapSize
             For Y = YMinMapSize To YMaxMapSize
@@ -210,8 +204,6 @@ Dim Y As Byte
     If MsgBox("Are you sure you wish to flood the screen with the selected content?" & _
         vbCrLf & "Set NPCs: " & CBool(frmNPCs.Visible And frmNPCs.SetOpt.Value = True) & _
         vbCrLf & "Erase NPCs: " & CBool(frmNPCs.Visible And frmNPCs.EraseOpt.Value = True) & _
-        vbCrLf & "Set OBJs: " & CBool(frmObj.Visible And frmObj.SetOpt.Value = True) & _
-        vbCrLf & "Erase OBJs: " & CBool(frmObj.Visible And frmObj.EraseOpt.Value = True) & _
         vbCrLf & "Set Tiles: " & CBool(frmSetTile.Visible), vbYesNo) = vbYes Then
         For X = (UserPos.X - AddtoUserPos.X) - WindowTileWidth \ 2 To (UserPos.X - AddtoUserPos.X) + WindowTileWidth \ 2
             For Y = (UserPos.Y - AddtoUserPos.Y) - WindowTileHeight \ 2 To (UserPos.Y - AddtoUserPos.Y) + WindowTileHeight \ 2

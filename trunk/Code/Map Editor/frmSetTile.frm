@@ -1980,8 +1980,10 @@ End Sub
 Private Sub GrhTxt_KeyPress(Index As Integer, KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub
@@ -2034,8 +2036,12 @@ End Sub
 Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If Chr$(KeyAscii) <> "-" Then
+                If KeyAscii <> 8 Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
 End Sub
@@ -2057,8 +2063,10 @@ End Sub
 Private Sub ShadowTxt_KeyPress(Index As Integer, KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub

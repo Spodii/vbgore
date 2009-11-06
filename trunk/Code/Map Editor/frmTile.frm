@@ -3,7 +3,7 @@ Begin VB.Form frmTile
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
    Caption         =   "Tile"
-   ClientHeight    =   6225
+   ClientHeight    =   6405
    ClientLeft      =   0
    ClientTop       =   0
    ClientWidth     =   1620
@@ -11,17 +11,93 @@ Begin VB.Form frmTile
    MaxButton       =   0   'False
    MinButton       =   0   'False
    Picture         =   "frmTile.frx":0000
-   ScaleHeight     =   415
+   ScaleHeight     =   427
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   108
    ShowInTaskbar   =   0   'False
+   Begin VB.TextBox OldLLbl 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   4
+      Left            =   480
+      TabIndex        =   53
+      Text            =   "0"
+      ToolTipText     =   "Top-left light value of the layer"
+      Top             =   5880
+      Width           =   975
+   End
+   Begin VB.TextBox OldLLbl 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   3
+      Left            =   480
+      TabIndex        =   52
+      Text            =   "0"
+      ToolTipText     =   "Top-left light value of the layer"
+      Top             =   5400
+      Width           =   975
+   End
+   Begin VB.TextBox OldLLbl 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   2
+      Left            =   480
+      TabIndex        =   51
+      Text            =   "0"
+      ToolTipText     =   "Top-left light value of the layer"
+      Top             =   4920
+      Width           =   975
+   End
+   Begin VB.TextBox OldLLbl 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   1
+      Left            =   480
+      TabIndex        =   50
+      Text            =   "0"
+      ToolTipText     =   "Top-left light value of the layer"
+      Top             =   4440
+      Width           =   975
+   End
+   Begin VB.TextBox OldGLbl 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   600
+      TabIndex        =   49
+      Text            =   "0"
+      ToolTipText     =   "The graphic index of the layer"
+      Top             =   3720
+      Width           =   975
+   End
+   Begin VB.TextBox SignTxt 
+      Appearance      =   0  'Flat
+      BackColor       =   &H00000000&
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Left            =   720
+      TabIndex        =   47
+      Text            =   "0"
+      ToolTipText     =   "The number of the sign from Signs.dat"
+      Top             =   1320
+      Width           =   735
+   End
    Begin VB.TextBox SfxTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Left            =   600
-      TabIndex        =   8
+      TabIndex        =   6
       Text            =   "0"
       ToolTipText     =   "The number of the .wav file that will be looped on the tile for stuff like waterfalls, birds, etc - set to 0 for nothing"
       Top             =   2520
@@ -34,8 +110,8 @@ Begin VB.Form frmTile
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Left            =   240
-      TabIndex        =   14
-      Top             =   5880
+      TabIndex        =   12
+      Top             =   6120
       Width           =   1215
    End
    Begin VB.TextBox WYTxt 
@@ -43,8 +119,8 @@ Begin VB.Form frmTile
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   1200
-      TabIndex        =   7
+      Left            =   720
+      TabIndex        =   5
       Text            =   "0"
       ToolTipText     =   "The Y co-ordinate the user will warp to when stepping on the tile"
       Top             =   2280
@@ -55,11 +131,11 @@ Begin VB.Form frmTile
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   600
-      TabIndex        =   6
+      Left            =   720
+      TabIndex        =   4
       Text            =   "0"
       ToolTipText     =   "The X co-ordinate the user will warp to when stepping on the tile"
-      Top             =   2280
+      Top             =   2040
       Width           =   255
    End
    Begin VB.TextBox WMapTxt 
@@ -67,11 +143,11 @@ Begin VB.Form frmTile
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   840
-      TabIndex        =   5
+      Left            =   720
+      TabIndex        =   3
       Text            =   "0"
       ToolTipText     =   "The map the user will warp to when stepping on the tile"
-      Top             =   2040
+      Top             =   1800
       Width           =   615
    End
    Begin VB.TextBox GrhTxt 
@@ -79,47 +155,24 @@ Begin VB.Form frmTile
       BackColor       =   &H00000000&
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   600
-      TabIndex        =   9
+      Left            =   480
+      TabIndex        =   7
       Text            =   "0"
       ToolTipText     =   "The graphic index of the layer"
-      Top             =   3240
-      Width           =   855
-   End
-   Begin VB.TextBox AmountTxt 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   840
-      TabIndex        =   4
-      Text            =   "0"
-      ToolTipText     =   "The amount of the objects on the tile"
-      Top             =   1800
-      Width           =   615
-   End
-   Begin VB.TextBox ObjTxt 
-      Appearance      =   0  'Flat
-      BackColor       =   &H00000000&
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   720
-      TabIndex        =   3
-      Text            =   "0"
-      ToolTipText     =   "The index of the Object placed on the tile by the *.obj file number"
-      Top             =   1560
-      Width           =   735
+      Top             =   3480
+      Width           =   975
    End
    Begin VB.TextBox NPCTxt 
       Appearance      =   0  'Flat
       BackColor       =   &H00000000&
+      Enabled         =   0   'False
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Left            =   720
       TabIndex        =   2
       Text            =   "0"
       ToolTipText     =   "The index of the NPC placed on the tile by the *.npc file number"
-      Top             =   1320
+      Top             =   1560
       Width           =   735
    End
    Begin VB.TextBox MailboxTxt 
@@ -131,7 +184,7 @@ Begin VB.Form frmTile
       MaxLength       =   1
       TabIndex        =   1
       Text            =   "0"
-      ToolTipText     =   $"frmTile.frx":20D7E
+      ToolTipText     =   $"frmTile.frx":21CAE
       Top             =   1080
       Width           =   375
    End
@@ -155,10 +208,10 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   4
       Left            =   480
-      TabIndex        =   13
+      TabIndex        =   11
       Text            =   "0"
       ToolTipText     =   "Bottom-right light value of the layer"
-      Top             =   5400
+      Top             =   5640
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -168,10 +221,10 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   3
       Left            =   480
-      TabIndex        =   12
+      TabIndex        =   10
       Text            =   "0"
       ToolTipText     =   "Bottom-left light value of the layer"
-      Top             =   4920
+      Top             =   5160
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -181,10 +234,10 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   2
       Left            =   480
-      TabIndex        =   11
+      TabIndex        =   9
       Text            =   "0"
       ToolTipText     =   "Top-right light value of the layer"
-      Top             =   4440
+      Top             =   4680
       Width           =   975
    End
    Begin VB.TextBox LightTxt 
@@ -194,11 +247,32 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   1
       Left            =   480
-      TabIndex        =   10
+      TabIndex        =   8
       Text            =   "0"
       ToolTipText     =   "Top-left light value of the layer"
-      Top             =   3960
+      Top             =   4200
       Width           =   975
+   End
+   Begin VB.Label MiscLbl 
+      AutoSize        =   -1  'True
+      BackStyle       =   0  'Transparent
+      Caption         =   "Sign:"
+      BeginProperty Font 
+         Name            =   "MS Sans Serif"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      ForeColor       =   &H00FFFFFF&
+      Height          =   195
+      Index           =   23
+      Left            =   240
+      TabIndex        =   48
+      Top             =   1320
+      Width           =   450
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -217,7 +291,7 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   22
       Left            =   240
-      TabIndex        =   55
+      TabIndex        =   46
       Top             =   2520
       Width           =   345
    End
@@ -238,8 +312,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   0
       Left            =   1440
-      TabIndex        =   54
-      Top             =   3240
+      TabIndex        =   45
+      Top             =   3480
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -259,8 +333,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   4
       Left            =   1440
-      TabIndex        =   53
-      Top             =   5400
+      TabIndex        =   44
+      Top             =   5640
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -280,8 +354,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   3
       Left            =   1440
-      TabIndex        =   52
-      Top             =   4920
+      TabIndex        =   43
+      Top             =   5160
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -301,8 +375,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   2
       Left            =   1440
-      TabIndex        =   51
-      Top             =   4440
+      TabIndex        =   42
+      Top             =   4680
       Width           =   90
    End
    Begin VB.Label LightLbl 
@@ -322,8 +396,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   1
       Left            =   1440
-      TabIndex        =   50
-      Top             =   3960
+      TabIndex        =   41
+      Top             =   4200
       Width           =   90
    End
    Begin VB.Label MiscLbl 
@@ -342,8 +416,8 @@ Begin VB.Form frmTile
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   21
-      Left            =   960
-      TabIndex        =   49
+      Left            =   480
+      TabIndex        =   40
       Top             =   2280
       Width           =   195
    End
@@ -363,9 +437,9 @@ Begin VB.Form frmTile
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   16
-      Left            =   360
-      TabIndex        =   48
-      Top             =   2280
+      Left            =   480
+      TabIndex        =   39
+      Top             =   2040
       Width           =   195
    End
    Begin VB.Label MiscLbl 
@@ -384,9 +458,9 @@ Begin VB.Form frmTile
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   15
-      Left            =   240
-      TabIndex        =   47
-      Top             =   2040
+      Left            =   120
+      TabIndex        =   38
+      Top             =   1800
       Width           =   525
    End
    Begin VB.Label LayerLbl 
@@ -406,22 +480,10 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   1
       Left            =   120
-      TabIndex        =   46
+      TabIndex        =   37
       ToolTipText     =   "Click to view layer 1"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
-   End
-   Begin VB.Label OldGLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "0"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Left            =   600
-      TabIndex        =   45
-      ToolTipText     =   "What the graphic index was when you last right-clicked the tile"
-      Top             =   3480
-      Width           =   90
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -440,8 +502,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   14
       Left            =   240
-      TabIndex        =   44
-      Top             =   3480
+      TabIndex        =   36
+      Top             =   3720
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -461,8 +523,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   13
       Left            =   120
-      TabIndex        =   43
-      Top             =   3720
+      TabIndex        =   35
+      Top             =   3960
       Width           =   585
    End
    Begin VB.Label MiscLbl 
@@ -482,8 +544,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   12
       Left            =   120
-      TabIndex        =   42
-      Top             =   3240
+      TabIndex        =   34
+      Top             =   3480
       Width           =   375
    End
    Begin VB.Label LayerLbl 
@@ -503,9 +565,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   6
       Left            =   1320
-      TabIndex        =   41
+      TabIndex        =   33
       ToolTipText     =   "Click to view layer 6"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -525,9 +587,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   5
       Left            =   1080
-      TabIndex        =   40
+      TabIndex        =   32
       ToolTipText     =   "Click to view layer 5"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -547,9 +609,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   4
       Left            =   840
-      TabIndex        =   39
+      TabIndex        =   31
       ToolTipText     =   "Click to view layer 4"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -569,9 +631,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   3
       Left            =   600
-      TabIndex        =   38
+      TabIndex        =   30
       ToolTipText     =   "Click to view layer 3"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
    End
    Begin VB.Label LayerLbl 
@@ -591,9 +653,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   2
       Left            =   360
-      TabIndex        =   37
+      TabIndex        =   29
       ToolTipText     =   "Click to view layer 2"
-      Top             =   3000
+      Top             =   3120
       Width           =   120
    End
    Begin VB.Label MiscLbl 
@@ -613,8 +675,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   17
       Left            =   120
-      TabIndex        =   36
-      Top             =   4200
+      TabIndex        =   28
+      Top             =   4440
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -634,8 +696,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   18
       Left            =   120
-      TabIndex        =   35
-      Top             =   4680
+      TabIndex        =   27
+      Top             =   4920
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -655,8 +717,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   19
       Left            =   120
-      TabIndex        =   34
-      Top             =   5160
+      TabIndex        =   26
+      Top             =   5400
       Width           =   360
    End
    Begin VB.Label MiscLbl 
@@ -676,103 +738,9 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   20
       Left            =   120
-      TabIndex        =   33
-      Top             =   5640
+      TabIndex        =   25
+      Top             =   5880
       Width           =   360
-   End
-   Begin VB.Label OldLLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "0"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   1
-      Left            =   480
-      TabIndex        =   32
-      ToolTipText     =   "What the light was when you last right-clicked the tile"
-      Top             =   4200
-      Width           =   90
-   End
-   Begin VB.Label OldLLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "0"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   2
-      Left            =   480
-      TabIndex        =   31
-      ToolTipText     =   "What the light was when you last right-clicked the tile"
-      Top             =   4680
-      Width           =   90
-   End
-   Begin VB.Label OldLLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "0"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   3
-      Left            =   480
-      TabIndex        =   30
-      ToolTipText     =   "What the light was when you last right-clicked the tile"
-      Top             =   5160
-      Width           =   90
-   End
-   Begin VB.Label OldLLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "0"
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   4
-      Left            =   480
-      TabIndex        =   29
-      ToolTipText     =   "What the light was when you last right-clicked the tile"
-      Top             =   5640
-      Width           =   90
-   End
-   Begin VB.Label MiscLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "#:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   11
-      Left            =   600
-      TabIndex        =   28
-      Top             =   1800
-      Width           =   195
-   End
-   Begin VB.Label MiscLbl 
-      AutoSize        =   -1  'True
-      BackStyle       =   0  'Transparent
-      Caption         =   "OBJ:"
-      BeginProperty Font 
-         Name            =   "MS Sans Serif"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      ForeColor       =   &H00FFFFFF&
-      Height          =   195
-      Index           =   10
-      Left            =   240
-      TabIndex        =   27
-      Top             =   1560
-      Width           =   420
    End
    Begin VB.Label MiscLbl 
       AutoSize        =   -1  'True
@@ -791,8 +759,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   9
       Left            =   240
-      TabIndex        =   26
-      Top             =   1320
+      TabIndex        =   24
+      Top             =   1560
       Width           =   450
    End
    Begin VB.Label MiscLbl 
@@ -812,7 +780,7 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   8
       Left            =   240
-      TabIndex        =   25
+      TabIndex        =   23
       Top             =   1080
       Width           =   720
    End
@@ -833,7 +801,7 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   7
       Left            =   240
-      TabIndex        =   24
+      TabIndex        =   22
       Top             =   840
       Width           =   765
    End
@@ -854,8 +822,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   6
       Left            =   240
-      TabIndex        =   23
-      Top             =   5400
+      TabIndex        =   21
+      Top             =   5640
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -875,8 +843,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   5
       Left            =   240
-      TabIndex        =   22
-      Top             =   4920
+      TabIndex        =   20
+      Top             =   5160
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -896,8 +864,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   4
       Left            =   240
-      TabIndex        =   21
-      Top             =   4440
+      TabIndex        =   19
+      Top             =   4680
       Width           =   180
    End
    Begin VB.Label MiscLbl 
@@ -917,18 +885,19 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   3
       Left            =   240
-      TabIndex        =   20
-      Top             =   3960
+      TabIndex        =   18
+      Top             =   4200
       Width           =   180
    End
    Begin VB.Label YLbl 
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
       Caption         =   "100"
+      Enabled         =   0   'False
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Left            =   1080
-      TabIndex        =   19
+      TabIndex        =   17
       ToolTipText     =   "Tile Y position of the tile you are viewing"
       Top             =   600
       Width           =   270
@@ -937,10 +906,11 @@ Begin VB.Form frmTile
       AutoSize        =   -1  'True
       BackStyle       =   0  'Transparent
       Caption         =   "100"
+      Enabled         =   0   'False
       ForeColor       =   &H00FFFFFF&
       Height          =   195
-      Left            =   480
-      TabIndex        =   18
+      Left            =   360
+      TabIndex        =   16
       ToolTipText     =   "Tile X position of the tile you are viewing"
       Top             =   600
       Width           =   270
@@ -962,8 +932,8 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   2
       Left            =   120
-      TabIndex        =   17
-      Top             =   2760
+      TabIndex        =   15
+      Top             =   2880
       Width           =   630
    End
    Begin VB.Label MiscLbl 
@@ -983,7 +953,7 @@ Begin VB.Form frmTile
       Height          =   195
       Index           =   1
       Left            =   840
-      TabIndex        =   16
+      TabIndex        =   14
       Top             =   600
       Width           =   195
    End
@@ -1003,8 +973,8 @@ Begin VB.Form frmTile
       ForeColor       =   &H00FFFFFF&
       Height          =   195
       Index           =   0
-      Left            =   240
-      TabIndex        =   15
+      Left            =   120
+      TabIndex        =   13
       Top             =   600
       Width           =   195
    End
@@ -1024,8 +994,6 @@ Public Sub SetInfo(ByVal tX As Byte, ByVal tY As Byte)
 
     'Set the information
     If MapData(tX, tY).NPCIndex > 0 Then frmTile.NPCTxt.Text = CharList(MapData(tX, tY).NPCIndex).NPCNumber Else frmTile.NPCTxt.Text = 0
-    ObjTxt.Text = MapData(tX, tY).ObjInfo.ObjIndex
-    AmountTxt.Text = MapData(tX, tY).ObjInfo.Amount
     BlockedTxt.Text = MapData(tX, tY).Blocked
     If frmBlock.Visible = True Then
         If MapData(tX, tY).Blocked And 1 Then frmBlock.BlockChk(1).Value = 1 Else frmBlock.BlockChk(1).Value = 0
@@ -1040,6 +1008,8 @@ Public Sub SetInfo(ByVal tX As Byte, ByVal tY As Byte)
     XLbl.Caption = tX
     YLbl.Caption = tY
     MailboxTxt.Text = MapData(tX, tY).Mailbox
+    SignTxt.Text = MapData(tX, tY).Sign
+    SfxTxt.Text = MapData(tX, tY).Sfx
     LayerLbl_Click SelectedLayer
     
 End Sub
@@ -1047,17 +1017,39 @@ End Sub
 Private Sub AmountTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
+End Sub
+
+Private Sub BlockedTxt_Change()
+Dim i As Byte
+On Error GoTo ErrOut
+
+    i = CByte(BlockedTxt.Text)
+    If i < 0 Then i = 0
+    
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).Blocked = i
+
+    Exit Sub
+
+ErrOut:
+
+    BlockedTxt.Text = "0"
+    
 End Sub
 
 Private Sub BlockedTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub
@@ -1093,6 +1085,24 @@ Private Sub GrhSelectLbl_Click(Index As Integer)
 
     ShowFrmTileSelect 0
 
+End Sub
+
+Private Sub GrhTxt_Change()
+Dim i As Long
+On Error GoTo ErrOut
+
+    i = CLng(GrhTxt.Text)
+    If i < 0 Then i = 0
+    
+    'Set the sign value
+    Engine_Init_Grh MapData(XLbl.Caption, YLbl.Caption).Graphic(SelectedLayer), i
+    
+    Exit Sub
+
+ErrOut:
+
+    GrhTxt.Text = "0"
+    Engine_Init_Grh MapData(XLbl.Caption, YLbl.Caption).Graphic(SelectedLayer), 0
 End Sub
 
 Private Sub GrhTxt_KeyPress(KeyAscii As Integer)
@@ -1140,10 +1150,10 @@ Dim i As Byte
     
     'Set values
     GrhTxt.Text = MapData(XLbl.Caption, YLbl.Caption).Graphic(Index).GrhIndex
-    OldGLbl.Caption = GrhTxt.Text
+    OldGLbl.Text = GrhTxt.Text
     For i = 1 To 4
-        LightTxt(i).Text = MapData(XLbl.Caption, YLbl.Caption).Light(Index + ((i - 1) * 4))
-        OldLLbl(i).Caption = LightTxt(i).Text
+        LightTxt(i).Text = MapData(XLbl.Caption, YLbl.Caption).Light(i + ((Index - 1) * 4))
+        OldLLbl(i).Text = LightTxt(i).Text
     Next i
     ShadowChk.Value = MapData(XLbl.Caption, YLbl.Caption).Shadow(Index)
     
@@ -1155,14 +1165,35 @@ Private Sub LightLbl_Click(Index As Integer)
 
 End Sub
 
+Private Sub LightTxt_Change(Index As Integer)
+Dim i As Long
+On Error GoTo ErrOut
+
+    i = CLng(LightTxt(Index).Text)
+
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).Light(((SelectedLayer - 1) * 4) + Index) = i
+    
+    Exit Sub
+
+ErrOut:
+
+    LightTxt(Index).Text = "0"
+    MapData(XLbl.Caption, YLbl.Caption).Light(((SelectedLayer - 1) * 4) + Index) = 0
+End Sub
+
 Private Sub LightTxt_KeyPress(Index As Integer, KeyAscii As Integer)
 Dim i As Long
 On Error GoTo ErrOut
     
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If Chr$(KeyAscii) <> "-" Then
+                If KeyAscii <> 8 Then
+                    KeyAscii = 0
+                    Exit Sub
+                End If
+            End If
         End If
     End If
     
@@ -1201,8 +1232,10 @@ End Sub
 Private Sub MailboxTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub
@@ -1210,8 +1243,10 @@ End Sub
 Private Sub NPCTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub
@@ -1243,8 +1278,10 @@ End Sub
 Private Sub SfxTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub
@@ -1255,29 +1292,118 @@ Private Sub ShadowChk_Click()
 
 End Sub
 
+Private Sub SignTxt_Change()
+Dim i As Integer
+On Error GoTo ErrOut
+
+    i = CInt(SignTxt.Text)
+    If i < 0 Then i = 0
+    
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).Sign = i
+
+    Exit Sub
+
+ErrOut:
+
+    SignTxt.Text = "0"
+End Sub
+
+Private Sub SignTxt_KeyPress(KeyAscii As Integer)
+    If GetAsyncKeyState(vbKeyControl) = 0 Then
+        If IsNumeric(Chr$(KeyAscii)) = False Then
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
+        End If
+    End If
+End Sub
+
+Private Sub WMapTxt_Change()
+Dim i As Integer
+On Error GoTo ErrOut
+
+    i = CInt(WMapTxt.Text)
+    If i < 0 Then i = 0
+    
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).TileExit.Map = i
+
+    Exit Sub
+
+ErrOut:
+
+    WMapTxt.Text = "0"
+End Sub
+
 Private Sub WMapTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
+End Sub
+
+Private Sub WXTxt_Change()
+Dim i As Byte
+On Error GoTo ErrOut
+
+    i = CByte(WXTxt.Text)
+    If i < 0 Then i = 0
+    If i > XMaxMapSize Then i = XMaxMapSize
+    
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).TileExit.X = i
+
+    Exit Sub
+
+ErrOut:
+
+    WXTxt.Text = "0"
+    
 End Sub
 
 Private Sub WXTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
+End Sub
+
+Private Sub WYTxt_Change()
+Dim i As Byte
+On Error GoTo ErrOut
+
+    i = CByte(WYTxt.Text)
+    If i < 0 Then i = 0
+    If i > YMaxMapSize Then i = YMaxMapSize
+    
+    'Set the sign value
+    MapData(XLbl.Caption, YLbl.Caption).TileExit.Y = i
+
+    Exit Sub
+
+ErrOut:
+
+    WYTxt.Text = "0"
+    
 End Sub
 
 Private Sub WYTxt_KeyPress(KeyAscii As Integer)
     If GetAsyncKeyState(vbKeyControl) = 0 Then
         If IsNumeric(Chr$(KeyAscii)) = False Then
-            KeyAscii = 0
-            Exit Sub
+            If KeyAscii <> 8 Then
+                KeyAscii = 0
+                Exit Sub
+            End If
         End If
     End If
 End Sub

@@ -25,7 +25,7 @@ Begin VB.Form frmMain
       ScaleHeight     =   10
       ScaleMode       =   3  'Pixel
       ScaleWidth      =   8
-      TabIndex        =   24
+      TabIndex        =   23
       Top             =   1245
       Width           =   120
    End
@@ -73,7 +73,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   35
+         TabIndex        =   34
          ToolTipText     =   "New: Clear the current map and make it a new map"
          Top             =   960
          Width           =   480
@@ -88,7 +88,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   10
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   8
-         TabIndex        =   28
+         TabIndex        =   27
          Top             =   1245
          Width           =   120
       End
@@ -102,7 +102,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   10
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   8
-         TabIndex        =   27
+         TabIndex        =   26
          Top             =   1020
          Width           =   120
       End
@@ -116,7 +116,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   10
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   8
-         TabIndex        =   26
+         TabIndex        =   25
          Top             =   1245
          Width           =   120
       End
@@ -130,7 +130,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   10
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   8
-         TabIndex        =   25
+         TabIndex        =   24
          Top             =   1020
          Width           =   120
       End
@@ -144,7 +144,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   10
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   8
-         TabIndex        =   23
+         TabIndex        =   22
          Top             =   1020
          Width           =   120
       End
@@ -158,7 +158,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   22
+         TabIndex        =   21
          ToolTipText     =   "Quit: Exit vbGORE Map Editor"
          Top             =   960
          Width           =   480
@@ -173,7 +173,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   21
+         TabIndex        =   20
          ToolTipText     =   "Optimize: Perform automatic map performance/size optimization check algorithm"
          Top             =   960
          Width           =   480
@@ -188,7 +188,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   20
+         TabIndex        =   19
          ToolTipText     =   "Load: Load an existing map file"
          Top             =   960
          Width           =   480
@@ -203,7 +203,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   19
+         TabIndex        =   18
          ToolTipText     =   "Save: Save currently displayed map as the current map number"
          Top             =   960
          Width           =   480
@@ -218,7 +218,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   18
+         TabIndex        =   17
          ToolTipText     =   "Save As: Save currently displayed map as a different map number (new number or overwrite existing map)"
          Top             =   960
          Width           =   480
@@ -233,7 +233,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   17
+         TabIndex        =   16
          ToolTipText     =   "Hide/Show weather effects"
          Top             =   960
          Width           =   480
@@ -248,7 +248,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   16
+         TabIndex        =   15
          ToolTipText     =   "Hide/Show NPCs placed on the map"
          Top             =   960
          Width           =   480
@@ -263,7 +263,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   15
+         TabIndex        =   14
          ToolTipText     =   "Hide/Show objects placed on the map"
          Top             =   960
          Width           =   480
@@ -278,7 +278,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   14
+         TabIndex        =   13
          ToolTipText     =   $"frmMain.frx":17D2A
          Top             =   960
          Width           =   480
@@ -293,7 +293,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   13
+         TabIndex        =   12
          ToolTipText     =   "Hide/Show the 32x32 grid"
          Top             =   960
          Width           =   480
@@ -308,37 +308,37 @@ Begin VB.Form frmMain
          ScaleHeight     =   32
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   32
-         TabIndex        =   12
+         TabIndex        =   11
          ToolTipText     =   "Hide/Show information flag squares on tiles"
          Top             =   960
          Width           =   480
       End
       Begin VB.PictureBox SetTilesPic 
          Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
+         BackColor       =   &H00C0C0C0&
          BorderStyle     =   0  'None
          ForeColor       =   &H80000008&
          Height          =   960
-         Left            =   2400
+         Left            =   3360
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   11
+         TabIndex        =   10
          ToolTipText     =   "Hide/Show tile placement form"
          Top             =   0
          Width           =   960
       End
       Begin VB.PictureBox ViewTilesPic 
          Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
+         BackColor       =   &H00404040&
          BorderStyle     =   0  'None
          ForeColor       =   &H80000008&
          Height          =   960
-         Left            =   5280
+         Left            =   6240
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   10
+         TabIndex        =   9
          ToolTipText     =   "Hide/Show selected tile information form"
          Top             =   0
          Width           =   960
@@ -353,7 +353,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   9
+         TabIndex        =   8
          ToolTipText     =   "Hide/Show map information form"
          Top             =   0
          Width           =   960
@@ -368,7 +368,7 @@ Begin VB.Form frmMain
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   8
+         TabIndex        =   7
          ToolTipText     =   "Hide/Show NPC placement/removal form"
          Top             =   0
          Width           =   960
@@ -383,48 +383,33 @@ Begin VB.Form frmMain
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   7
+         TabIndex        =   6
          ToolTipText     =   "Hide/Show particle effect placement/removal form"
          Top             =   0
          Width           =   960
       End
       Begin VB.PictureBox FloodsPic 
          Appearance      =   0  'Flat
-         BackColor       =   &H00C0C0C0&
+         BackColor       =   &H00404040&
          BorderStyle     =   0  'None
          ForeColor       =   &H80000008&
          Height          =   960
-         Left            =   3360
+         Left            =   4320
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
-         TabIndex        =   6
+         TabIndex        =   5
          ToolTipText     =   "Hide/Show map flooding form"
          Top             =   0
          Width           =   960
       End
-      Begin VB.PictureBox ObjEditPic 
+      Begin VB.PictureBox ExitsPic 
          Appearance      =   0  'Flat
          BackColor       =   &H00C0C0C0&
          BorderStyle     =   0  'None
          ForeColor       =   &H80000008&
          Height          =   960
          Left            =   7200
-         ScaleHeight     =   64
-         ScaleMode       =   3  'Pixel
-         ScaleWidth      =   64
-         TabIndex        =   5
-         ToolTipText     =   "Hide/Show object placement/removal form"
-         Top             =   0
-         Width           =   960
-      End
-      Begin VB.PictureBox ExitsPic 
-         Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
-         BorderStyle     =   0  'None
-         ForeColor       =   &H80000008&
-         Height          =   960
-         Left            =   6240
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
@@ -435,11 +420,11 @@ Begin VB.Form frmMain
       End
       Begin VB.PictureBox BlocksPic 
          Appearance      =   0  'Flat
-         BackColor       =   &H00404040&
+         BackColor       =   &H00C0C0C0&
          BorderStyle     =   0  'None
          ForeColor       =   &H80000008&
          Height          =   960
-         Left            =   4320
+         Left            =   5280
          ScaleHeight     =   64
          ScaleMode       =   3  'Pixel
          ScaleWidth      =   64
@@ -479,7 +464,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   255
          Left            =   7920
-         TabIndex        =   34
+         TabIndex        =   33
          Top             =   1200
          Width           =   1095
       End
@@ -499,7 +484,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   195
          Left            =   7080
-         TabIndex        =   33
+         TabIndex        =   32
          Top             =   1200
          Width           =   360
       End
@@ -519,7 +504,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   195
          Left            =   6120
-         TabIndex        =   32
+         TabIndex        =   31
          Top             =   1200
          Width           =   360
       End
@@ -539,7 +524,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   195
          Left            =   7080
-         TabIndex        =   31
+         TabIndex        =   30
          Top             =   960
          Width           =   675
       End
@@ -559,7 +544,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   195
          Left            =   6120
-         TabIndex        =   30
+         TabIndex        =   29
          Top             =   960
          Width           =   675
       End
@@ -579,7 +564,7 @@ Begin VB.Form frmMain
          ForeColor       =   &H00606060&
          Height          =   255
          Left            =   7920
-         TabIndex        =   29
+         TabIndex        =   28
          Top             =   960
          Width           =   1095
       End
@@ -607,7 +592,7 @@ End Sub
 Private Sub ExitPic_Click()
     
     'Ask if they want to save
-    Select Case MsgBox("Are you sure you wish to quit?", vbYesNo)
+    Select Case MsgBox("Are you sure you wish to quit?" & vbCrLf & "All unsaved changes will be lost!", vbYesNo)
         Case vbNo
         
             'Cancel the quitting
@@ -651,8 +636,6 @@ Private Sub Form_Load()
     frmParticles.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "PART", "Y"))
     frmFloods.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "X"))
     frmFloods.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "FLOODS", "Y"))
-    frmObj.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "OBJ", "X"))
-    frmObj.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "OBJ", "Y"))
     frmExit.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "X"))
     frmExit.Top = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "EXIT", "Y"))
     frmBlock.Left = Val(Engine_Var_Get(Data2Path & "MapEditor.ini", "BLOCK", "X"))
@@ -710,7 +693,6 @@ Private Sub Form_Load()
     HideFrmNPCs
     HideFrmParticles
     HideFrmFloods
-    HideFrmObj
     HideFrmExit
     HideFrmBlock
     
@@ -892,18 +874,11 @@ Dim i As Long
             MapData(tX, tY).TileExit.Y = 0
             MapData(tX, tY).UserIndex = 0
             MapData(tX, tY).BlockedAttack = 0
+            MapData(tX, tY).Sign = 0
             
         Next tY
     Next tX
 
-End Sub
-
-Private Sub ObjEditPic_DblClick()
-    ObjEditPic_Click
-End Sub
-
-Private Sub ObjPic_DblClick()
-    ObjPic_Click
 End Sub
 
 Private Sub PartPic_DblClick()
@@ -1086,25 +1061,6 @@ Dim FileName As String
     Game_Map_Switch CInt(Left$(FileName, Len(FileName) - 4))
     
 ErrOut:
-
-End Sub
-
-Private Sub ObjEditPic_Click()
-
-    'Show/hide frmObj
-    If ObjEditChkValue = 1 Then HideFrmObj Else ShowFrmObj
-
-End Sub
-
-Private Sub ObjPic_Click()
-
-    If ObjChkValue = 1 Then
-        ObjChkValue = 0
-        ObjPic.Picture = LoadPicture(GrhMapPath & "showobjg.bmp")
-    Else
-        ObjChkValue = 1
-        ObjPic.Picture = LoadPicture(GrhMapPath & "showobj.bmp")
-    End If
 
 End Sub
 

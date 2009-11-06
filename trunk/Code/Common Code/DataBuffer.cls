@@ -39,13 +39,27 @@ Private ByteBuffer() As Byte
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 
+Public Sub Overflow()
+
+    'Force the buffer to overflow to break the packet reading loop
+    GetBytePos = UBound(ByteBuffer) + 10
+
+End Sub
+
+Public Function HasBuffer() As Byte
+
+    'If there is a buffer or not
+    If PutBytePos > 0 Then HasBuffer = 1
+
+End Function
+
 Public Sub Clear()
 
 'Clear all the values so we can use the buffer from the start again
 
     PutBytePos = 0
     GetBytePos = 0
-    ReDim ByteBuffer(0)
+    Erase ByteBuffer
 
 End Sub
 
@@ -78,7 +92,8 @@ Public Function Get_Byte() As Byte
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
     If GetBytePos > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
-
+    If GetBytePos > UBound(ByteBuffer) Then Exit Function   'Non-log style
+    
     CopyMemory Get_Byte, ByteBuffer(GetBytePos), 1
     GetBytePos = GetBytePos + 1
 
@@ -96,6 +111,7 @@ Public Function Get_Integer() As Integer
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
     If GetBytePos + 1 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 1 > UBound(ByteBuffer) Then Exit Function  'Non-log style
 
     CopyMemory Get_Integer, ByteBuffer(GetBytePos), 2
     GetBytePos = GetBytePos + 2
@@ -114,6 +130,7 @@ Public Function Get_Long() As Long
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
     If GetBytePos + 3 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 3 > UBound(ByteBuffer) Then Exit Function  'Non-log style
 
     CopyMemory Get_Long, ByteBuffer(GetBytePos), 4
     GetBytePos = GetBytePos + 4
@@ -147,13 +164,14 @@ Public Function Get_String() As String
 Dim tempB() As Byte
 Dim ArraySize As Byte
 
-    On Error GoTo ErrOut '//\\LOGLINE//\\
+    On Error GoTo ErrOut
 
     'Retrieve a string from the buffer
     ArraySize = Get_Byte    'Get the size of the string
 
     'Check for a valid size before sizing the array
     If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
+    If ArraySize = 0 Then Exit Function   'Non-log style
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -167,7 +185,7 @@ Dim ArraySize As Byte
 
 Exit Function '//\\LOGLINE//\\
 
-ErrOut: '//\\LOGLINE//\\
+ErrOut:
 
     Log "Get_String: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
@@ -178,13 +196,14 @@ Public Function Get_StringEX() As String
 Dim tempB() As Byte
 Dim ArraySize As Integer
 
-    On Error GoTo ErrOut '//\\LOGLINE//\\
+    On Error GoTo ErrOut
 
     'Retrieve a very long string from the buffer
     ArraySize = Get_Integer 'Get the size of the string
 
     'Check for a valid size before sizing the array
     If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
+    If ArraySize = 0 Then Exit Function   'Non-log style
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -198,7 +217,7 @@ Dim ArraySize As Integer
 
 Exit Function '//\\LOGLINE//\\
 
-ErrOut: '//\\LOGLINE//\\
+ErrOut:
 
     Log "Get_StringEX: Could not acquire STRING from buffer. GetBytePos: " & GetBytePos & " Ubound(ByteBuffer): " & UBound(ByteBuffer) & " Size: " & ArraySize, CriticalError '//\\LOGLINE//\\
 
@@ -300,9 +319,4 @@ Public Sub Set_Buffer(ByRef Value() As Byte)
     CopyMemory ByteBuffer(0), Value(0), UBound(Value) + 1
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 27  Code: 236  Total: 263 Lines
-':) CommentOnly: 54 (20.5%)  Commented: 2 (0.8%)  Empty: 96 (36.5%)  Max Logic Depth: 1
-
-
 

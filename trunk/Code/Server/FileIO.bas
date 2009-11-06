@@ -19,6 +19,10 @@ Public Enum LogType                                                             
     ' (packet handling is wrong) or packet hacking (people sending custom packets)                                  '//\\LOGLINE//\\
     InvalidPacketData = 5                                                                                           '//\\LOGLINE//\\
 End Enum                                                                                                            '//\\LOGLINE//\\
+#If False Then                                                                                                      '//\\LOGLINE//\\
+Private General, CodeTracker, PacketIn, PacketOut, CriticalError, InvalidPacketData                                 '//\\LOGLINE//\\
+#End If                                                                                                             '//\\LOGLINE//\\
+                                                                                                                    '//\\LOGLINE//\\
 Public LogFileNumGeneral As Byte                                                                                    '//\\LOGLINE//\\
 Public LogFileNumCodeTracker As Byte                                                                                '//\\LOGLINE//\\
 Public LogFileNumPacketIn As Byte                                                                                   '//\\LOGLINE//\\
@@ -35,7 +39,7 @@ Private Const MaxLogFileSize As Long = 10485760  '10 MB                         
                                                                                                                     '//\\LOGLINE//\\
 Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long            '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
-Sub Log(ByVal Text As String, ByVal LogType As LogType)                                                             '//\\LOGLINE//\\
+Public Sub Log(ByVal Text As String, ByVal LogType As LogType)                                                      '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
 '*****************************************************************                                                  '//\\LOGLINE//\\
 'Logs data for finding errors                                                                                       '//\\LOGLINE//\\
@@ -49,14 +53,14 @@ Dim b() As Byte         'Used for cropping down the file if it gets too large   
 Dim C() As Byte         'The cropped down version of b()                                                            '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
     'We put the line break on here because it'd be soooo tedious and worthless to write it for every log call       '//\\LOGLINE//\\
-    Text = Text & vbCrLf                                                                                            '//\\LOGLINE//\\
+    Text = Text & vbNewLine                                                                                         '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
     'Define the log file path according to the log type                                                             '//\\LOGLINE//\\
     Select Case LogType                                                                                             '//\\LOGLINE//\\
         Case General                                                                                                '//\\LOGLINE//\\
             If LogFileNumGeneral = 0 Then                                                                           '//\\LOGLINE//\\
                 LogFile = LogPath & "General.log"                                                                   '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumGeneral = FreeFile                                                                        '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumGeneral                                                       '//\\LOGLINE//\\
@@ -78,7 +82,7 @@ Dim C() As Byte         'The cropped down version of b()                        
         Case CodeTracker                                                                                            '//\\LOGLINE//\\
             If LogFileNumCodeTracker = 0 Then                                                                       '//\\LOGLINE//\\
                 LogFile = LogPath & "CodeTracker.log"                                                               '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumCodeTracker = FreeFile                                                                    '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumCodeTracker                                                   '//\\LOGLINE//\\
@@ -100,7 +104,7 @@ Dim C() As Byte         'The cropped down version of b()                        
         Case PacketIn                                                                                               '//\\LOGLINE//\\
             If LogFileNumPacketIn = 0 Then                                                                          '//\\LOGLINE//\\
                 LogFile = LogPath & "PacketIn.log"                                                                  '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumPacketIn = FreeFile                                                                       '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumPacketIn                                                      '//\\LOGLINE//\\
@@ -122,7 +126,7 @@ Dim C() As Byte         'The cropped down version of b()                        
         Case PacketOut                                                                                              '//\\LOGLINE//\\
             If LogFileNumPacketOut = 0 Then                                                                         '//\\LOGLINE//\\
                 LogFile = LogPath & "PacketOut.log"                                                                 '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumPacketOut = FreeFile                                                                      '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumPacketOut                                                     '//\\LOGLINE//\\
@@ -144,7 +148,7 @@ Dim C() As Byte         'The cropped down version of b()                        
         Case CriticalError                                                                                          '//\\LOGLINE//\\
             If LogFileNumCriticalError = 0 Then                                                                     '//\\LOGLINE//\\
                 LogFile = LogPath & "CriticalError.log"                                                             '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumCriticalError = FreeFile                                                                  '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumCriticalError                                                 '//\\LOGLINE//\\
@@ -166,7 +170,7 @@ Dim C() As Byte         'The cropped down version of b()                        
         Case InvalidPacketData                                                                                      '//\\LOGLINE//\\
             If LogFileNumInvalidPacketData = 0 Then                                                                 '//\\LOGLINE//\\
                 LogFile = LogPath & "InvalidPacketData.log"                                                         '//\\LOGLINE//\\
-                If Dir$(LogFile, vbNormal) <> "" Then Kill LogFile                                                  '//\\LOGLINE//\\
+                If LenB(Dir$(LogFile, vbNormal)) Then Kill LogFile                                                  '//\\LOGLINE//\\
                 MakeSureDirectoryPathExists LogFile                                                                 '//\\LOGLINE//\\
                 LogFileNumInvalidPacketData = FreeFile                                                              '//\\LOGLINE//\\
                 Open LogFile For Binary As #LogFileNumInvalidPacketData                                             '//\\LOGLINE//\\
@@ -189,11 +193,10 @@ Dim C() As Byte         'The cropped down version of b()                        
                                                                                                                     '//\\LOGLINE//\\
 End Sub                                                                                                             '//\\LOGLINE//\\
 
-Function Load_Mail(ByVal MailIndex As Long) As MailData
+Public Function Load_Mail(ByVal MailIndex As Long) As MailData
 Dim DataSplit() As String
 Dim ObjSplit() As String
 Dim ObjStr As String
-Dim S As String
 Dim i As Long
 
     Log "Call Load_Mail(" & MailIndex & ")", CodeTracker '//\\LOGLINE//\\
@@ -202,7 +205,7 @@ Dim i As Long
     DB_RS.Open "SELECT * FROM mail WHERE id=" & MailIndex, DB_Conn, adOpenStatic, adLockOptimistic
     
     'Make sure we have a valid mail index
-    If DB_RS.EOF = False Then
+    If Not DB_RS.EOF Then
         
         'Apply the values
         Load_Mail.Subject = Trim$(DB_RS!Sub)
@@ -210,15 +213,15 @@ Dim i As Long
         Load_Mail.RecieveDate = DB_RS!Date
         Load_Mail.Message = Trim$(DB_RS!msg)
         Load_Mail.New = Val(DB_RS!New)
-        ObjStr = Trim$(DB_RS!objs)
+        ObjStr = Trim$(DB_RS!Objs)
     
         'Check for a valid object string
-        If ObjStr <> "" Then
+        If LenB(ObjStr) Then
         
             Log "Load_Mail: Splitting ObjStr (" & ObjStr & ")", CodeTracker '//\\LOGLINE//\\
         
             'Split the objects up from the object string
-            ObjSplit = Split(ObjStr, vbCrLf)
+            ObjSplit = Split(ObjStr, vbNewLine)
 
             'Loop through the objects
             For i = 0 To UBound(ObjSplit)
@@ -243,28 +246,305 @@ Dim i As Long
 
 End Function
 
-Sub Load_Maps()
-
+Public Sub Load_Maps_Temp(ByVal MapNum As Integer)
 '*****************************************************************
-'Loads the MapX.X files
+'Take the bulk temp map dump and load it instead of using the compressed
+' (and in result, slower) load map system from Load_Maps_Data
 '*****************************************************************
-Dim TempObj As Obj
-Dim ObjIndex As Integer
-Dim ObjAmount As Integer
-Dim TempSplit() As String
-Dim FileNumMap As Byte
-Dim FileNumInf As Byte
+Dim NPCInfo() As NPCLoadData
 Dim CharIndex As Integer
 Dim NPCIndex As Integer
+Dim intNumNPCs As Integer
+Dim FileNum As Byte
+Dim i As Long
+
+    'Don't load a loaded map
+    If MapInfo(MapNum).DataLoaded = 1 Then Exit Sub Else MapInfo(MapNum).DataLoaded = 1
+
+    'Create the data arrays
+    ReDim MapInfo(MapNum).Data(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
+    ReDim MapInfo(MapNum).ObjTile(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
+
+    'Open the file
+    FileNum = FreeFile
+    Open ServerTempPath & "m" & MapNum & ".temp" For Binary Access Read As #FileNum
+    
+        'Get the NPC information
+        Get #FileNum, , intNumNPCs
+        If intNumNPCs > 0 Then
+            ReDim NPCInfo(1 To intNumNPCs) As NPCLoadData
+            Get #FileNum, , NPCInfo()
+        End If
+
+        'Get the tile information
+        Get #FileNum, , MapInfo(MapNum).Data()
+        
+    'Close up
+    Close #FileNum
+    
+    'Load the NPCs
+    If intNumNPCs > 0 Then
+        For i = 1 To intNumNPCs
+        
+            NPCIndex = Load_NPC(NPCInfo(i).NPCNum)
+            
+            With NPCList(NPCIndex)
+            
+                'Create the NPC
+                .Pos.Map = MapNum
+                .Pos.X = NPCInfo(i).X
+                .Pos.Y = NPCInfo(i).Y
+                .StartPos = .Pos
+    
+                'Give the NPC a char index
+                CharIndex = Server_NextOpenCharIndex
+                .Char.CharIndex = CharIndex
+                CharList(CharIndex).Index = NPCIndex
+                CharList(CharIndex).CharType = CharType_NPC
+                
+                'Set the NPC as used
+                .Flags.NPCActive = 1
+            
+            End With
+        Next i
+    End If
+
+End Sub
+
+Private Sub Save_Maps_Temp(ByVal MapNum As Integer)
+
+'*****************************************************************
+'Take the data from a loaded map and saves it in a bulky yet fast access storage
+'This is used to make on-the-fly map loading much faster
+'*****************************************************************
+Dim NPCInfo() As NPCLoadData
+Dim intNumNPCs As Integer
+Dim FileNum As Byte
+Dim X As Long
+Dim Y As Long
+
+    'Delete any existing temp file
+    If Server_FileExist(ServerTempPath & "m" & MapNum & ".temp", vbNormal) Then Kill ServerTempPath & "m" & MapNum & ".temp"
+
+    'Count and store the NPCs (then clear them off)
+    For X = XMinMapSize To XMaxMapSize
+        For Y = YMinMapSize To YMaxMapSize
+            If MapInfo(MapNum).Data(X, Y).NPCIndex > 0 Then
+                
+                'Raise the NPC count and store the information
+                intNumNPCs = intNumNPCs + 1
+                If intNumNPCs = 1 Then ReDim NPCInfo(1 To intNumNPCs) Else ReDim Preserve NPCInfo(1 To intNumNPCs)
+                With NPCInfo(intNumNPCs)
+                    .NPCNum = MapInfo(MapNum).Data(X, Y).NPCIndex
+                    .X = X
+                    .Y = Y
+                End With
+
+            End If
+            
+            'Clear off the variables that need to be removed
+            MapInfo(MapNum).Data(X, Y).NPCIndex = 0
+            MapInfo(MapNum).Data(X, Y).UserIndex = 0
+            
+        Next Y
+    Next X
+    
+    'Open the file
+    FileNum = FreeFile
+    Open ServerTempPath & "m" & MapNum & ".temp" For Binary Access Write As #FileNum
+        
+        'Store the NPCs
+        Put #FileNum, , intNumNPCs
+        If intNumNPCs > 0 Then Put #FileNum, , NPCInfo
+    
+        'Store the tile information
+        Put #FileNum, , MapInfo(MapNum).Data()
+        
+    'Close up
+    Close #FileNum
+
+End Sub
+
+Private Sub Load_Maps_Data(ByVal MapNum As Integer)
+
+'*****************************************************************
+'Loads the Data() of a map (holds the tile data)
+'*****************************************************************
+Dim FileNumMap As Byte
+Dim FileNumInf As Byte
 Dim TempLng As Long
 Dim TempInt As Integer
 Dim ByFlags As Long
 Dim BxFlags As Byte
-Dim LoopC As Long
-Dim Map As Long
 Dim X As Long
 Dim Y As Long
 Dim i As Long
+
+    Log "Call Load_Maps_Data(" & MapNum & ")", CodeTracker '//\\LOGLINE//\\
+        
+    'Create the array
+    ReDim MapInfo(MapNum).Data(XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize)
+    
+    'Load the files
+    'Map
+    FileNumMap = FreeFile
+    Open MapPath & MapNum & ".map" For Binary Access Read As #FileNumMap
+    Seek #FileNumMap, 1
+
+    'Inf
+    FileNumInf = FreeFile
+    Open MapEXPath & MapNum & ".inf" For Binary Access Read As #FileNumInf
+    Seek #FileNumInf, 1
+
+    'Map header
+    Get #FileNumMap, , MapInfo(MapNum).MapVersion
+
+    'Load arrays
+    For Y = YMinMapSize To YMaxMapSize
+        For X = XMinMapSize To XMaxMapSize
+
+            'Get tile's flags
+            Get #FileNumMap, , ByFlags
+
+            'Blocked
+            MapInfo(MapNum).Data(X, Y).Blocked = 0
+            If ByFlags And 1 Then Get #FileNumMap, , MapInfo(MapNum).Data(X, Y).Blocked
+
+            'Graphic layers (values dont need to be stored)
+            If ByFlags And 2 Then Get #FileNumMap, , TempLng
+            If ByFlags And 4 Then Get #FileNumMap, , TempLng
+            If ByFlags And 8 Then Get #FileNumMap, , TempLng
+            If ByFlags And 16 Then Get #FileNumMap, , TempLng
+            If ByFlags And 32 Then Get #FileNumMap, , TempLng
+            If ByFlags And 64 Then Get #FileNumMap, , TempLng
+
+            'Get lighting values (values dont need to be stored)
+            If ByFlags And 128 Then
+                For i = 1 To 4
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+            If ByFlags And 256 Then
+                For i = 5 To 8
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+            If ByFlags And 512 Then
+                For i = 9 To 12
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+            If ByFlags And 1024 Then
+                For i = 13 To 16
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+            If ByFlags And 2048 Then
+                For i = 17 To 20
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+            If ByFlags And 4096 Then
+                For i = 21 To 24
+                    Get #FileNumMap, , TempLng
+                Next i
+            End If
+
+            'Mailbox
+            If ByFlags And 8192 Then MapInfo(MapNum).Data(X, Y).Mailbox = 1 Else MapInfo(MapNum).Data(X, Y).Mailbox = 0
+            
+            'Sfx (value doesn't need to be stored)
+            If ByFlags And 1048576 Then Get #FileNumMap, , TempInt
+            
+            'Blocked attack (value stuck into the Blocked flag to save RAM)
+            If ByFlags And 2097152 Then MapInfo(MapNum).Data(X, Y).Blocked = MapInfo(MapNum).Data(X, Y).Blocked Or 128
+            
+            'Sign (value doesn't need to be stored)
+            If ByFlags And 4194304 Then Get #FileNumMap, , TempInt
+            
+            '.inf file
+
+            'Get flag's byte
+            Get #FileNumInf, , BxFlags
+
+            'Load Tile Exit
+            If BxFlags And 1 Then
+                With MapInfo(MapNum).Data(X, Y)
+                    Get #FileNumInf, , .TileExitMap
+                    Get #FileNumInf, , .TileExitX
+                    Get #FileNumInf, , .TileExitY
+                End With
+            End If
+
+            'Load NPC
+            If BxFlags And 2 Then
+                Get #FileNumInf, , TempInt
+                MapInfo(MapNum).Data(X, Y).NPCIndex = TempInt
+            End If
+            
+        Next X
+    Next Y
+
+    'Close files
+    Close #FileNumMap
+    Close #FileNumInf
+
+End Sub
+
+Sub Unload_Map(ByVal MapNum As Integer)
+
+'*****************************************************************
+'Unloads the map data from memory, and any NPCs and objects on it
+'*****************************************************************
+Dim i As Long
+
+    'Don't unload an unloaded map
+    If MapInfo(MapNum).DataLoaded = 0 Then
+    
+        'Check the map life time
+        If MapInfo(MapNum).UnloadTimer = 0 Then
+            MapInfo(MapNum).UnloadTimer = EmptyMapLife + CurrentTime
+            Exit Sub
+        End If
+        
+        'Check if to remove the map
+        If MapInfo(MapNum).UnloadTimer + EmptyMapLife > CurrentTime Then
+        
+            'Set the map as unloaded
+            MapInfo(MapNum).DataLoaded = 0
+            MapInfo(MapNum).UnloadTimer = 0
+        
+            'Unload all the NPCs on the map
+            For i = 1 To LastNPC
+                With NPCList(i)
+                    If .Pos.Map = MapNum Then
+                        CharList(.Char.CharIndex).Index = 0
+                        CharList(.Char.CharIndex).CharType = 0
+                        .Flags.NPCActive = 0
+                        NPC_Close i, 0
+                    End If
+                End With
+            Next i
+            
+            'Clean the NPC array
+            NPC_CleanArray
+        
+            'Completely unload the map data
+            Erase MapInfo(MapNum).Data()
+            
+        End If
+            
+    End If
+
+End Sub
+
+Public Sub Load_Maps()
+
+'*****************************************************************
+'Loads the MapX.X files
+'*****************************************************************
+Dim LoopC As Long
+Dim Map As Long
 
     Log "Call Load_Maps", CodeTracker '//\\LOGLINE//\\
 
@@ -272,8 +552,7 @@ Dim i As Long
     frmMain.Refresh
 
     NumMaps = Val(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
-    ReDim MapData(1 To NumMaps, XMinMapSize To XMaxMapSize, YMinMapSize To YMaxMapSize) As MapBlock
-    ReDim MapInfo(1 To NumMaps) As MapInfo
+    ReDim MapInfo(1 To NumMaps)
 
     'Create MapUsers
     ReDim MapUsers(1 To NumMaps)
@@ -285,156 +564,219 @@ Dim i As Long
     
         Log "Load_Maps: Loading map (" & Map & ")", CodeTracker '//\\LOGLINE//\\
 
-        'Map
-        FileNumMap = FreeFile
-        Open MapPath & Map & ".map" For Binary As #FileNumMap
-        Seek #FileNumMap, 1
-
-        'Inf
-        FileNumInf = FreeFile
-        Open MapEXPath & Map & ".inf" For Binary As #FileNumInf
-        Seek #FileNumInf, 1
-
-        'Map header
-        Get #FileNumMap, , MapInfo(Map).MapVersion
-
-        'Load arrays
-        For Y = YMinMapSize To YMaxMapSize
-            For X = XMinMapSize To XMaxMapSize
-
-                'Get tile's flags
-                Get #FileNumMap, , ByFlags
-
-                'Blocked
-                MapData(Map, X, Y).Blocked = 0
-                If ByFlags And 1 Then Get #FileNumMap, , MapData(Map, X, Y).Blocked
-
-                'Graphic layers (values dont need to be stored)
-                If ByFlags And 2 Then Get #FileNumMap, , TempLng
-                If ByFlags And 4 Then Get #FileNumMap, , TempLng
-                If ByFlags And 8 Then Get #FileNumMap, , TempLng
-                If ByFlags And 16 Then Get #FileNumMap, , TempLng
-                If ByFlags And 32 Then Get #FileNumMap, , TempLng
-                If ByFlags And 64 Then Get #FileNumMap, , TempLng
-
-                'Get lighting values (values dont need to be stored)
-                If ByFlags And 128 Then
-                    For i = 1 To 4
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-                If ByFlags And 256 Then
-                    For i = 5 To 8
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-                If ByFlags And 512 Then
-                    For i = 9 To 12
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-                If ByFlags And 1024 Then
-                    For i = 13 To 16
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-                If ByFlags And 2048 Then
-                    For i = 17 To 20
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-                If ByFlags And 4096 Then
-                    For i = 21 To 24
-                        Get #FileNumMap, , TempLng
-                    Next i
-                End If
-
-                'Mailbox
-                If ByFlags And 8192 Then MapData(Map, X, Y).Mailbox = 1 Else MapData(Map, X, Y).Mailbox = 0
-                
-                'Sfx (value doesn't need to be stored)
-                If ByFlags And 1048576 Then
-                    Get #FileNumMap, , TempInt
-                End If
-                
-                'Blocked attack
-                If ByFlags And 2097152 Then MapData(Map, X, Y).Blocked = MapData(Map, X, Y).Blocked Or 128
-                
-                '.inf file
-
-                'Get flag's byte
-                Get #FileNumInf, , BxFlags
-
-                'Load Tile Exit
-                If BxFlags And 1 Then
-                    Get #FileNumInf, , MapData(Map, X, Y).TileExit.Map
-                    Get #FileNumInf, , MapData(Map, X, Y).TileExit.X
-                    Get #FileNumInf, , MapData(Map, X, Y).TileExit.Y
-                End If
-
-                'Load NPC
-                If BxFlags And 2 Then
-                    Get #FileNumInf, , TempInt
-
-                    'Set up pos and startup pos
-                    NPCIndex = Load_NPC(TempInt)
-                    NPCList(NPCIndex).Pos.Map = Map
-                    NPCList(NPCIndex).Pos.X = X
-                    NPCList(NPCIndex).Pos.Y = Y
-                    NPCList(NPCIndex).StartPos = NPCList(NPCIndex).Pos
-
-                    'Place it on the map
-                    MapData(Map, X, Y).NPCIndex = NPCIndex
-
-                    'Give it a char index
-                    CharIndex = Server_NextOpenCharIndex
-                    NPCList(NPCIndex).Char.CharIndex = CharIndex
-                    CharList(CharIndex).Index = NPCIndex
-                    CharList(CharIndex).CharType = CharType_NPC
-
-                    'Set alive flag
-                    NPCList(NPCIndex).Flags.NPCAlive = 1
-
-                End If
-
-                'Item
-                If BxFlags And 4 Then
-                    Get #FileNumInf, , ObjIndex
-                    Get #FileNumInf, , ObjAmount
-                    TempObj.ObjIndex = ObjIndex
-                    TempObj.Amount = ObjAmount
-                    Obj_Make TempObj, 1, Map, X, Y, 1
-                End If
-
-            Next X
-        Next Y
-
-        'Close files
-        Close #FileNumMap
-        Close #FileNumInf
-
         'Other Room Data
-        MapInfo(Map).Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
-        MapInfo(Map).Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
-        MapInfo(Map).Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
+        With MapInfo(Map)
+            .Name = Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+            .Weather = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
+            .Music = Val(Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
+        End With
+        
+        'Create the temp maps
+        Load_Maps_Data Map
+        Save_Maps_Temp Map
 
     Next Map
-
+    
 End Sub
 
-Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0) As Integer
+Public Sub Save_NPCs_Temp()
 
 '*****************************************************************
-'Loads a NPC and returns its index
+'Creates and saves the .temp NPCs
 '*****************************************************************
-
-Dim NPCIndex As Integer
+Dim ObjNums As NPCBytes
+Dim FileNum As Byte
 Dim ShopStr As String
 Dim DropStr As String
 Dim ItemSplit() As String
 Dim TempSplit() As String
-Dim S As String
 Dim i As Long
+
+    Log "Call Save_NPCs_Temp", CodeTracker '//\\LOGLINE//\\
+    
+    'Resize the NPC array to fit the one NPC we are using
+    ReDim NPCList(1 To 1) As NPC
+
+    'Grab all the NPCs from the database
+    DB_RS.Open "SELECT * FROM npcs", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Loop through them, and put the data into the NPCList(1)
+    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+        
+        'Delete any existing temp file
+        If Server_FileExist(ServerTempPath & "n" & DB_RS!id & ".temp", vbNormal) Then Kill ServerTempPath & "n" & DB_RS!id & ".temp"
+    
+        'Clear the variables so nothing gets transferred over to the next NPC
+        Erase NPCList(1).VendItems
+        Erase NPCList(1).DropItems
+        Erase NPCList(1).DropRate
+        ZeroMemory NPCList(1), Len(NPCList(1))
+        i = 0
+        ObjNums.Drop = 0
+        ObjNums.Vend = 0
+    
+        With NPCList(1)
+            Log "Save_NPCs_Temp: Filling in values for NPC " & DB_RS!id, CodeTracker '//\\LOGLINE//\\
+            .Name = Trim$(DB_RS!Name)
+            .Desc = Trim$(DB_RS!Descr)
+            .AttackGrh = Val(DB_RS!AttackGrh)
+            .AttackRange = Val(DB_RS!AttackRange)
+            .AI = Val(DB_RS!AI)
+            .RespawnWait = Val(DB_RS!RespawnWait)
+            .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
+            .Attackable = Val(DB_RS!Attackable)
+            .Hostile = Val(DB_RS!Hostile)
+            .Quest = Val(DB_RS!Quest)
+            .GiveEXP = Val(DB_RS!give_exp)
+            .GiveGLD = Val(DB_RS!give_gold)
+            .Char.Hair = Val(DB_RS!char_hair)
+            .Char.Head = Val(DB_RS!char_head)
+            .Char.Body = Val(DB_RS!char_body)
+            .Char.Weapon = Val(DB_RS!char_weapon)
+            .Char.Wings = Val(DB_RS!char_wings)
+            .Char.Heading = Val(DB_RS!char_heading)
+            .Char.HeadHeading = Val(DB_RS!char_headheading)
+            .BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
+            .BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
+            .BaseStat(SID.DEF) = Val(DB_RS!stat_def)
+            .BaseStat(SID.MinHIT) = Val(DB_RS!stat_hit_min)
+            .BaseStat(SID.MaxHIT) = Val(DB_RS!stat_hit_max)
+            .BaseStat(SID.MaxHP) = Val(DB_RS!stat_hp)
+            .BaseStat(SID.MaxMAN) = Val(DB_RS!stat_mp)
+            .BaseStat(SID.MaxSTA) = Val(DB_RS!stat_sp)
+            .BaseStat(SID.MinHP) = .BaseStat(SID.MaxHP)
+            .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
+            .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
+            .NPCNumber = DB_RS!id
+            .Flags.NPCActive = 1
+            ShopStr = Trim$(DB_RS!objs_shop)
+            DropStr = Trim$(DB_RS!drops)
+
+            'Create the shop list
+            If LenB(ShopStr) Then
+                Log "Load_NPC: Splitting ShopStr (" & ShopStr & ")", CodeTracker '//\\LOGLINE//\\
+                TempSplit = Split(ShopStr, vbNewLine)
+                ReDim .VendItems(1 To UBound(TempSplit) + 1)
+                .NumVendItems = UBound(TempSplit) + 1
+                For i = 0 To UBound(TempSplit)
+                    Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
+                    ItemSplit = Split(TempSplit(i), " ")
+                    If UBound(ItemSplit) = 1 Then   'If ubound <> 1, we have an invalid item entry
+                        .VendItems(i + 1).ObjIndex = Val(ItemSplit(0))
+                        .VendItems(i + 1).Amount = Val(ItemSplit(1))
+                    Else
+                        Log "Save_NPCs_Temp: Invalid shop/vending item entry found in the database. NPC: " & DB_RS!id & " Slot: " & i, CriticalError '//\\LOGLINE//\\
+                    End If
+                Next i
+            End If
+            
+            'Create the drop list
+            If LenB(DropStr) Then
+                Log "Load_NPC: Splitting DropStr (" & DropStr & ")", CodeTracker '//\\LOGLINE//\\
+                TempSplit = Split(DropStr, vbNewLine)
+                ReDim .DropItems(1 To UBound(TempSplit) + 1)
+                ReDim .DropRate(1 To UBound(TempSplit) + 1)
+                .NumDropItems = UBound(TempSplit) + 1
+                For i = 0 To UBound(TempSplit)
+                    Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
+                    ItemSplit = Split(TempSplit(i), " ")
+                    If UBound(ItemSplit) = 2 Then   'If ubound <> 2, we have an invalid item entry
+                        .DropItems(i + 1).ObjIndex = Val(ItemSplit(0))
+                        .DropItems(i + 1).Amount = Val(ItemSplit(1))
+                        .DropRate(i + 1) = Val(ItemSplit(2))
+                    Else
+                        Log "Save_NPCs_Temp: Invalid drop item entry found in the database. NPC: " & DB_RS!id & " Slot: " & i, CriticalError '//\\LOGLINE//\\
+                    End If
+                Next i
+            End If
+            
+            'Put the values into the ObjNums
+            ObjNums.Drop = NPCList(1).NumDropItems
+            ObjNums.Vend = NPCList(1).NumVendItems
+            
+            'Finally, update the NPC's mod stats
+            NPC_UpdateModStats 1
+
+            'Save the NPCs to the file
+            FileNum = FreeFile
+            Open ServerTempPath & "n" & DB_RS!id & ".temp" For Binary Access Write As #FileNum
+                
+                'Array sizes
+                Put #FileNum, , ObjNums
+
+                'The NPC itself
+                Put #FileNum, , NPCList(1)
+                
+            Close #FileNum
+        
+        End With
+        DB_RS.MoveNext
+    Loop
+    
+    'Close the record set
+    DB_RS.Close
+    
+    'Clear the NPC list again
+    Erase NPCList
+            
+End Sub
+
+Public Sub Load_NPC_Names()
+
+'*****************************************************************
+'Loads the names of NPCs (only if they are used in a quest)
+'*****************************************************************
+Dim i As Long
+
+    'Resize the NPC name array by the highest index used
+    DB_RS.Open "SELECT finish_req_killnpc FROM quests ORDER BY id DESC LIMIT 1", DB_Conn, adOpenStatic, adLockOptimistic
+    If DB_RS(0) = 0 Then Exit Sub   'No NPCs used for quests, abort
+    ReDim NPCName(1 To DB_RS(0))
+    DB_RS.Close
+
+    'Grab all the NPC numbers used in quests
+    DB_RS.Open "SELECT finish_req_killnpc FROM quests", DB_Conn, adOpenStatic, adLockOptimistic
+    
+    'Loop through all the IDs
+    Do While DB_RS.EOF = False  'Loop until we reach the end of the recordset
+        
+        'If the ID is used, mark it with ".", so we can get the real name later
+        If DB_RS(0) > 0 Then NPCName(DB_RS(0)) = "."
+        
+        'Move to the next record
+        DB_RS.MoveNext
+        
+    Loop
+    
+    DB_RS.Close
+        
+    'Fill in the values
+    For i = 1 To UBound(NPCName)
+        
+        'A "." states we need to get the name
+        If NPCName(i) = "." Then
+            
+            'Get the name
+            DB_RS.Open "SELECT name FROM npcs WHERE id=" & i, DB_Conn, adOpenStatic, adLockOptimistic
+            NPCName(i) = DB_RS(0)
+            DB_RS.Close
+        
+        End If
+        
+    Next i
+        
+End Sub
+
+Public Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0) As Integer
+
+'*****************************************************************
+'Loads a NPC and returns its index
+'*****************************************************************
+Dim ObjNums As NPCBytes
+Dim NPCIndex As Integer
+Dim FileNum As Byte
+Dim i As Long
+Dim b As Byte
 
     Log "Call Load_NPC(" & NPCNumber & "," & Thralled & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -443,12 +785,10 @@ Dim i As Long
         Log "Rtrn Load_NPC = " & Load_NPC, CodeTracker '//\\LOGLINE//\\
         Exit Function
     End If
-    
     Log "Load_NPC: Acquiring NPC index", CodeTracker '//\\LOGLINE//\\
 
     'Find next open NPCindex
     NPCIndex = NPC_NextOpen
-    
     Log "Load_NPC: NPC index acquired (" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Update NPC counters
@@ -460,108 +800,48 @@ Dim i As Long
         End If
     End If
     NumNPCs = NumNPCs + 1
-    
-    'Make sure the NPC's array is empty
-    ZeroMemory NPCList(NPCIndex), Len(NPCList(NPCIndex))
 
-    'Load the NPC information from the database
-    DB_RS.Open "SELECT * FROM npcs WHERE id=" & NPCNumber, DB_Conn, adOpenStatic, adLockOptimistic
-    
     'Make sure the NPC exists
-    If DB_RS.EOF Then
+    If Not Server_FileExist(ServerTempPath & "n" & NPCNumber & ".temp", vbNormal) Then
         If Thralled = 0 Then    'Don't give the error from an invalid thrall
             Log "Load_NPC: Error loading NPC " & NPCIndex & " with NPCNumber " & NPCNumber & " - no NPC by the number found!", CriticalError '//\\LOGLINE//\\
         End If
         Log "Rtrn Load_NPC = " & Load_NPC, CodeTracker '//\\LOGLINE//\\
-        DB_RS.Close
         Exit Function
     End If
 
-    'Loop through every field - match up the names then set the data accordingly
     With NPCList(NPCIndex)
-        .Name = Trim$(DB_RS!Name)
-        .Desc = Trim$(DB_RS!Descr)
-        .AttackGrh = Val(DB_RS!AttackGrh)
-        .AttackRange = Val(DB_RS!AttackRange)
-        .AI = Val(DB_RS!AI)
-        .RespawnWait = Val(DB_RS!RespawnWait)
-        .ProjectileRotateSpeed = Val(DB_RS!ProjectileRotateSpeed)
-        .Attackable = Val(DB_RS!Attackable)
-        .Hostile = Val(DB_RS!Hostile)
-        .Quest = Val(DB_RS!Quest)
-        .GiveEXP = Val(DB_RS!give_exp)
-        .GiveGLD = Val(DB_RS!give_gold)
-        .Char.Hair = Val(DB_RS!char_hair)
-        .Char.Head = Val(DB_RS!char_head)
-        .Char.Body = Val(DB_RS!char_body)
-        .Char.Weapon = Val(DB_RS!char_weapon)
-        .Char.Wings = Val(DB_RS!char_wings)
-        .Char.Heading = Val(DB_RS!char_heading)
-        .Char.HeadHeading = Val(DB_RS!char_headheading)
-        .BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
-        .BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
-        .BaseStat(SID.DEF) = Val(DB_RS!stat_def)
-        .BaseStat(SID.MinHIT) = Val(DB_RS!stat_hit_min)
-        .BaseStat(SID.MaxHIT) = Val(DB_RS!stat_hit_max)
-        .BaseStat(SID.MaxHP) = Val(DB_RS!stat_hp)
-        .BaseStat(SID.MaxMAN) = Val(DB_RS!stat_mp)
-        .BaseStat(SID.MaxSTA) = Val(DB_RS!stat_sp)
-        ShopStr = Trim$(DB_RS!objs_shop)
-        DropStr = Trim$(DB_RS!drops)
         
-        'Close the recordset
-        DB_RS.Close
+        'Get the NPC information from the file
+        FileNum = FreeFile
+        Open ServerTempPath & "n" & NPCNumber & ".temp" For Binary Access Read As #FileNum
+            
+            'Get the array sizes
+            Get #FileNum, , ObjNums
+            
+            'Set the arrays if needed
+            If ObjNums.Drop > 0 Then
+                ReDim .DropItems(1 To ObjNums.Drop) As Obj
+                ReDim .DropRate(1 To ObjNums.Drop) As Single
+            Else
+                Erase .DropItems
+                Erase .DropRate
+            End If
+            If ObjNums.Vend > 0 Then
+                ReDim VendArray(1 To ObjNums.Vend) As Obj
+            Else
+                Erase .VendItems
+            End If
+            
+            'Get the NPC
+            Get #FileNum, , NPCList(NPCIndex)
         
-        'Create the shop list
-        If ShopStr <> "" Then
-            Log "Load_NPC: Splitting ShopStr (" & ShopStr & ")", CodeTracker '//\\LOGLINE//\\
-            TempSplit = Split(ShopStr, vbCrLf)
-            ReDim .VendItems(1 To UBound(TempSplit) + 1)
-            .NumVendItems = UBound(TempSplit) + 1
-            For i = 0 To UBound(TempSplit)
-                Log "Load_NPC: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
-                ItemSplit = Split(TempSplit(i), " ")
-                If UBound(ItemSplit) = 1 Then   'If ubound <> 1, we have an invalid item entry
-                    .VendItems(i + 1).ObjIndex = Val(ItemSplit(0))
-                    .VendItems(i + 1).Amount = Val(ItemSplit(1))
-                Else
-                    Log "Load_NPC: Invalid shop/vending item entry found in the database. NPC: " & NPCNumber & " Slot: " & i, CriticalError '//\\LOGLINE//\\
-                End If
-            Next i
-        End If
-        
-        'Create the drop list
-        If DropStr <> "" Then
-            Log "Load_NPC: Splitting DropStr (" & DropStr & ")", CodeTracker '//\\LOGLINE//\\
-            TempSplit = Split(DropStr, vbCrLf)
-            ReDim .DropItems(1 To UBound(TempSplit) + 1)
-            ReDim .DropRate(1 To UBound(TempSplit) + 1)
-            .NumDropItems = UBound(TempSplit) + 1
-            For i = 0 To UBound(TempSplit)
-                Log "Load_NPC: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
-                ItemSplit = Split(TempSplit(i), " ")
-                If UBound(ItemSplit) = 2 Then   'If ubound <> 2, we have an invalid item entry
-                    .DropItems(i + 1).ObjIndex = Val(ItemSplit(0))
-                    .DropItems(i + 1).Amount = Val(ItemSplit(1))
-                    .DropRate(i + 1) = Val(ItemSplit(2))
-                Else
-                    Log "Load_NPC: Invalid drop item entry found in the database. NPC: " & NPCNumber & " Slot: " & i, CriticalError '//\\LOGLINE//\\
-                End If
-            Next i
-        End If
-        
-        'Set up the NPC
-        .NPCNumber = NPCNumber
-        .Flags.NPCActive = 1
-        .BaseStat(SID.MinHP) = .BaseStat(SID.MaxHP)
-        .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
-        .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
-        .Flags.Thralled = Thralled
-                
-    End With
+            'Set the NPC's thralled value
+            .Flags.Thralled = Thralled
 
-    'Set the temp mod stats
-    NPC_UpdateModStats NPCIndex
+        Close #FileNum
+
+    End With
 
     'Return new NPCIndex
     Load_NPC = NPCIndex
@@ -570,7 +850,7 @@ Dim i As Long
 
 End Function
 
-Sub Load_OBJs()
+Public Sub Load_OBJs()
 
     Log "Call Load_OBJs", CodeTracker '//\\LOGLINE//\\
 
@@ -629,16 +909,13 @@ Sub Load_OBJs()
         End With
         DB_RS.MoveNext
     Loop
-    
+
     'Close the recordset
     DB_RS.Close
     
 End Sub
 
 Public Sub Load_Quests()
-Dim LoopQuest As Long
-Dim S As String
-Dim i As Long
 
     Log "Call Load_Quests", CodeTracker '//\\LOGLINE//\\
 
@@ -694,7 +971,7 @@ Dim i As Long
     
 End Sub
 
-Sub Load_ServerIni()
+Public Sub Load_ServerIni()
 
 '*****************************************************************
 'Loads the Server.ini
@@ -728,14 +1005,14 @@ Dim TempSplit() As String
 
 End Sub
 
-Sub Load_User(UserChar As User, ByVal UserName As String)
+Public Sub Load_User(UserChar As User, ByVal UserName As String)
 Dim TempStr() As String
 Dim TempStr2() As String
 Dim InvStr As String
 Dim MailStr As String
+Dim BankStr As String
 Dim KSStr As String
 Dim CurQStr As String
-Dim S As String
 Dim i As Long
 
     Log "Call Load_User(N/A," & UserName & ")", CodeTracker '//\\LOGLINE//\\
@@ -744,84 +1021,107 @@ Dim i As Long
     DB_RS.Open "SELECT * FROM users WHERE `name`='" & UserName & "'", DB_Conn, adOpenStatic, adLockOptimistic
 
     'Make sure the character exists
-    If DB_RS.EOF = True Then
+    If DB_RS.EOF Then
         DB_RS.Close
         Exit Sub
     End If
     
     'Loop through every field - match up the names then set the data accordingly
-    UserChar.Desc = Trim$(DB_RS!Descr)
-    UserChar.Flags.GMLevel = DB_RS!gm
-    InvStr = DB_RS!inventory
-    MailStr = DB_RS!mail
-    KSStr = DB_RS!KnownSkills
-    UserChar.CompletedQuests = Trim$(DB_RS!CompletedQuests)
-    CurQStr = Trim$(DB_RS!currentquest)
-    UserChar.Pos.X = Val(DB_RS!pos_x)
-    UserChar.Pos.Y = Val(DB_RS!pos_y)
-    UserChar.Pos.Map = Val(DB_RS!pos_map)
-    UserChar.Char.Hair = Val(DB_RS!char_hair)
-    UserChar.Char.Head = Val(DB_RS!char_head)
-    UserChar.Char.Body = Val(DB_RS!char_body)
-    UserChar.Char.Weapon = Val(DB_RS!char_weapon)
-    UserChar.Char.Wings = Val(DB_RS!char_wings)
-    UserChar.Char.Heading = Val(DB_RS!char_heading)
-    UserChar.Char.HeadHeading = Val(DB_RS!char_headheading)
-    UserChar.WeaponEqpSlot = Val(DB_RS!eq_weapon)
-    UserChar.ArmorEqpSlot = Val(DB_RS!eq_armor)
-    UserChar.WingsEqpSlot = Val(DB_RS!eq_wings)
-    UserChar.Stats.BaseStat(SID.Speed) = Val(DB_RS!stat_speed)
-    UserChar.Stats.BaseStat(SID.Str) = Val(DB_RS!stat_str)
-    UserChar.Stats.BaseStat(SID.Agi) = Val(DB_RS!stat_agi)
-    UserChar.Stats.BaseStat(SID.Mag) = Val(DB_RS!stat_mag)
-    UserChar.Stats.BaseStat(SID.DEF) = Val(DB_RS!stat_def)
-    UserChar.Stats.BaseStat(SID.Gold) = Val(DB_RS!stat_gold)
-    UserChar.Stats.BaseStat(SID.EXP) = Val(DB_RS!stat_exp)
-    UserChar.Stats.BaseStat(SID.ELV) = Val(DB_RS!stat_elv)
-    UserChar.Stats.BaseStat(SID.ELU) = Val(DB_RS!stat_elu)
-    UserChar.Stats.BaseStat(SID.Points) = Val(DB_RS!stat_points)
-    UserChar.Stats.BaseStat(SID.MinHIT) = Val(DB_RS!stat_hit_min)
-    UserChar.Stats.BaseStat(SID.MaxHIT) = Val(DB_RS!stat_hit_max)
-    UserChar.Stats.BaseStat(SID.MaxHP) = Val(DB_RS!stat_hp_max) 'Max HP/SP/MP MUST be loaded before the mins!
-    UserChar.Stats.BaseStat(SID.MaxMAN) = Val(DB_RS!stat_mp_max)
-    UserChar.Stats.BaseStat(SID.MaxSTA) = Val(DB_RS!stat_sp_max)
-    UserChar.Stats.ModStat(SID.MaxHP) = UserChar.Stats.BaseStat(SID.MaxHP)
-    UserChar.Stats.ModStat(SID.MaxMAN) = UserChar.Stats.BaseStat(SID.MaxMAN)
-    UserChar.Stats.ModStat(SID.MaxSTA) = UserChar.Stats.BaseStat(SID.MaxSTA)
-    UserChar.Stats.BaseStat(SID.MinHP) = Val(DB_RS!stat_hp_min)
-    UserChar.Stats.BaseStat(SID.MinMAN) = Val(DB_RS!stat_mp_min)
-    UserChar.Stats.BaseStat(SID.MinSTA) = Val(DB_RS!stat_sp_min)
+    With DB_RS
+        UserChar.Desc = Trim$(!Descr)
+        UserChar.Flags.GMLevel = !gm
+        InvStr = !inventory
+        MailStr = !mail
+        BankStr = !Bank
+        KSStr = !KnownSkills
+        UserChar.CompletedQuests = Trim$(!CompletedQuests)
+        CurQStr = Trim$(!currentquest)
+        UserChar.Pos.X = Val(!pos_x)
+        UserChar.Pos.Y = Val(!pos_y)
+        UserChar.Pos.Map = Val(!pos_map)
+        UserChar.Char.Hair = Val(!char_hair)
+        UserChar.Char.Head = Val(!char_head)
+        UserChar.Char.Body = Val(!char_body)
+        UserChar.Char.Weapon = Val(!char_weapon)
+        UserChar.Char.Wings = Val(!char_wings)
+        UserChar.Char.Heading = Val(!char_heading)
+        UserChar.Char.HeadHeading = Val(!char_headheading)
+        UserChar.WeaponEqpSlot = Val(!eq_weapon)
+        UserChar.ArmorEqpSlot = Val(!eq_armor)
+        UserChar.WingsEqpSlot = Val(!eq_wings)
+        UserChar.Stats.BaseStat(SID.Speed) = Val(!stat_speed)
+        UserChar.Stats.BaseStat(SID.Str) = Val(!stat_str)
+        UserChar.Stats.BaseStat(SID.Agi) = Val(!stat_agi)
+        UserChar.Stats.BaseStat(SID.Mag) = Val(!stat_mag)
+        UserChar.Stats.BaseStat(SID.DEF) = Val(!stat_def)
+        UserChar.Stats.BaseStat(SID.Gold) = Val(!stat_gold)
+        UserChar.Stats.BaseStat(SID.EXP) = Val(!stat_exp)
+        UserChar.Stats.BaseStat(SID.ELV) = Val(!stat_elv)
+        UserChar.Stats.BaseStat(SID.ELU) = Val(!stat_elu)
+        UserChar.Stats.BaseStat(SID.Points) = Val(!stat_points)
+        UserChar.Stats.BaseStat(SID.MinHIT) = Val(!stat_hit_min)
+        UserChar.Stats.BaseStat(SID.MaxHIT) = Val(!stat_hit_max)
+        UserChar.Stats.BaseStat(SID.MaxHP) = Val(!stat_hp_max) 'Max HP/SP/MP MUST be loaded before the mins!
+        UserChar.Stats.BaseStat(SID.MaxMAN) = Val(!stat_mp_max)
+        UserChar.Stats.BaseStat(SID.MaxSTA) = Val(!stat_sp_max)
+        UserChar.Stats.ModStat(SID.MaxHP) = UserChar.Stats.BaseStat(SID.MaxHP)
+        UserChar.Stats.ModStat(SID.MaxMAN) = UserChar.Stats.BaseStat(SID.MaxMAN)
+        UserChar.Stats.ModStat(SID.MaxSTA) = UserChar.Stats.BaseStat(SID.MaxSTA)
+        UserChar.Stats.BaseStat(SID.MinHP) = Val(!stat_hp_min)
+        UserChar.Stats.BaseStat(SID.MinMAN) = Val(!stat_mp_min)
+        UserChar.Stats.BaseStat(SID.MinSTA) = Val(!stat_sp_min)
+        
+        'Update the user as being online
+        If MySQLUpdate_Online Then
+            !online = 1
+            .Update
+        End If
     
-    'Update the user as being online
-    If MySQLUpdate_Online Then
-        DB_RS!online = 1
-        DB_RS.Update
-    End If
-    
-    'Close the recordset
-    DB_RS.Close
+        'Close the recordset
+        .Close
+        
+    End With
 
     'Inventory string
-    If InvStr <> "" Then
+    If LenB(InvStr) Then
         Log "Load_User: Splitting inventory string (" & InvStr & ")", CodeTracker '//\\LOGLINE//\\
-        TempStr = Split(InvStr, vbCrLf) 'Split up the inventory slots
-        For i = 0 To UBound(TempStr)    'Loop through the slots
+        TempStr = Split(InvStr, vbNewLine)  'Split up the inventory slots
+        For i = 0 To UBound(TempStr)        'Loop through the slots
             Log "Load_User: Splitting item data (" & TempStr(i) & ")", CodeTracker '//\\LOGLINE//\\
             TempStr2 = Split(TempStr(i), " ")   'Split up the slot, objindex, amount and equipted (in that order)
             If Val(TempStr2(0)) <= MAX_INVENTORY_SLOTS Then
-                UserChar.Object(Val(TempStr2(0))).ObjIndex = Val(TempStr2(1))
-                UserChar.Object(Val(TempStr2(0))).Amount = Val(TempStr2(2))
-                UserChar.Object(Val(TempStr2(0))).Equipped = Val(TempStr2(3))
+                With UserChar.Object(Val(TempStr2(0)))
+                    .ObjIndex = Val(TempStr2(1))
+                    .Amount = Val(TempStr2(2))
+                    .Equipped = Val(TempStr2(3))
+                End With
             Else '//\\LOGLINE//\\
                 Log "Load_User: User has too many inventory slots - tried applying slot " & Val(TempStr2(0)), CriticalError '//\\LOGLINE//\\
             End If
         Next i
     End If
     
+    'Bank string
+    If LenB(BankStr) Then
+        Log "Load_User: Splitting bank string (" & InvStr & ")", CodeTracker '//\\LOGLINE//\\
+        TempStr = Split(BankStr, vbNewLine) 'Split the bank slots
+        For i = 0 To UBound(TempStr)        'Loop through the slots
+            TempStr2 = Split(TempStr(i), " ")   'Split up the slot, objindex and amount (in that order)
+            If Val(TempStr2(0)) <= MAX_INVENTORY_SLOTS Then
+                With UserChar.Bank(Val(TempStr2(0)))
+                    .ObjIndex = Val(TempStr2(1))
+                    .Amount = Val(TempStr2(2))
+                End With
+            Else '//\\LOGLINE//\\
+                Log "Load_User: User has too many bank slots - tried applying slot " & Val(TempStr2(0)), CriticalError '//\\LOGLINE//\\
+            End If
+        Next i
+    End If
+                    
     'Mail string
-    If MailStr <> "" Then
+    If LenB(MailStr) Then
         Log "Load_User: Splititng mail string (" & MailStr & ")", CodeTracker '//\\LOGLINE//\\
-        TempStr = Split(MailStr, vbCrLf)    'Split up the mail indexes
+        TempStr = Split(MailStr, vbNewLine) 'Split up the mail indexes
         For i = 0 To UBound(TempStr)
             If i <= MaxMailPerUser Then
                 UserChar.MailID(i + 1) = Val(TempStr(i))
@@ -832,8 +1132,8 @@ Dim i As Long
     End If
     
     'Known skills string (if the index is stored, then that skill is known - if not stored, then unknown)
-    If KSStr <> "" Then
-        TempStr = Split(KSStr, vbCrLf)      'Split up the known skill indexes
+    If LenB(KSStr) Then
+        TempStr = Split(KSStr, vbNewLine)   'Split up the known skill indexes
         For i = 0 To UBound(TempStr)
             If Val(TempStr(i)) <= NumSkills Then
                 UserChar.KnownSkills(Val(TempStr(i))) = 1
@@ -844,8 +1144,8 @@ Dim i As Long
     End If
     
     'Current quest string
-    If CurQStr <> "" Then
-        TempStr = Split(CurQStr, vbCrLf)    'Split up the quests
+    If LenB(CurQStr) Then
+        TempStr = Split(CurQStr, vbNewLine)    'Split up the quests
         For i = 0 To UBound(TempStr)
             If i + 1 < MaxQuests Then 'Make sure we are within limit
                 TempStr2 = Split(TempStr(i), " ")   'Split up the QuestID and NPCKills (in that order)
@@ -870,8 +1170,7 @@ Dim i As Long
     
 End Sub
 
-Sub Save_Mail(ByVal MailIndex As Long, ByRef MailData As MailData)
-Dim ObjStr As String
+Public Sub Save_Mail(ByVal MailIndex As Long, ByRef MailData As MailData)
 Dim S As String
 Dim i As Long
 
@@ -881,42 +1180,47 @@ Dim i As Long
     For i = 1 To MaxMailObjs
         If MailData.Obj(i).ObjIndex > 0 Then
             If MailData.Obj(i).Amount > 0 Then
-                If S <> "" Then S = S & vbCrLf  'Split the line, but make sure we dont add a split on first entry
+                If LenB(S) Then S = S & vbNewLine   'Split the line, but make sure we dont add a split on first entry
                 S = S & MailData.Obj(i).ObjIndex & " " & MailData.Obj(i).Amount
             End If
         End If
     Next i
     Log "Save_Mail: Built object string (" & S & ")", CodeTracker '//\\LOGLINE//\\
     
-    'If we are updating the mail, then the record must be deleted, so make sure it isn't there (or else we get a duplicate key entry error)
-    DB_Conn.Execute "DELETE FROM mail WHERE id=" & MailIndex
-
-    'Open the database with an empty table
-    DB_RS.Open "SELECT * FROM mail WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
-    DB_RS.AddNew
+    With DB_RS
+        
+        'If we are updating the mail, then the record must be deleted, so make sure it isn't there (or else we get a duplicate key entry error)
+        DB_Conn.Execute "DELETE FROM mail WHERE id=" & MailIndex
     
-    'Put the data in the recordset
-    DB_RS!id = Str$(MailIndex)
-    DB_RS!Sub = MailData.Subject
-    DB_RS!By = MailData.WriterName
-    DB_RS!Date = MailData.RecieveDate
-    DB_RS!msg = MailData.Message
-    DB_RS!New = Str$(MailData.New)
-    DB_RS!objs = S
-    
-    'Update the database with the new piece of mail
-    DB_RS.Update
-   
-    'Close the database
-    DB_RS.Close
+        'Open the database with an empty table
+        .Open "SELECT * FROM mail WHERE 0=1", DB_Conn, adOpenStatic, adLockOptimistic
+        .AddNew
+        
+        'Put the data in the recordset
+        !id = Str$(MailIndex)
+        !Sub = MailData.Subject
+        !By = MailData.WriterName
+        !Date = MailData.RecieveDate
+        !msg = MailData.Message
+        !New = Str$(MailData.New)
+        !Objs = S
+        
+        'Update the database with the new piece of mail
+        .Update
+       
+        'Close the database
+        .Close
+        
+    End With
 
 End Sub
 
-Sub Save_User(UserChar As User, Optional ByVal Password As String, Optional ByVal NewUser As Byte)
+Public Sub Save_User(UserChar As User, Optional ByVal Password As String, Optional ByVal NewUser As Byte)
 
 '*****************************************************************
 'Saves a user's data to a .chr file
 '*****************************************************************
+Dim BankStr As String
 Dim InvStr As String
 Dim MailStr As String
 Dim KSStr As String
@@ -940,7 +1244,7 @@ Dim i As Long
         'Build the inventory string
         For i = 1 To MAX_INVENTORY_SLOTS
             If .Object(i).ObjIndex > 0 Then
-                If InvStr <> "" Then InvStr = InvStr & vbCrLf   'Add the line break, but dont add it to first entry
+                If InvStr <> "" Then InvStr = InvStr & vbNewLine   'Add the line break, but dont add it to first entry
                 InvStr = InvStr & i & " " & .Object(i).ObjIndex & " " & .Object(i).Amount & " " & .Object(i).Equipped
             End If
         Next i
@@ -949,7 +1253,7 @@ Dim i As Long
         'Build mail string
         For i = 1 To MaxMailPerUser
             If .MailID(i) > 0 Then
-                If MailStr <> "" Then MailStr = MailStr & vbCrLf
+                If MailStr <> "" Then MailStr = MailStr & vbNewLine
                 MailStr = MailStr & .MailID(i)
             End If
         Next i
@@ -958,7 +1262,7 @@ Dim i As Long
         'Build known skills string
         For i = 1 To NumSkills
             If .KnownSkills(i) > 0 Then
-                If KSStr <> "" Then KSStr = KSStr & vbCrLf
+                If KSStr <> "" Then KSStr = KSStr & vbNewLine
                 KSStr = KSStr & i
             End If
         Next i
@@ -967,11 +1271,20 @@ Dim i As Long
         'Build current quest string
         For i = 1 To MaxQuests
             If .Quest(i) > 0 Then
-                If CurQStr <> "" Then CurQStr = CurQStr & vbCrLf
+                If CurQStr <> "" Then CurQStr = CurQStr & vbNewLine
                 CurQStr = CurQStr & .Quest(i) & " " & .QuestStatus(i).NPCKills
             End If
         Next i
         Log "Save_User: Built current quest string (" & CurQStr & ")", CodeTracker '//\\LOGLINE//\\
+        
+        'Build the bank string
+        For i = 1 To MAX_INVENTORY_SLOTS
+            If .Bank(i).ObjIndex > 0 Then
+                If BankStr <> "" Then BankStr = BankStr & vbNewLine
+                BankStr = BankStr & i & " " & .Bank(i).ObjIndex & " " & .Bank(i).Amount
+            End If
+        Next i
+        Log "Save_User: Built bank string (" & BankStr & ")", CodeTracker '//\\LOGLINE//\\
 
         'Check whether we have to make a new entry or can update an old one
         If NewUser Then
@@ -988,13 +1301,14 @@ Dim i As Long
         End If
         
         'Put the data in the recordset
-        If Password <> "" Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
+        If LenB(Password) Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
         If NewUser Then DB_RS!Name = .Name
         DB_RS!gm = .Flags.GMLevel
         DB_RS!Descr = .Desc
         DB_RS!inventory = InvStr
         DB_RS!mail = MailStr
         DB_RS!KnownSkills = KSStr
+        DB_RS!Bank = BankStr
         DB_RS!CompletedQuests = .CompletedQuests
         DB_RS!currentquest = CurQStr
         DB_RS!pos_x = .Pos.X
@@ -1040,7 +1354,7 @@ Dim i As Long
 
 End Sub
 
-Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
+Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String
 
 '*****************************************************************
 'Gets a variable from a text file
@@ -1064,7 +1378,7 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
 End Function
 
-Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As String, ByVal Value As String)
+Public Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As String, ByVal Value As String)
 
 '*****************************************************************
 'Writes a var to a text file

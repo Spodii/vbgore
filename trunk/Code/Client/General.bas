@@ -21,7 +21,7 @@ Public NumBytesForSkills As Long
 Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
-Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hwnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
@@ -31,6 +31,35 @@ Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
 '***************************************************
 
 End Sub
+
+Public Function Engine_BuildSkinsList() As String
+
+'***************************************************
+'Returns the list of all the skins
+'***************************************************
+Dim TempSplit() As String
+Dim Files() As String
+Dim i As Long
+
+    'Get the list of files
+    Files() = AllFilesInFolders(DataPath & "Skins\", False)
+    
+    'Show the header message
+    Engine_AddToChatTextBuffer "The following skins are available:", FontColor_Info
+    
+    'Look for files ending with ".ini" only
+    For i = LBound(Files) To UBound(Files)
+        If Right$(Files(i), 4) = ".ini" Then
+            
+            'Crop out the skin name and add it to the function
+            TempSplit() = Split(Files(i), "\")
+            If Engine_BuildSkinsList <> "" Then Engine_BuildSkinsList = Engine_BuildSkinsList & vbCrLf
+            Engine_BuildSkinsList = Engine_BuildSkinsList & " * |" & Left$(TempSplit(UBound(TempSplit)), Len(TempSplit(UBound(TempSplit))) - 4) & "|"
+
+        End If
+    Next i
+    
+End Function
 
 Private Sub Draw_Stat(ByVal SkillName As String, ByVal Base As Long, ByVal Modi As Long)
 
@@ -97,19 +126,31 @@ Dim LoopC As Integer
 
 End Function
 
-Function Game_ClickItem(ItemIndex As Byte, Optional ByVal InventoryType As Long = 1) As Long
+Function Game_ClickItem(ByVal ItemIndex As Byte, Optional ByVal InventoryType As Long = 1) As Long
 
 '***************************************************
 'Selects the item clicked if it's valid and return's it's index
 '***************************************************
-'Make sure item index is within limits
-
+    
+    'Make sure item index is within limits
     If ItemIndex <= 0 Then Exit Function
     If ItemIndex > MAX_INVENTORY_SLOTS Then Exit Function
-    'Make sure it's within limits
+    
+    'Check by the appropriate window
     Select Case InventoryType
-    Case 1
-        If UserInventory(ItemIndex).GrhIndex Then Game_ClickItem = 1
+        
+        'User inventory
+        Case 1
+            If UserInventory(ItemIndex).GrhIndex > 0 Then Game_ClickItem = 1
+            
+        'Shop inventory
+        Case 2
+            If NPCTradeItems(ItemIndex).GrhIndex > 0 Then Game_ClickItem = 1
+        
+        'Bank depot
+        Case 3
+            If UserBank(ItemIndex).GrhIndex > 0 Then Game_ClickItem = 1
+            
     End Select
 
 End Function
@@ -424,6 +465,9 @@ Dim X As Byte
             
             'Blocked attack
             If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
+            
+            'Sign
+            If ByFlags And 4194304 Then Get #MapNum, , MapData(X, Y).Sign Else MapData(X, Y).Sign = 0
 
         Next X
     Next Y
@@ -492,7 +536,45 @@ Dim i As Byte
         Engine_Var_Write t, "AMOUNT", "ScreenY", Str(.Amount.Screen.Y)
         Engine_Var_Write t, "MENU", "ScreenX", Str(.Menu.Screen.X)
         Engine_Var_Write t, "MENU", "ScreenY", Str(.Menu.Screen.Y)
+        Engine_Var_Write t, "BANK", "ScreenX", Str(.Bank.Screen.X)
+        Engine_Var_Write t, "BANK", "ScreenY", Str(.Bank.Screen.Y)
     End With
+
+End Sub
+
+Sub UpdateShownTextBuffer()
+
+'*****************************************************************
+'Updates the ShownTextBuffer
+'*****************************************************************
+Dim X As Long
+Dim Y As Long
+Dim j As Long
+    
+    'Check if the width is larger then the screen
+    If EnterTextBufferWidth > GameWindow.ChatWindow.Text.Width - 24 Then
+        
+        'Loop through the characters backwards
+        For X = Len(EnterTextBuffer) To 1 Step -1
+            
+            'Add up the size
+            j = j + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(EnterTextBuffer, X, 1)))
+            
+            'Check if the size has become too large
+            If j > GameWindow.ChatWindow.Text.Width - 24 Then
+            
+                'If the size has become too large, the character before (since we are looping backwards, it is + 1) is the limit
+                ShownText = Right$(EnterTextBuffer, Len(EnterTextBuffer) - X + 1)
+                Exit For
+                
+            End If
+        Next X
+    Else
+    
+        'Set the shown text buffer to the full buffer
+        ShownText = EnterTextBuffer
+    
+    End If
 
 End Sub
 
@@ -532,6 +614,9 @@ Dim i As Integer
     'Number of bytes required to fill the skills
     NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
     
+    'Load the font information
+    Engine_Init_FontSettings
+    
     'Load the messages
     Engine_Init_Messages LCase$(Engine_Var_Get(DataPath & "Game.ini", "INIT", "Language"))
 
@@ -544,6 +629,7 @@ Dim i As Integer
     EnterTextBufferWidth = 1
     EngineBaseSpeed = 0.011
     ReDim SkillListIDs(1 To NumSkills)
+    LineBreakChr = Chr$(10)
 
     'Setup borders
     MinXBorder = XMinMapSize + (WindowTileWidth \ 2)
@@ -578,12 +664,14 @@ Dim i As Integer
     Engine_Init_HeadData
     Engine_Init_HairData
     Engine_Init_MapData
-
-    'Create the buffer
-    Set sndBuf = New DataBuffer
+    Engine_Init_Signs
     
     'Load the config
     Game_Config_Load
+    Engine_Init_GUI
+
+    'Create the buffer
+    Set sndBuf = New DataBuffer
 
     'Set the form starting positions
     DoEvents
@@ -665,10 +753,8 @@ Dim i As Integer
 
         'Check if unloading
         If IsUnloading = 1 Then
-            If frmMain.Socket.ShutDown <> soxERROR Then
-                frmMain.Socket.UnHook
-                Exit Do
-            End If
+            frmMain.Socket.UnHook
+            Exit Do
         End If
 
         'Send the data buffer

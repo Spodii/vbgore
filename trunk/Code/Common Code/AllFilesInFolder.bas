@@ -93,6 +93,8 @@ Dim i As Integer, j As Integer
         End If
 
         AllFilesInFolders = sFilelist
+        
+    On Error GoTo 0
 
 End Function
 

@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.7            ************
+'************            Official Release: Version 0.3.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -105,6 +105,9 @@ Public Const RunningSpeed As Byte = 5
 'If we are in windowed mode or not
 Public Const Windowed As Boolean = False
 
+'Max chat bubble width
+Public Const BubbleMaxWidth As Long = 100
+
 '********** Object types ************
 Public Type ObjData
     Name As String              'Name
@@ -154,6 +157,9 @@ End Type
 Public NumMessages As Byte
 Public Message() As String
 
+'Signs
+Public Signs() As String
+
 'Known user skills/spells
 Public UserKnowSkill(1 To NumSkills)
 
@@ -162,6 +168,7 @@ Public UserAttackRange As Byte
 
 'User status vars
 Public UserInventory(1 To MAX_INVENTORY_SLOTS) As Inventory
+Public UserBank(1 To MAX_INVENTORY_SLOTS) As Inventory
 
 'If there is a clear path to the target (if any)
 Public ClearPathToTarget As Byte
@@ -177,6 +184,9 @@ Public SoxID As Long
 Public SocketOpen As Byte
 Public TargetCharIndex As Integer
 Public Const DegreeToRadian As Single = 0.01745329251994 'Pi / 180
+
+'Mail sending spam prevention
+Public LastMailSendTime As Long
 
 'Holds the skin the user is using at the time
 Public CurrentSkin As String
@@ -206,7 +216,14 @@ Public DisableInput As Byte
 
 'Zoom level - 0 = No Zoom, > 0 = Zoomed
 Public ZoomLevel As Single
-Public Const MaxZoomLevel As Single = 0.25
+Public Const MaxZoomLevel As Single = 0.4
+
+'Cursor flash rate
+Public Const CursorFlashRate As Long = 450
+
+Public Const MAXLONG As Long = 2147483647
+Public Const MAXINT As Integer = 32767
+Public Const MAXBYTE As Byte = 255
 
 '********** OUTSIDE FUNCTIONS ***********
 'For Get and Write Var

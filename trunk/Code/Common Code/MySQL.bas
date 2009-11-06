@@ -11,7 +11,6 @@ Public Const DB_Port As String = "3306"         'Port of the database (default "
 'Change these values to update the database when the value changes during gameplay
 'Most of these values will automatically be set during loading/saving a character (except _Online)
 '0 is for false, 1 is for true
-Public Const MySQLUpdate_Desc As Byte = 1
 Public Const MySQLUpdate_UserMap As Byte = 1
 Public Const MySQLUpdate_Online As Byte = 1 'Set to 0 to never write this value to MySQL (always 0)
 
@@ -38,30 +37,30 @@ Public Sub MySQL_Init()
 ErrOut:
 
     'Could not connect to the database
-    MsgBox "Error connecting to the MySQL database. Please make sure you have MySQL 5.0 running, and that you have ODBC v3.51!" & vbCrLf & _
-        "Also make sure your connection variables are correct (found in vbGORE's MySQL module's declares section)." & vbCrLf & _
-        "If you have your database installed and running, make sure you have executed the database dump on the 'vbgore' table." & vbCrLf & _
-        "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database.", vbOKOnly
+    MsgBox "Error connecting to the MySQL database. Please make sure you have MySQL 5.0 running, and that you have ODBC v3.51!" & vbNewLine & _
+       "Also make sure your connection variables are correct (found in vbGORE's MySQL module's declares section)." & vbNewLine & _
+       "If you have your database installed and running, make sure you have executed the database dump on the 'vbgore' table." & vbNewLine & _
+       "The database dump can be found in the '_Database dump' folder. Select 'Execute batch file' (or something similar) on your 'vbgore' database.", vbOKOnly
     Unload frmMain
 
 End Sub
 
 Public Sub MySQL_RemoveOnline()
-On Error Resume Next
 
     'Make sure we are using the variable in the first place
-    If MySQLUpdate_Online = 0 Then Exit Sub
+    If MySQLUpdate_Online = 0 Then
 
-    'Remove the online flag from all the users (recommended for server loading in case of a crash)
-    DB_RS.Open "SELECT * FROM users WHERE `online`='1'", DB_Conn, adOpenStatic, adLockOptimistic
-    If DB_RS.EOF = False Then
-        Do While DB_RS.EOF = False
-            DB_RS!online = 0
-            DB_RS.MoveNext
-        Loop
-        DB_RS.Update
+        'Remove the online flag from all the users (recommended for server loading in case of a crash)
+        DB_RS.Open "SELECT * FROM users WHERE `online`='1'", DB_Conn, adOpenStatic, adLockOptimistic
+        If Not DB_RS.EOF Then
+            Do While DB_RS.EOF = False
+                DB_RS!online = 0
+                DB_RS.MoveNext
+            Loop
+        End If
+        DB_RS.Close
+        
     End If
-    DB_RS.Close
     
 End Sub
 

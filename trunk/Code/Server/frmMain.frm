@@ -28,17 +28,12 @@ Begin VB.Form frmMain
    StartUpPosition =   2  'CenterScreen
    Begin SoxOCXBinary.SoxBinary Socket 
       Height          =   420
-      Left            =   3480
-      Top             =   1320
+      Left            =   2520
+      Top             =   1440
       Visible         =   0   'False
       Width           =   420
       _ExtentX        =   741
       _ExtentY        =   741
-   End
-   Begin VB.Timer DataCalcTmr 
-      Interval        =   1000
-      Left            =   3000
-      Top             =   1320
    End
    Begin VB.TextBox BytesOutTxt 
       Appearance      =   0  'Flat
@@ -77,14 +72,8 @@ Begin VB.Form frmMain
       Locked          =   -1  'True
       TabIndex        =   4
       ToolTipText     =   "Overall average KBytes/sec downloaded from the clients (41 byte TCP/IP packet headers included)"
-      Top             =   960
+      Top             =   1080
       Width           =   1695
-   End
-   Begin VB.Timer GameTimer 
-      Enabled         =   0   'False
-      Interval        =   5
-      Left            =   2520
-      Top             =   1320
    End
    Begin VB.ListBox Userslst 
       Appearance      =   0  'Flat
@@ -135,7 +124,7 @@ Begin VB.Form frmMain
       Height          =   195
       Left            =   2520
       TabIndex        =   2
-      Top             =   720
+      Top             =   840
       Width           =   1575
    End
    Begin VB.Label Label2 
@@ -169,43 +158,12 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 Option Explicit
-Public RecoverTimer As Long
+
 Private Declare Function SetThreadPriority Lib "kernel32" (ByVal hThread As Long, ByVal nPriority As Long) As Long
 Private Declare Function SetPriorityClass Lib "kernel32" (ByVal hProcess As Long, ByVal dwPriorityClass As Long) As Long
 Private Declare Function GetCurrentThread Lib "kernel32" () As Long
 Private Declare Function GetCurrentProcess Lib "kernel32" () As Long
-
-Private UpdateStats As Long
-Private GroundObjectTimer As Long
-
-Private Sub DataCalcTmr_Timer()
-
-    Log "Call Data_Send_Buffer", CodeTracker '//\\LOGLINE//\\
-
-    'Turn bytes into kilobytes
-    If DataIn > 1024 Then
-        Do While DataIn > 1024
-            DataIn = DataIn - 1024
-            DataKBIn = DataKBIn + 1
-        Loop
-    End If
-
-    If DataOut > 1024 Then
-        Do While DataOut > 1024
-            DataOut = DataOut - 1024
-            DataKBOut = DataKBOut + 1
-        Loop
-    End If
-
-    'Display statistics (KB)
-    BytesInTxt.Text = Round((DataKBIn + (DataIn / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 6)
-    BytesOutTxt.Text = Round((DataKBOut + (DataOut / 1024)) / ((timeGetTime - ServerStartTime) * 0.001), 6)
-
-    'Display statistics (Bytes)
-    'BytesInTxt.Text = Round(((DataKBIn * 1024) + DataIn) / ((timeGetTime - ServerStartTime) / 1000), 6)
-    'BytesOutTxt.Text = Round(((DataKBOut * 1024) + DataOut) / ((timeGetTime - ServerStartTime) / 1000), 6)
-
-End Sub
+Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long
 
 Private Sub Form_Load()
 
@@ -217,9 +175,6 @@ Private Sub Form_Load()
 
     'Set the file paths
     InitFilePaths
-
-    'Set timeGetTime to a high resolution
-    timeBeginPeriod 1
     
     'Set the server priority
     If RunHighPriority Then
@@ -243,7 +198,6 @@ Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y A
                 TrayDelete
                 Me.WindowState = 0
                 Me.Show
-                DataCalcTmr.Enabled = True
             End If
         Case LeftDbClick
         Case RightUp
@@ -260,7 +214,6 @@ Private Sub Form_Resize()
     If WindowState = 1 Then
         TrayAdd Me, "Game Server: " & CurrConnections & " connections", MouseMove
         Me.Hide
-        DataCalcTmr.Enabled = False
     End If
 
 End Sub
@@ -270,10 +223,12 @@ Dim FileNum As Byte
 Dim LoopC As Long
 Dim S As String
 
+    On Error Resume Next
+
     Log "Call Form_Unload(" & Cancel & ")", CodeTracker '//\\LOGLINE//\\
 
     If Socket.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
-        If MsgBox("ShutDown procedure has not completed!" & vbCrLf & "(Hint - Select No and Try again!)" & vbCrLf & "Execute Forced ShutDown?", vbApplicationModal + vbCritical + vbYesNo, "UNABLE TO COMPLY!") = vbNo Then
+        If MsgBox("ShutDown procedure has not completed!" & vbNewLine & "(Hint - Select No and Try again!)" & vbNewLine & "Execute Forced ShutDown?", vbApplicationModal + vbCritical + vbYesNo, "UNABLE TO COMPLY!") = vbNo Then
             Let Cancel = True
             Exit Sub
         Else
@@ -283,20 +238,26 @@ Dim S As String
         Socket.UnHook  'The reason is VB closes my Mod which stores the WindowProc function used for SubClassing and VB doesn't know that! So it closes the Mod before the Control!
     End If
     
+    'Stop the server loop
+    ServerRunning = 0
+    
     'Kill the database connection
     DB_Conn.Close
 
     'Save the debug packets out
     If DEBUG_RecordPacketsOut Then
-        S = vbCrLf
+        S = vbNewLine
         For LoopC = 0 To 255
-            S = S & LoopC & ": " & DebugPacketsOut(LoopC) & vbCrLf
+            S = S & LoopC & ": " & DebugPacketsOut(LoopC) & vbNewLine
         Next LoopC
         FileNum = FreeFile
         Open App.Path & "\packetsout.txt" For Output As #FileNum
             Write #FileNum, S
         Close #FileNum
     End If
+    
+    'Kill the temp files
+    Kill ServerTempPath & "*"
     
     'Close the log files                                                                                            '//\\LOGLINE//\\
     If LogFileNumGeneral Then Close #LogFileNumGeneral                                                              '//\\LOGLINE//\\
@@ -309,7 +270,6 @@ Dim S As String
     'Deallocate all arrays to avoid memory leaks
     Erase UserList
     Erase NPCList
-    Erase MapData
     Erase MapInfo
     Erase CharList
     Erase ObjData
@@ -321,295 +281,6 @@ Dim S As String
     Erase MapUsers
 
     End
-
-End Sub
-
-Private Sub GameTimer_Timer()
-
-'*****************************************************************
-'Update world
-'*****************************************************************
-Dim UserIndex As Integer
-Dim NPCIndex As Integer
-Dim Recover As Boolean
-Dim MapIndex As Integer
-Dim CheckGroundObjs As Byte
-Dim X As Byte
-Dim Y As Byte
-Dim ObjIndex As Byte
-
-    Log "Call GameTimer_Timer", CodeTracker '//\\LOGLINE//\\
-
-    'Update current time
-    Elapsed = timeGetTime - LastTime
-    LastTime = timeGetTime
-
-    'Check if it is time to recover stats
-    If RecoverTimer < timeGetTime - STAT_RECOVERRATE Then
-        Recover = True
-        RecoverTimer = timeGetTime
-    End If
-    
-    'Check if it is time to update the ground objects (to see if they need to be removed)
-    If GroundObjectTimer < timeGetTime - 60000 Then 'Check only every 60 seconds since it really isn't too vital
-        CheckGroundObjs = 1
-        GroundObjectTimer = timeGetTime
-    End If
-    
-    'Update ground objects, check if it is time to remove them
-    If CheckGroundObjs Then
-        
-        'Loop through all the maps
-        For MapIndex = 1 To NumMaps
-            
-            'Make sure the map is in use before checking
-            If MapInfo(MapIndex).NumUsers > 0 Then
-            
-                'Loop through the tiles
-                For X = MinXBorder To MaxXBorder
-                    For Y = MinYBorder To MaxYBorder
-                        
-                        'Check if an object exists on the tile - loop through all on there
-                        If MapData(MapIndex, X, Y).NumObjs > 0 Then
-                            For ObjIndex = 1 To MapData(MapIndex, X, Y).NumObjs
-                                
-                                'Check if it is time to remove the object
-                                If MapData(MapIndex, X, Y).ObjLife(ObjIndex) < timeGetTime - GroundObjLife Then
-                                    Obj_Erase MapData(MapIndex, X, Y).ObjInfo(ObjIndex).Amount, ObjIndex, MapIndex, X, Y
-                                End If
-                                
-                            Next ObjIndex
-                        End If
-                    Next Y
-                Next X
-            End If
-        Next MapIndex
-    End If
-                
-    'Update Users
-    For UserIndex = 1 To LastUser
-
-        'Make sure user is logged on
-        If UserList(UserIndex).Flags.UserLogged Then
-
-            'Check if it has been idle for too long
-            If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 85
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                Server_CloseSocket UserIndex
-                Exit Sub
-            End If
-            
-            'Check if the user was possible disconnected (or extremely laggy)
-            If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 85
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                Server_CloseSocket UserIndex
-                Exit Sub
-            End If
-            
-            'Check if stats need to be recovered
-            If Recover = True Then
-
-                'Check if Health needs to be updated
-                If UserList(UserIndex).Stats.BaseStat(SID.MinHP) < UserList(UserIndex).Stats.ModStat(SID.MaxHP) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) + 1 + UserList(UserIndex).Stats.ModStat(SID.Str) * 0.5
-                End If
-
-                'Check if Stamina needs to be updated
-                If UserList(UserIndex).Stats.BaseStat(SID.MinSTA) < UserList(UserIndex).Stats.ModStat(SID.MaxSTA) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinSTA) = UserList(UserIndex).Stats.BaseStat(SID.MinSTA) + 1 + UserList(UserIndex).Stats.ModStat(SID.Agi) * 0.5
-                End If
-
-                'Check if Mana needs to be updated
-                If UserList(UserIndex).Stats.BaseStat(SID.MinMAN) < UserList(UserIndex).Stats.ModStat(SID.MaxMAN) Then
-                    UserList(UserIndex).Stats.BaseStat(SID.MinMAN) = UserList(UserIndex).Stats.BaseStat(SID.MinMAN) + 1 + UserList(UserIndex).Stats.ModStat(SID.Mag) * 0.5
-                End If
-
-            End If
-
-            'Update the spell lengths
-            If UserList(UserIndex).Counters.BlessCounter > 0 Then
-                UserList(UserIndex).Counters.BlessCounter = UserList(UserIndex).Counters.BlessCounter - Elapsed
-                If UserList(UserIndex).Counters.BlessCounter <= 0 Then
-                    UserList(UserIndex).Skills.Bless = 0
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_IconBlessed
-                    ConBuf.Put_Byte 0
-                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                End If
-            End If
-            If UserList(UserIndex).Counters.ProtectCounter > 0 Then
-                UserList(UserIndex).Counters.ProtectCounter = UserList(UserIndex).Counters.ProtectCounter - Elapsed
-                If UserList(UserIndex).Counters.ProtectCounter <= 0 Then
-                    UserList(UserIndex).Skills.Protect = 0
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_IconProtected
-                    ConBuf.Put_Byte 0
-                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                End If
-            End If
-            If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
-                UserList(UserIndex).Counters.StrengthenCounter = UserList(UserIndex).Counters.StrengthenCounter - Elapsed
-                If UserList(UserIndex).Counters.StrengthenCounter <= 0 Then
-                    UserList(UserIndex).Skills.Strengthen = 0
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_IconStrengthened
-                    ConBuf.Put_Byte 0
-                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                End If
-            End If
-
-            'Update spell exhaustion
-            If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
-                UserList(UserIndex).Counters.SpellExhaustion = UserList(UserIndex).Counters.SpellExhaustion - Elapsed
-                If UserList(UserIndex).Counters.SpellExhaustion <= 0 Then
-                    UserList(UserIndex).Counters.SpellExhaustion = 0
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
-                    ConBuf.Put_Byte 0
-                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                End If
-            End If
-
-            'Update aggressive-face timer
-            If UserList(UserIndex).Counters.AggressiveCounter > 0 Then
-                UserList(UserIndex).Counters.AggressiveCounter = UserList(UserIndex).Counters.AggressiveCounter - Elapsed
-                If UserList(UserIndex).Counters.AggressiveCounter <= 0 Then
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.User_AggressiveFace
-                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                    ConBuf.Put_Byte 0
-                    Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
-                    UserList(UserIndex).Counters.AggressiveCounter = 0
-                End If
-            End If
-            
-            'Check if the packet wait time has passed
-            If UserList(UserIndex).HasBuffer Then
-                If UserList(UserIndex).PacketWait > 0 Then UserList(UserIndex).PacketWait = UserList(UserIndex).PacketWait - Elapsed
-                If UserList(UserIndex).PacketWait <= 0 Then
-                    
-                    'Send the packet buffer to the user
-                    If UserList(UserIndex).PPValue = PP_High Then
-                        
-                        'High priority - send asap
-                        Data_Send_Buffer UserIndex
-                        
-                    ElseIf UserList(UserIndex).PPValue = PP_Low Then
-                        
-                        'Low priority - check counter for sending
-                        If UserList(UserIndex).PPCount > 0 Then UserList(UserIndex).PPCount = UserList(UserIndex).PPCount - Elapsed
-                        If UserList(UserIndex).PPCount <= 0 Then Data_Send_Buffer UserIndex
-                    
-                    End If
-                    
-                End If
-            End If
-            
-            UserList(UserIndex).Stats.SendUpdatedStats
-
-        End If
-
-    Next UserIndex
-
-    'Update NPCs
-    For NPCIndex = 1 To LastNPC
-
-        'Make sure NPC is active
-        If NPCList(NPCIndex).Flags.NPCActive Then
-
-            'See if npc is alive
-            If NPCList(NPCIndex).Flags.NPCAlive Then
-
-                'Update warcurse time
-                If NPCList(NPCIndex).Skills.WarCurse = 1 Then
-                    NPCList(NPCIndex).Counters.WarCurseCounter = NPCList(NPCIndex).Counters.WarCurseCounter - Elapsed
-                    If NPCList(NPCIndex).Counters.WarCurseCounter <= 0 Then
-                        NPCList(NPCIndex).Counters.WarCurseCounter = 0
-                        NPCList(NPCIndex).Skills.WarCurse = 0
-                        ConBuf.Clear
-                        ConBuf.Put_Byte DataCode.Server_Message
-                        ConBuf.Put_Byte 1
-                        ConBuf.Put_String NPCList(NPCIndex).Name
-                        Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-                        ConBuf.Clear
-                        ConBuf.Put_Byte DataCode.Server_IconWarCursed
-                        ConBuf.Put_Byte 0
-                        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                        Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                    End If
-                End If
-
-                'Only update npcs in user populated maps
-                If MapInfo(NPCList(NPCIndex).Pos.Map).NumUsers Then
-
-                    'Check to update mod stats
-                    If NPCList(NPCIndex).Flags.UpdateStats Then
-                        NPCList(NPCIndex).Flags.UpdateStats = 0
-                        NPC_UpdateModStats NPCIndex
-                    End If
-                    
-                    'Update spell exhaustion
-                    If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
-                        NPCList(NPCIndex).Counters.SpellExhaustion = NPCList(NPCIndex).Counters.SpellExhaustion - Elapsed
-                        If NPCList(NPCIndex).Counters.SpellExhaustion <= 0 Then
-                            NPCList(NPCIndex).Counters.SpellExhaustion = 0
-                            ConBuf.Clear
-                            ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
-                            ConBuf.Put_Byte 0
-                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                        End If
-                    End If
-
-                    'Call the NPC AI
-                    NPC_AI NPCIndex
-
-                    'Update aggressive-face timer
-                    If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
-                        NPCList(NPCIndex).Counters.AggressiveCounter = NPCList(NPCIndex).Counters.AggressiveCounter - Elapsed
-                        If NPCList(NPCIndex).Counters.AggressiveCounter <= 0 Then
-                            ConBuf.Clear
-                            ConBuf.Put_Byte DataCode.User_AggressiveFace
-                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                            ConBuf.Put_Byte 0
-                            Data_Send ToMap, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-                            NPCList(NPCIndex).Counters.AggressiveCounter = 0
-                        End If
-                    End If
-
-                End If
-
-            Else
-
-                'Check if it's time to respawn
-                If NPCList(NPCIndex).Counters.RespawnCounter <= timeGetTime - NPCList(NPCIndex).RespawnWait Then NPC_Spawn NPCIndex
-
-            End If
-        End If
-    Next NPCIndex
-
-    'Check if it's time to do a World Save
-    If timeGetTime - LastWorldSave >= WORLDSAVERATE Then
-
-        'Save all user's data
-        For UserIndex = 1 To LastUser
-            If UserList(UserIndex).Flags.UserLogged Then Save_User UserList(UserIndex)
-        Next UserIndex
-
-        'Reset the save counter
-        LastWorldSave = timeGetTime
-
-    End If
 
 End Sub
 
@@ -676,7 +347,7 @@ Dim CommandID As Byte
     If UserList(Index).Flags.Disconnecting Then Exit Sub
     
     'Reset the user's packet counter
-    UserList(Index).Counters.LastPacket = timeGetTime
+    UserList(Index).Counters.LastPacket = CurrentTime
     
     'Calculate data transfer rate
     'TCP header = 20 bytes, IPv4 header = 20 bytes, socket header = 4 bytes
@@ -684,8 +355,8 @@ Dim CommandID As Byte
     If CalcTraffic = True Then DataIn = DataIn + BufUBound + 45 '+ 1 because we have to count inData(0)
     
     'Check if to reset the packet flood timer
-    If UserList(Index).Counters.PacketsInTime + 1000 < timeGetTime Then
-        UserList(Index).Counters.PacketsInTime = timeGetTime
+    If UserList(Index).Counters.PacketsInTime + 1000 < CurrentTime Then
+        UserList(Index).Counters.PacketsInTime = CurrentTime
         UserList(Index).Counters.PacketsInCount = 0
     End If
     
@@ -726,7 +397,7 @@ Dim CommandID As Byte
         With DataCode
             
             'Reset idle counter
-            If CommandID <> .Server_Ping Then UserList(Index).Counters.IdleCount = timeGetTime
+            If CommandID <> .Server_Ping Then UserList(Index).Counters.IdleCount = CurrentTime
         
             Select Case CommandID
             
@@ -751,13 +422,14 @@ Dim CommandID As Byte
             Case .Server_Help: Data_Server_Help Index
             Case .Server_MailCompose: Data_Server_MailCompose rBuf, Index
             Case .Server_MailDelete: Data_Server_MailDelete rBuf, Index
-            Case .Server_MailItemInfo: Data_Server_MailItemInfo rBuf, Index
             Case .Server_MailItemTake: Data_Server_MailItemTake rBuf, Index
             Case .Server_MailMessage: Data_Server_MailMessage rBuf, Index
             Case .Server_Ping: Data_Server_Ping Index
             Case .Server_Who: Data_Server_Who Index
 
-            Case .User_Attack: Data_User_Attack Index
+            Case .User_Attack: Data_User_Attack rBuf, Index
+            Case .User_Bank_PutItem: Data_User_Bank_PutItem rBuf, Index
+            Case .User_Bank_TakeItem: Data_User_Bank_TakeItem rBuf, Index
             Case .User_BaseStat: Data_User_BaseStat rBuf, Index
             Case .User_Blink: Data_User_Blink Index
             Case .User_CastSkill: Data_User_CastSkill rBuf, Index
@@ -773,10 +445,13 @@ Dim CommandID As Byte
             Case .User_LookRight: Data_User_LookRight Index
             Case .User_Move: Data_User_Move rBuf, Index
             Case .User_NewLogin: Data_User_NewLogin rBuf, Index
+            Case .User_RequestMakeChar: Data_User_RequestMakeChar rBuf, Index
+            Case .User_RequestUserCharIndex: Data_User_RequestUserCharIndex Index
             Case .User_RightClick: Data_User_RightClick rBuf, Index
             Case .User_Rotate: Data_User_Rotate rBuf, Index
             Case .User_StartQuest: Data_User_StartQuest Index
             Case .User_Trade_BuyFromNPC: Data_User_Trade_BuyFromNPC rBuf, Index
+            Case .User_Trade_SellToNPC: Data_User_Trade_SellToNPC rBuf, Index
             Case .User_Use: Data_User_Use rBuf, Index
             
             Case Else
@@ -806,9 +481,9 @@ Dim LoopC As Long
     'Show the form
     Me.Show
     DoEvents
-
-    'Check if server is already started
-    If GameTimer.Enabled = True Then Exit Sub
+    
+    'Make the server temp path
+    MakeSureDirectoryPathExists ServerTempPath
     
     'Set up debug packets out
     If DEBUG_RecordPacketsOut Then ReDim DebugPacketsOut(0 To 255)
@@ -856,6 +531,8 @@ Dim LoopC As Long
     Load_OBJs
     Load_Quests
     Load_Maps
+    Save_NPCs_Temp
+    Load_NPC_Names
     
     '*** Listen ***
     frmMain.Caption = "Loading sockets..."
@@ -866,29 +543,20 @@ Dim LoopC As Long
     Socket.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
 
     '*** Misc ***
-    'Calculate data transfer rate
-    If CalcTraffic = True Then DataCalcTmr.Enabled = True
 
     'Show status
     Server_RefreshUserListBox
 
     'Show local IP/Port
-    If frmMain.Socket.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
-    
-    'Initialize LastWorldSave
-    LastWorldSave = timeGetTime
-    RecoverTimer = timeGetTime
-
-    'Start Game timer
-    GameTimer.Enabled = True
+    If frmMain.Socket.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbNewLine & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbNewLine & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     'Set the starting time
-    ServerStartTime = timeGetTime
+    ServerStartTime = CurrentTime
 
-    'Done
-    Me.Caption = "vbGORE V." & App.Major & "." & App.Minor & "." & App.Revision
+    'Set the caption
+    Me.Caption = "vbGORE v." & App.Major & "." & App.Minor & "." & App.Revision
+    
+    'Start the main server loop
+    Server_Update
 
 End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 3  Code: 650  Total: 653 Lines
-':) CommentOnly: 95 (14.5%)  Commented: 5 (0.8%)  Empty: 144 (22.1%)  Max Logic Depth: 8

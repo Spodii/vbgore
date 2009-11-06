@@ -2,12 +2,12 @@ Attribute VB_Name = "SystemTray"
 Option Explicit
 
 'System tray variables
-Const NIF_MESSAGE As Long = &H1 'Message
-Const NIF_ICON As Long = &H2    'Icon
-Const NIF_TIP As Long = &H4     'TooTipText
-Const NIM_ADD As Long = &H0     'Add to tray
-Const NIM_MODIFY As Long = &H1  'Modify
-Const NIM_DELETE As Long = &H2  'Delete From Tray
+Private Const NIF_MESSAGE As Long = &H1 'Message
+Private Const NIF_ICON As Long = &H2    'Icon
+Private Const NIF_TIP As Long = &H4     'TooTipText
+Private Const NIM_ADD As Long = &H0     'Add to tray
+Private Const NIM_MODIFY As Long = &H1  'Modify
+Private Const NIM_DELETE As Long = &H2  'Delete From Tray
 Private Type NOTIFYICONDATA
     cbSize As Long
     hwnd As Long
@@ -42,7 +42,7 @@ Private ToolTip, Icon
 Private TrayIcon As NOTIFYICONDATA
 Private Declare Function Shell_NotifyIcon Lib "shell32" Alias "Shell_NotifyIconA" (ByVal dwMessage As Long, pnid As NOTIFYICONDATA) As Boolean
 
-Public Sub TrayAdd(TargetForm As Form, ToolTip As String, ReturnCallEvent As TrayRetunEventEnum)
+Public Sub TrayAdd(TargetForm As Form, ByVal ToolTip As String, ReturnCallEvent As TrayRetunEventEnum)
 
 'Add to the tray
 

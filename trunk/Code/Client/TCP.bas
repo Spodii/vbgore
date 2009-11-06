@@ -1,9 +1,61 @@
 Attribute VB_Name = "TCP"
 Option Explicit
 
-'Size of our buffer - the lower the value, the faster the send/recv, if more is sent or
-'recieved then buffer size, then becomes slower (recommended to leave as is)
-Public Const TCPBufferSize As Long = 512
+Sub Data_User_Bank_UpdateSlot(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Updates a specific bank item
+'<Slot(B)><GrhIndex(L)> If GrhIndex > 0, <Amount(I)>
+'*********************************************
+Dim GrhIndex As Long
+Dim Amount As Integer
+Dim Slot As Byte
+
+    'Get the values
+    Slot = rBuf.Get_Byte
+    GrhIndex = rBuf.Get_Long
+    
+    'Check if to get the amount
+    If GrhIndex > 0 Then Amount = rBuf.Get_Integer
+
+    'Update the item
+    UserBank(Slot).Amount = Amount
+    UserBank(Slot).GrhIndex = GrhIndex
+
+End Sub
+
+Sub Data_User_Bank_Open(ByRef rBuf As DataBuffer)
+'*********************************************
+'Sends the list of bank items
+'Loop: <Slot(B)><GrhIndex(L)><Amount(I)> until Slot = 255
+'*********************************************
+Dim GrhIndex As Long
+Dim Amount As Integer
+Dim Slot As Byte
+
+    'Loop through the items until we get the terminator slot (255)
+    Do
+        
+        'Get the slot
+        Slot = rBuf.Get_Byte
+        
+        'Check if we have acquired the terminator slot
+        If Slot = 255 Then Exit Do
+        
+        'Get the amount and obj index
+        GrhIndex = rBuf.Get_Long
+        Amount = rBuf.Get_Integer
+        
+        'Store the values
+        UserBank(Slot).Amount = Amount
+        UserBank(Slot).GrhIndex = GrhIndex
+        
+    Loop
+    
+    'Show the bank window
+    ShowGameWindow(BankWindow) = 1
+
+End Sub
 
 Sub Data_Server_MakeProjectile(ByRef rBuf As DataBuffer)
 '*********************************************
@@ -19,6 +71,18 @@ Dim Rotate As Byte
     TargetIndex = rBuf.Get_Integer
     GrhIndex = rBuf.Get_Long
     Rotate = rBuf.Get_Byte
+    
+    'If the char doesn't exist, request to create it
+    If AttackerIndex > LastChar Or CharList(AttackerIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer AttackerIndex
+        Exit Sub
+    End If
+    If TargetIndex > LastChar Or CharList(TargetIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer TargetIndex
+        Exit Sub
+    End If
     
     'Create the projectile
     Engine_Projectile_Create AttackerIndex, TargetIndex, GrhIndex, Rotate
@@ -46,6 +110,14 @@ Dim Speed As Byte
 
     CharIndex = rBuf.Get_Integer
     Speed = rBuf.Get_Byte
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+    
     CharList(CharIndex).Speed = Speed
 
 End Sub
@@ -58,11 +130,13 @@ Sub Data_Server_Message(ByRef rBuf As DataBuffer)
 '*********************************************
 Dim MessageID As Byte
 Dim TempStr As String
+Dim TempInt As Integer
 Dim Str1 As String
 Dim Str2 As String
 Dim Lng1 As Long
 Dim Int1 As Integer
 Dim Int2 As Integer
+Dim Int3 As Integer
 Dim Byt1 As Byte
 
     'Get the message ID
@@ -95,22 +169,31 @@ Dim Byt1 As Byte
         Case 9
             Int1 = rBuf.Get_Integer
             Str1 = rBuf.Get_String
+            Int3 = rBuf.Get_Integer
             TempStr = Replace$(Message(9), "<amount>", Int1)
-            Engine_AddToChatTextBuffer Replace$(TempStr, "<npcname>", Str1), FontColor_Quest
+            TempStr = Replace$(TempStr, "<npcname>", Str1)
+            Engine_AddToChatTextBuffer TempStr, FontColor_Quest
+            Engine_MakeChatBubble Int3, Engine_WordWrap(TempStr, BubbleMaxWidth - 10)
         Case 10
             Int1 = rBuf.Get_Integer
             Str1 = rBuf.Get_String
+            Int3 = rBuf.Get_Integer
             TempStr = Replace$(Message(10), "<amount>", Int1)
-            Engine_AddToChatTextBuffer Replace$(TempStr, "<objname>", Str1), FontColor_Quest
+            TempStr = Replace$(TempStr, "<objname>", Str1)
+            Engine_AddToChatTextBuffer TempStr, FontColor_Quest
+            Engine_MakeChatBubble Int3, Engine_WordWrap(TempStr, BubbleMaxWidth - 10)
         Case 11
             Int1 = rBuf.Get_Integer
             Str1 = rBuf.Get_String
             Int2 = rBuf.Get_Integer
             Str2 = rBuf.Get_String
+            Int3 = rBuf.Get_Integer
             TempStr = Replace$(Message(11), "<npcamount>", Int1)
             TempStr = Replace$(TempStr, "<npcname>", Str1)
             TempStr = Replace$(TempStr, "<objamount>", Int2)
-            Engine_AddToChatTextBuffer Replace$(TempStr, "<objname>", Str2), FontColor_Quest
+            TempStr = Replace$(TempStr, "<objname>", Str2)
+            Engine_AddToChatTextBuffer TempStr, FontColor_Quest
+            Engine_MakeChatBubble Int3, Engine_WordWrap(TempStr, BubbleMaxWidth - 10)
         Case 12
             Engine_AddToChatTextBuffer Message(12), FontColor_Quest
         Case 13
@@ -300,7 +383,7 @@ Dim Byt1 As Byte
             Lng1 = rBuf.Get_Long
             TempStr = Replace$(Message(67), "<amount>", Int1)
             TempStr = Replace$(TempStr, "<name>", Str1)
-            Engine_AddToChatTextBuffer Replace$(TempStr, "<total>", Lng1), FontColor_Info
+            Engine_AddToChatTextBuffer Replace$(TempStr, "<cost>", Lng1), FontColor_Info
         Case 68
             Str1 = rBuf.Get_String
             Engine_AddToChatTextBuffer Replace$(Message(68), "<name>", Str1), FontColor_Info
@@ -330,8 +413,11 @@ Dim Byt1 As Byte
         Case 76
             Str1 = rBuf.Get_String
             Str2 = rBuf.Get_String
+            TempInt = rBuf.Get_Integer
             TempStr = Replace$(Message(76), "<name>", Str1)
-            Engine_AddToChatTextBuffer Replace$(TempStr, "<message>", Str2), FontColor_Info
+            TempStr = Replace$(TempStr, "<message>", Str2)
+            Engine_AddToChatTextBuffer TempStr, FontColor_Info
+            Engine_MakeChatBubble TempInt, Engine_WordWrap(TempStr, BubbleMaxWidth - 10)
         Case 77
             Str1 = rBuf.Get_String
             Str2 = rBuf.Get_String
@@ -415,28 +501,43 @@ Sub Data_Comm_Talk(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Send data to chat buffer
-'<Text(S)><FontColorID(B)>
+'<Text(S)><FontColorID(B)>(<CharIndex(B)>)
 '*********************************************
-
+Dim CharIndex As Integer
 Dim TempStr As String
 Dim TempLng As Long
 Dim TempByte As Byte
 
+    'Get the text
     TempStr = rBuf.Get_String
     TempByte = rBuf.Get_Byte
     
+    'See if we have to make a bubble
+    If TempByte And DataCode.Comm_UseBubble Then
+        
+        'We need a char index
+        CharIndex = rBuf.Get_Integer
+        
+        'Split up the string for our chat bubble and assign it to the character
+        Engine_MakeChatBubble CharIndex, Engine_WordWrap(TempStr, BubbleMaxWidth - 10)
+
+    End If
+    
+    'Get the color
     Select Case TempByte
-    Case DataCode.Comm_FontType_Fight
-        TempLng = FontColor_Fight
-    Case DataCode.Comm_FontType_Info
-        TempLng = FontColor_Info
-    Case DataCode.Comm_FontType_Quest
-        TempLng = FontColor_Quest
-    Case DataCode.Comm_FontType_Talk
-        TempLng = FontColor_Talk
-    Case Else
-        TempLng = FontColor_Talk
+        Case DataCode.Comm_FontType_Fight
+            TempLng = FontColor_Fight
+        Case DataCode.Comm_FontType_Info
+            TempLng = FontColor_Info
+        Case DataCode.Comm_FontType_Quest
+            TempLng = FontColor_Quest
+        Case DataCode.Comm_FontType_Talk
+            TempLng = FontColor_Talk
+        Case Else
+            TempLng = FontColor_Talk
     End Select
+    
+    'Add the text in the text box
     Engine_AddToChatTextBuffer TempStr, TempLng
 
 End Sub
@@ -530,7 +631,7 @@ Dim TempBuffer() As Byte
 
     'Check that we have data to send
     If SocketOpen = 0 Then DoEvents
-    If UBound(sndBuf.Get_Buffer) > 0 Then
+    If sndBuf.HasBuffer Then
         If SocketOpen = 0 Then DoEvents
     
         'Assign to the temp buffer
@@ -617,7 +718,13 @@ Dim HP As Byte
     HP = rBuf.Get_Byte
     CharIndex = rBuf.Get_Byte
 
-    If CharIndex > LastChar Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex = 0 Then Exit Sub
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     CharList(CharIndex).HealthPercent = HP
 
@@ -636,7 +743,12 @@ Dim MP As Byte
     MP = rBuf.Get_Byte
     CharIndex = rBuf.Get_Byte
 
-    If CharIndex > LastChar Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     CharList(CharIndex).ManaPercent = MP
 
@@ -692,8 +804,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     CharList(CharIndex).CharStatus.Blessed = State
 
@@ -712,8 +828,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     CharList(CharIndex).CharStatus.Cursed = State
 
@@ -732,8 +852,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     CharList(CharIndex).CharStatus.IronSkinned = State
 
@@ -752,8 +876,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     CharList(CharIndex).CharStatus.Protected = State
 
@@ -772,8 +900,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
 
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     CharList(CharIndex).CharStatus.Exhausted = State
 
@@ -792,8 +924,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     CharList(CharIndex).CharStatus.Strengthened = State
 
@@ -812,8 +948,12 @@ Dim CharIndex As Integer
     State = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     CharList(CharIndex).CharStatus.WarCursed = State
 
@@ -847,23 +987,6 @@ Dim Subj As String
 
 End Sub
 
-Sub Data_Server_MailItemInfo(ByRef rBuf As DataBuffer)
-
-'*********************************************
-'Retrieve information on the selected mail item
-'<Name(S)><Amount(I)>
-'*********************************************
-
-Dim Name As String
-Dim Amount As Integer
-
-    Name = rBuf.Get_String
-
-    Amount = rBuf.Get_Integer
-    Engine_SetItemDesc Name, Amount
-
-End Sub
-
 Sub Data_Server_MailItemRemove(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -879,26 +1002,66 @@ Dim ItemIndex As Byte
 
 End Sub
 
+Sub Data_Server_MailObjUpdate(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Updates the objects in a mail message
+'<NumObjs(B)> Loop: <ObjGrhIndex(L)>
+'*********************************************
+Dim NumObjs As Byte
+Dim X As Byte
+
+    'Clear the current objects
+    For X = 1 To MaxMailObjs
+        ReadMailData.Obj(X) = 0
+        ReadMailData.ObjName(X) = 0
+        ReadMailData.ObjAmount(X) = 0
+    Next X
+    
+    'Get the number of objects
+    NumObjs = rBuf.Get_Byte
+    
+    'Get the mail objects
+    For X = 1 To NumObjs
+        ReadMailData.Obj(X) = rBuf.Get_Long
+        ReadMailData.ObjName(X) = rBuf.Get_String
+        ReadMailData.ObjAmount(X) = rBuf.Get_Integer
+    Next X
+
+End Sub
+
 Sub Data_Server_MailMessage(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Recieve message that was requested to be read
-'<Message(S-EX)><Subject(S)><WriterName(S)> Loop: <ObjGrhIndex(I)>
+'<Message(S-EX)><Subject(S)><WriterName(S)><NumObjs(B)> Loop: <ObjGrhIndex(L)>
 '*********************************************
+Dim NumObjs As Byte
+Dim i As Long
 
-Dim X As Byte
-
+    'Clear the current objects
+    For i = 1 To MaxMailObjs
+        ReadMailData.Obj(i) = 0
+        ReadMailData.ObjName(i) = 0
+        ReadMailData.ObjAmount(i) = 0
+    Next i
+    
+    'Show the correct windows
     ShowGameWindow(MailboxWindow) = 0
-
     ShowGameWindow(ViewMessageWindow) = 1
     LastClickedWindow = ViewMessageWindow
+    
+    'Get the data
     ReadMailData.Message = rBuf.Get_StringEX
-    ReadMailData.Message = Engine_WordWrap(ReadMailData.Message, 60)
+    ReadMailData.Message = Engine_WordWrap(ReadMailData.Message, GameWindow.ViewMessage.Message.Width)
     ReadMailData.Subject = rBuf.Get_String
     ReadMailData.WriterName = rBuf.Get_String
-    For X = 1 To MaxMailObjs
-        ReadMailData.Obj(X) = rBuf.Get_Integer
-    Next X
+    NumObjs = rBuf.Get_Byte
+    For i = 1 To NumObjs
+        ReadMailData.Obj(i) = rBuf.Get_Long
+        ReadMailData.ObjName(i) = rBuf.Get_String
+        ReadMailData.ObjAmount(i) = rBuf.Get_Integer
+    Next i
 
 End Sub
 
@@ -985,6 +1148,13 @@ Dim Running As Byte
     Y = rBuf.Get_Byte
     Heading = rBuf.Get_Byte
     
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+    
     'Check if running
     If Heading > 128 Then
         Heading = Heading Xor 128
@@ -1069,9 +1239,13 @@ Dim Damage As Integer
     CharIndex = rBuf.Get_Integer
     Damage = rBuf.Get_Integer
     
-    'Check for invalid conditions
+    'If the char doesn't exist, request to create it
     If CharIndex = 0 Then Exit Sub
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     'Create the blood
     Engine_Blood_Create CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y
@@ -1101,6 +1275,15 @@ Dim Y As Byte
     If X > XMaxMapSize Then Exit Sub
     If Y < YMinMapSize Then Exit Sub
     If Y > YMaxMapSize Then Exit Sub
+    
+    'Check for a valid UserCharIndex
+    If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
+    
+        'We have an invalid user char index, so we must have the wrong one - request an update on the right one
+        sndBuf.Put_Byte DataCode.User_RequestUserCharIndex
+        Exit Sub
+        
+    End If
 
     'Update the user's position
     UserPos.X = X
@@ -1141,6 +1324,13 @@ Dim CharIndex As Integer
 Dim IsOn As Byte
 
     CharIndex = rBuf.Get_Integer
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     IsOn = rBuf.Get_Byte
     CharList(CharIndex).Aggressive = IsOn
@@ -1158,8 +1348,12 @@ Dim CharIndex As Integer
 
     CharIndex = rBuf.Get_Integer
     
-    'Check for invalid conditions
-    If CharIndex > UBound(CharList()) Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     'Start the attack animation
     CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).Started = 1
@@ -1194,9 +1388,13 @@ Sub Data_User_Blink(ByRef rBuf As DataBuffer)
 Dim CharIndex As Integer
 
     CharIndex = rBuf.Get_Integer
-
-    If CharIndex > LastChar Then Exit Sub
-    If CharIndex <= 0 Then Exit Sub
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     CharList(CharIndex).StartBlinkTimer = 0
     CharList(CharIndex).BlinkTimer = 0
@@ -1220,6 +1418,19 @@ Dim Y As Long
     SkillID = rBuf.Get_Byte
     CasterIndex = rBuf.Get_Integer
     TargetIndex = rBuf.Get_Integer
+    
+    'If the char doesn't exist, request to create it
+    If TargetIndex = 0 Or CasterIndex = 0 Then Exit Sub
+    If CasterIndex > LastChar Or CharList(CasterIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CasterIndex
+        Exit Sub
+    End If
+    If TargetIndex > LastChar Or CharList(TargetIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer TargetIndex
+        Exit Sub
+    End If
 
     Select Case SkillID
 
@@ -1382,10 +1593,30 @@ Dim Y As Long
 
 End Sub
 
-Sub Data_Server_MakeSlash(ByRef rBuf As DataBuffer)
+Sub Data_Server_MakeEffect(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Create an effect on the effects layer
+'<X(B)><Y(B)><GrhIndex(L)>
+'*********************************************
+Dim X As Byte
+Dim Y As Byte
+Dim GrhIndex As Long
+
+    'Get the values
+    X = rBuf.Get_Byte
+    Y = rBuf.Get_Byte
+    GrhIndex = rBuf.Get_Long
+
+    'Create the effect
+    Engine_Effect_Create X, Y, GrhIndex, 0, 0, 1
+    
+End Sub
+
+Sub Data_Server_MakeSlash(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Create a slash effect on the effects layer
 '<CharIndex(I)><GrhIndex(L)>
 '*********************************************
 
@@ -1396,6 +1627,13 @@ Dim Angle As Single
     'Get the values
     CharIndex = rBuf.Get_Integer
     GrhIndex = rBuf.Get_Long
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
     
     'Get the new heading
     Select Case CharList(CharIndex).Heading
@@ -1435,9 +1673,12 @@ Dim CharIndex As Integer
     EmoticonIndex = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
 
-    'Check for valid range (dont worry about emoticon range - it just wont be set if it cant find a valid emoticon ID
-    If CharIndex <= 0 Then Exit Sub
-    If CharIndex > LastChar Then Exit Sub
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
 
     'Reset the fade value
     CharList(CharIndex).EmoFade = 0
@@ -1530,6 +1771,13 @@ Sub Data_User_LookLeft(ByRef rBuf As DataBuffer)
 Dim CharIndex As Integer
 Dim Heading As Byte
 
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+
     CharIndex = rBuf.Get_Integer
 
     Heading = rBuf.Get_Byte
@@ -1564,11 +1812,20 @@ Sub Data_User_Rotate(ByRef rBuf As DataBuffer)
 ' ChangeChar, but used to save ourselves a little bandwidth :)
 '<CharIndex(I)><Heading(B)>
 '*********************************************
-
+Dim Heading As Byte
 Dim CharIndex As Integer
-
+    
     CharIndex = rBuf.Get_Integer
-    CharList(CharIndex).Heading = rBuf.Get_Byte
+    Heading = rBuf.Get_Byte
+    
+    'If the char doesn't exist, request to create it
+    If CharIndex > LastChar Or CharList(CharIndex).Active = 0 Then
+        sndBuf.Put_Byte DataCode.User_RequestMakeChar
+        sndBuf.Put_Integer CharIndex
+        Exit Sub
+    End If
+    
+    CharList(CharIndex).Heading = Heading
     CharList(CharIndex).HeadHeading = CharList(CharIndex).Heading
 
 End Sub
@@ -1613,6 +1870,15 @@ Sub Data_User_Target(ByRef rBuf As DataBuffer)
 '*********************************************
 
     TargetCharIndex = rBuf.Get_Integer
+    
+    'Check for a valid UserCharIndex
+    If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
+    
+        'We have an invalid user char index, so we must have the wrong one - request an update on the right one
+        sndBuf.Put_Byte DataCode.User_RequestUserCharIndex
+        Exit Sub
+        
+    End If
     
     'Check if the path to the targeted character is valid (if any)
     If TargetCharIndex > 0 Then ClearPathToTarget = Engine_ClearPath(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y)

@@ -85,20 +85,6 @@ Sub HideFrmFloods()
     frmMain.FloodsPic.Picture = LoadPicture(GrhMapPath & "floodsg.bmp")
 End Sub
 
-Sub ShowFrmObj()
-    frmObj.Visible = True
-    frmObj.Show , frmMain
-    ObjEditChkValue = 1
-    frmMain.ObjEditPic.Picture = LoadPicture(GrhMapPath & "objects.bmp")
-End Sub
-
-Sub HideFrmObj()
-    frmObj.Visible = False
-    frmObj.Hide
-    ObjEditChkValue = 0
-    frmMain.ObjEditPic.Picture = LoadPicture(GrhMapPath & "objectsg.bmp")
-End Sub
-
 Sub ShowFrmOptimizeStart()
     frmOptimizeStart.Visible = True
     frmOptimizeStart.Show , frmMain
@@ -337,36 +323,6 @@ Dim Y As Byte
             End If
         End If
     End If
-                
-    'Check to place/erase an Object
-    If frmObj.Visible = True Then
-        If Button = vbLeftButton Then
-            If Not Shift Then
-                If frmObj.SetOpt.Value = True Then
-                    If MapData(tX, tY).ObjInfo.ObjIndex = 0 Then
-                        DB_RS.Open "SELECT grhindex FROM objects WHERE id=" & frmObj.OBJList.ListIndex + 1, DB_Conn, adOpenStatic, adLockOptimistic
-                        TempLng = DB_RS!GrhIndex
-                        DB_RS.Close
-                        Engine_OBJ_Create TempLng, tX, tY
-                        MapData(tX, tY).ObjInfo.ObjIndex = frmObj.OBJList.ListIndex + 1
-                        MapData(tX, tY).ObjInfo.Amount = Val(frmObj.AmountTxt.Text)
-                    End If
-                End If
-                If frmObj.EraseOpt.Value = True Then
-                    For i = 1 To LastObj
-                        If OBJList(i).Pos.X = tX Then
-                            If OBJList(i).Pos.Y = tY Then
-                                Engine_OBJ_Erase i
-                                MapData(tX, tY).ObjInfo.ObjIndex = 0
-                                MapData(tX, tY).ObjInfo.Amount = 0
-                                Exit For
-                            End If
-                        End If
-                    Next i
-                End If
-            End If
-        End If
-    End If
     
     'Move a particle effect
     If frmParticles.Visible = True Then
@@ -599,6 +555,9 @@ Dim X As Byte
             'Blocked attack tiles
             If ByFlags And 2097152 Then MapData(X, Y).BlockedAttack = 1 Else MapData(X, Y).BlockedAttack = 0
             
+            'Sign
+            If ByFlags And 4194304 Then Get #MapNum, , MapData(X, Y).Sign Else MapData(X, Y).Sign = 0
+            
             '*** Inf File ***
 
             'Flags
@@ -624,15 +583,6 @@ Dim X As Byte
                 Engine_Char_Make NextOpenCharIndex, DB_RS!char_body, DB_RS!char_head, DB_RS!char_heading, X, Y, Trim$(DB_RS!Name), DB_RS!char_weapon, DB_RS!char_hair, DB_RS!id
                 DB_RS.Close
         
-            End If
-        
-            'Item
-            If BxFlags And 4 Then
-                Get #InfNum, , MapData(X, Y).ObjInfo.ObjIndex
-                Get #InfNum, , MapData(X, Y).ObjInfo.Amount
-            Else
-                MapData(X, Y).ObjInfo.ObjIndex = 0
-                MapData(X, Y).ObjInfo.Amount = 0
             End If
 
         Next X
@@ -789,6 +739,9 @@ Dim i As Integer
             
             'Blocked attack tile
             If MapData(X, Y).BlockedAttack = 1 Then ByFlags = ByFlags Or 2097152
+            
+            'Signs
+            If MapData(X, Y).Sign > 0 Then ByFlags = ByFlags Or 4194304
 
             '**********************
             'Store data
@@ -840,6 +793,9 @@ Dim i As Integer
             
             'Save Sfx
             If ByFlags And 1048576 Then Put #FileNumMap, , MapData(X, Y).Sfx
+            
+            'Save sign
+            If ByFlags And 4194304 Then Put #FileNumMap, , MapData(X, Y).Sign
 
             '#######################
             '.inf file
@@ -875,12 +831,6 @@ Dim i As Integer
             'Save NPCs
             If MapData(X, Y).NPCIndex Then
                 Put #FileNumInf, , CharList(MapData(X, Y).NPCIndex).NPCNumber
-            End If
-
-            'Item
-            If MapData(X, Y).ObjInfo.ObjIndex Then
-                Put #FileNumInf, , MapData(X, Y).ObjInfo.ObjIndex
-                Put #FileNumInf, , MapData(X, Y).ObjInfo.Amount
             End If
             
         Next X

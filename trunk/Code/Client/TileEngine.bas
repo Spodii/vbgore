@@ -206,6 +206,8 @@ Public Type Char
     StartBlinkTimer As Single   'How long until a blink starts
     ScrollDirectionX As Integer
     ScrollDirectionY As Integer
+    BubbleStr As String
+    BubbleTime As Long
     Name As String
     NameOffset As Integer       'Used to acquire the center position for the name
     ActionIndex As Byte
@@ -224,6 +226,7 @@ Public Type MapBlock
     Light(1 To 24) As Long
     Shadow(1 To 6) As Byte
     CharIndex As Integer
+    Sign As Integer
     Blocked As Byte
     Mailbox As Byte
     Sfx As DirectSoundSecondaryBuffer8
@@ -352,7 +355,8 @@ Public Const AmountWindow As Byte = 7
 Public Const MenuWindow As Byte = 8
 Public Const ChatWindow As Byte = 9
 Public Const StatWindow As Byte = 10
-Private Const NumGameWindows As Byte = 10
+Public Const BankWindow As Byte = 11
+Private Const NumGameWindows As Byte = 11
 Public Const MaxMailObjs As Byte = 10
 Public SelGameWindow As Byte            'The selected game window (mouse is down, not last-clicked)
 Public SelMessage As Byte               'The selected message in the mailbox
@@ -360,10 +364,21 @@ Public LastClickedWindow As Byte        'The last game window to be clicked
 Public ShowGameWindow(1 To NumGameWindows) As Byte  'What game windows are visible
 Public MailboxListBuffer As String      'Holds the list of text for the mailbox
 Public AmountWindowValue As String      'How much of the item will be dropped from the amount window
-Public AmountWindowDropIndex As Byte    'Index of the item to be dropped when the amount window pops up
+Public AmountWindowItemIndex As Byte    'Index of the item to be dropped/sold/sent when the amount window pops up
+Public AmountWindowUsage As Byte        'The usage combination for the amount window (as defined with below constants)
 Public DrawSkillList As Byte            'If the skills list is to be drawn
 Public QuickBarSetSlot As Byte          'What slot on the quickbar was clicked to be set
+Public DragSourceWindow As Byte         'The window the item was dragged from
 Public DragItemSlot As Byte             'Holds what slot an item is being dragged from in the inventory
+
+'AmountWindowUsage constants
+Public Const AW_Drop As Byte = 0
+Public Const AW_InvToInv As Byte = 1
+Public Const AW_InvToShop As Byte = 2
+Public Const AW_InvToBank As Byte = 3
+Public Const AW_InvToMail As Byte = 4
+Public Const AW_ShopToInv As Byte = 5
+Public Const AW_BankToInv As Byte = 6
 
 Private Type QuickBarIDData
 Type As Byte    'Type of information in the quick bar (Item, Skill, etc)
@@ -388,6 +403,8 @@ Private Type RMailData          'The mail data for the message being read
     Message As String
     New As Byte
     Obj(1 To MaxMailObjs) As Integer
+    ObjName(1 To MaxMailObjs) As String
+    ObjAmount(1 To MaxMailObjs) As Integer
 End Type
 
 Public ReadMailData As RMailData
@@ -401,6 +418,7 @@ Private Type WMailData          'The mail data for the message being written
 End Type
 
 Public WriteMailData As WMailData
+
 Public Enum WriteMailSelectedControl
     wmFrom = 1
     wmSubject = 2
@@ -495,16 +513,17 @@ Public Type GameWindow          'List of all the different game windows
     Menu As WindowMenu
     ChatWindow As ChatWindow
     StatWindow As StatWindow
+    Bank As WindowInventory
 End Type
 
 Public GameWindow As GameWindow
 
 '********** Direct X ***********
-Public Const SurfaceTimerMax As Single = 30000      'How long a texture stays in memory unused (miliseconds)
-Public Const SoundBufferTimerMax As Single = 30000  'How long a sound stays in memory unused (miliseconds)
+Public Const SurfaceTimerMax As Single = 300000     'How long a texture stays in memory unused (miliseconds)
+Public Const SoundBufferTimerMax As Single = 300000 'How long a sound stays in memory unused (miliseconds)
 Public SurfaceDB() As Direct3DTexture8          'The list of all the textures
-Public SurfaceTimer() As Integer                'How long until the surface unloads
-Public SoundBufferTimer() As Integer            'How long until the sound buffer unloads
+Public SurfaceTimer() As Long                   'How long until the surface unloads
+Public SoundBufferTimer() As Long               'How long until the sound buffer unloads
 Public LastTexture As Long                      'The last texture used
 Public D3DWindow As D3DPRESENT_PARAMETERS       'Describes the viewport and used to restore when in fullscreen
 Public UsedCreateFlags As CONST_D3DCREATEFLAGS  'The flags we used to create the device when it first succeeded
@@ -588,12 +607,25 @@ End Type
 
 Private NotFirstRender As Byte
 
+Public ShownText As String
+Public LineBreakChr As String * 1
+
 '********** OUTSIDE FUNCTIONS ***********
-'Very percise counter 64bit system counter
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long
 Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
 Private Declare Function IntersectRect Lib "user32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
+
+Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
+
+'************************************************************
+'Adds text to a chat bubble
+'************************************************************
+
+    CharList(CharIndex).BubbleStr = Text
+    CharList(CharIndex).BubbleTime = 5000
+    
+End Sub
 
 Private Sub Engine_AddItem2Array1D(ByRef VarArray As Variant, ByVal VarValue As Variant)
 
@@ -645,29 +677,63 @@ Public Sub Engine_AddToChatTextBuffer(ByVal Text As String, ByVal Color As Long)
 'Adds text to the chat text buffer
 'Buffer is order from bottom to top
 '************************************************************
-Dim TempS() As String
-Dim LoopC As Long
+Dim TempSplit() As String
+Dim TSLoop As Long
+Dim LastSpace As Long
+Dim Size As Long
 Dim i As Long
 Dim b As Long
+Dim j As Long
 
-    'Put the text change markers
-    Text = Engine_WordWrap(Text, 50, Chr$(10))
+    'Check if there are any line breaks - if so, we will support them
+    TempSplit = Split(Text, vbCrLf)
     
-    'Break the string at all the change markers
-    b = 1
-    For i = 1 To LenB(Text)
+    For TSLoop = 0 To UBound(TempSplit)
     
-        'Look for our break character
-        If Mid$(Text, i, 1) = Chr$(10) Then
-            Engine_AddToChatTextBuffer2 Mid$(Text, b, i), Color
-            b = i
-        End If
+        'Clear the values for the new line
+        Size = 0
+        b = 1
+        LastSpace = 1
         
-        'This handles the remainder, whether there is no Chr$(10) or Chr$(10) is not the last character
-        If i = LenB(Text) Then Engine_AddToChatTextBuffer2 Mid$(Text, b, i), Color
+        'Loop through all the characters
+        For i = 1 To Len(TempSplit(TSLoop))
         
-    Next i
-
+            'If it is a space, store it so we can easily break at it
+            If Mid$(TempSplit(TSLoop), i, 1) = " " Or Mid$(TempSplit(TSLoop), i, 1) = "_" Or Mid$(TempSplit(TSLoop), i, 1) = "-" Then LastSpace = i
+        
+            'Add up the size
+            Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            If Size > GameWindow.ChatWindow.Screen.Width - 24 Then
+                
+                'Check if the last space was too far back
+                If i - LastSpace > 10 Then
+                    
+                    'Too far away to the last space, so break at the last character
+                    Engine_AddToChatTextBuffer2 Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)), Color
+                    b = i - 1
+                
+                Else
+                
+                    'Break at the last space to preserve the word
+                    Engine_AddToChatTextBuffer2 Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)), Color
+                    b = LastSpace + 1
+                    
+                End If
+                
+                'Clear the size
+                Size = 0
+                
+            End If
+            
+            'This handles the remainder
+            If i = Len(TempSplit(TSLoop)) Then
+                If b <> i Then Engine_AddToChatTextBuffer2 Mid$(TempSplit(TSLoop), b, i), Color
+            End If
+            
+        Next i
+        
+    Next TSLoop
+    
     'Only update if we have set up the text (that way we can add to the buffer before it is even made)
     If Font_Default.RowPitch = 0 Then Exit Sub
 
@@ -822,9 +888,11 @@ Dim TempColor As Long
     
     'Set the vertex array to the vertex buffer
     If Pos = 0 Then Pos = 1
-    Set ChatVB = D3DDevice.CreateVertexBuffer(Len(ChatArray(0)) * Pos * 4, 0, FVF, D3DPOOL_MANAGED)
-    D3DVertexBuffer8SetData ChatVB, 0, Len(ChatArray(0)) * Pos * 4, 0, ChatArray(0)
-
+    If ObjPtr(D3DDevice) Then   'Make sure the D3DDevice exists - this will only return false if we received messages before it had time to load
+        Set ChatVB = D3DDevice.CreateVertexBuffer(Len(ChatArray(0)) * Pos * 4, 0, FVF, D3DPOOL_MANAGED)
+        D3DVertexBuffer8SetData ChatVB, 0, Len(ChatArray(0)) * Pos * 4, 0, ChatArray(0)
+    End If
+    
 End Sub
 
 Private Function Engine_AllFilesInFolders(ByVal sFolderPath As String, Optional bWithSubFolders As Boolean = False) As String()
@@ -886,6 +954,8 @@ Dim j As Integer
 
         'Return the values
         Engine_AllFilesInFolders = sFilelist
+        
+    On Error GoTo 0
 
 End Function
 
@@ -957,8 +1027,17 @@ Sub Engine_ChangeHeading(ByVal Direction As Byte)
 '*****************************************************************
 'Face user in appropriate direction
 '*****************************************************************
-'Only rotate if the user is not already facing that direction
 
+    'Check for a valid UserCharIndex
+    If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
+    
+        'We have an invalid user char index, so we must have the wrong one - request an update on the right one
+        sndBuf.Put_Byte DataCode.User_RequestUserCharIndex
+        Exit Sub
+        
+    End If
+    
+    'Only rotate if the user is not already facing that direction
     If CharList(UserCharIndex).Heading <> Direction Then
         sndBuf.Put_Byte DataCode.User_Rotate
         sndBuf.Put_Byte Direction
@@ -1020,7 +1099,7 @@ Dim EmptyChar As Char
     CharList(CharIndex).Heading = Heading
     CharList(CharIndex).HeadHeading = Heading
     CharList(CharIndex).HealthPercent = HP
-    CharList(CharIndex).ManaPercent = HP
+    CharList(CharIndex).ManaPercent = MP
     CharList(CharIndex).Speed = Speed
 
     'Reset moving stats
@@ -1548,6 +1627,27 @@ Dim i As Integer
     Next i
 
 End Function
+
+Sub Engine_Init_Signs()
+
+'*****************************************************************
+'Loads the sign messages
+'*****************************************************************
+Dim NumSigns As Integer
+Dim LoopC As Integer
+Dim S As String
+
+    'Get the number of signs
+    NumSigns = Val(Engine_Var_Get(DataPath & "Signs.dat", "SIGNS", "NumSigns"))
+    If NumSigns = 0 Then Exit Sub
+    ReDim Signs(1 To NumSigns)
+    
+    'Loop through the signs, and get the values
+    For LoopC = 1 To NumSigns
+        Signs(LoopC) = Engine_Var_Get(DataPath & "Signs.dat", "SIGNS", CStr(LoopC))
+    Next LoopC
+    
+End Sub
 
 Sub Engine_Init_Messages(ByVal Language As String)
 
@@ -2201,6 +2301,19 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
         End If
         Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "SHOP", "Grh"))
     End With
+    
+    'Load bank window
+    GameWindow.Bank = GameWindow.Inventory
+    With GameWindow.Bank
+        If LoadCustomPos Then
+            .Screen.X = Val(Engine_Var_Get(t, "BANK", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(t, "BANK", "ScreenY"))
+        Else
+            .Screen.X = Val(Engine_Var_Get(S, "BANK", "ScreenX"))
+            .Screen.Y = Val(Engine_Var_Get(S, "BANK", "ScreenY"))
+        End If
+        Engine_Init_Grh .SkinGrh, Val(Engine_Var_Get(S, "BANK", "Grh"))
+    End With
 
     'Load Mailbox window
     With GameWindow.Mailbox.Screen
@@ -2337,7 +2450,7 @@ Dim t As String 'Stores the path to our custom window positions file (.dat)
     End With
     
     'Reset text position
-    Engine_UpdateChatArray
+    If CurMap > 0 Then Engine_UpdateChatArray
 
 End Sub
 
@@ -2508,7 +2621,19 @@ Dim FilePath As String
 
 End Sub
 
-Sub Engine_Init_Font()
+Sub Engine_Init_FontTextures()
+
+'*****************************************************************
+'Init the custom font textures
+'*****************************************************************
+Dim FileNum As Byte
+
+    '*** Default font ***
+    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
+
+End Sub
+
+Sub Engine_Init_FontSettings()
 
 '*****************************************************************
 'Init the custom font settings
@@ -2516,8 +2641,6 @@ Sub Engine_Init_Font()
 Dim FileNum As Byte
     
     '*** Default font ***
-    'Note that we use Triangle filtering for the font - since there is very few font textures and only load at runtime, we can afford the cost of the time to use nicer filtering
-    Set Font_Default.Texture = D3DX.CreateTextureFromFileEx(D3DDevice, DataPath & "texdefault.png", D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, ByVal 0, ByVal 0)
 
     'Load the header information
     FileNum = FreeFile
@@ -2567,9 +2690,8 @@ Function Engine_Init_TileEngine() As Boolean
     Engine_Init_RenderStates
     
     'Load the rest of the tile engine stuff
-    Engine_Init_Font
+    Engine_Init_FontTextures
     Engine_Init_ParticleEngine
-    Engine_Init_GUI
 
     'Set FPS value to 60 for startup
     FPS = 60
@@ -3030,38 +3152,40 @@ Dim tY As Integer
     If Engine_Input_Mouse_LeftClick_Window(LastClickedWindow) = 0 Then
         If Engine_Input_Mouse_LeftClick_Window(ChatWindow) = 0 Then
             If Engine_Input_Mouse_LeftClick_Window(QuickBarWindow) = 0 Then
-                If Engine_Input_Mouse_LeftClick_Window(InventoryWindow) = 0 Then
-                    If Engine_Input_Mouse_LeftClick_Window(ShopWindow) = 0 Then
-                        If Engine_Input_Mouse_LeftClick_Window(StatWindow) = 0 Then
-                            If Engine_Input_Mouse_LeftClick_Window(MailboxWindow) = 0 Then
-                                If Engine_Input_Mouse_LeftClick_Window(ViewMessageWindow) = 0 Then
-                                    If Engine_Input_Mouse_LeftClick_Window(WriteMessageWindow) = 0 Then
-                                        If Engine_Input_Mouse_LeftClick_Window(AmountWindow) = 0 Then
-                                            If Engine_Input_Mouse_LeftClick_Window(MenuWindow) = 0 Then
+                If Engine_Input_Mouse_LeftClick_Window(MenuWindow) = 0 Then
+                    If Engine_Input_Mouse_LeftClick_Window(InventoryWindow) = 0 Then
+                        If Engine_Input_Mouse_LeftClick_Window(ShopWindow) = 0 Then
+                            If Engine_Input_Mouse_LeftClick_Window(BankWindow) = 0 Then
+                                If Engine_Input_Mouse_LeftClick_Window(StatWindow) = 0 Then
+                                    If Engine_Input_Mouse_LeftClick_Window(MailboxWindow) = 0 Then
+                                        If Engine_Input_Mouse_LeftClick_Window(ViewMessageWindow) = 0 Then
+                                            If Engine_Input_Mouse_LeftClick_Window(WriteMessageWindow) = 0 Then
+                                                If Engine_Input_Mouse_LeftClick_Window(AmountWindow) = 0 Then
+
+                                                    'No windows clicked, so a tile click will take place
+                                                    'Get the tile positions
+                                                    Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
             
-                                                'No windows clicked, so a tile click will take place
-                                                'Get the tile positions
-                                                Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
-        
-                                                'Send left click
-                                                sndBuf.Put_Byte DataCode.User_LeftClick
-                                                sndBuf.Put_Byte CByte(tX)
-                                                sndBuf.Put_Byte CByte(tY)
-        
-                                                'If there was a click on the game screen and the
-                                                ' skill list is up, but no window clicked, set to 0
-                                                If DrawSkillList Then
-                                                    If QuickBarSetSlot Then
-                                                        QuickBarID(QuickBarSetSlot).ID = 0
-                                                        QuickBarID(QuickBarSetSlot).Type = 0
-                                                        DrawSkillList = 0
-                                                        QuickBarSetSlot = 0
+                                                    'Send left click
+                                                    sndBuf.Put_Byte DataCode.User_LeftClick
+                                                    sndBuf.Put_Byte CByte(tX)
+                                                    sndBuf.Put_Byte CByte(tY)
+            
+                                                    'If there was a click on the game screen and the
+                                                    ' skill list is up, but no window clicked, set to 0
+                                                    If DrawSkillList Then
+                                                        If QuickBarSetSlot Then
+                                                            QuickBarID(QuickBarSetSlot).ID = 0
+                                                            QuickBarID(QuickBarSetSlot).Type = 0
+                                                            DrawSkillList = 0
+                                                            QuickBarSetSlot = 0
+                                                        End If
                                                     End If
-                                                End If
+                                                    
+                                                    'Last clicked window was nothing, so set to nothing :)
+                                                    LastClickedWindow = 0
                                                 
-                                                'Last clicked window was nothing, so set to nothing :)
-                                                LastClickedWindow = 0
-    
+                                                End If
                                             End If
                                         End If
                                     End If
@@ -3152,6 +3276,9 @@ Dim j As Byte
                 If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                     Engine_Input_Mouse_LeftClick_Window = 1
                     LastClickedWindow = QuickBarWindow
+                    'Cancel changes to quick bar items
+                    DrawSkillList = 0
+                    QuickBarSetSlot = 0
                     'Check if an item was clicked
                     For i = 1 To 12
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
@@ -3184,14 +3311,77 @@ Dim j As Byte
                             If GetAsyncKeyState(vbKeyShift) Then
                                 If Game_ClickItem(i) Then
                                     If UserInventory(i).Amount = 1 Then
-                                        sndBuf.Put_Byte DataCode.User_Drop
-                                        sndBuf.Put_Byte i
-                                        sndBuf.Put_Integer 1
+                                        'Drop item into mailbox
+                                        If ShowGameWindow(WriteMessageWindow) Then
+                                            'Check for duplicate entries
+                                            For j = 1 To MaxMailObjs
+                                                If WriteMailData.ObjIndex(j) = i Then Exit Function
+                                            Next j
+                                            'Place item in next free slot (if any)
+                                            j = 0
+                                            Do
+                                                j = j + 1
+                                                If j > MaxMailObjs Then Exit Function
+                                            Loop While WriteMailData.ObjIndex(j) > 0
+                                            WriteMailData.ObjIndex(j) = i
+                                            WriteMailData.ObjAmount(j) = 1
+                                        'Sell item to shopkeeper
+                                        ElseIf ShowGameWindow(ShopWindow) Then
+                                            sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
+                                            sndBuf.Put_Byte i
+                                            sndBuf.Put_Integer 1
+                                        'Put item in the bank
+                                        ElseIf ShowGameWindow(BankWindow) Then
+                                            sndBuf.Put_Byte DataCode.User_Bank_PutItem
+                                            sndBuf.Put_Byte i
+                                            sndBuf.Put_Integer 1
+                                        'Drop item on ground
+                                        Else
+                                            sndBuf.Put_Byte DataCode.User_Drop
+                                            sndBuf.Put_Byte i
+                                            sndBuf.Put_Integer 1
+                                        End If
                                     Else
-                                        ShowGameWindow(AmountWindow) = 1
-                                        LastClickedWindow = AmountWindow
-                                        AmountWindowValue = vbNullString
-                                        AmountWindowDropIndex = i
+                                        'Drop item into mailbox
+                                        If ShowGameWindow(WriteMessageWindow) Then
+                                            'Check for duplicate entries
+                                            For j = 1 To MaxMailObjs
+                                                If WriteMailData.ObjIndex(j) = i Then Exit Function
+                                            Next j
+                                            'Check for free slots
+                                            j = 0
+                                            Do
+                                                j = j + 1
+                                                If j > MaxMailObjs Then Exit Function
+                                            Loop While WriteMailData.ObjIndex(j) > 0
+                                            'Open the amount window
+                                            ShowGameWindow(AmountWindow) = 1
+                                            LastClickedWindow = AmountWindow
+                                            AmountWindowValue = vbNullString
+                                            AmountWindowItemIndex = i
+                                            AmountWindowUsage = AW_InvToMail
+                                        'Sell item to shopkeeper
+                                        ElseIf ShowGameWindow(ShopWindow) Then
+                                            ShowGameWindow(AmountWindow) = 1
+                                            LastClickedWindow = AmountWindow
+                                            AmountWindowValue = vbNullString
+                                            AmountWindowItemIndex = i
+                                            AmountWindowUsage = AW_InvToShop
+                                        'Put item in the bank
+                                        ElseIf ShowGameWindow(BankWindow) Then
+                                            ShowGameWindow(AmountWindow) = 1
+                                            LastClickedWindow = AmountWindow
+                                            AmountWindowValue = vbNullString
+                                            AmountWindowItemIndex = i
+                                            AmountWindowUsage = AW_InvToBank
+                                        'Drop item on ground
+                                        Else
+                                            ShowGameWindow(AmountWindow) = 1
+                                            LastClickedWindow = AmountWindow
+                                            AmountWindowValue = vbNullString
+                                            AmountWindowItemIndex = i
+                                            AmountWindowUsage = AW_Drop
+                                        End If
                                     End If
                                 End If
                             Else
@@ -3220,14 +3410,41 @@ Dim j As Byte
                     'Check if an item was clicked
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
-                            sndBuf.Put_Byte i
-                            sndBuf.Put_Integer 1
+                            If Game_ClickItem(i, 2) > 0 Then
+                                sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
+                                sndBuf.Put_Byte i
+                                sndBuf.Put_Integer 1
+                            End If
                             Exit Function
                         End If
                     Next i
                     'Item was not clicked
                     SelGameWindow = ShopWindow
+                    Exit Function
+                End If
+            End With
+        End If
+        
+    Case BankWindow
+        If ShowGameWindow(BankWindow) Then
+            With GameWindow.Bank
+                'Check if the screen was clicked
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                    Engine_Input_Mouse_LeftClick_Window = 1
+                    LastClickedWindow = BankWindow
+                    'Check if an item was clicked
+                    For i = 1 To 49
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                            If Game_ClickItem(i, 3) > 0 Then
+                                sndBuf.Put_Byte DataCode.User_Bank_TakeItem
+                                sndBuf.Put_Byte i
+                                sndBuf.Put_Integer 1
+                            End If
+                            Exit Function
+                        End If
+                    Next i
+                    'Item was not clicked
+                    SelGameWindow = BankWindow
                     Exit Function
                 End If
             End With
@@ -3242,6 +3459,13 @@ Dim j As Byte
                     LastClickedWindow = MailboxWindow
                     'Check if Write was clicked
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .WriteLbl.X, .Screen.Y + .WriteLbl.Y, .WriteLbl.Width, .WriteLbl.Height) Then
+                        For i = 1 To MaxMailObjs
+                            WriteMailData.ObjIndex(i) = 0
+                            WriteMailData.ObjAmount(i) = 0
+                        Next i
+                        WriteMailData.Message = vbNullString
+                        WriteMailData.Subject = vbNullString
+                        WriteMailData.RecieverName = vbNullString
                         ShowGameWindow(MailboxWindow) = 0
                         ShowGameWindow(WriteMessageWindow) = 1
                         LastClickedWindow = WriteMessageWindow
@@ -3436,6 +3660,18 @@ Dim tY As Integer
                     If .Y > 600 - .Height Then .Y = 600 - .Height
                 End If
             End With
+            'Move Bank
+        ElseIf SelGameWindow = BankWindow Then
+            With GameWindow.Bank.Screen
+                .X = .X + MousePosAdd.X
+                .Y = .Y + MousePosAdd.Y
+                If WindowsInScreen Then
+                    If .X < 0 Then .X = 0
+                    If .Y < 0 Then .Y = 0
+                    If .X > 800 - .Width Then .X = 800 - .Width
+                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                End If
+            End With
             'Move Mailbox
         ElseIf SelGameWindow = MailboxWindow Then
             With GameWindow.Mailbox.Screen
@@ -3451,6 +3687,18 @@ Dim tY As Integer
             'Move View Message
         ElseIf SelGameWindow = ViewMessageWindow Then
             With GameWindow.ViewMessage.Screen
+                .X = .X + MousePosAdd.X
+                .Y = .Y + MousePosAdd.Y
+                If WindowsInScreen Then
+                    If .X < 0 Then .X = 0
+                    If .Y < 0 Then .Y = 0
+                    If .X > 800 - .Width Then .X = 800 - .Width
+                    If .Y > 600 - .Height Then .Y = 600 - .Height
+                End If
+            End With
+            'Move write message
+        ElseIf SelGameWindow = WriteMessageWindow Then
+            With GameWindow.WriteMessage.Screen
                 .X = .X + MousePosAdd.X
                 .Y = .Y + MousePosAdd.Y
                 If WindowsInScreen Then
@@ -3496,14 +3744,22 @@ Dim tY As Integer
         If Engine_Input_Mouse_RightClick_Window(QuickBarWindow) = 0 Then
             If Engine_Input_Mouse_RightClick_Window(InventoryWindow) = 0 Then
                 If Engine_Input_Mouse_RightClick_Window(ShopWindow) = 0 Then
-                    If Engine_Input_Mouse_RightClick_Window(MailboxWindow) = 0 Then
-                        'No windows clicked, so a tile click will take place
-                        'Get the tile positions
-                        Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
-                        'Send left click
-                        sndBuf.Put_Byte DataCode.User_RightClick
-                        sndBuf.Put_Byte CByte(tX)
-                        sndBuf.Put_Byte CByte(tY)
+                    If Engine_Input_Mouse_RightClick_Window(BankWindow) = 0 Then
+                        If Engine_Input_Mouse_RightClick_Window(MailboxWindow) = 0 Then
+                            If Engine_Input_Mouse_RightClick_Window(WriteMessageWindow) = 0 Then
+                            
+                                'No windows clicked, so a tile click will take place
+                                'Get the tile positions
+                                Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
+                                'Check if a sign was clicked
+                                If MapData(tX, tY).Sign Then Engine_AddToChatTextBuffer Signs(MapData(tX, tY).Sign), FontColor_Info
+                                'Send left click
+                                sndBuf.Put_Byte DataCode.User_RightClick
+                                sndBuf.Put_Byte CByte(tX)
+                                sndBuf.Put_Byte CByte(tY)
+                                
+                            End If
+                        End If
                     End If
                 End If
             End If
@@ -3517,8 +3773,6 @@ Function Engine_Input_Mouse_RightClick_Window(ByVal WindowIndex As Byte) As Byte
 '******************************************
 'Left click a game window
 '******************************************
-
-Dim Temp As Byte
 Dim i As Integer
 
     Select Case WindowIndex
@@ -3539,13 +3793,12 @@ Dim i As Integer
                             ElseIf QuickBarID(i).Type = QuickBarType_Skill Then
                                 Engine_SetItemDesc Engine_SkillIDtoSkillName(QuickBarID(i).ID)
                             End If
+                            Exit Function
                         End If
                     Next i
                     'Item was not clicked
-                    If Temp = 0 Then
-                        SelGameWindow = QuickBarWindow
-                        Exit Function
-                    End If
+                    SelGameWindow = QuickBarWindow
+                    Exit Function
                 End If
             End With
         End If
@@ -3559,16 +3812,17 @@ Dim i As Integer
                     'Check if an item was clicked
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            Temp = 1
-                            If UserInventory(i).GrhIndex > 0 Then Engine_SetItemDesc UserInventory(i).Name, UserInventory(i).Amount
-                            DragItemSlot = i
+                            If UserInventory(i).GrhIndex > 0 Then
+                                Engine_SetItemDesc UserInventory(i).Name, UserInventory(i).Amount
+                                DragSourceWindow = InventoryWindow
+                                DragItemSlot = i
+                            End If
+                            Exit Function
                         End If
                     Next i
                     'Item was not clicked
-                    If Temp = 0 Then
-                        SelGameWindow = InventoryWindow
-                        Exit Function
-                    End If
+                    SelGameWindow = InventoryWindow
+                    Exit Function
                 End If
             End With
         End If
@@ -3582,19 +3836,41 @@ Dim i As Integer
                     'Check if an item was clicked
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            Temp = 1
                             If i <= NPCTradeItemArraySize Then
                                 If NPCTradeItems(i).GrhIndex > 0 Then
                                     Engine_SetItemDesc NPCTradeItems(i).Name, 0, NPCTradeItems(i).Price
+                                    DragSourceWindow = ShopWindow
+                                    DragItemSlot = i
                                 End If
                             End If
+                            Exit Function
                         End If
                     Next i
                     'Item was not clicked
-                    If Temp = 0 Then
-                        SelGameWindow = ShopWindow
-                        Exit Function
-                    End If
+                    SelGameWindow = ShopWindow
+                    Exit Function
+                End If
+            End With
+        End If
+    Case BankWindow
+        If ShowGameWindow(BankWindow) Then
+            With GameWindow.Bank
+                'Check if the screen was clicked
+                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                    Engine_Input_Mouse_RightClick_Window = 1
+                    LastClickedWindow = BankWindow
+                    'Check if an item was clicked
+                    For i = 1 To 49
+                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                            If UserBank(i).GrhIndex > 0 Then Engine_SetItemDesc UserBank(i).Name, UserBank(i).Amount
+                            DragSourceWindow = BankWindow
+                            DragItemSlot = i
+                            Exit Function
+                        End If
+                    Next i
+                    'Item was not clicked
+                    SelGameWindow = ShopWindow
+                    Exit Function
                 End If
             End With
         End If
@@ -3608,16 +3884,13 @@ Dim i As Integer
                     'Click an item
                     For i = 1 To MaxMailObjs
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
-                            sndBuf.Put_Byte DataCode.Server_MailItemInfo
-                            sndBuf.Put_Byte i
-                            Temp = 1
-                            Exit For
+                            Engine_SetItemDesc ReadMailData.ObjName(i), ReadMailData.ObjAmount(i)
+                            Exit Function
                         End If
                     Next i
-                    If Temp = 0 Then
-                        SelGameWindow = ViewMessageWindow
-                        Exit Function
-                    End If
+                    'Item was not clicked
+                    SelGameWindow = ViewMessageWindow
+                    Exit Function
                 End If
             End With
         End If
@@ -3631,14 +3904,13 @@ Dim i As Integer
                     'Click an item
                     For i = 1 To MaxMailObjs
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
-                            Temp = 1
-                            Exit For
+                            Engine_SetItemDesc UserInventory(WriteMailData.ObjIndex(i)).Name, WriteMailData.ObjAmount(i)
+                            Exit Function
                         End If
                     Next i
-                    If Temp = 0 Then
-                        SelGameWindow = WriteMessageWindow
-                        Exit Function
-                    End If
+                    'Item was not clicked
+                    SelGameWindow = WriteMessageWindow
+                    Exit Function
                 End If
             End With
         End If
@@ -3651,53 +3923,202 @@ Sub Engine_Input_Mouse_RightRelease()
 '******************************************
 'Right mouse button released
 '******************************************
-
 Dim i As Byte
 
-'Check if we released mouse and have an item in being dragged
-
+    'Check if we released mouse and have an item in being dragged
     If DragItemSlot Then
 
-        'Check for release over inventory window
-        If ShowGameWindow(InventoryWindow) Then
-            With GameWindow.Inventory
-                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
-                    For i = 1 To 49
-                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            If DragItemSlot <> i Then
-                                'Switch slots
-                                sndBuf.Put_Byte DataCode.User_ChangeInvSlot
-                                sndBuf.Put_Byte DragItemSlot
-                                sndBuf.Put_Byte i
+        'Inventory -> Inventory (change slot)
+        If DragSourceWindow = InventoryWindow Then
+            If ShowGameWindow(InventoryWindow) Then
+                With GameWindow.Inventory
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        For i = 1 To 49
+                            If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                                If DragItemSlot <> i Then
+                                    'Switch slots
+                                    sndBuf.Put_Byte DataCode.User_ChangeInvSlot
+                                    sndBuf.Put_Byte DragItemSlot
+                                    sndBuf.Put_Byte i
+                                    'Clear and leave
+                                    DragSourceWindow = 0
+                                    DragItemSlot = 0
+                                    Exit Sub
+                                End If
+                            End If
+                        Next i
+                    End If
+                End With
+            End If
+        End If
+
+        'Inventory -> Quick Bar
+        If DragSourceWindow = InventoryWindow Then
+            If ShowGameWindow(QuickBarWindow) Then
+                With GameWindow.QuickBar
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        For i = 1 To 12
+                            If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
+                                'Drop into quick use slot
+                                QuickBarID(i).Type = QuickBarType_Item
+                                QuickBarID(i).ID = DragItemSlot
                                 'Clear and leave
+                                DragSourceWindow = 0
                                 DragItemSlot = 0
                                 Exit Sub
                             End If
-                        End If
-                    Next i
-                End If
-            End With
+                        Next i
+                    End If
+                End With
+            End If
         End If
-
-        'Check for release over quick bar
-        If ShowGameWindow(QuickBarWindow) Then
-            With GameWindow.QuickBar
-                If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
-                    For i = 1 To 12
-                        If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
-                            'Drop into quick use slot
-                            QuickBarID(i).Type = QuickBarType_Item
-                            QuickBarID(i).ID = DragItemSlot
-                            'Clear and leave
-                            DragItemSlot = 0
-                            Exit Sub
+        
+        'Inventory -> Depot
+        If DragSourceWindow = InventoryWindow Then
+            If ShowGameWindow(BankWindow) Then
+                With GameWindow.Bank
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        'Single item
+                        If UserInventory(DragItemSlot).Amount = 1 Then
+                            sndBuf.Put_Byte DataCode.User_Bank_PutItem
+                            sndBuf.Put_Byte DragItemSlot
+                            sndBuf.Put_Integer 1
+                        'Multiple items
+                        Else
+                            ShowGameWindow(AmountWindow) = 1
+                            LastClickedWindow = AmountWindow
+                            AmountWindowValue = vbNullString
+                            AmountWindowItemIndex = DragItemSlot
+                            AmountWindowUsage = AW_InvToBank
                         End If
-                    Next i
-                End If
-            End With
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
+                    End If
+                End With
+            End If
+        End If
+        
+        'Inventory -> Shop
+        If DragSourceWindow = InventoryWindow Then
+            If ShowGameWindow(ShopWindow) Then
+                With GameWindow.Shop
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        'Single item
+                        If UserInventory(DragItemSlot).Amount = 1 Then
+                            sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
+                            sndBuf.Put_Byte DragItemSlot
+                            sndBuf.Put_Integer 1
+                        'Multiple items
+                        Else
+                            ShowGameWindow(AmountWindow) = 1
+                            LastClickedWindow = AmountWindow
+                            AmountWindowValue = vbNullString
+                            AmountWindowItemIndex = DragItemSlot
+                            AmountWindowUsage = AW_InvToShop
+                        End If
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
+                    End If
+                End With
+            End If
+        End If
+        
+        'Shop -> Inventory
+        If DragSourceWindow = ShopWindow Then
+            If ShowGameWindow(InventoryWindow) Then
+                With GameWindow.Inventory
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        'Bring up amount window for bulk buying
+                        ShowGameWindow(AmountWindow) = 1
+                        LastClickedWindow = AmountWindow
+                        AmountWindowValue = vbNullString
+                        AmountWindowItemIndex = DragItemSlot
+                        AmountWindowUsage = AW_ShopToInv
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
+                    End If
+                End With
+            End If
+        End If
+        
+        'Bank -> Inventory
+        If DragSourceWindow = BankWindow Then
+            If ShowGameWindow(InventoryWindow) Then
+                With GameWindow.Inventory
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        If UserBank(DragItemSlot).Amount > 1 Then
+                            'Bring up amount window for bulk withdrawing
+                            ShowGameWindow(AmountWindow) = 1
+                            LastClickedWindow = AmountWindow
+                            AmountWindowValue = vbNullString
+                            AmountWindowItemIndex = DragItemSlot
+                            AmountWindowUsage = AW_BankToInv
+                        Else
+                            sndBuf.Put_Byte DataCode.User_Bank_TakeItem
+                            sndBuf.Put_Byte DragItemSlot
+                            sndBuf.Put_Integer 1
+                        End If
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
+                    End If
+                End With
+            End If
+        End If
+                                
+        'Inventory -> Mail
+        If DragSourceWindow = InventoryWindow Then
+            If ShowGameWindow(WriteMessageWindow) Then
+                With GameWindow.WriteMessage
+                    If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
+                        'Single item
+                        If UserInventory(DragItemSlot).Amount = 1 Then
+                            'Check for duplicate entries
+                            For i = 1 To MaxMailObjs
+                                If WriteMailData.ObjIndex(i) = DragItemSlot Then
+                                    DragSourceWindow = 0
+                                    DragItemSlot = 0
+                                    Exit Sub
+                                End If
+                            Next i
+                            'Place item in next free slot (if any)
+                            i = 0
+                            Do
+                                i = i + 1
+                                If i > MaxMailObjs Then
+                                    DragSourceWindow = 0
+                                    DragItemSlot = 0
+                                    Exit Sub
+                                End If
+                            Loop While WriteMailData.ObjIndex(i) > 0
+                            WriteMailData.ObjIndex(i) = DragItemSlot
+                            WriteMailData.ObjAmount(i) = 1
+                        'Multiple items
+                        Else
+                            ShowGameWindow(AmountWindow) = 1
+                            LastClickedWindow = AmountWindow
+                            AmountWindowValue = vbNullString
+                            AmountWindowItemIndex = DragItemSlot
+                            AmountWindowUsage = AW_InvToMail
+                        End If
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
+                    End If
+                End With
+            End If
         End If
 
         'Didn't release over a valid area
+        DragSourceWindow = 0
         DragItemSlot = 0
 
     End If
@@ -3819,9 +4240,20 @@ Sub Engine_MoveUser(ByVal Direction As Byte)
 Dim Running As Byte
 Dim aX As Integer
 Dim aY As Integer
+    
+    'Check for a valid UserCharIndex
+    If UserCharIndex <= 0 Or UserCharIndex > LastChar Then
+    
+        'We have an invalid user char index, so we must have the wrong one - request an update on the right one
+        sndBuf.Put_Byte DataCode.User_RequestUserCharIndex
+        Exit Sub
+        
+    End If
 
-'Figure out the AddX and AddY values
+    'Dont move if the mail composing window is up
+    If ShowGameWindow(WriteMessageWindow) Then Exit Sub
 
+    'Figure out the AddX and AddY values
     Select Case Direction
     Case NORTHEAST
         aX = 1
@@ -3853,7 +4285,11 @@ Dim aY As Integer
     ShowGameWindow(MailboxWindow) = 0
     ShowGameWindow(ShopWindow) = 0
     ShowGameWindow(ViewMessageWindow) = 0
-    ShowGameWindow(WriteMessageWindow) = 0
+    ShowGameWindow(AmountWindow) = 0
+    ShowGameWindow(BankWindow) = 0
+    AmountWindowUsage = 0
+    AmountWindowItemIndex = 0
+    AmountWindowValue = ""
 
     'Check for legal position
     If Engine_LegalPos(UserPos.X + aX, UserPos.Y + aY, Direction) Then
@@ -4764,7 +5200,7 @@ Dim FileNum As Integer
                         VertexArray(1).Y = Y - (GrhData(CurrGrhIndex).pixelHeight * 0.5)
                 
                     Else
-                
+
                         SrcWidth = SrcWidth + 1
                         SrcHeight = SrcHeight + 1
                 
@@ -4812,6 +5248,107 @@ Dim FileNum As Integer
 
 End Sub
 
+Private Sub Engine_Render_ChatBubble(ByVal Text As String, ByVal X As Integer, ByVal Y As Integer)
+
+'*****************************************************************
+'Renders a chat bubble and the text for the given text and co-ordinates
+'*****************************************************************
+Const RenderColor As Long = -1761607681
+Dim TempGrh As Grh
+Dim BubbleWidth As Long
+Dim BubbleHeight As Long
+Dim TempSplit() As String
+Dim i As Long
+Dim j As Long
+
+    'Set up the temp grh
+    TempGrh.FrameCounter = 1
+    TempGrh.Started = 1
+
+    'Split up the string
+    TempSplit = Split(Text, vbNewLine)
+    
+    '*** Calculate the bubble width and height ***
+    If UBound(TempSplit) > 0 Then
+    
+        'If there are multiple lines, it is assumed it is the max width
+        BubbleWidth = BubbleMaxWidth
+        
+        'Because there are multiple lines, we have to calculate the height, too
+        BubbleHeight = Font_Default.CharHeight * (UBound(TempSplit) + 1)
+        
+    Else
+    
+        'Theres only one line, so that line is the width
+        BubbleWidth = Engine_GetTextWidth(Text)
+        BubbleHeight = Font_Default.CharHeight
+        
+    End If
+    
+    'Round the width and height to the nearest 10 (the size of each chat bubble side section)
+    BubbleWidth = BubbleWidth + 10
+    If BubbleWidth Mod 10 Then BubbleWidth = BubbleWidth + (10 - (BubbleWidth Mod 10))
+    If BubbleHeight Mod 10 Then BubbleHeight = BubbleHeight + (10 - (BubbleHeight Mod 10))
+    
+    'Modify the X and Y values the center the bubble
+    X = X - (BubbleWidth * 0.5) + 16
+    Y = Y - BubbleHeight - 20
+    
+    '*** Draw the bubble ***
+    
+    'Top-left corner
+    TempGrh.GrhIndex = 109
+    Engine_Render_Grh TempGrh, X, Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    
+    'Top-right corner
+    TempGrh.GrhIndex = 111
+    Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    
+    'Bottom-left corner
+    TempGrh.GrhIndex = 115
+    Engine_Render_Grh TempGrh, X, Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    
+    'Bottom-right corner
+    TempGrh.GrhIndex = 117
+    Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    
+    'Top side
+    TempGrh.GrhIndex = 110
+    For i = 0 To (BubbleWidth \ 10) - 1
+        Engine_Render_Grh TempGrh, X + 5 + (i * 10), Y, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Next i
+    
+    'Left side
+    TempGrh.GrhIndex = 112
+    For i = 0 To (BubbleHeight \ 10) - 1
+        Engine_Render_Grh TempGrh, X, Y + 5 + (i * 10), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Next i
+    
+    'Right side
+    TempGrh.GrhIndex = 114
+    For i = 0 To (BubbleHeight \ 10) - 1
+        Engine_Render_Grh TempGrh, X + BubbleWidth + 5, Y + 5 + (i * 10), 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Next i
+    
+    'Bottom side
+    TempGrh.GrhIndex = 116
+    For i = 0 To (BubbleWidth \ 10) - 1
+        Engine_Render_Grh TempGrh, X + 5 + (i * 10), Y + BubbleHeight + 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+    Next i
+    
+    'Middle
+    TempGrh.GrhIndex = 113
+    For i = 1 To (BubbleWidth \ 10)
+        For j = 1 To (BubbleHeight \ 10)
+            Engine_Render_Grh TempGrh, X + (i * 10) - 5, Y + (j * 10) - 5, 0, 0, False, RenderColor, RenderColor, RenderColor, RenderColor
+        Next j
+    Next i
+    
+    'Render the text (finally!)
+    Engine_Render_Text Text, X + 5, Y + 5, D3DColorARGB(255, 0, 0, 0)
+
+End Sub
+
 Private Sub Engine_Render_GUI()
 
 '*****************************************************************
@@ -4837,11 +5374,22 @@ Dim i As Byte
     'Render the spells list
     If DrawSkillList Then Engine_Render_Skills
 
+    'Render an item where the cursor should be (item being dragged)
     If DragItemSlot Then
-        'Render an item where the cursor should be (item being dragged)
-        TempGrh.GrhIndex = UserInventory(DragItemSlot).GrhIndex
+        
+        Select Case DragSourceWindow
+            Case InventoryWindow
+                TempGrh.GrhIndex = UserInventory(DragItemSlot).GrhIndex
+            Case ShopWindow
+                TempGrh.GrhIndex = NPCTradeItems(DragItemSlot).GrhIndex
+            Case BankWindow
+                TempGrh.GrhIndex = UserBank(DragItemSlot).GrhIndex
+        End Select
+
+        'Draw
         TempGrh.FrameCounter = 1
         Engine_Render_Grh TempGrh, MousePos.X, MousePos.Y, 0, 0, False
+        
     End If
 
     'Render the cursor
@@ -4922,6 +5470,12 @@ Dim i As Byte
             Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
             Engine_Render_Inventory 2
         End With
+    
+    Case BankWindow
+        With GameWindow.Bank
+            Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
+            Engine_Render_Inventory 3
+        End With
 
     Case MailboxWindow
         With GameWindow.Mailbox
@@ -4950,15 +5504,39 @@ Dim i As Byte
     Case WriteMessageWindow
         With GameWindow.WriteMessage
             Engine_Render_Grh .SkinGrh, .Screen.X, .Screen.Y, 0, 1, True, GUIColorValue, GUIColorValue, GUIColorValue, GUIColorValue
-            If WriteMailData.RecieverName <> "" Then Engine_Render_Text WriteMailData.RecieverName, .Screen.X + .From.X, .Screen.Y + .From.Y, -1
-            If WriteMailData.Subject <> "" Then Engine_Render_Text WriteMailData.Subject, .Screen.X + .Subject.X, .Screen.Y + .Subject.Y, -1
-            If WriteMailData.Message <> "" Then Engine_Render_Text Engine_WordWrap(WriteMailData.Message, 65), .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
+            
+            '"To" text box
+            If LenB(WriteMailData.RecieverName) Then Engine_Render_Text WriteMailData.RecieverName, .Screen.X + .From.X, .Screen.Y + .From.Y, -1
+            If WMSelCon = wmFrom Then
+                If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+                    TempGrh.GrhIndex = 39
+                    Engine_Render_Grh TempGrh, .Screen.X + .From.X + Engine_GetTextWidth(WriteMailData.RecieverName), .Screen.Y + .From.Y, 0, 0, False
+                End If
+            End If
+            'Subject text box
+            If LenB(WriteMailData.Subject) Then Engine_Render_Text WriteMailData.Subject, .Screen.X + .Subject.X, .Screen.Y + .Subject.Y, -1
+            If WMSelCon = wmSubject Then
+                If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+                    TempGrh.GrhIndex = 39
+                    Engine_Render_Grh TempGrh, .Screen.X + .Subject.X + Engine_GetTextWidth(WriteMailData.Subject), .Screen.Y + .Subject.Y, 0, 0, False
+                End If
+            End If
+            'Message body text box
+            If LenB(WriteMailData.Message) Then Engine_Render_Text Engine_WordWrap(WriteMailData.Message, GameWindow.WriteMessage.Message.Width), .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
+            If WMSelCon = wmMessage Then
+                If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+                    TempGrh.GrhIndex = 39
+                    Engine_Render_Grh TempGrh, .Screen.X + .Message.X + Engine_GetTextWidth(WriteMailData.Message), .Screen.Y + .Message.Y, 0, 0, False
+                End If
+            End If
+            'Objects
             For i = 1 To MaxMailObjs
                 If WriteMailData.ObjIndex(i) > 0 Then
-                    TempGrh.GrhIndex = WriteMailData.ObjIndex(i)
+                    TempGrh.GrhIndex = UserInventory(WriteMailData.ObjIndex(i)).GrhIndex
                     Engine_Render_Grh TempGrh, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, 0, 0, False
                 End If
             Next i
+            
         End With
 
     Case AmountWindow
@@ -4991,7 +5569,7 @@ Dim LoopC As Long
                 DestY = GameWindow.Inventory.Screen.Y + GameWindow.Inventory.Image(LoopC).Y
                 TempGrh.FrameCounter = 1
                 TempGrh.GrhIndex = UserInventory(LoopC).GrhIndex
-                If DragItemSlot = LoopC Then
+                If DragItemSlot = LoopC And DragSourceWindow = InventoryWindow Then
                     Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False, -1761607681, -1761607681, -1761607681, -1761607681    'ARGB 150/255/255/255
                 Else
                     Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False
@@ -5008,7 +5586,27 @@ Dim LoopC As Long
                 DestY = GameWindow.Shop.Screen.Y + GameWindow.Shop.Image(LoopC).Y
                 TempGrh.FrameCounter = 1
                 TempGrh.GrhIndex = NPCTradeItems(LoopC).GrhIndex
-                Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False, -1, -1, -1, -1
+                If DragItemSlot = LoopC And DragSourceWindow = ShopWindow Then
+                    Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False, -1761607681, -1761607681, -1761607681, -1761607681    'ARGB 150/255/255/255
+                Else
+                    Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False
+                End If
+            End If
+        Next LoopC
+        'Bank inventory
+    Case 3
+        For LoopC = 1 To MAX_INVENTORY_SLOTS
+            If UserBank(LoopC).GrhIndex Then
+                DestX = GameWindow.Bank.Screen.X + GameWindow.Bank.Image(LoopC).X
+                DestY = GameWindow.Bank.Screen.Y + GameWindow.Bank.Image(LoopC).Y
+                TempGrh.FrameCounter = 1
+                TempGrh.GrhIndex = UserBank(LoopC).GrhIndex
+                If DragItemSlot = LoopC And DragSourceWindow = BankWindow Then
+                    Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False, -1761607681, -1761607681, -1761607681, -1761607681    'ARGB 150/255/255/255
+                Else
+                    Engine_Render_Grh TempGrh, DestX, DestY, 0, 0, False
+                End If
+                If UserBank(LoopC).Amount <> -1 Then Engine_Render_Text UserBank(LoopC).Amount, DestX, DestY, -1
             End If
         Next LoopC
     End Select
@@ -5172,8 +5770,8 @@ Sub Engine_Render_Screen(ByVal TileX As Integer, ByVal TileY As Integer, ByVal P
 '***********************************************
 'Draw current visible to scratch area based on TileX and TileY
 '***********************************************
+Dim TempGrh As Grh
 Dim TempRect As RECT    'Used to calculate/display our zoom level
-Dim ShownText As String
 Dim ScreenX As Integer  'Keeps track of where to place tile on screen
 Dim ScreenY As Integer
 Dim ChrID() As Integer
@@ -5588,6 +6186,21 @@ Dim Angle As Single
             End If
         End If
     End If
+    
+    '************** Chat bubbles **************
+    'Loop through the chars
+    For j = 1 To LastChar
+        If CharList(j).Active Then
+            If LenB(CharList(j).BubbleStr) Then
+                Engine_Render_ChatBubble CharList(j).BubbleStr, CharList(j).RealPos.X, CharList(j).RealPos.Y
+                CharList(j).BubbleTime = CharList(j).BubbleTime - ElapsedTime
+                If CharList(j).BubbleTime <= 0 Then
+                    CharList(j).BubbleTime = 0
+                    CharList(j).BubbleStr = ""
+                End If
+            End If
+        End If
+    Next j
 
     '************** Damage text **************
     'Loop to do drawing
@@ -5631,12 +6244,14 @@ Dim Angle As Single
     'Draw entered text
     If EnterText = True Then
         If EnterTextBufferWidth = 0 Then EnterTextBufferWidth = 1   'Dividing by 0 is never good
-        If Len(EnterTextBuffer) > 40 Then
-            ShownText = Mid(EnterTextBuffer, Len(EnterTextBuffer) - 40, 40)
-        Else
-            ShownText = EnterTextBuffer
+        If LenB(ShownText) Then Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, -1
+        If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+            TempGrh.GrhIndex = 39
+            TempGrh.FrameCounter = 1
+            TempGrh.Started = 1
+            TempGrh.SpeedCounter = 0
+            Engine_Render_Grh TempGrh, GameWindow.ChatWindow.Screen.X + 12 + Engine_GetTextWidth(ShownText), GameWindow.ChatWindow.Screen.Y + GameWindow.ChatWindow.Text.Y, 0, 0, False
         End If
-        Engine_Render_Text ShownText, GameWindow.ChatWindow.Screen.X + 12, GameWindow.ChatWindow.Screen.Y + 136, -1
     End If
 
     'Not connected or high Ping
@@ -5831,8 +6446,8 @@ Dim Y As Long
     
         'Check if the target is to the top-left of the user
         If UserX > TargetX Then
-            For X = TargetX To UserX - 1
-                For Y = TargetY To UserY - 1
+            For X = TargetX To UserX
+                For Y = TargetY To UserY
                     'We must do * 2 on the tiles so we can use +1 to get the center (its like * 32 and + 16 - this does the same affect)
                     If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
                         If MapData(X, Y).BlockedAttack Then
@@ -5847,8 +6462,8 @@ Dim Y As Long
     
         'Check if the target is to the top-right of the user
         Else
-            For X = UserX + 1 To TargetX
-                For Y = TargetY To UserY - 1
+            For X = UserX To TargetX
+                For Y = TargetY To UserY
                     If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
                         If MapData(X, Y).BlockedAttack Then
                             Engine_ClearPath = 0
@@ -5863,8 +6478,8 @@ Dim Y As Long
     
         'Check if the target is to the bottom-left of the user
         If UserX > TargetX Then
-            For X = TargetX To UserX - 1
-                For Y = UserY + 1 To TargetY
+            For X = TargetX To UserX
+                For Y = UserY To TargetY
                     If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
                         If MapData(X, Y).BlockedAttack Then
                             Engine_ClearPath = 0
@@ -5876,8 +6491,8 @@ Dim Y As Long
         
         'Check if the target is to the bottom-right of the user
         Else
-            For X = UserX + 1 To TargetX
-                For Y = UserY + 1 To TargetY
+            For X = UserX To TargetX
+                For Y = UserY To TargetY
                     If Engine_Collision_LineRect(X * 2, Y * 2, 2, 2, UserX * 2 + 1, UserY * 2 + 1, TargetX * 2 + 1, TargetY * 2 + 1) Then
                         If MapData(X, Y).BlockedAttack Then
                             Engine_ClearPath = 0
@@ -6286,15 +6901,76 @@ End Sub
 Public Function Engine_WordWrap(ByVal Text As String, ByVal MaxLineLen As Integer, Optional ByVal ReplaceChar As String = vbCrLf) As String
 
 '************************************************************
-'Wrap a long string to multiple lines by vbCrLf
+'Wrap a long string to multiple lines by vbNewLine
 '************************************************************
+Dim TempSplit() As String
+Dim TSLoop As Long
+Dim LastSpace As Long
+Dim Size As Long
+Dim i As Long
+Dim b As Long
+Dim j As Long
 
-Dim i As Integer
+    'Too small of text
+    If Len(Text) < 2 Then
+        Engine_WordWrap = Text
+        Exit Function
+    End If
 
-    For i = 1 To Len(Text) / MaxLineLen
-        Text = Mid$(Text, 1, MaxLineLen * i - 1) & Replace$(Text, " ", ReplaceChar, MaxLineLen * i, 1, vbTextCompare)
-    Next i
-    Engine_WordWrap = Text
+    'Check if there are any line breaks - if so, we will support them
+    TempSplit = Split(Text, vbNewLine)
+    
+    For TSLoop = 0 To UBound(TempSplit)
+    
+        'Clear the values for the new line
+        Size = 0
+        b = 1
+        LastSpace = 1
+        
+        'Loop through all the characters
+        For i = 1 To Len(TempSplit(TSLoop))
+        
+            'If it is a space, store it so we can easily break at it
+            Select Case Mid$(TempSplit(TSLoop), i, 1)
+                Case " ": LastSpace = i
+                Case "_": LastSpace = i
+                Case "-": LastSpace = i
+            End Select
+
+            'Add up the size
+            Size = Size + Font_Default.HeaderInfo.CharWidth(Asc(Mid$(TempSplit(TSLoop), i, 1)))
+            If Size > MaxLineLen Then
+                
+                'Check if the last space was too far back
+                If i - LastSpace > 5 Then
+                    
+                    'Too far away to the last space, so break at the last character
+                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, (i - 1) - b)) & vbNewLine
+                    b = i - 1
+                
+                Else
+                
+                    'Break at the last space to preserve the word
+                    Engine_WordWrap = Engine_WordWrap & Trim$(Mid$(TempSplit(TSLoop), b, LastSpace - b)) & vbNewLine
+                    b = LastSpace + 1
+                    
+                End If
+                
+                'Clear the size
+                Size = 0
+                
+            End If
+            
+            'This handles the remainder
+            If i = Len(TempSplit(TSLoop)) Then
+                If b <> i Then
+                    Engine_WordWrap = Engine_WordWrap & Mid$(TempSplit(TSLoop), b, i)
+                End If
+            End If
+            
+        Next i
+        
+    Next TSLoop
 
 End Function
 

@@ -129,6 +129,7 @@ Private Sub InitSoxSocket()
     'Clean out the socket so we can make a fresh new connection
     If SoxID > 0 Then frmMain.Socket.Shut SoxID
     frmMain.Socket.ShutDown
+    DoEvents
     frmMain.Socket.UnHook
     DoEvents
     
@@ -145,14 +146,14 @@ Private Sub InitSoxSocket()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
 
 '*****************************************************************
 'Process clicking events
 '*****************************************************************
     
     'New
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 85, 141, 36) Then
+    If Engine_Collision_Rect(x, Y, 1, 1, 29, 85, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -162,7 +163,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     End If
     
     'Connect
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 129, 141, 36) Then
+    If Engine_Collision_Rect(x, Y, 1, 1, 29, 129, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -172,7 +173,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y A
     End If
     
     'Exit
-    If Engine_Collision_Rect(X, Y, 1, 1, 29, 174, 141, 36) Then
+    If Engine_Collision_Rect(x, Y, 1, 1, 29, 174, 141, 36) Then
         'Save the game ini
         Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then

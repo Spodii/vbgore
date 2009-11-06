@@ -86,7 +86,7 @@ Dim Y As Single
 Dim R As Single
     
     Effect(EffectIndex).Progression = Effect(EffectIndex).Progression + 0.1
-    R = (Index / 20) * EXP(Index / Effect(EffectIndex).Progression Mod 3)
+    R = (Index / 20) * Exp(Index / Effect(EffectIndex).Progression Mod 3)
     X = R * Cos(Index)
     Y = R * Sin(Index)
     
@@ -1317,11 +1317,15 @@ Dim LoopC As Long
 End Function
 
 Private Sub Effect_Waterfall_Reset(ByVal EffectIndex As Byte, ByVal Index As Long)
+Dim i As Byte
 
-    'Reset the particle
-    Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X + (Rnd * 60), Effect(EffectIndex).Y + (Rnd * 130), 0, 10 + (Rnd * 2), 0, 0
+    If Int(Rnd * 10) = 1 Then
+        Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X + (Rnd * 60), Effect(EffectIndex).Y + (Rnd * 130), 0, 8 + (Rnd * 6), 0, 0
+    Else
+        Effect(EffectIndex).Particles(Index).ResetIt Effect(EffectIndex).X + (Rnd * 60), Effect(EffectIndex).Y + (Rnd * 10), 0, 8 + (Rnd * 6), 0, 0
+    End If
     Effect(EffectIndex).Particles(Index).ResetColor 0.1, 0.1, 0.9, 0.6 + (Rnd * 0.4), 0
-
+    
 End Sub
 
 Private Sub Effect_Waterfall_Update(ByVal EffectIndex As Byte)

@@ -209,6 +209,3 @@ Public Property Let Used(ByVal vData As Boolean)
     mvarused = vData
 
 End Property
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 18:12)  Decl: 15  Code: 184  Total: 199 Lines
-':) CommentOnly: 4 (2%)  Commented: 0 (0%)  Empty: 85 (42.7%)  Max Logic Depth: 1

@@ -28,9 +28,9 @@ Public Type DataCode
     Comm_FontType_Fight As Byte
     Comm_FontType_Info As Byte
     Comm_FontType_Quest As Byte
+    Comm_UseBubble As Byte  'Do not use this alone - OR it onto Comm_Talk!
     Server_MailMessage As Byte
     Server_MailBox As Byte
-    Server_MailItemInfo As Byte
     Server_MailItemTake As Byte
     Server_MailItemRemove As Byte
     Server_MailDelete As Byte
@@ -64,6 +64,8 @@ Public Type DataCode
     Server_SetCharSpeed As Byte
     Server_MakeProjectile As Byte
     Server_MakeSlash As Byte
+    Server_MailObjUpdate As Byte
+    Server_MakeEffect As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_DoneSwitching As Byte
@@ -90,6 +92,10 @@ Public Type DataCode
     User_Trade_StartNPCTrade As Byte
     User_Trade_BuyFromNPC As Byte
     User_Trade_SellToNPC As Byte
+    User_Bank_Open As Byte
+    User_Bank_PutItem As Byte
+    User_Bank_TakeItem As Byte
+    User_Bank_UpdateSlot As Byte
     User_BaseStat As Byte
     User_ModStat As Byte
     User_CastSkill As Byte
@@ -97,6 +103,8 @@ Public Type DataCode
     User_Emote As Byte
     User_StartQuest As Byte
     User_SetWeaponRange As Byte
+    User_RequestMakeChar As Byte
+    User_RequestUserCharIndex As Byte
     GM_Approach As Byte
     GM_Summon As Byte
     GM_Kick As Byte
@@ -193,6 +201,7 @@ Public Sub InitDataCommands()
     End With
 
     With DataCode
+        .User_RequestMakeChar = 1
         .GM_Thrall = 2
         .Server_IconSpellExhaustion = 3
         .Comm_Shout = 4
@@ -264,9 +273,9 @@ Public Sub InitDataCommands()
         .Server_IconIronSkin = 70
         .Server_MailBox = 71
         .Server_MailMessage = 72
-        .Server_MailItemInfo = 73
+        .User_RequestUserCharIndex = 73
         .Server_MailItemTake = 74
-        .Server_MailItemRemove = 75
+        .Server_MailObjUpdate = 75
         .Server_MailDelete = 76
         .Server_MailCompose = 77
         .GM_SetGMLevel = 78
@@ -277,6 +286,14 @@ Public Sub InitDataCommands()
         .User_SetWeaponRange = 83
         .Server_MakeProjectile = 84
         .Server_MakeSlash = 85
+        .Server_MakeEffect = 86
+        .User_Bank_Open = 87
+        .User_Bank_PutItem = 88
+        .User_Bank_TakeItem = 89
+        .User_Bank_UpdateSlot = 90
+        
+        .Comm_UseBubble = 128   'Value 128 can be used over again since this does not count as an ID in itself
     End With
 
 End Sub
+

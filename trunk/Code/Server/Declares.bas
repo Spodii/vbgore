@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.7            ************
+'************            Official Release: Version 0.3.0            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -90,7 +90,6 @@ Option Explicit
 
 'Used to record the number of packets coming in/out and what command ID they have
 Public Const DEBUG_UseLogging As Boolean = False                  '//\\LOGLINE//\\
-Public Const DEBUG_RecordPacketsIn As Boolean = False
 Public Const DEBUG_RecordPacketsOut As Boolean = False
 
 '********** Public CONSTANTS ***********
@@ -102,11 +101,14 @@ Public Const OptimizeDatabase As Byte = 0
 Public Const RunHighPriority As Byte = 0
 
 'How long objects can be on the ground (in miliseconds) before being removed
-Public Const GroundObjLife As Long = 300000    '5 minutes
+Public Const GroundObjLife As Currency = 300000 '5 minutes
+
+'How long the maps last in memory when no users are on it
+Public Const EmptyMapLife As Currency = 1800    '3 minutes
 
 'Amount of time that must elapse for certain user events (in miliseconds)
-Public Const DelayTimeMail As Long = 3000   'Sending messages
-Public Const DelayTimeTalk As Long = 500    'Talking (in any form)
+Public Const DelayTimeMail As Currency = 3000   'Sending messages (has to be updated client-side, too)
+Public Const DelayTimeTalk As Currency = 500    'Talking (in any form)
 
 'Change this value to add a cost to sending mail
 Public Const MailCost As Long = 0
@@ -118,32 +120,31 @@ Public Const MaxObjsPerTile As Byte = 5
 Public Const RunningSpeed As Byte = 5   'How much to increase speed when running
 Public Const RunningCost As Long = 2    'How much stamina it cost to run
 
+'How long char remains aggressive-faced after being attacked
+Public Const AGGRESSIVEFACETIME = 4000
+
+'Calculate the data in/out per sec or ont
+Public Const CalcTraffic As Boolean = True
+
+'Sound constants
+Public Const SOUND_SWING As Byte = 7
+Public Const SOUND_WARP As Byte = 1
+
+'Stat constants
+Public Const STAT_ATTACKWAIT As Currency = 1000 'How many ms a user has to wait till he can attack again
+
+'How many quests a user can accept at once
+Public Const MaxQuests As Byte = 20
+
+'Time that must elapse for NPC to make another action (in miliseconds) after attacking
+Public Const NPCDelayFight As Long = 1000
+
 'Blocked directions - take the blocked byte and OR these values (If Blocked OR <Direction> Then...)
 Public Const BlockedNorth As Byte = 1
 Public Const BlockedEast As Byte = 2
 Public Const BlockedSouth As Byte = 4
 Public Const BlockedWest As Byte = 8
 Public Const BlockedAll As Byte = 15
-
-'Time that must elapse for NPC to make another action (in miliseconds) after attacking
-Public Const NPCDelayFight As Long = 1000
-
-'Calculate the data in/out per sec or ont
-Public Const CalcTraffic As Boolean = True
-
-'How much time elapsed
-Public Elapsed As Long
-Public LastTime As Long
-
-'The biggest LONG possible
-Public Const LARGESTLONG As Long = 2147483647
-
-'How many quests a user can accept at once
-Public Const MaxQuests As Byte = 20
-
-'Time of last WorldSave
-Public LastWorldSave As Long
-Public Const WORLDSAVERATE As Long = 300000 'Save every 5 mins.
 
 'Character types for CharList()
 Public Const CharType_PC As Byte = 1
@@ -153,19 +154,6 @@ Public Const CharType_NPC As Byte = 2
 Public Const MaxServerDistanceX As Long = 13
 Public Const MaxServerDistanceY As Long = 10
 
-'Sound constants
-Public Const SOUND_SWING As Byte = 7
-Public Const SOUND_WARP As Byte = 1
-
-'Stat constants
-Public Const STAT_MAXSTAT = 2000000000  'Max for general stats
-Public Const STAT_RECOVERRATE = 5000    'How many ms base for recovery stats
-Public Const STAT_ATTACKWAIT = 1000     'How many ms a user has to wait till he can attack again
-
-'Other constants
-Public Const MaxVersion As Integer = 30000
-Public Const AGGRESSIVEFACETIME = 4000  'How long char remains aggressive-faced after being attacked
-
 '************ Positioning ************
 Type WorldPos   'Holds placement information
     Map As Integer  'Map
@@ -174,8 +162,8 @@ Type WorldPos   'Holds placement information
 End Type
 
 '************ Object types ************
-Public Const MAX_INVENTORY_OBJS = 9999  'Maximum number of objects per slot (same obj)
-Public Const MAX_INVENTORY_SLOTS = 49   'Maximum number of slots
+Public Const MAX_INVENTORY_OBJS As Integer = 9999   'Maximum number of objects per slot (same obj)
+Public Const MAX_INVENTORY_SLOTS As Byte = 49       'Maximum number of slots
 Public Type ObjData
     Name As String                  'Name
     ObjType As Byte                 'Type (armor, weapon, item, etc)
@@ -205,28 +193,41 @@ Public Type Obj 'Holds info about a object
 End Type
 
 '************ Map Tiles/Information ************
+Type NPCLoadData    'Used to load NPCs from the .temp map files
+    NPCNum As Integer
+    X As Byte
+    Y As Byte
+End Type
 Type MapBlock   'Information for each map block
+    '*** IMPORTANT! *** ADDING ARRAYS TO THIS UDT WILL BREAK THE LOADING!
+    'If you must add an array, try adding it to a different UDT, like I did with the objects
+    TileExitMap As Integer      'Warp location when user touches the tile
+    TileExitX As Byte
+    TileExitY As Byte
     Blocked As Byte             'If the tile is blocked
+    Mailbox As Byte             'If there is a mailbox on the tile
     UserIndex As Integer        'Index of the user on the tile
     NPCIndex As Integer         'Index of the NPC on the tile
-    ObjInfo() As Obj            'Information of the object on the tile
-    ObjLife() As Long           'When the object was created (used to determine it's life)
-    NumObjs As Byte             'Number of objects on the tile
-    TileExit As WorldPos        'Warp location when user touches the tile
-    Mailbox As Byte             'If there is a mailbox on the tile
 End Type
-Public MapData() As MapBlock
+Type ObjBlock   'Information on an object on a map block
+    NumObjs As Byte             'Number of objects on the tile
+    ObjLife() As Currency       'When the object was created (used to determine it's life)
+    ObjInfo() As Obj            'Information of the object on the tile
+End Type
 Type MapInfo    'Map information
     NumUsers As Integer     'Number of users on the map
     Name As String          'Name of the map
     MapVersion As Integer   'Version of the map
     Weather As Byte         'What weather effects the map has going
     Music As Byte           'The music file number of the map
+    DataLoaded As Byte      'If the map data is loaded
+    UnloadTimer As Currency 'How long until the surface unloads
+    Data() As MapBlock      'Holds the information on each tile; Data(TileX, TileY)
+    ObjTile() As ObjBlock   'Holds the information on the objects on the tiles; Obj(TileX, TileY)
 End Type
 Public MapInfo() As MapInfo
 
 '************ Mailing System ************
-Public Const MaxMail As Integer = 20000     'Total amount of mail files allowed
 Public Const MaxMailPerUser As Byte = 50    'How much mail each user may have maximum
 Public Const MaxMailObjs As Byte = 10       'How many objects can be attached to a message maximum
 Type MailData   'Mailing system information
@@ -300,21 +301,20 @@ Type UserFlags  'Flags for a user
     QuestNPC As Integer     'The ID of the NPC that the user is talking to about a quest
 End Type
 Type UserCounters   'Counters for a user
-    IdleCount As Long           'Stores last time the user sent an action packet
-    LastPacket As Long          'Stores last time the user sent ANY packet
-    AttackCounter As Long       'Stores last time user attacked
-    MoveCounter As Long         'Stores last time the user moved
-    SendMapCounter As WorldPos  'Stores map counter information
-    AggressiveCounter As Long   'How long the user will remain aggressive-faced
-    SpellExhaustion As Long     'Time until another spell can be casted
-    BlessCounter As Long        'Time left on bless
-    ProtectCounter As Long      'Time left on protection
-    StrengthenCounter As Long   'Time left on strengthen
-    WarCurseCounter As Long     'Time left on warcry-curse
-    DelayTimeMail As Long       'Mail write delay time
-    DelayTimeTalk As Long       'Talk delay time
-    PacketsInCount As Long      'Packets in per second (used to prevent packet flooding)
-    PacketsInTime As Long       'When the packet counting started
+    IdleCount As Currency           'Stores last time the user sent an action packet
+    LastPacket As Currency          'Stores last time the user sent ANY packet
+    AttackCounter As Currency       'Stores last time user attacked
+    MoveCounter As Currency         'Stores last time the user moved
+    AggressiveCounter As Currency   'How long the user will remain aggressive-faced
+    SpellExhaustion As Currency     'Time until another spell can be casted
+    BlessCounter As Currency        'Time left on bless
+    ProtectCounter As Currency      'Time left on protection
+    StrengthenCounter As Currency   'Time left on strengthen
+    WarCurseCounter As Currency     'Time left on warcry-curse
+    DelayTimeMail As Currency       'Mail write delay time
+    DelayTimeTalk As Currency       'Talk delay time
+    PacketsInCount As Currency      'Packets in per second (used to prevent packet flooding)
+    PacketsInTime As Currency       'When the packet counting started
 End Type
 Type UserOBJ    'Objects the user has
     ObjIndex As Long    'Index of the object
@@ -350,9 +350,10 @@ Type User   'Holds data for a user
     HasBuffer As Byte       'If there is anything in the buffer
     HasMovePacket As Byte   'If there is a move packet in the buffer (if there is, buffer is forced to PP_High upon movement)
     PPValue As Byte         'Packet priority value
-    PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
-    PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
+    PPCount As Currency     'Packet priority count-down (only valid if PPValue = PP_Low)
+    PacketWait As Currency  'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
     Object(1 To MAX_INVENTORY_SLOTS) As UserOBJ 'The user's inventory
+    Bank(1 To MAX_INVENTORY_SLOTS) As Obj       'The user's bank items
     WeaponEqpObjIndex As Integer    'The index of the equipted weapon
     WeaponEqpSlot As Byte           'Slot of the equipted weapon
     WeaponType As Byte              'Type of weapon the user is using
@@ -375,23 +376,18 @@ Public UserList() As User   'Holds data for each user
 Type NPCFlags   'Flags for a NPC
     NPCAlive As Byte        'If the NPC is alive and visible
     NPCActive As Byte       'If the NPC is active
-    ActionDelay As Long     'How long until the NPC can perform another action
-    WalkPath() As WorldPos  'The position the NPC will be traveling
-    HasPath As Byte         'If the NPC has a path they are following
-    PathPos As Integer      'The index in the WalkPath() the NPC is currently on
-    GoalX As Byte           'The position the NPC is trying to get to with the walkpath
-    GoalY As Byte
     Thralled As Byte        'If the NPC is thralled (if so, it does not get saved or respawn)
     UpdateStats As Byte     'If to update the mod stats
 End Type
 Type NPCCounters    'Counters for a NPC
-    RespawnCounter As Long  'Stores the death time to respawn later
-    AggressiveCounter As Long   'How long the NPC will remain aggressive-faced
-    SpellExhaustion As Long     'Time until another spell can be casted
-    BlessCounter As Long        'Time left on bless
-    ProtectCounter As Long      'Time left on protection
-    StrengthenCounter As Long   'Time left on strengthen
-    WarCurseCounter As Long     'Time left on warcry-curse
+    RespawnCounter As Currency  'Stores the death time to respawn later
+    AggressiveCounter As Currency   'How long the NPC will remain aggressive-faced
+    SpellExhaustion As Currency     'Time until another spell can be casted
+    BlessCounter As Currency        'Time left on bless
+    ProtectCounter As Currency      'Time left on protection
+    StrengthenCounter As Currency   'Time left on strengthen
+    WarCurseCounter As Currency     'Time left on warcry-curse
+    ActionDelay As Currency         'How long until the NPC can perform another action
 End Type
 Type NPC    'Holds all the NPC variables
     Name As String  'Name of the NPC
@@ -401,7 +397,7 @@ Type NPC    'Holds all the NPC variables
     StartPos As WorldPos    'Spawning location of the NPC
     NPCNumber As Integer    'The NPC index within NPC.dat
     AI As Byte              'Used AI algorithm
-    RespawnWait As Long     'How long for the NPC to respawn
+    RespawnWait As Currency 'How long for the NPC to respawn
     Attackable As Byte      'If the NPC is attackable
     Hostile As Byte         'If the NPC is hostile
     GiveEXP As Long         'How much exp given on death
@@ -411,17 +407,25 @@ Type NPC    'Holds all the NPC variables
     AttackGrh As Long       'Grh used when the NPC attacks
     ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
-    BaseStat(1 To NumStats) As Long 'Declares the NPC's stats
-    ModStat(1 To NumStats) As Long  'Declares the NPC's stats
     Flags As NPCFlags               'Declares the NPC's flags
     Counters As NPCCounters         'Declares the NPC's counters
     NumVendItems As Byte            'Number of items the NPC is vending
-    VendItems() As Obj              'Information on the item the NPC is vending
     NumDropItems As Byte            'Number of items the NPC is dropping
+    BaseStat(1 To NumStats) As Long 'Declares the NPC's stats
+    ModStat(1 To NumStats) As Long  'Declares the NPC's stats
+    
+    'THESE ARRAYS MUST STAY DOWN HERE AT THE BOTTOM OF THE UDT!
+    VendItems() As Obj              'Information on the item the NPC is vending
     DropItems() As Obj              'Information on the item to drop
     DropRate() As Single            'The drop rate of the item in the DropItems() array sharing the same index
 End Type
 Public NPCList() As NPC     'Holds data for each NPC
+
+'Two bytes put together (used for the NPC loading/saving of vending/drop item amounts)
+Public Type NPCBytes
+    Vend As Byte
+    Drop As Byte
+End Type
 
 '***********************************
 '********** Misc Values ************
@@ -437,34 +441,34 @@ Public Enum WeaponType
     Throwing = 4    'Weapon is thrown (ninja stars, throwing knives, etc)
 End Enum
 #If False Then
-Private Hand, Staff, Dagger, Sword, Bow, Gun
+Private Hand, Staff, Dagger, Sword, Throwing
 #End If
 
 'Object types
-Public Const OBJTYPE_USEONCE = 1    'Objects that can be used only once
-Public Const OBJTYPE_WEAPON = 2     'Weapons of all types
-Public Const OBJTYPE_ARMOR = 3      'Body armors
-Public Const OBJTYPE_WINGS = 4      'Wings
+Public Const OBJTYPE_USEONCE As Byte = 1    'Objects that can be used only once
+Public Const OBJTYPE_WEAPON As Byte = 2     'Weapons of all types
+Public Const OBJTYPE_ARMOR As Byte = 3      'Body armors
+Public Const OBJTYPE_WINGS As Byte = 4      'Wings
 
 'Constants for headings
-Public Const NORTH = 1
-Public Const EAST = 2
-Public Const SOUTH = 3
-Public Const WEST = 4
-Public Const NORTHEAST = 5
-Public Const SOUTHEAST = 6
-Public Const SOUTHWEST = 7
-Public Const NORTHWEST = 8
+Public Const NORTH As Byte = 1
+Public Const EAST As Byte = 2
+Public Const SOUTH As Byte = 3
+Public Const WEST As Byte = 4
+Public Const NORTHEAST As Byte = 5
+Public Const SOUTHEAST As Byte = 6
+Public Const SOUTHWEST As Byte = 7
+Public Const NORTHWEST As Byte = 8
 
 'Map sizes
-Public Const XMaxMapSize = 100  'Maximum width of the map in tiles
-Public Const XMinMapSize = 1    'Minimum width of the map in tiles
-Public Const YMaxMapSize = 100  'Maximum height of the map in tiles
-Public Const YMinMapSize = 1    'Minimum height of the map in tiles
+Public Const XMaxMapSize As Byte = 100  'Maximum width of the map in tiles
+Public Const XMinMapSize As Byte = 1    'Minimum width of the map in tiles
+Public Const YMaxMapSize As Byte = 100  'Maximum height of the map in tiles
+Public Const YMinMapSize As Byte = 1    'Minimum height of the map in tiles
 
 'Window size in tiles
-Public Const XWindow = 25   'Size of the window's width in tiles
-Public Const YWindow = 18   'Size of the window's height in tiles
+Public Const XWindow As Byte = 25   'Size of the window's width in tiles
+Public Const YWindow As Byte = 18   'Size of the window's height in tiles
 
 '********** Public VARS ***********
 
@@ -484,8 +488,8 @@ Public NumMaps As Integer
 Public NumQuests As Integer
 Public NumObjDatas As Integer
 
-Public IdleLimit As Long
-Public LastPacket As Long
+Public IdleLimit As Currency
+Public LastPacket As Currency
 Public MaxUsers As Integer
 
 'All the users located on a map
@@ -494,11 +498,17 @@ Public Type MapUsersType
 End Type
 Public MapUsers() As MapUsersType
 
+'Names of NPCs (for NPCs involved in quests)
+Public NPCName() As String
+
 'Number of connections (used just for displaying purposes)
 Public CurrConnections As Long
 
 'The time the server started (in system time)
-Public ServerStartTime As Long
+Public ServerStartTime As Currency
+
+'States the server is running
+Public ServerRunning As Byte
 
 'ID of the local socket
 Public LocalSoxID As Long
@@ -512,7 +522,7 @@ Public DataOut As Long
 Public DataKBIn As Long
 Public DataKBOut As Long
 
-'The number of longs we need to send all of our known skills
+'The number of bytes we need to send all of our known skills
 Public NumBytesForSkills As Long
 
 'Help variables
@@ -522,12 +532,8 @@ Public HelpLine(1 To NumHelpLines) As String    'These are filled in on frmMain.
 Public DebugPacketsOut() As Long
 
 '********** EXTERNAL FUNCTIONS ***********
-Public Declare Function timeGetTime Lib "winmm.dll" () As Long
-Public Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
+Public Declare Sub GetSystemTime Lib "kernel32.dll" Alias "GetSystemTimeAsFileTime" (ByRef lpSystemTimeAsFileTime As Currency)
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:48)  Decl: 678  Code: 0  Total: 678 Lines
-':) CommentOnly: 129 (19%)  Commented: 228 (33.6%)  Empty: 65 (9.6%)  Max Logic Depth: 1

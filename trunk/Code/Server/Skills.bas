@@ -2,28 +2,28 @@ Attribute VB_Name = "Skills"
 Option Explicit
 
 'Bless
-Public Const Bless_Cost As Single = 0.5     'Magic * Bless_Cost
-Public Const Bless_Length As Long = 300000  'How long the skill lasts
-Public Const Bless_Exhaust As Long = 3500   'Exhaustion time
+Private Const Bless_Cost As Single = 0.5    'Magic * Bless_Cost
+Private Const Bless_Length As Long = 300000 'How long the skill lasts
+Private Const Bless_Exhaust As Long = 3500  'Exhaustion time
 
 'Protection
-Public Const Pro_Cost As Single = 0.5       'Magic * Pro_Cost
-Public Const Pro_Length As Long = 300000
-Public Const Pro_Exhaust As Long = 2000
+Private Const Pro_Cost As Single = 0.5      'Magic * Pro_Cost
+Private Const Pro_Length As Long = 300000
+Private Const Pro_Exhaust As Long = 2000
 
 'Strengthen
-Public Const Str_Cost As Single = 0.5       'Magic * Str_Cost
-Public Const Str_Length As Long = 300000
-Public Const Str_Exhaust As Long = 2000
+Private Const Str_Cost As Single = 0.5      'Magic * Str_Cost
+Private Const Str_Length As Long = 300000
+Private Const Str_Exhaust As Long = 2000
 
 'Warcry
-Public Const Warcry_Cost As Single = 0.5    'Strength * Warcry_Cost
-Public Const Warcry_Length As Long = 15000
-Public Const Warcry_Exhaust As Long = 1500
+Private Const Warcry_Cost As Single = 0.5   'Strength * Warcry_Cost
+Private Const Warcry_Length As Long = 15000
+Private Const Warcry_Exhaust As Long = 1500
 
 'Heal
-Public Const Heal_Cost As Single = 0.5      'Magic * Heal_Cost
-Public Const Heal_Value As Single = 1.5     'Magic * Heal_Value = MinHP Raised
+Private Const Heal_Cost As Single = 0.5     'Magic * Heal_Cost
+Private Const Heal_Value As Single = 1.5    'Magic * Heal_Value = MinHP Raised
 Public Const Heal_Exhaust As Long = 1000
 
 Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
@@ -87,12 +87,12 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     End If
     
     'Apply the spell's effects
-    NPCList(TargetIndex).Counters.BlessCounter = Bless_Length
+    NPCList(TargetIndex).Counters.BlessCounter = CurrentTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Bless_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -114,6 +114,15 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
     'Successfully casted
     NPCList(TargetIndex).Flags.UpdateStats = 1
     Skill_Bless_PCtoNPC = 1
@@ -127,8 +136,8 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
 '*****************************************************************
     
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If NPCList(CasterIndex).Flags.ActionDelay Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > CurrentTime Then Exit Function
+    If NPCList(CasterIndex).Counters.ActionDelay > CurrentTime Then Exit Function
     
     'Check for enough mana to cast
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Pro_Cost) Then Exit Function
@@ -154,12 +163,12 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     End If
     
     'Apply the spell's effects
-    NPCList(TargetIndex).Counters.ProtectCounter = Pro_Length
+    NPCList(TargetIndex).Counters.ProtectCounter = CurrentTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = NPCList(CasterIndex).BaseStat(SID.Mag)
     NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
-    NPCList(CasterIndex).Counters.SpellExhaustion = Pro_Exhaust
+    NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -174,9 +183,87 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     
+    'Face the caster to the target
+    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    
     'Successfully casted
     NPCList(TargetIndex).Flags.UpdateStats = 1
     Skill_Protection_NPCtoNPC = 1
+    
+End Function
+
+Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As Integer) As Byte
+
+'*****************************************************************
+'Raises all the character's stats
+'*****************************************************************
+    
+    'Check for invalid values
+    If NPCList(CasterIndex).Counters.SpellExhaustion > CurrentTime Then Exit Function
+    If NPCList(CasterIndex).Counters.ActionDelay > CurrentTime Then Exit Function
+    
+    'Check for enough mana to cast
+    If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost) Then Exit Function
+
+    'Reduce the mana
+    NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Str_Cost)
+    
+    'Cast on the target
+    If NPCList(TargetIndex).Counters.StrengthenCounter > 0 Then
+        If NPCList(TargetIndex).Skills.Strengthen > NPCList(CasterIndex).ModStat(SID.Mag) Then
+            'Power of what we are casting is weaker then what is already applied
+            Exit Function
+        End If
+    End If
+    
+    'Display the strengthen icon (only if it isn't already displayed)
+    If NPCList(TargetIndex).Skills.Strengthen = 0 Then
+        ConBuf.Clear
+        ConBuf.Put_Byte DataCode.Server_IconStrengthened
+        ConBuf.Put_Byte 1
+        ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+        Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    End If
+    
+    'Apply the spell's effects
+    NPCList(TargetIndex).Counters.StrengthenCounter = CurrentTime + Str_Length
+    NPCList(TargetIndex).Skills.Strengthen = NPCList(CasterIndex).BaseStat(SID.Mag)
+    NPCList(TargetIndex).Flags.UpdateStats = 1
+    
+    'Add the spell exhaustion and display it
+    NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
+    ConBuf.Put_Byte 1
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+
+    'Display the effect on the map
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_CastSkill
+    ConBuf.Put_Byte SkID.Strengthen
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    
+    'Successfully casted
+    NPCList(TargetIndex).Flags.UpdateStats = 1
+    Skill_Strengthen_NPCtoNPC = 1
     
 End Function
 
@@ -187,8 +274,8 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
 '*****************************************************************
     
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If NPCList(CasterIndex).Flags.ActionDelay Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > CurrentTime Then Exit Function
+    If NPCList(CasterIndex).Counters.ActionDelay > CurrentTime Then Exit Function
     
     'Check for enough mana to cast
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * Bless_Cost) Then Exit Function
@@ -214,12 +301,12 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     End If
     
     'Apply the spell's effects
-    NPCList(TargetIndex).Counters.BlessCounter = Bless_Length
+    NPCList(TargetIndex).Counters.BlessCounter = CurrentTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = NPCList(CasterIndex).BaseStat(SID.Mag)
     NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
-    NPCList(CasterIndex).Counters.SpellExhaustion = Bless_Exhaust
+    NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -232,6 +319,15 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -301,12 +397,12 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     End If
     
     'Apply the spell's effects
-    NPCList(TargetIndex).Counters.StrengthenCounter = Str_Length
+    NPCList(TargetIndex).Counters.StrengthenCounter = CurrentTime + Str_Length
     NPCList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Str_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -326,6 +422,15 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -395,12 +500,12 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     End If
     
     'Apply the spell's effects
-    NPCList(TargetIndex).Counters.ProtectCounter = Pro_Length
+    NPCList(TargetIndex).Counters.ProtectCounter = CurrentTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Pro_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -420,6 +525,15 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -491,12 +605,12 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     End If
     
     'Apply the spell's effects
-    UserList(TargetIndex).Counters.BlessCounter = Bless_Length
+    UserList(TargetIndex).Counters.BlessCounter = CurrentTime + Bless_Length
     UserList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     UserList(TargetIndex).Stats.Update = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Bless_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -526,6 +640,15 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -596,12 +719,12 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     End If
     
     'Apply the spell's effects
-    UserList(TargetIndex).Counters.StrengthenCounter = Str_Length
+    UserList(TargetIndex).Counters.StrengthenCounter = CurrentTime + Str_Length
     UserList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     UserList(TargetIndex).Stats.Update = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Str_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -631,6 +754,15 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -701,12 +833,12 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     End If
     
     'Apply the spell's effects
-    UserList(TargetIndex).Counters.ProtectCounter = Pro_Length
+    UserList(TargetIndex).Counters.ProtectCounter = CurrentTime + Pro_Length
     UserList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     UserList(TargetIndex).Stats.Update = 1
     
     'Add the spell exhaustion and display it
-    UserList(CasterIndex).Counters.SpellExhaustion = Pro_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -736,6 +868,15 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
@@ -779,7 +920,7 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
 
     'Apply spell exhaustion
-    UserList(CasterIndex).Counters.SpellExhaustion = Heal_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -814,6 +955,15 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     ConBuf.Put_Integer UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
     
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
+    
     'Successfully casted
     Skill_Heal_PCtoPC = 1
 
@@ -826,15 +976,15 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 '*****************************************************************
 
     'Check for invalid values
-    If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If NPCList(CasterIndex).Flags.ActionDelay > 0 Then Exit Function
+    If NPCList(CasterIndex).Counters.SpellExhaustion > CurrentTime Then Exit Function
+    If NPCList(CasterIndex).Counters.ActionDelay > CurrentTime Then Exit Function
 
     'Check for enough mana
     If NPCList(CasterIndex).BaseStat(SID.MinMAN) < NPCList(CasterIndex).BaseStat(SID.Mag) * Heal_Cost Then Exit Function
     NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Cost)
 
     'Apply spell exhaustion
-    NPCList(CasterIndex).Counters.SpellExhaustion = Heal_Exhaust
+    NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -851,6 +1001,15 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 
     'Cast on the target
     NPC_Heal TargetIndex, (NPCList(CasterIndex).ModStat(SID.Mag) * Heal_Value)
+    
+    'Face the caster to the target
+    NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
 
     'Successfully casted
     Skill_Heal_NPCtoNPC = 1
@@ -891,7 +1050,7 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     If Server_CheckTargetedDistance(CasterIndex) = 0 Then Exit Function
 
     'Apply spell exhaustion
-    UserList(CasterIndex).Counters.SpellExhaustion = Heal_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -915,6 +1074,15 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     ConBuf.Put_Byte 42
     ConBuf.Put_String NPCList(TargetIndex).Name
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+    
+    'Face the caster to the target
+    UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
+    UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.User_Rotate
+    ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
+    ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
+    Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
     Skill_Heal_PCtoNPC = 1
@@ -942,7 +1110,7 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
 
     'Check if still exhausted
     If UserList(UserIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    UserList(UserIndex).Counters.SpellExhaustion = 2000
+    UserList(UserIndex).Counters.SpellExhaustion = CurrentTime + 2000
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -1020,7 +1188,7 @@ Dim Damage As Integer
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
 
     'Apply spell exhaustion
-    UserList(CasterIndex).Counters.SpellExhaustion = 3000
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + 3000
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
@@ -1036,119 +1204,119 @@ Dim Damage As Integer
     'Loop through all the tiles, damaging any NPC on them
     'NORTH
     If UserList(CasterIndex).Char.HeadHeading = NORTH Or UserList(CasterIndex).Char.HeadHeading = NORTHEAST Then
-        If MapData(aMap, aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.25
 
-        If MapData(aMap, aX - 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 1).NPCIndex, CasterIndex, Damage
-        If MapData(aMap, aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 1).NPCIndex, CasterIndex, Damage
+        If MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 1, aY - 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY - 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY - 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY - 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY - 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 3).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX, aY - 4).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 4).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY - 4).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 4).NPCIndex, CasterIndex, Damage * 0.25
 
         'EAST
     ElseIf UserList(CasterIndex).Char.HeadHeading = EAST Or UserList(CasterIndex).Char.HeadHeading = SOUTHEAST Then
-        If MapData(aMap, aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.25
 
-        If MapData(aMap, aX + 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY).NPCIndex, CasterIndex, Damage
-        If MapData(aMap, aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY).NPCIndex, CasterIndex, Damage
+        If MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX + 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX + 3, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 3, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 3, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 3, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 3, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 3, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 3, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 3, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 3, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 3, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 3, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 3, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX + 4, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 4, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX + 4, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 4, aY).NPCIndex, CasterIndex, Damage * 0.25
 
         'SOUTH
     ElseIf UserList(CasterIndex).Char.HeadHeading = SOUTH Or UserList(CasterIndex).Char.HeadHeading = SOUTHWEST Then
-        If MapData(aMap, aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY).NPCIndex, CasterIndex, Damage * 0.25
 
-        If MapData(aMap, aX - 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 1).NPCIndex, CasterIndex, Damage
-        If MapData(aMap, aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 1).NPCIndex, CasterIndex, Damage
+        If MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX + 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX + 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 1, aY + 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY + 3).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY + 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY + 3).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 3).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX, aY + 4).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 4).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY + 4).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 4).NPCIndex, CasterIndex, Damage * 0.25
 
         'WEST
     ElseIf UserList(CasterIndex).Char.HeadHeading = WEST Or UserList(CasterIndex).Char.HeadHeading = NORTHWEST Then
-        If MapData(aMap, aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX + 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX + 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.25
-        If MapData(aMap, aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 2).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 2).NPCIndex, CasterIndex, Damage * 0.25
 
-        If MapData(aMap, aX - 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY).NPCIndex, CasterIndex, Damage
-        If MapData(aMap, aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX - 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY - 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX - 1, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY).NPCIndex, CasterIndex, Damage
+        If MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX - 1, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.5
-        If MapData(aMap, aX - 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY - 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY - 2).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY).NPCIndex, CasterIndex, Damage * 0.5
+        If MapInfo(aMap).Data(aX - 2, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 2, aY + 2).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 2, aY + 2).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 3, aY - 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 3, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 3, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 3, aY).NPCIndex, CasterIndex, Damage * 0.333
-        If MapData(aMap, aX - 3, aY + 1).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 3, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 3, aY - 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 3, aY - 1).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 3, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 3, aY).NPCIndex, CasterIndex, Damage * 0.333
+        If MapInfo(aMap).Data(aX - 3, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 3, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
 
-        If MapData(aMap, aX - 4, aY).NPCIndex > 0 Then NPC_Damage MapData(aMap, aX - 4, aY).NPCIndex, CasterIndex, Damage * 0.25
+        If MapInfo(aMap).Data(aX - 4, aY).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 4, aY).NPCIndex, CasterIndex, Damage * 0.25
 
     End If
 
@@ -1196,7 +1364,7 @@ Dim WarCursePower As Integer
     UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) = UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) - Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * Warcry_Cost)
 
     'Apply spell exhaustion
-    UserList(CasterIndex).Counters.SpellExhaustion = Warcry_Exhaust
+    UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Warcry_Exhaust
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Warcry
@@ -1237,7 +1405,7 @@ Dim WarCursePower As Integer
                                         Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(LoopC).Pos.Map
                                     End If
                                     NPCList(LoopC).Skills.WarCurse = WarCursePower
-                                    NPCList(LoopC).Counters.WarCurseCounter = Warcry_Length
+                                    NPCList(LoopC).Counters.WarCurseCounter = CurrentTime + Warcry_Length
                                     
                                 End If
                             End If

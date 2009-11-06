@@ -36,6 +36,8 @@ Private DispEffect As Byte  'Index of the displayed effect
 
 Private ResetX As Single
 Private ResetY As Single
+Private Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+
 
 Private Sub Form_Load()
 
@@ -70,6 +72,9 @@ Private Sub Form_Load()
 
         'FPS
         ElapsedTime = Engine_ElapsedTime()
+        If ElapsedTime < 16 Then
+            Sleep 16 - ElapsedTime
+        End If
         If FPS_Last_Check + 1000 < timeGetTime Then
             FPS = FramesPerSecCounter
             FramesPerSecCounter = 1
@@ -89,30 +94,30 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 'Recreate the effect
 
     If Button = vbRightButton Then
         Effect(DispEffect).Used = False
         ResetEffect
-        Effect(DispEffect).x = x
+        Effect(DispEffect).X = X
         Effect(DispEffect).Y = Y
-        ResetX = x
+        ResetX = X
         ResetY = Y
     End If
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 'Reposition the effect
 
     If Button = vbLeftButton Then
         If Effect(DispEffect).Used = False Then ResetEffect
-        Effect(DispEffect).x = x
+        Effect(DispEffect).X = X
         Effect(DispEffect).Y = Y
-        ResetX = x
+        ResetX = X
         ResetY = Y
     End If
 
@@ -137,9 +142,9 @@ Private Sub ResetEffect()
     'DispEffect = Effect_Protection_Begin(ResetX, ResetY, 11, 100, 40, 15)
     'DispEffect = Effect_Strengthen_Begin(ResetX, ResetY, 12, 100, 40, 15)
     
-    DispEffect = Effect_EquationTemplate_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000)
+    'DispEffect = Effect_EquationTemplate_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 1, 1000)
     
-    'DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
+    DispEffect = Effect_Waterfall_Begin(Me.ScaleWidth * 0.5, Me.ScaleHeight * 0.5, 2, 75)
 
 End Sub
 

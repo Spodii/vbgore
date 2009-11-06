@@ -1,6 +1,8 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Public Const NumFlags As Long = 50
+
 Public CurrGrhNum As Long
 Public CurrGrh As Grh
 
