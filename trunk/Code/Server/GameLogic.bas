@@ -462,12 +462,22 @@ Function Server_FindDirection(Pos As WorldPos, Target As WorldPos) As Byte
 '*****************************************************************
 'Returns the direction in which the Target is from the Pos, 0 if equal
 '*****************************************************************
-
+Dim pX As Integer
+Dim pY As Integer
+Dim tX As Integer
+Dim tY As Integer
 Dim X As Integer
 Dim Y As Integer
 
-    X = Pos.X - Target.X
-    Y = Pos.Y - Target.Y
+    'Put the bytes into integer variables (causes overflows for negatives, even if the return is an integer)
+    pX = Pos.X
+    pY = Pos.Y
+    tX = Target.X
+    tY = Target.Y
+    
+    'Find the difference
+    X = pX - tX
+    Y = pY - tY
 
     'NE
     If X <= -1 Then
@@ -989,8 +999,10 @@ Dim AttackPos As WorldPos
 
         'Play attack sound
         ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_PlaySound
+        ConBuf.Put_Byte DataCode.Server_PlaySound3D
         ConBuf.Put_Byte SOUND_SWING
+        ConBuf.Put_Byte UserList(UserIndex).Pos.X
+        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
         Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
         'Go to the user attacking user sub
@@ -1009,8 +1021,10 @@ Dim AttackPos As WorldPos
 
             'Play attack sound
             ConBuf.Clear
-            ConBuf.Put_Byte DataCode.Server_PlaySound
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
             ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte UserList(UserIndex).Pos.X
+            ConBuf.Put_Byte UserList(UserIndex).Pos.Y
             Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
             'Go to user attacking npc sub
@@ -1090,10 +1104,8 @@ Dim Hit As Integer
 
 'Don't allow if switchingmaps maps
 
-    If UserList(VictimIndex).Flags.SwitchingMaps Then
-        Exit Sub
-    End If
-
+    If UserList(VictimIndex).Flags.SwitchingMaps Then Exit Sub
+    
     'Calculate hit
     Hit = Server_RandomNumber(UserList(AttackerIndex).Stats.ModStat(SID.MinHIT), UserList(AttackerIndex).Stats.ModStat(SID.MaxHIT))
     Hit = Hit - (UserList(VictimIndex).Stats.ModStat(SID.DEF) / 2)
@@ -1860,7 +1872,6 @@ Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte)
 '*****************************************************************
 'Moves a User from one tile to another
 '*****************************************************************
-
 Dim nPos As WorldPos
 
 'Check for invalid values
@@ -1876,8 +1887,8 @@ Dim nPos As WorldPos
         'If the user is moving too fast, then put them back
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_SetUserPosition
-        ConBuf.Put_Byte CByte(UserList(UserIndex).Pos.X)
-        ConBuf.Put_Byte CByte(UserList(UserIndex).Pos.Y)
+        ConBuf.Put_Byte UserList(UserIndex).Pos.X
+        ConBuf.Put_Byte UserList(UserIndex).Pos.Y
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         Exit Sub
 
@@ -1895,12 +1906,15 @@ Dim nPos As WorldPos
 
     'Move if legal pos
     If Server_LegalPos(UserList(UserIndex).Pos.Map, nPos.X, nPos.Y, nHeading) = True Then
+    
+        'Send the movement
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_MoveChar
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Byte nPos.X
         ConBuf.Put_Byte nPos.Y
-        Data_Send ToMapButIndex, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
+        ConBuf.Put_Byte nHeading
+        Data_Send ToPCAreaButIndex, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
 
         'Update map and user pos
         MapData(UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = 0
@@ -1912,16 +1926,14 @@ Dim nPos As WorldPos
         'Do tile events
         Server_DoTileEvents UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
 
-    Else
-
-        'Else correct user's pos
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_SetUserPosition
-        ConBuf.Put_Byte CByte(UserList(UserIndex).Pos.X)
-        ConBuf.Put_Byte CByte(UserList(UserIndex).Pos.Y)
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-
     End If
+
+    'Make sure the user's position is correct
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.Server_SetUserPosition
+    ConBuf.Put_Byte UserList(UserIndex).Pos.X
+    ConBuf.Put_Byte UserList(UserIndex).Pos.Y
+    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
 
 End Sub
 

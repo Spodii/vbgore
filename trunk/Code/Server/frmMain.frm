@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{C1A38C00-7EC2-4319-A304-FE5B3519AF73}#1.0#0"; "vbgoresocketbinary.ocx"
+Object = "{41E14DE4-8B3E-4E31-89BB-654FD3A78163}#1.0#0"; "goresockmicro.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   1  'Fixed Single
@@ -26,19 +26,19 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   287
    StartUpPosition =   2  'CenterScreen
-   Begin SoxOCX.Sox Sox 
-      Height          =   420
-      Left            =   1080
-      Top             =   0
+   Begin GORESOCKmicro.Socket Socket 
+      Height          =   660
+      Left            =   2520
+      Top             =   1800
       Visible         =   0   'False
-      Width           =   420
-      _ExtentX        =   741
-      _ExtentY        =   741
+      Width           =   660
+      _ExtentX        =   1164
+      _ExtentY        =   1164
    End
    Begin VB.Timer DataCalcTmr 
       Interval        =   1000
-      Left            =   2040
-      Top             =   0
+      Left            =   3000
+      Top             =   1320
    End
    Begin VB.TextBox BytesOutTxt 
       Appearance      =   0  'Flat
@@ -83,8 +83,8 @@ Begin VB.Form frmMain
    Begin VB.Timer GameTimer 
       Enabled         =   0   'False
       Interval        =   5
-      Left            =   1560
-      Top             =   0
+      Left            =   2520
+      Top             =   1320
    End
    Begin VB.ListBox Userslst 
       Appearance      =   0  'Flat
@@ -209,9 +209,6 @@ Private Sub Form_Load()
     'Set the file paths
     InitFilePaths
 
-    'Initialize our encryption
-    Encryption_Misc_Init
-
     'Set timeGetTime to a high resolution
     timeBeginPeriod 1
 
@@ -220,23 +217,23 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseMove(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
-    Select Case x
-    Case MouseMove
-    Case LeftUp
-    Case LeftDown
-        'Return from system tray
-        If Me.WindowState = 1 Then
-            TrayDelete
-            Me.WindowState = 0
-            Me.Show
-            DataCalcTmr.Enabled = True
-        End If
-    Case LeftDbClick
-    Case RightUp
-    Case RightDown
-    Case RightDbClick
+    Select Case X
+        Case MouseMove
+        Case LeftUp
+        Case LeftDown
+            'Return from system tray
+            If Me.WindowState = 1 Then
+                TrayDelete
+                Me.WindowState = 0
+                Me.Show
+                DataCalcTmr.Enabled = True
+            End If
+        Case LeftDbClick
+        Case RightUp
+        Case RightDown
+        Case RightDbClick
     End Select
 
 End Sub
@@ -254,24 +251,35 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
+Dim FileNum As Byte
 Dim LoopC As Long
+Dim S As String
 
-    If Sox.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
+    If Socket.ShutDown = soxERROR Then 'Terminate will be True if we have ShutDown properly
         If MsgBox("ShutDown procedure has not completed!" & vbCrLf & "(Hint - Select No and Try again!)" & vbCrLf & "Execute Forced ShutDown?", vbApplicationModal + vbCritical + vbYesNo, "UNABLE TO COMPLY!") = vbNo Then
             Let Cancel = True
             Exit Sub
         Else
-            Sox.UnHook  'Unfortunately for now, I can't get around doing this automatically for you :( VB crashes if you don't do this!
+            Socket.UnHook  'Unfortunately for now, I can't get around doing this automatically for you :( VB crashes if you don't do this!
         End If
     Else
-        Sox.UnHook  'The reason is VB closes my Mod which stores the WindowProc function used for SubClassing and VB doesn't know that! So it closes the Mod before the Control!
+        Socket.UnHook  'The reason is VB closes my Mod which stores the WindowProc function used for SubClassing and VB doesn't know that! So it closes the Mod before the Control!
     End If
     
     'Kill the database connection
     DB_Conn.Close
-    
-    'Save the maps
-    Save_MapData
+
+    'Save the debug packets out
+    If DEBUG_RecordPacketsOut Then
+        S = vbCrLf
+        For LoopC = 0 To 255
+            S = S & LoopC & ": " & DebugPacketsOut(LoopC) & vbCrLf
+        Next LoopC
+        FileNum = FreeFile
+        Open App.Path & "\packetsout.txt" For Output As #FileNum
+            Write #FileNum, S
+        Close #FileNum
+    End If
 
     'Deallocate all arrays to avoid memory leaks
     Erase UserList
@@ -321,23 +329,23 @@ Dim Update As Boolean
         If UserList(UserIndex).Flags.UserLogged Then
 
             'Check if it has been idle for too long
-            If DEBUG_PacketFlood = False Then
-                If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_Message
-                    ConBuf.Put_Byte 85
-                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                    Server_CloseSocket UserIndex
-                    Exit Sub
-                End If
-                If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
-                    ConBuf.Clear
-                    ConBuf.Put_Byte DataCode.Server_Message
-                    ConBuf.Put_Byte 85
-                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                    Server_CloseSocket UserIndex
-                    Exit Sub
-                End If
+            If UserList(UserIndex).Counters.IdleCount <= timeGetTime - IdleLimit Then
+                ConBuf.Clear
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 85
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                Server_CloseSocket UserIndex
+                Exit Sub
+            End If
+            
+            'Check if the user was possible disconnected (or extremely laggy)
+            If UserList(UserIndex).Counters.LastPacket <= timeGetTime - LastPacket Then
+                ConBuf.Clear
+                ConBuf.Put_Byte DataCode.Server_Message
+                ConBuf.Put_Byte 85
+                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                Server_CloseSocket UserIndex
+                Exit Sub
             End If
             
             'Check if stats need to be recovered
@@ -422,23 +430,25 @@ Dim Update As Boolean
             End If
             
             'Check if the packet wait time has passed
-            If UserList(UserIndex).PacketWait > 0 Then UserList(UserIndex).PacketWait = UserList(UserIndex).PacketWait - Elapsed
-            If UserList(UserIndex).PacketWait <= 0 Then
-                
-                'Send the packet buffer to the user
-                If UserList(UserIndex).PPValue = PP_High Then
+            If UserList(UserIndex).HasBuffer Then
+                If UserList(UserIndex).PacketWait > 0 Then UserList(UserIndex).PacketWait = UserList(UserIndex).PacketWait - Elapsed
+                If UserList(UserIndex).PacketWait <= 0 Then
                     
-                    'High priority - send asap
-                    Data_SendBuffer UserIndex
+                    'Send the packet buffer to the user
+                    If UserList(UserIndex).PPValue = PP_High Then
+                        
+                        'High priority - send asap
+                        Data_Send_Buffer UserIndex
+                        
+                    ElseIf UserList(UserIndex).PPValue = PP_Low Then
+                        
+                        'Low priority - check counter for sending
+                        If UserList(UserIndex).PPCount > 0 Then UserList(UserIndex).PPCount = UserList(UserIndex).PPCount - Elapsed
+                        If UserList(UserIndex).PPCount <= 0 Then Data_Send_Buffer UserIndex
                     
-                ElseIf UserList(UserIndex).PPValue = PP_Low Then
+                    End If
                     
-                    'Low priority - check counter for sending
-                    If UserList(UserIndex).PPCount > 0 Then UserList(UserIndex).PPCount = UserList(UserIndex).PPCount - Elapsed
-                    If UserList(UserIndex).PPCount <= 0 Then Data_SendBuffer UserIndex
-                
                 End If
-                
             End If
             
             UserList(UserIndex).Stats.SendUpdatedStats
@@ -511,9 +521,6 @@ Dim Update As Boolean
     'Check if it's time to do a World Save
     If timeGetTime - LastWorldSave >= WORLDSAVE_RATE Then
 
-        'Save all maps
-        Save_MapData
-
         'Save all user's data
         For UserIndex = 1 To LastUser
             If UserList(UserIndex).Flags.UserLogged Then Save_User UserList(UserIndex)
@@ -526,7 +533,7 @@ Dim Update As Boolean
 
 End Sub
 
-Private Sub Sox_OnClose(inSox As Long)
+Private Sub Socket_OnClose(inSox As Long)
 
 '*********************************************
 'Socket was closed - make sure the user is logged off and reset the ConnID
@@ -542,7 +549,7 @@ Dim UserIndex As Integer
 
 End Sub
 
-Private Sub Sox_OnConnection(inSox As Long)
+Private Sub Socket_OnConnection(inSox As Long)
 
 '*********************************************
 'Accepts new user and assigns an open Index
@@ -555,10 +562,13 @@ Dim Index As Integer
     'Check for max users
     If Index > MaxUsers Then Exit Sub
     UserList(Index).ConnID = inSox
+    Socket.SetOption inSox, soxSO_TCP_NODELAY, True
+    Socket.SetOption inSox, soxSO_RCVBUF, TCPBufferSize
+    Socket.SetOption inSox, soxSO_SNDBUF, TCPBufferSize
 
 End Sub
 
-Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
+Private Sub Socket_OnDataArrival(inSox As Long, inData() As Byte)
 
 '*********************************************
 'Retrieve the CommandIDs and send to corresponding data handler
@@ -568,7 +578,7 @@ Dim Index As Integer
 Dim rBuf As DataBuffer
 Dim BufUBound As Long
 Dim CommandID As Byte
-Static x As Long
+Static X As Long
 
     'Get the UserIndex
     Index = User_IndexFromSox(inSox)
@@ -580,35 +590,14 @@ Static x As Long
     'Reset the user's packet counter
     UserList(Index).Counters.LastPacket = timeGetTime
     
-    'Decrypt our packet
-    Select Case EncryptionType
-        Case EncryptionTypeBlowfish
-            Encryption_Blowfish_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeCryptAPI
-            Encryption_CryptAPI_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeDES
-            Encryption_DES_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeGost
-            Encryption_Gost_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeRC4
-            Encryption_RC4_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeXOR
-            Encryption_XOR_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeSkipjack
-            Encryption_Skipjack_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeTEA
-            Encryption_TEA_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeTwofish
-            Encryption_Twofish_DecryptByte inData, EncryptionKey
-    End Select
-    
     'Create the data buffer
     Set rBuf = New DataBuffer
     rBuf.Set_Buffer inData
     BufUBound = UBound(inData)
 
     'Calculate data transfer rate
-    If CalcTraffic = True Then DataIn = DataIn + BufUBound + 1
+    'TCP header = 20 bytes, IPv4 header = 20 bytes, GORESOCK header = 2 bytes
+    If CalcTraffic = True Then DataIn = DataIn + BufUBound + 43 '+ 1 because we have to count inData(0)
 
     'Loop through the data buffer until it's empty
     'If done right, we should use up exactly every byte in the buffer
@@ -624,11 +613,10 @@ Static x As Long
             If CommandID <> .Server_Ping Then UserList(Index).Counters.IdleCount = timeGetTime
         
             Select Case CommandID
+            
             Case 0
-                If DEBUG_PrintPacketReadErrors Then
-                    x = x + 1
-                    Debug.Print "---Blank Byte #" & x
-                End If
+                Exit Do
+       
             Case .Comm_Emote: Data_Comm_Emote rBuf, Index
             Case .Comm_Shout: Data_Comm_Shout rBuf, Index
             Case .Comm_Talk: Data_Comm_Talk rBuf, Index
@@ -674,7 +662,7 @@ Static x As Long
             Case .User_Use: Data_User_Use rBuf, Index
             
             Case Else
-                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " cause premature packet handling abortion!"
+                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
                 Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
                 
             End Select
@@ -685,12 +673,6 @@ Static x As Long
         If rBuf.Get_ReadPos > BufUBound Then Exit Do
 
     Loop
-    
-    If DEBUG_PacketFlood = True Then
-        ConBuf.Clear
-        ConBuf.Put_Byte 111
-        Sox.SendData UserList(1).ConnID, ConBuf.Get_Buffer
-    End If
 
 End Sub
 
@@ -707,6 +689,9 @@ Dim LoopC As Long
 
     'Check if server is already started
     If GameTimer.Enabled = True Then Exit Sub
+    
+    'Set up debug packets out
+    If DEBUG_RecordPacketsOut Then ReDim DebugPacketsOut(0 To 255)
 
     '*** Database ***
     
@@ -755,8 +740,12 @@ Dim LoopC As Long
     frmMain.Refresh
     
     'Change the 127.0.0.1 to 0.0.0.0 or your internal IP to make the server public
-    LocalSoxID = Sox.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
-    Sox.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
+    LocalSoxID = Socket.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
+    Socket.SetOption LocalSoxID, soxSO_TCP_NODELAY, True
+    Socket.SetEncryption eRC4, "1!jkl@!$:!(Zxq"
+    Socket.SetBufferSize TCPBufferSize
+    Socket.SetOption LocalSoxID, soxSO_RCVBUF, TCPBufferSize
+    Socket.SetOption LocalSoxID, soxSO_SNDBUF, TCPBufferSize
 
     '*** Misc ***
     'Calculate data transfer rate
@@ -766,8 +755,8 @@ Dim LoopC As Long
     Server_RefreshUserListBox
 
     'Show local IP/Port
-    If frmMain.Sox.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
-
+    If frmMain.Socket.Address(LocalSoxID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
+    
     'Initialize LastWorldSave
     LastWorldSave = timeGetTime
     RecoverTimer = timeGetTime

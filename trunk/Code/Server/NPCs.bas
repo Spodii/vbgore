@@ -75,60 +75,62 @@ Dim X As Long
 
     'Movement
     Select Case NPCList(NPCIndex).Movement
-
-    Case 2  '*** Random movement ***
-        NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
-
-    Case 3  '*** Go towards nearby players - simple/fast AI ***
-
-        'Look for a user
-        X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
-        If X > 0 Then
-
-            'Find the direction to move
-            tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
-            
-            'Move towards the retrieved position
-            If NPC_MoveChar(NPCIndex, tHeading) = 0 Then
-            
-                'Move towards alternate positions (the two directions that surround the selected direction)
-                Select Case tHeading
-                    Case 1
-                        t1 = 5
-                        t2 = 8
-                    Case 2
-                        t1 = 5
-                        t2 = 6
-                    Case 3
-                        t1 = 7
-                        t2 = 6
-                    Case 4
-                        t1 = 7
-                        t2 = 8
-                    Case 5
-                        t1 = 1
-                        t2 = 2
-                    Case 6
-                        t1 = 2
-                        t2 = 3
-                    Case 7
-                        t1 = 3
-                        t2 = 4
-                    Case 8
-                        t1 = 4
-                        t2 = 1
-                End Select
+    
+        '*** Random movement ***
+        Case 2
+            NPC_MoveChar NPCIndex, Int(Rnd * 8) + 1
+    
+        '*** Go towards nearby players - simple/fast AI ***
+        Case 3
+    
+            'Look for a user
+            X = NPC_AI_ClosestPC(NPCIndex, 10, 8)
+            If X > 0 Then
+    
+                'Find the direction to move
+                tHeading = Server_FindDirection(NPCList(NPCIndex).Pos, UserList(X).Pos)
                 
-                'Do the alternate movement
-                If NPC_MoveChar(NPCIndex, t1) = 0 Then
-                    NPC_MoveChar NPCIndex, t2   'If this doesn't happen, then we're out of stuff to do
+                'Move towards the retrieved position
+                If NPC_MoveChar(NPCIndex, tHeading) = 0 Then
+                
+                    'Move towards alternate positions (the two directions that surround the selected direction)
+                    Select Case tHeading
+                        Case 1
+                            t1 = 5
+                            t2 = 8
+                        Case 2
+                            t1 = 5
+                            t2 = 6
+                        Case 3
+                            t1 = 7
+                            t2 = 6
+                        Case 4
+                            t1 = 7
+                            t2 = 8
+                        Case 5
+                            t1 = 1
+                            t2 = 2
+                        Case 6
+                            t1 = 2
+                            t2 = 3
+                        Case 7
+                            t1 = 3
+                            t2 = 4
+                        Case 8
+                            t1 = 4
+                            t2 = 1
+                    End Select
+                    
+                    'Do the alternate movement
+                    If NPC_MoveChar(NPCIndex, t1) = 0 Then
+                        NPC_MoveChar NPCIndex, t2   'If this doesn't happen, then we're out of stuff to do
+                    End If
+                
                 End If
-            
+                    
+                Exit Sub
+    
             End If
-                
-            Exit Sub
-
-        End If
 
     End Select
 
@@ -187,6 +189,14 @@ Dim Hit As Integer
 
     'Set the action delay
     NPCList(NPCIndex).Flags.ActionDelay = NPCDelayFight
+    
+    'Sound effect
+    ConBuf.Clear
+    ConBuf.Put_Byte DataCode.Server_PlaySound3D
+    ConBuf.Put_Byte SOUND_SWING
+    ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
+    ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
+    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
     'Check if the user has a 100% chance to miss
     If NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50 < UserList(UserIndex).Stats.ModStat(SID.Agi) Then Exit Sub
@@ -209,6 +219,7 @@ Dim Hit As Integer
     'Hit user
     UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) - Hit
 
+    'Display damage
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_SetCharDamage
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -217,6 +228,7 @@ Dim Hit As Integer
 
     'User Die
     If UserList(UserIndex).Stats.BaseStat(SID.MinHP) <= 0 Then
+    
         'Kill user
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
@@ -224,6 +236,7 @@ Dim Hit As Integer
         ConBuf.Put_String NPCList(NPCIndex).Name
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
         User_Kill UserIndex
+        
     End If
 
 End Sub
@@ -499,7 +512,8 @@ Dim nPos As WorldPos
         ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
         ConBuf.Put_Byte nPos.X
         ConBuf.Put_Byte nPos.Y
-        Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+        ConBuf.Put_Byte nHeading
+        Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
 
         'Update map and user pos
         MapData(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y).NPCIndex = 0
@@ -507,7 +521,7 @@ Dim nPos As WorldPos
         NPCList(NPCIndex).Char.Heading = nHeading
         NPCList(NPCIndex).Char.HeadHeading = nHeading
         MapData(NPCList(NPCIndex).Pos.Map, NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y).NPCIndex = NPCIndex
-
+        
         'NPC moved, return the flag
         NPC_MoveChar = 1
 
@@ -535,7 +549,7 @@ Dim LoopC As Long
 
 End Function
 
-Sub NPC_Spawn(ByVal NPCIndex As Integer)
+Sub NPC_Spawn(ByVal NPCIndex As Integer, Optional ByVal BypassUpdate As Byte = 0)
 
 '*****************************************************************
 'Places a NPC that has been Opened
@@ -559,10 +573,15 @@ Dim CharIndex As Integer
 
     'Set vars
     NPCList(NPCIndex).Pos = TempPos
+    NPCList(NPCIndex).Flags.NPCAlive = 1
 
     'Make NPC Char
-    If UBound(ConnectionGroups(TempPos.Map).UserIndex) > 0 Then NPC_MakeChar ToMap, ConnectionGroups(TempPos.Map).UserIndex(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
-
+    If Not BypassUpdate Then
+        If UBound(ConnectionGroups(TempPos.Map).UserIndex) > 0 Then
+            NPC_MakeChar ToMap, ConnectionGroups(TempPos.Map).UserIndex(1), NPCIndex, TempPos.Map, TempPos.X, TempPos.Y
+        End If
+    End If
+    
 End Sub
 
 ':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:46)  Decl: 13  Code: 684  Total: 697 Lines

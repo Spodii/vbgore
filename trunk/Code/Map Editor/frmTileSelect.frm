@@ -17,6 +17,34 @@ Begin VB.Form frmTileSelect
    ShowInTaskbar   =   0   'False
    StartUpPosition =   3  'Windows Default
    WindowState     =   2  'Maximized
+   Begin VB.PictureBox RightPic 
+      AutoRedraw      =   -1  'True
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      Height          =   255
+      Left            =   360
+      Picture         =   "frmTileSelect.frx":0000
+      ScaleHeight     =   17
+      ScaleMode       =   3  'Pixel
+      ScaleWidth      =   23
+      TabIndex        =   1
+      Top             =   0
+      Width           =   345
+   End
+   Begin VB.PictureBox LeftPic 
+      AutoRedraw      =   -1  'True
+      BackColor       =   &H00000000&
+      BorderStyle     =   0  'None
+      Height          =   255
+      Left            =   0
+      Picture         =   "frmTileSelect.frx":0222
+      ScaleHeight     =   17
+      ScaleMode       =   3  'Pixel
+      ScaleWidth      =   23
+      TabIndex        =   0
+      Top             =   0
+      Width           =   345
+   End
 End
 Attribute VB_Name = "frmTileSelect"
 Attribute VB_GlobalNameSpace = False
@@ -45,4 +73,18 @@ Dim RetVal As Long
         ShowFrmTSOpt
     End If
     
+End Sub
+
+Private Sub LeftPic_Click()
+
+    tsStart = tsStart - (tsWidth * tsHeight)
+    Engine_SetTileSelectionArray
+
+End Sub
+
+Private Sub RightPic_Click()
+
+    tsStart = tsStart + (tsWidth * tsHeight)
+    Engine_SetTileSelectionArray
+
 End Sub

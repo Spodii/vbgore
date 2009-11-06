@@ -653,15 +653,9 @@ Dim X As Byte
     Close #InfNum
 
     'Get info
-    MapInfo.Name = Engine_Var_Get(MapEXPath & MapNum & ".dat", "1", "Name")
-    MapInfo.Weather = Val(Engine_Var_Get(MapEXPath & MapNum & ".dat", "1", "Weather"))
-    MapInfo.Music = Val(Engine_Var_Get(MapEXPath & MapNum & ".dat", "1", "Music"))
-
-    'Set current map
-    CurMap = Map
-    
-    'Update effects
-    UpdateEffectList
+    MapInfo.Name = Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Name")
+    MapInfo.Weather = Val(Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Weather"))
+    MapInfo.Music = Val(Engine_Var_Get(MapEXPath & Map & ".dat", "1", "Music"))
     
     'Display info
     With frmMapInfo
@@ -670,6 +664,12 @@ Dim X As Byte
         .WeatherTxt.Text = MapInfo.Weather
         .MusicTxt.Text = MapInfo.Music
     End With
+
+    'Set current map
+    CurMap = Map
+    
+    'Update effects
+    UpdateEffectList
 
 End Sub
 

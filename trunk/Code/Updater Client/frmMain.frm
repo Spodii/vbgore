@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "Comdlg32.ocx"
-Object = "{E4B113F2-DDE2-4AB3-AEA1-60C47D60380C}#1.0#0"; "vbgoresocketstring.ocx"
+Object = "{598D2D95-4E74-49D9-8F45-E9E53990E851}#1.0#0"; "goresockfull.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
@@ -17,14 +17,13 @@ Begin VB.Form frmMain
    ScaleMode       =   3  'Pixel
    ScaleWidth      =   203
    StartUpPosition =   2  'CenterScreen
-   Begin SoxOCX.Sox Sox 
-      Height          =   420
-      Left            =   2400
-      Top             =   600
-      Visible         =   0   'False
-      Width           =   420
-      _ExtentX        =   741
-      _ExtentY        =   741
+   Begin GORESOCKfull.Socket Socket 
+      Height          =   660
+      Left            =   2280
+      Top             =   480
+      Width           =   660
+      _ExtentX        =   1164
+      _ExtentY        =   1164
    End
    Begin VB.Timer CloseTimer 
       Enabled         =   0   'False
@@ -187,7 +186,7 @@ Option Explicit
 Private LocalID As Long
 Private Type da
     FileToSend As String
-    Filename As String
+    FileName As String
     RemoteIP As String
     FileSize As Double
     SaveAs As String
@@ -198,7 +197,7 @@ Private Info As da
 
 Dim RecFileName As String       'File name (path) that we are recieving
 Dim RecFileSize As Long         'Official file size recieved from server
-Dim RecFileHash As String * 32  'Hash recieved from the server
+Dim RecFileHash As String * 32  'Hash received from the server
 
 Dim WriteFileNum As Byte    'File number being written to
 
@@ -235,14 +234,14 @@ Private Sub Connect()
     StatusLbl.Caption = "Connecting..."
 
     'Set up the socket
-    LocalID = Sox.Connect("127.0.0.1", 10202)
+    LocalID = Socket.Connect("127.0.0.1", 10201)
     
      'Check for invalid LocalID (did not connect)
     If LocalID = -1 Then
         StatusLbl.Caption = "Unable to connect!"
         ConnectCmd.Enabled = True
     Else
-        Sox.SetOption LocalID, soxSO_TCP_NODELAY, True
+        Socket.SetOption LocalID, soxSO_TCP_NODELAY, True
     End If
     
 End Sub
@@ -278,15 +277,15 @@ Private Sub Form_Load()
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
     ReleaseCapture
     SendMessage Me.hwnd, &HA1, 2, 0&
 
     'Close form
     If Button = vbLeftButton Then
-        If x >= Me.ScaleWidth - 23 Then
-            If x <= Me.ScaleWidth - 10 Then
+        If X >= Me.ScaleWidth - 23 Then
+            If X <= Me.ScaleWidth - 10 Then
                 If Y <= 26 Then
                     If Y >= 11 Then
                         Unload Me
@@ -301,26 +300,26 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
 Static Cancels As Byte
 
-    If Sox.ShutDown = soxERROR Then
+    If Socket.ShutDown = soxERROR Then
         Cancels = Cancels + 1
         If Cancels < 3 Then
             Let Cancel = True
         Else
-            Sox.UnHook  'Force unload
+            Socket.UnHook  'Force unload
         End If
     Else
-        Sox.UnHook
+        Socket.UnHook
     End If
 
 End Sub
 
-Private Sub Sox_OnClose(inSox As Long)
+Private Sub socket_OnClose(inSox As Long)
 
     ConnectCmd.Enabled = True
 
 End Sub
 
-Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
+Private Sub socket_OnDataArrival(inSox As Long, inData() As Byte)
 Dim TempArray() As String
 Dim TempStr As String
 Dim AppPath As String
@@ -328,8 +327,7 @@ Dim FileNum As Byte
 Dim rData As String
 Dim i As Integer
 Dim j As Long
-
-    On Error Resume Next
+Dim b() As Byte
 
     'Turn the data into a string
     rData = StrConv(inData(), vbUnicode)
@@ -367,7 +365,8 @@ Dim j As Long
             If TempStr = RecFileHash Then
             
                 'The file is the same, do not update
-                Sox.SendData LocalID, "****no****"
+                b() = StrConv("****no****", vbFromUnicode)
+                Socket.SendData LocalID, b()
                 Exit Sub
                 
             End If
@@ -375,7 +374,8 @@ Dim j As Long
         End If
 
         'File is different, request the update
-        Sox.SendData LocalID, "****ok****"
+        b() = StrConv("****ok****", vbFromUnicode)
+        Socket.SendData LocalID, b()
         StatusLbl.Caption = "Downloading..."
         Exit Sub
 
@@ -394,11 +394,16 @@ Dim j As Long
 
     'Done downloading
     If Right$(rData, 12) = "****DONE****" Then
-        Sox.Shut LocalID
-        Sox.ShutDown
+        Socket.Shut LocalID
+        Socket.ShutDown
         StatusLbl.Caption = "Download Successful!"
         FileLbl.Caption = ""
         PercentLbl.Caption = "100%"
+        
+        'Make sure the file is closed
+        On Error Resume Next
+        Close #WriteFileNum
+        On Error GoTo 0
         
         'Clean up the compressed files
         TempArray = AllFilesInFolders(App.Path, True)
@@ -412,9 +417,9 @@ Dim j As Long
         End If
         
         'Unload the updater
-        Sox.Shut LocalID
+        Socket.Shut LocalID
         DoEvents
-        Sox.UnHook
+        Socket.UnHook
         DoEvents
         
         'Initiate the closedown (gives the socket time to unload)
@@ -428,15 +433,9 @@ Dim j As Long
 
 End Sub
 
-Private Sub Sox_OnRecvProgress(inSox As Long, bytesRecv As Long, bytesRemaining As Long)
+Private Sub socket_OnRecvProgress(inSox As Long, bytesRecv As Long, bytesRemaining As Long)
 
     'Update recieved percentage
     PercentLbl.Caption = (Round(bytesRecv / (bytesRecv + bytesRemaining), 2) * 100) & "%"
-
-End Sub
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:45)  Decl: 167  Code: 199  Total: 366 Lines
-':) CommentOnly: 98 (26.8%)  Commented: 9 (2.5%)  Empty: 56 (15.3%)  Max Logic Depth: 6
-Private Sub Sox_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
 
 End Sub

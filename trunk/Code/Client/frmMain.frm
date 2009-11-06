@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{E4B113F2-DDE2-4AB3-AEA1-60C47D60380C}#1.0#0"; "vbgoresocketstring.ocx"
+Object = "{41E14DE4-8B3E-4E31-89BB-654FD3A78163}#1.0#0"; "goresockmicro.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,25 +31,25 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin SoxOCX.Sox Sox 
-      Height          =   420
+   Begin GORESOCKmicro.Socket Socket 
+      Height          =   660
       Left            =   120
-      Top             =   120
+      Top             =   600
       Visible         =   0   'False
-      Width           =   420
-      _ExtentX        =   741
-      _ExtentY        =   741
+      Width           =   660
+      _ExtentX        =   1164
+      _ExtentY        =   1164
    End
    Begin VB.Timer ShutdownTimer 
       Enabled         =   0   'False
       Interval        =   200
-      Left            =   1080
+      Left            =   600
       Top             =   120
    End
    Begin VB.Timer PingTmr 
       Enabled         =   0   'False
-      Interval        =   10000
-      Left            =   600
+      Interval        =   1000
+      Left            =   120
       Top             =   120
    End
 End
@@ -84,10 +84,10 @@ Dim Moved As Byte
 
             'Move on X axis
         Case DIMOFS_X
-            MousePosAdd.x = (DevData(LoopC).lData * MouseSpeed)
-            MousePos.x = MousePos.x + MousePosAdd.x
-            If MousePos.x < 0 Then MousePos.x = 0
-            If MousePos.x > frmMain.ScaleWidth Then MousePos.x = frmMain.ScaleWidth
+            MousePosAdd.X = (DevData(LoopC).lData * MouseSpeed)
+            MousePos.X = MousePos.X + MousePosAdd.X
+            If MousePos.X < 0 Then MousePos.X = 0
+            If MousePos.X > frmMain.ScaleWidth Then MousePos.X = frmMain.ScaleWidth
             Moved = 1
 
             'Move on Y axis
@@ -130,7 +130,7 @@ Dim Moved As Byte
 
             'Reset move variables
             Moved = 0
-            MousePosAdd.x = 0
+            MousePosAdd.X = 0
             MousePosAdd.Y = 0
         End If
 
@@ -248,6 +248,43 @@ Dim i As Byte
                     ElseIf UCase$(Left$(EnterTextBuffer, 3)) = "/EM" Then
                         sndBuf.Put_Byte DataCode.Comm_Emote
                         sndBuf.Put_String SplitCommandFromString(EnterTextBuffer)
+                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/LANG" Then
+                        S = LCase$(SplitCommandFromString(EnterTextBuffer))
+                        If Engine_FileExist(MessagePath & S & ".ini", vbNormal) Then
+                            Engine_Init_Messages S
+                            Engine_Var_Write DataPath & "Game.ini", "INIT", "Language", S
+                            Engine_AddToChatTextBuffer "Language changed to " & S, FontColor_Info
+                        Else
+                            Engine_AddToChatTextBuffer "Specified language does not exist!", FontColor_Info
+                        End If
+                    ElseIf UCase$(Left$(EnterTextBuffer, 5)) = "/SKIN" Then
+                        S = LCase$(SplitCommandFromString(EnterTextBuffer))
+                        If Engine_FileExist(DataPath & "Skins\" & S & ".ini", vbNormal) Then
+                            CurrentSkin = S
+                            Engine_Init_GUI 0
+                            Engine_Var_Write DataPath & "Game.ini", "INIT", "CurrentSkin", CurrentSkin
+                            Engine_AddToChatTextBuffer "Skin changed to " & CurrentSkin, FontColor_Info
+                        Else
+                            Engine_AddToChatTextBuffer "Specified skin does not exist!", FontColor_Info
+                        End If
+                    ElseIf UCase$(Left$(EnterTextBuffer, 4)) = "/THR" Then
+                        TempS = Split(EnterTextBuffer)
+                        If UBound(TempS) <> 0 Then
+                            If IsNumeric(TempS(1)) Then
+                                sndBuf.Put_Byte DataCode.GM_Thrall
+                                sndBuf.Put_Integer Val(TempS(1))
+                                If UBound(TempS) > 1 Then
+                                    If IsNumeric(TempS(2)) Then
+                                        sndBuf.Put_Integer Val(TempS(2))
+                                    Else
+                                        sndBuf.Put_Integer 1
+                                    End If
+                                    sndBuf.Put_Integer 1
+                                End If
+                            End If
+                        End If
+                    ElseIf UCase$(Left$(EnterTextBuffer, 6)) = "/DETHR" Then
+                        sndBuf.Put_Byte DataCode.GM_DeThrall
                     ElseIf UCase$(EnterTextBuffer) = "/QUIT" Then
                         IsUnloading = 1
                     ElseIf UCase$(EnterTextBuffer) = "/ACCEPT" Then
@@ -530,6 +567,11 @@ Private Sub ShutdownTimer_Timer()
 
     On Error Resume Next    'Who cares about an error if we are closing down
 
+    'Make sure the socket is closed
+    frmMain.Socket.Shut SoxID
+    frmMain.Socket.ShutDown
+    frmMain.Socket.UnHook
+
     'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
     Engine_Init_UnloadTileEngine
     Engine_UnloadAllForms
@@ -537,13 +579,13 @@ Private Sub ShutdownTimer_Timer()
 
 End Sub
 
-Private Sub Sox_OnClose(inSox As Long)
+Private Sub Socket_OnClose(inSox As Long)
 
     If SocketOpen = 1 Then IsUnloading = 1
 
 End Sub
 
-Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
+Private Sub Socket_OnDataArrival(inSox As Long, inData() As Byte)
 
 '*********************************************
 'Retrieve the CommandIDs and send to corresponding data handler
@@ -552,38 +594,13 @@ Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
 Dim rBuf As DataBuffer
 Dim CommandID As Byte
 Dim BufUBound As Long
-
-'Counts empty CommandIDs - used for debugging to remove extra packet info
-'In a perfect program, this should always be 0, which means no empty data was sent and caught
-Static x As Long
+Static X As Long
 
     'Display packet
     If DEBUG_PrintPacket_In Then
         Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
     End If
 
-    'Decrypt our packet
-    Select Case EncryptionType
-        Case EncryptionTypeBlowfish
-            Encryption_Blowfish_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeCryptAPI
-            Encryption_CryptAPI_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeDES
-            Encryption_DES_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeGost
-            Encryption_Gost_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeRC4
-            Encryption_RC4_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeXOR
-            Encryption_XOR_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeSkipjack
-            Encryption_Skipjack_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeTEA
-            Encryption_TEA_DecryptByte inData, EncryptionKey
-        Case EncryptionTypeTwofish
-            Encryption_Twofish_DecryptByte inData, EncryptionKey
-    End Select
-    
     'Set up the data buffer
     Set rBuf = New DataBuffer
     rBuf.Set_Buffer inData
@@ -610,10 +627,11 @@ Static x As Long
         'Make the appropriate call based on the Command ID
         With DataCode
             Select Case CommandID
+
             Case 0
                 If DEBUG_PrintPacketReadErrors Then
-                    x = x + 1
-                    Debug.Print "---Blank Byte #" & x & " - Previous CommandID was " & CommandID
+                    X = X + 1
+                    Debug.Print "Empty Command ID #" & X
                 End If
 
             Case .Comm_Talk: Data_Comm_Talk rBuf
@@ -646,6 +664,7 @@ Static x As Long
             Case .Server_MoveChar: Data_Server_MoveChar rBuf
             Case .Server_Ping: Data_Server_Ping
             Case .Server_PlaySound: Data_Server_PlaySound rBuf
+            Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
             Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
             Case .Server_SetUserPosition: Data_Server_SetUserPosition rBuf
             Case .Server_UserCharIndex: Data_Server_UserCharIndex rBuf
@@ -666,7 +685,7 @@ Static x As Long
             Case .User_Trade_StartNPCTrade: Data_User_Trade_StartNPCTrade rBuf
 
             Case Else
-                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " cause premature packet handling abortion!"
+                If DEBUG_PrintPacketReadErrors Then Debug.Print "Command ID " & CommandID & " caused a premature packet handling abortion!"
                 Exit Do 'Something went wrong or we hit the end, either way, RUN!!!!
 
             End Select
@@ -698,35 +717,27 @@ Dim i As Integer
 
 End Function
 
-':) Ulli's VB Code Formatter V2.19.5 (2006-Jul-31 17:36)  Decl: 4  Code: 837  Total: 841 Lines
-':) CommentOnly: 51 (6.1%)  Commented: 2 (0.2%)  Empty: 77 (9.2%)  Max Logic Depth: 7
-Private Sub Sox_OnState(inSox As Long, inState As SoxOCX.enmSoxState)
-    
-    If inState = soxConnecting Then
-        If SocketOpen = 0 Then
-    
-            'Pre-saved character
-            If SendNewChar = False Then
-                sndBuf.Put_Byte DataCode.User_Login
-                sndBuf.Put_String UserName
-                sndBuf.Put_String UserPassword
-            Else
-                'New character
-                sndBuf.Put_Byte DataCode.User_NewLogin
-                sndBuf.Put_String UserName
-                sndBuf.Put_String UserPassword
-            End If
-        
-            'Save Game.ini
-            If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
-            Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
-            
-            'Send the data
-            Data_Send
-            DoEvents
-    
-        End If
+Private Sub Socket_OnEstablish(inSox As Long)
+
+    'Pre-saved character
+    If SendNewChar = False Then
+        sndBuf.Put_Byte DataCode.User_Login
+        sndBuf.Put_String UserName
+        sndBuf.Put_String UserPassword
+    Else
+        'New character
+        sndBuf.Put_Byte DataCode.User_NewLogin
+        sndBuf.Put_String UserName
+        sndBuf.Put_String UserPassword
     End If
 
+    'Save Game.ini
+    If frmConnect.SavePassChk.Value = 0 Then UserPassword = vbNullString
+    Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", UserName
+    Engine_Var_Write DataPath & "Game.ini", "INIT", "Password", UserPassword
+    
+    'Send the data
+    Data_Send
+    DoEvents
+    
 End Sub

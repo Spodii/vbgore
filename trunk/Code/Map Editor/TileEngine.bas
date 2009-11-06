@@ -54,23 +54,17 @@ Public Type FloatPos
     Y As Single
 End Type
 
-'Holds a local position
-Private Type PositionSng
-    X As Single
-    Y As Single
-End Type
-
 'Holds a world position
 Public Type WorldPos
-    X As Integer
-    Y As Integer
+    X As Byte
+    Y As Byte
 End Type
 
 'Holds a world position
 Private Type WorldPosEX
     Map As Integer
-    X As Integer
-    Y As Integer
+    X As Byte
+    Y As Byte
 End Type
 
 'Holds data about where a png can be found,
@@ -113,7 +107,6 @@ End Type
 Public Type WeaponData
     Walk(1 To 8) As Grh
     Attack(1 To 8) As Grh
-    WeaponOffset As Position
 End Type
 
 'Heads list
@@ -154,7 +147,7 @@ Public Type Char
     Wings As WingData
     Moving As Byte
     Aggressive As Byte
-    MoveOffset As PositionSng
+    MoveOffset As FloatPos
     BlinkTimer As Single
     ScrollDirectionX As Integer
     ScrollDirectionY As Integer
@@ -1338,8 +1331,6 @@ Dim LoopC As Long
         Engine_Init_Grh WeaponData(LoopC).Walk(6), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk6")), 0
         Engine_Init_Grh WeaponData(LoopC).Walk(7), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk7")), 0
         Engine_Init_Grh WeaponData(LoopC).Walk(8), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Walk8")), 0
-        WeaponData(LoopC).WeaponOffset.X = CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetX"))
-        WeaponData(LoopC).WeaponOffset.Y = CLng(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "WeaponOffsetY"))
         Engine_Init_Grh WeaponData(LoopC).Attack(1), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack1")), 1
         Engine_Init_Grh WeaponData(LoopC).Attack(2), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack2")), 1
         Engine_Init_Grh WeaponData(LoopC).Attack(3), CInt(Engine_Var_Get(DataPath & "Weapon.dat", "Weapon" & LoopC, "Attack3")), 1
@@ -2028,7 +2019,7 @@ Dim WingsGrh As Grh
 
         'Shadow
         Engine_Render_Grh CharList(CharIndex).Body.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
-        Engine_Render_Grh CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading), PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, True, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+        Engine_Render_Grh CharList(CharIndex).Weapon.Walk(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, True, True, True, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
 
     Else
 
@@ -2038,7 +2029,7 @@ Dim WingsGrh As Grh
 
         'Shadow
         Engine_Render_Grh CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, 1, 1, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
-        Engine_Render_Grh CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading), PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, True, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
+        Engine_Render_Grh CharList(CharIndex).Weapon.Attack(CharList(CharIndex).Heading), PixelOffsetX, PixelOffsetY, True, True, False, ShadowColor, ShadowColor, ShadowColor, ShadowColor, , 1
 
         'Check if animation has stopped
         If CharList(CharIndex).Body.Attack(CharList(CharIndex).Heading).Started = 0 Then CharList(CharIndex).ActionIndex = 0
@@ -2102,7 +2093,7 @@ Dim WingsGrh As Grh
         
     '*** NORTH / NORTHEAST *** (1.Weapon 2.Body 3.Head 4.Hair 5.Wings)
     If CharList(CharIndex).Heading = NORTH Or CharList(CharIndex).Heading = NORTHEAST Then
-        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
@@ -2114,7 +2105,7 @@ Dim WingsGrh As Grh
         Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh WingsGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
     '*** SOUTH / SOUTHWEST *** (1.Wings 2.Body 3.Head 4.Hair 5.Weapon)
     ElseIf CharList(CharIndex).Heading = SOUTH Or CharList(CharIndex).Heading = SOUTHWEST Then
@@ -2122,11 +2113,11 @@ Dim WingsGrh As Grh
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
-        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         
     '*** WEST / NORTHWEST *** (1.Weapon 1.Body 2.Head 3.Hair 4.Wings)
     ElseIf CharList(CharIndex).Heading = WEST Or CharList(CharIndex).Heading = NORTHWEST Then
-        Engine_Render_Grh WeaponGrh, PixelOffsetX + CharList(CharIndex).Weapon.WeaponOffset.X, PixelOffsetY + CharList(CharIndex).Weapon.WeaponOffset.Y, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
+        Engine_Render_Grh WeaponGrh, PixelOffsetX, PixelOffsetY, True, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh BodyGrh, PixelOffsetX, PixelOffsetY, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HeadGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)
         Engine_Render_Grh HairGrh, PixelOffsetX + CharList(CharIndex).Body.HeadOffset.X, PixelOffsetY + CharList(CharIndex).Body.HeadOffset.Y, 1, 0, True, RenderColor(1), RenderColor(2), RenderColor(3), RenderColor(4)

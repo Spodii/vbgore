@@ -12,13 +12,13 @@ Function Server_UserExist(ByVal UserName As String, Optional ByVal DeleteIfExist
     'If End Of File = true, then the user doesn't exist
     If DB_RS.EOF = True Then Server_UserExist = False Else Server_UserExist = True
     
-    'Close the recordset
-    DB_RS.Close
-    
     'Check for the delete flag
     If DeleteIfExists Then
         If Server_UserExist Then DB_Conn.Execute "DELETE FROM users WHERE `name`='" & UserName & "'"
     End If
+    
+    'Close the recordset
+    DB_RS.Close
 
 End Function
 

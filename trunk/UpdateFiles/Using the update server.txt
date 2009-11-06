@@ -1,0 +1,4 @@
+To use the update server, you must include your client files in this folder.
+Treat this folder as the root directory. So for example, any file in this
+folder will go to the same folder that the UpdateClient.exe is in on the
+client computer. Folder structures are allowed.

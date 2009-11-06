@@ -127,27 +127,36 @@ Private Sub InitSoxSocket()
     End If
     
     'Clean out the socket so we can make a fresh new connection
-    frmMain.Sox.ShutDown
-
+    If SoxID > 0 Then frmMain.Socket.Shut SoxID
+    frmMain.Socket.ShutDown
+    frmMain.Socket.UnHook
+    DoEvents
+    
     'Set up the socket
-    SoxID = frmMain.Sox.Connect("127.0.0.1", 10200)
+    frmMain.Socket.Hook
+    DoEvents
+    SoxID = frmMain.Socket.Connect("127.0.0.1", 10200)
 
     If SoxID = -1 Then
         MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
     Else
-        frmMain.Sox.SetOption SoxID, soxSO_TCP_NODELAY, True
+        frmMain.Socket.SetOption SoxID, soxSO_TCP_NODELAY, True
+        frmMain.Socket.SetEncryption eRC4, "1!jkl@!$:!(Zxq"
+        frmMain.Socket.SetBufferSize TCPBufferSize
+        frmMain.Socket.SetOption SoxID, soxSO_RCVBUF, TCPBufferSize
+        frmMain.Socket.SetOption SoxID, soxSO_SNDBUF, TCPBufferSize
     End If
 
 End Sub
 
-Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y As Single)
+Private Sub Form_MouseDown(Button As Integer, Shift As Integer, X As Single, Y As Single)
 
 '*****************************************************************
 'Process clicking events
 '*****************************************************************
     
     'New
-    If Engine_RectCollision(x, Y, 1, 1, 29, 85, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 85, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -157,7 +166,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y A
     End If
     
     'Connect
-    If Engine_RectCollision(x, Y, 1, 1, 29, 129, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 129, 141, 36) Then
         UserName = NameTxt.Text
         UserPassword = PasswordTxt.Text
         If Game_CheckUserData Then
@@ -167,7 +176,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y A
     End If
     
     'Exit
-    If Engine_RectCollision(x, Y, 1, 1, 29, 174, 141, 36) Then
+    If Engine_RectCollision(X, Y, 1, 1, 29, 174, 141, 36) Then
         'Save the game ini
         Engine_Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
         If SavePassChk.Value = 0 Then
@@ -177,7 +186,7 @@ Private Sub Form_MouseDown(Button As Integer, Shift As Integer, x As Single, Y A
         End If
     
         'End program
-        prgRun = False
+        IsUnloading = 1
         
     End If
     

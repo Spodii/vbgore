@@ -3,21 +3,6 @@ Option Explicit
 
 'Credits goes to Fredrik Qvarfort for writing the algorithms in Visual Basic!
 
-'***** SETTINGS *****
-'RECCOMENDED YOU ONLY USE ONE ENCRYPTION!!!
-Public Const EncryptionKey As String = "34l)2`ls)2/4\a)@4klja/2./as9"   'Change this to the key you wish to use
-Public Const EncryptionTypeNone As Byte = 0     'Set this value to bypass encryptions
-Public Const EncryptionTypeBlowfish As Byte = 1
-Public Const EncryptionTypeCryptAPI As Byte = 2
-Public Const EncryptionTypeDES As Byte = 3
-Public Const EncryptionTypeGost As Byte = 4
-Public Const EncryptionTypeRC4 As Byte = 5
-Public Const EncryptionTypeXOR As Byte = 6
-Public Const EncryptionTypeSkipjack As Byte = 7
-Public Const EncryptionTypeTEA As Byte = 8
-Public Const EncryptionTypeTwofish As Byte = 9
-Public Const EncryptionType As Byte = EncryptionTypeNone
-
 '***** BLOWFISH *****
 'Constant for number of rounds
 Private Const ROUNDS = 16
@@ -964,11 +949,11 @@ Dim ByteArray() As Byte
 
 End Function
 
-Private Static Function Encryption_Blowfish_F(ByVal x As Long) As Long
+Private Static Function Encryption_Blowfish_F(ByVal X As Long) As Long
 
 Dim xb(0 To 3) As Byte
 
-    Call CopyMem(xb(0), x, 4)
+    Call CopyMem(xb(0), X, 4)
     If (m_RunningCompiled) Then
         Encryption_Blowfish_F = (((m_sBoxBF(0, xb(3)) + m_sBoxBF(1, xb(2))) Xor m_sBoxBF(2, xb(1))) + m_sBoxBF(3, xb(0)))
     Else
@@ -3348,25 +3333,25 @@ End Function
 
 Private Static Function Encryption_Gost_F(R As Long, K As Long) As Long
 
-Dim x As Long
+Dim X As Long
 Dim xb(0 To 3) As Byte
 Dim xx(0 To 3) As Byte
 Dim a As Byte, b As Byte, C As Byte, D As Byte
 
     If (m_RunningCompiled) Then
-        x = R + K
+        X = R + K
     Else
-        x = Encryption_Misc_UnsignedAdd(R, K)
+        X = Encryption_Misc_UnsignedAdd(R, K)
     End If
 
     'Extract byte sequence
-    D = x And &HFF
-    x = x \ 256
-    C = x And &HFF
-    x = x \ 256
-    b = x And &HFF
-    x = x \ 256
-    a = x And &HFF
+    D = X And &HFF
+    X = X \ 256
+    C = X And &HFF
+    X = X \ 256
+    b = X And &HFF
+    X = X \ 256
+    a = X And &HFF
 
     'Key-dependant substutions
     xb(0) = k21(a)
@@ -3473,11 +3458,11 @@ Dim ByteArray() As Byte
 
 End Sub
 
-Private Function Encryption_Misc_FileExist(Filename As String) As Boolean
+Private Function Encryption_Misc_FileExist(FileName As String) As Boolean
 
     On Error GoTo NotExist
 
-    Call FileLen(Filename)
+    Call FileLen(FileName)
     Encryption_Misc_FileExist = True
 
 Exit Function
@@ -3535,29 +3520,6 @@ Dim ByteArray() As Byte
     Encryption_Misc_HexToStr = StrConv(ByteArray, vbUnicode)
 
 End Function
-
-Public Sub Encryption_Misc_Init()
-
-    Select Case EncryptionType
-    Case EncryptionTypeBlowfish
-        Encryption_Blowfish_Init
-    Case EncryptionTypeCryptAPI
-        'Nothing
-    Case EncryptionTypeDES
-        Encryption_DES_Init
-    Case EncryptionTypeGost
-        Encryption_Gost_Init
-    Case EncryptionTypeRC4
-        'Nothing
-    Case EncryptionTypeSkipjack
-        Encryption_Skipjack_Init
-    Case EncryptionTypeTEA
-        Encryption_TEA_Init
-    Case EncryptionTypeTwofish
-        Encryption_Twofish_Init
-    End Select
-
-End Sub
 
 Private Sub Encryption_Misc_InitHex()
 
@@ -4278,7 +4240,7 @@ End Sub
 
 Public Sub Encryption_TEA_DecryptByte(ByteArray() As Byte, Optional Key As String)
 
-Dim x As Long
+Dim X As Long
 Dim sum As Long
 Dim Offset As Long
 Dim OrigLen As Long
@@ -4309,7 +4271,7 @@ Dim Sl As Long
         Call Encryption_Misc_GetWord(RightWord, ByteArray(), Offset + 4)
 
         sum = DecryptSum
-        For x = 1 To TEAROUNDS
+        For X = 1 To TEAROUNDS
             If (m_RunningCompiled) Then
                 Sl = ((LeftWord And &HFFFFFFE0) \ 32) And &H7FFFFFF
                 RightWord = RightWord - (((LeftWord * 16) + Tk(2)) Xor (LeftWord + sum) Xor (Sl + Tk(3)))
@@ -4410,7 +4372,7 @@ End Function
 
 Public Sub Encryption_TEA_EncryptByte(ByteArray() As Byte, Optional Key As String)
 
-Dim x As Long
+Dim X As Long
 Dim sum As Long
 Dim Offset As Long
 Dim OrigLen As Long
@@ -4465,7 +4427,7 @@ Dim Sr As Long
 
         'Encrypt the block
         sum = 0
-        For x = 1 To TEAROUNDS
+        For X = 1 To TEAROUNDS
             If (m_RunningCompiled) Then
                 sum = (sum + Delta)
                 Sr = ((RightWord And &HFFFFFFE0) \ 32) And &H7FFFFFF
@@ -4968,12 +4930,12 @@ Dim ByteArray() As Byte
 
 End Function
 
-Private Static Function Encryption_Twofish_F32(k64Cnt As Long, x As Long, k32() As Long) As Long
+Private Static Function Encryption_Twofish_F32(k64Cnt As Long, X As Long, k32() As Long) As Long
 
 Dim xb(0 To 3) As Byte
 Dim Key(0 To 3, 0 To 3) As Byte
 
-    Call CopyMem(xb(0), x, 4)
+    Call CopyMem(xb(0), X, 4)
     Call CopyMem(Key(0, 0), k32(0), 16)
 
     If ((k64Cnt And 3) = 1) Then
@@ -5002,13 +4964,13 @@ Dim Key(0 To 3, 0 To 3) As Byte
 
 End Function
 
-Private Static Function Encryption_Twofish_Fe32(x As Long, R As Long) As Long
+Private Static Function Encryption_Twofish_Fe32(X As Long, R As Long) As Long
 
 Dim xb(0 To 3) As Byte
 
 'Extract the byte sequence
 
-    Call CopyMem(xb(0), x, 4)
+    Call CopyMem(xb(0), X, 4)
 
     'Calculate the FE32 function
     Encryption_Twofish_Fe32 = sBoxTF(2 * xb(R Mod 4)) Xor _
@@ -5114,62 +5076,62 @@ Private Function Encryption_Twofish_lBSR(ByRef lInput As Long, ByRef bShiftBits 
 
 End Function
 
-Private Static Function Encryption_Twofish_LFSR1(ByRef x As Long) As Long
+Private Static Function Encryption_Twofish_LFSR1(ByRef X As Long) As Long
 
-    Encryption_Twofish_LFSR1 = Encryption_Twofish_lBSR(x, 1) Xor ((x And 1) * GF256_FDBK_2)
+    Encryption_Twofish_LFSR1 = Encryption_Twofish_lBSR(X, 1) Xor ((X And 1) * GF256_FDBK_2)
 
 End Function
 
-Private Static Function Encryption_Twofish_LFSR2(ByRef x As Long) As Long
+Private Static Function Encryption_Twofish_LFSR2(ByRef X As Long) As Long
 
-    Encryption_Twofish_LFSR2 = Encryption_Twofish_lBSR(x, 2) Xor ((x And &H2) / &H2 * GF256_FDBK_2) Xor ((x And &H1) * GF256_FDBK_4)
+    Encryption_Twofish_LFSR2 = Encryption_Twofish_lBSR(X, 2) Xor ((X And &H2) / &H2 * GF256_FDBK_2) Xor ((X And &H1) * GF256_FDBK_4)
 
 End Function
 
 Private Static Function Encryption_Twofish_Rot1(Value As Long) As Long
 
 Dim Temp As Byte
-Dim x(0 To 3) As Byte
+Dim X(0 To 3) As Byte
 
-    Call CopyMem(x(0), Value, 4)
+    Call CopyMem(X(0), Value, 4)
 
-    Temp = x(0)
-    x(0) = (x(0) \ 2) Or ((x(1) And 1) * 128)
-    x(1) = (x(1) \ 2) Or ((x(2) And 1) * 128)
-    x(2) = (x(2) \ 2) Or ((x(3) And 1) * 128)
-    x(3) = (x(3) \ 2) Or ((Temp And 1) * 128)
+    Temp = X(0)
+    X(0) = (X(0) \ 2) Or ((X(1) And 1) * 128)
+    X(1) = (X(1) \ 2) Or ((X(2) And 1) * 128)
+    X(2) = (X(2) \ 2) Or ((X(3) And 1) * 128)
+    X(3) = (X(3) \ 2) Or ((Temp And 1) * 128)
 
-    Call CopyMem(Encryption_Twofish_Rot1, x(0), 4)
+    Call CopyMem(Encryption_Twofish_Rot1, X(0), 4)
 
 End Function
 
 Private Static Function Encryption_Twofish_Rot31(Value As Long) As Long
 
 Dim Temp As Byte
-Dim x(0 To 3) As Byte
+Dim X(0 To 3) As Byte
 
-    Call CopyMem(x(0), Value, 4)
+    Call CopyMem(X(0), Value, 4)
 
-    Temp = x(3)
-    x(3) = ((x(3) And 127) * 2) Or -CBool(x(2) And 128)
-    x(2) = ((x(2) And 127) * 2) Or -CBool(x(1) And 128)
-    x(1) = ((x(1) And 127) * 2) Or -CBool(x(0) And 128)
-    x(0) = ((x(0) And 127) * 2) Or -CBool(Temp And 128)
+    Temp = X(3)
+    X(3) = ((X(3) And 127) * 2) Or -CBool(X(2) And 128)
+    X(2) = ((X(2) And 127) * 2) Or -CBool(X(1) And 128)
+    X(1) = ((X(1) And 127) * 2) Or -CBool(X(0) And 128)
+    X(0) = ((X(0) And 127) * 2) Or -CBool(Temp And 128)
 
-    Call CopyMem(Encryption_Twofish_Rot31, x(0), 4)
+    Call CopyMem(Encryption_Twofish_Rot31, X(0), 4)
 
 End Function
 
-Private Static Function Encryption_Twofish_RS_Rem(x As Long) As Long
+Private Static Function Encryption_Twofish_RS_Rem(X As Long) As Long
 
 Dim b As Long
 Dim g2 As Long
 Dim g3 As Long
 
-    b = (Encryption_Twofish_Encryption_Twofish_lBSRU(x, 24) And &HFF)
+    b = (Encryption_Twofish_Encryption_Twofish_lBSRU(X, 24) And &HFF)
     g2 = ((Encryption_Twofish_lBSL(b, 1) Xor (b And &H80) / &H80 * &H14D) And &HFF)
     g3 = (Encryption_Twofish_Encryption_Twofish_lBSRU(b, 1) Xor ((b And &H1) * Encryption_Twofish_Encryption_Twofish_lBSRU(&H14D, 1)) Xor g2)
-    Encryption_Twofish_RS_Rem = Encryption_Twofish_lBSL(x, 8) Xor Encryption_Twofish_lBSL(g3, 24) Xor Encryption_Twofish_lBSL(g2, 16) Xor Encryption_Twofish_lBSL(g3, 8) Xor b
+    Encryption_Twofish_RS_Rem = Encryption_Twofish_lBSL(X, 8) Xor Encryption_Twofish_lBSL(g3, 24) Xor Encryption_Twofish_lBSL(g2, 16) Xor Encryption_Twofish_lBSL(g3, 8) Xor b
 
 End Function
 

@@ -15,7 +15,7 @@ Dim i As Long
     If DB_RS.EOF = False Then
         
         'Apply the values
-        Load_Mail.Subject = Trim$(DB_RS!sub)
+        Load_Mail.Subject = Trim$(DB_RS!Sub)
         Load_Mail.WriterName = Trim$(DB_RS!By)
         Load_Mail.RecieveDate = DB_RS!Date
         Load_Mail.Message = Trim$(DB_RS!msg)
@@ -214,7 +214,7 @@ Dim i As Long
 
 End Sub
 
-Function Load_NPC(ByVal NPCNumber As Integer) As Integer
+Function Load_NPC(ByVal NPCNumber As Integer, Optional ByVal Thralled As Byte = 0) As Integer
 
 '*****************************************************************
 'Loads a NPC and returns its index
@@ -245,7 +245,9 @@ Dim i As Long
     
     'Make sure the NPC exists
     If DB_RS.EOF Then
-        If DEBUG_DebugMode Then MsgBox "Error loading NPC " & NPCIndex & " with NPCNumber " & NPCNumber & " - no NPC by the number found!", vbOKOnly
+        If Thralled = 0 Then    'Don't give the error from an invalid thrall
+            If DEBUG_DebugMode Then MsgBox "Error loading NPC " & NPCIndex & " with NPCNumber " & NPCNumber & " - no NPC by the number found!", vbOKOnly
+        End If
         Exit Function
     End If
 
@@ -298,6 +300,7 @@ Dim i As Long
         .BaseStat(SID.MinHP) = .BaseStat(SID.MaxHP)
         .BaseStat(SID.MinMAN) = .BaseStat(SID.MaxMAN)
         .BaseStat(SID.MinSTA) = .BaseStat(SID.MaxSTA)
+        .Flags.Thralled = Thralled
                 
     End With
     
@@ -607,7 +610,7 @@ Dim i As Long
     
     'Put the data in the recordset
     DB_RS!id = Str$(MailIndex)
-    DB_RS!sub = MailData.Subject
+    DB_RS!Sub = MailData.Subject
     DB_RS!By = MailData.WriterName
     DB_RS!Date = MailData.RecieveDate
     DB_RS!msg = MailData.Message
@@ -619,80 +622,6 @@ Dim i As Long
    
     'Close the database
     DB_RS.Close
-
-End Sub
-
-Sub Save_MapData()
-
-'*****************************************************************
-'Saves the MapX.inf files (all others don't need back up)
-'*****************************************************************
-
-Dim Map As Long
-Dim X As Long
-Dim Y As Long
-Dim ByFlags As Byte
-Dim FileNum As Byte
-
-    NumMaps = Val(Var_Get(DataPath & "Map.dat", "INIT", "NumMaps"))
-
-    'Get the next free file slot
-    FileNum = FreeFile
-
-    For Map = 1 To NumMaps
-
-        'Open files and save updated version
-
-        'inf
-        Open MapEXPath & Map & ".inf" For Binary As #FileNum
-        Seek #FileNum, 1
-
-        'Save arrays
-        For Y = YMinMapSize To YMaxMapSize
-            For X = XMinMapSize To XMaxMapSize
-                '.inf file
-
-                '#############################
-                'Set up flag's byte
-                '#############################
-                'Reset it
-                ByFlags = 0
-
-                'Tile exits
-                If MapData(Map, X, Y).TileExit.Map Then ByFlags = ByFlags Xor 1
-
-                'NPC
-                If MapData(Map, X, Y).NPCIndex Then ByFlags = ByFlags Xor 2
-
-                'OBJs
-                If MapData(Map, X, Y).ObjInfo.ObjIndex Then ByFlags = ByFlags Xor 4
-
-                'Store flag's byte
-                Put #FileNum, , ByFlags
-
-                'Tile exit
-                If MapData(Map, X, Y).TileExit.Map Then
-                    Put #FileNum, , MapData(Map, X, Y).TileExit.Map
-                    Put #FileNum, , MapData(Map, X, Y).TileExit.X
-                    Put #FileNum, , MapData(Map, X, Y).TileExit.Y
-                End If
-
-                'Store NPC
-                If MapData(Map, X, Y).NPCIndex Then
-                    Put #FileNum, , NPCList(MapData(Map, X, Y).NPCIndex).NPCNumber
-                End If
-
-                'Get and make Object
-                If MapData(Map, X, Y).ObjInfo.ObjIndex Then
-                    Put #FileNum, , MapData(Map, X, Y).ObjInfo.ObjIndex
-                    Put #FileNum, , MapData(Map, X, Y).ObjInfo.Amount
-                End If
-            Next X
-        Next Y
-
-        'Close files
-        Close #FileNum
-    Next Map
 
 End Sub
 

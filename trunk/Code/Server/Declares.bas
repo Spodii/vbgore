@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.1            ************
+'************            Official Release: Version 0.2.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -94,8 +94,8 @@ Option Explicit
 
 'These two are mostly used for checking to make sure the encryption works
 Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
-Public Const DEBUG_PacketFlood As Boolean = False           'Set to true when using ToolPacketSender
 Public Const DEBUG_DebugMode As Boolean = True              'If we display critical errors
+Public Const DEBUG_RecordPacketsOut As Boolean = False      'If to record how many times we send each packet
 
 '********** Public CONSTANTS ***********
 
@@ -138,8 +138,8 @@ Public Const CharType_NPC As Byte = 2
 Public Max_Server_Distance As Integer
 
 'Sound constants
-Public Const SOUND_SWING As Byte = 2
-Public Const SOUND_WARP As Byte = 3
+Public Const SOUND_SWING As Byte = 7
+Public Const SOUND_WARP As Byte = 1
 
 'Stat constants
 Public Const STAT_MAXSTAT = 2000000000  'Max for general stats
@@ -153,8 +153,8 @@ Public Const AGGRESSIVEFACETIME = 4000  'How long char remains aggressive-faced 
 '************ Positioning ************
 Type WorldPos   'Holds placement information
     Map As Integer  'Map
-    X As Integer    'X coordinate
-    Y As Integer    'Y coordinate
+    X As Byte       'X coordinate
+    Y As Byte       'Y coordinate
 End Type
 
 '************ Object types ************
@@ -322,6 +322,8 @@ Type User   'Holds data for a user
     Gold As Long        'How much gold the user has
     ConnID As Long          'Connection ID
     SendBuffer() As Byte    'Buffer for sending data
+    BufferSize As Long      'Size of the buffer
+    HasBuffer As Byte       'If there is anything in the buffer
     PPValue As Byte         'Packet priority value
     PPCount As Long         'Packet priority count-down (only valid if PPValue = PP_Low)
     PacketWait As Long      'Packet wait count-down (not to be confused with the packet priority - this one is for Packet_WaitTime)
@@ -354,6 +356,7 @@ Type NPCFlags   'Flags for a NPC
     PathPos As Integer      'The index in the WalkPath() the NPC is currently on
     GoalX As Byte           'The position the NPC is trying to get to with the walkpath
     GoalY As Byte
+    Thralled As Byte        'If the NPC is thralled (if so, it does not get saved or respawn)
 End Type
 Type NPCCounters    'Counters for a NPC
     RespawnCounter As Long  'Stores the death time to respawn later
@@ -479,6 +482,8 @@ Public DataKBOut As Long
 'Help variables
 Public Const NumHelpLines As Byte = 3
 Public HelpLine(1 To NumHelpLines) As String    'These are filled in on frmMain.StartServer
+
+Public DebugPacketsOut() As Long
 
 '********** EXTERNAL FUNCTIONS ***********
 Public Declare Function timeGetTime Lib "winmm.dll" () As Long

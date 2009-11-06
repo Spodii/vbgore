@@ -33,22 +33,17 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
-    End If
-
-    'Check if still exhausted
-    If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
-    ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5) Then Exit Sub
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'If skill is already on the target, we have to make sure the spell power is either equal or greater
@@ -108,8 +103,6 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
-
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 40
@@ -157,8 +150,6 @@ Public Sub Skill_Bless(ByVal TargetIndex As Integer, ByVal CasterIndex As Intege
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
-
         If TargetType = CharType_PC Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
@@ -238,8 +229,10 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
         If NPCList(CasterIndex).BaseStat(SID.MinMAN) < NPCList(CasterIndex).BaseStat(SID.Mag) * 0.5 Then Exit Sub
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'Apply spell exhaustion
@@ -278,13 +271,6 @@ Public Sub Skill_Heal(ByVal TargetIndex As Integer, ByVal CasterIndex As Integer
             ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
         End If
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
-    End If
-
-    'Reduce the caster's mana
-    If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - (UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
-    ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - (NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'Cast on the target
@@ -417,22 +403,17 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Check for enough mana
     If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15) Then
+        If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 38
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
-    End If
-
-    'Check if still exhausted
-    If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
-    ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+        If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5) Then Exit Sub
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'If skill is already on the target, we have to make sure the spell power is either equal or greater
@@ -492,8 +473,6 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
-
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 44
@@ -541,8 +520,6 @@ Public Sub Skill_Protection(ByVal TargetIndex As Integer, ByVal CasterIndex As I
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
-
         If TargetType = CharType_PC Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
@@ -600,8 +577,10 @@ Dim aX As Integer
 Dim aY As Integer
 Dim Damage As Integer
 
-'Check if the user knows the skill
+    'Check for spell exhaustion
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
+    'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.SpikeField) = 0 Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
@@ -611,16 +590,16 @@ Dim Damage As Integer
     End If
 
     'Check for enough mana
-    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < 1 Then
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 38
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
+    UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
 
-    'Check if still exhausted
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+    'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = 3000
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
@@ -802,15 +781,10 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Sub
         End If
+        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
     ElseIf CasterType = CharType_NPC Then
         If NPCList(CasterIndex).BaseStat(SID.MinMAN) < Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15) Then Exit Sub
-    End If
-
-    'Check if still exhausted
-    If CasterType = CharType_PC Then
-        If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
-    ElseIf CasterType = CharType_NPC Then
-        If NPCList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.Mag) * 0.5)
     End If
 
     'If skill is already on the target, we have to make sure the spell power is either equal or greater
@@ -870,8 +844,6 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
 
     'Apply the spell's effects
     If CasterType = CharType_PC Then
-        UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.MaxMAN) * 0.15)
-
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 46
@@ -919,8 +891,6 @@ Public Sub Skill_Strengthen(ByVal TargetIndex As Integer, ByVal CasterIndex As I
         Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     ElseIf CasterType = CharType_NPC Then
-        NPCList(CasterIndex).BaseStat(SID.MinMAN) = NPCList(CasterIndex).BaseStat(SID.MinMAN) - Int(NPCList(CasterIndex).ModStat(SID.MaxMAN) * 0.15)
-
         If TargetType = CharType_PC Then
             ConBuf.Clear
             ConBuf.Put_Byte DataCode.Server_Message
@@ -968,8 +938,10 @@ Public Sub Skill_Warcry(ByVal CasterIndex As Integer)
 Dim LoopC As Integer
 Dim WarCursePower As Integer
 
-'Check if the user knows the skill
-
+    'Check if still exhausted
+    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+    
+    'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Warcry) = 0 Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
@@ -979,16 +951,16 @@ Dim WarCursePower As Integer
     End If
 
     'Check for enough endurance
-    If UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) < 1 Then '(3 * UserList(CasterIndex).Stats.ModWarcry) Then
+    If UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) < Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * 0.5) Then
         ConBuf.Clear
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 48
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         Exit Sub
     End If
+    UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) = UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) - Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * 0.5)
 
-    'Check if still exhausted
-    If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
+    'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = 1000
     ConBuf.Clear
     ConBuf.Put_Byte DataCode.User_CastSkill

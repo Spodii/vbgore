@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{E4B113F2-DDE2-4AB3-AEA1-60C47D60380C}#1.0#0"; "vbgoresocketstring.ocx"
+Object = "{598D2D95-4E74-49D9-8F45-E9E53990E851}#1.0#0"; "goresockfull.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
    BorderStyle     =   0  'None
@@ -34,14 +34,14 @@ Begin VB.Form frmMain
       TabIndex        =   8
       Top             =   480
       Width           =   3615
-      Begin SoxOCX.Sox Sox 
-         Height          =   420
+      Begin GORESOCKfull.Socket Socket 
+         Height          =   660
          Left            =   2880
          Top             =   240
          Visible         =   0   'False
-         Width           =   420
-         _ExtentX        =   741
-         _ExtentY        =   741
+         Width           =   660
+         _ExtentX        =   1164
+         _ExtentY        =   1164
       End
       Begin VB.Timer SecondTmr 
          Interval        =   1000
@@ -460,11 +460,11 @@ Dim j As Integer
     StatusLbl.Caption = "Creating socket"
     DoEvents
 
-    'Start up the socket
-    LocalID = Sox.Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
-    Sox.SetOption LocalID, soxSO_TCP_NODELAY, True
+    'Start up the socket (change the ip to 0.0.0.0 or your internal IP)
+    LocalID = Socket.Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "UpdatePort")))
+    Socket.SetOption LocalID, soxSO_TCP_NODELAY, True
     
-    If frmMain.Sox.Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
+    If frmMain.Socket.Address(LocalID) = "-1" Then MsgBox "Error while creating server connection. Please make sure you are connected to the internet and supplied a valid IP" & vbCrLf & "Make sure you use your INTERNAL IP, which can be found by Start -> Run -> 'Cmd' (Enter) -> IPConfig" & vbCrLf & "Finally, make sure you are NOT running another instance of the server, since two applications can not bind to the same port. If problems persist, you can try changing the port.", vbOKOnly
 
     StatusLbl.Caption = "Loaded!"
 
@@ -569,10 +569,10 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
 
-    If Sox.ShutDown = soxERROR Then
+    If Socket.ShutDown = soxERROR Then
         Let Cancel = True
     Else
-        Sox.UnHook
+        Socket.UnHook
     End If
 
 End Sub
@@ -617,6 +617,7 @@ End Sub
 
 Private Sub SendFileRequest(ByVal UserIndex As Long, ByVal FileIndex As Long)
 Dim FileNum As Byte
+Dim b() As Byte
 
     'Check for valid file index
     If FileIndex < 0 Then Exit Sub
@@ -624,11 +625,12 @@ Dim FileNum As Byte
 
     'Send the request to start transfering the file
     DoEvents
-    Sox.SendData UserIndex, "****sendrequest****|" & FileListShortName(FileIndex) & "|" & FileSize(FileIndex) & "|" & FileHash(FileIndex)
+    b() = StrConv("****sendrequest****|" & FileListShortName(FileIndex) & "|" & FileSize(FileIndex) & "|" & FileHash(FileIndex), vbFromUnicode)
+    Socket.SendData UserIndex, b()
 
 End Sub
 
-Private Sub Sox_OnClose(inSox As Long)
+Private Sub Socket_OnClose(inSox As Long)
 Dim i As Long
     
     'Remove the user's ConnID if they are on the socket that just closed
@@ -641,7 +643,7 @@ Dim i As Long
 
 End Sub
 
-Private Sub Sox_OnConnection(inSox As Long)
+Private Sub Socket_OnConnection(inSox As Long)
 
     'Assign the inSox ID as the ConnID
     UserList(inSox).ConnID = inSox
@@ -658,19 +660,20 @@ Private Sub Sox_OnConnection(inSox As Long)
 
 End Sub
 
-Private Sub Sox_OnDataArrival(inSox As Long, inData() As Byte)
+Private Sub Socket_OnDataArrival(inSox As Long, inData() As Byte)
 
 Dim SendBuffer As String
 Dim FileNum As Byte
 Dim rData As String
 Dim FileLen As Long
+Dim b() As Byte
 
 'Turn the data into a string
 
     rData = StrConv(inData(), vbUnicode)
 
     'The file was accepted to be transfered
-    If rData = "****ok****" Then
+    If Left$(rData, 10) = "****ok****" Then
 
         'Send the whole file
         FileNum = FreeFile
@@ -679,7 +682,8 @@ Dim FileLen As Long
             SendBuffer = Space$(FileLen)
             Get #FileNum, , SendBuffer
         Close #FileNum
-        Sox.SendData inSox, SendBuffer & "****ENDOFFILE****"
+        b() = StrConv(SendBuffer & "****ENDOFFILE****", vbFromUnicode)
+        Socket.SendData inSox, b()
 
         'Raise files uploaded count
         FilesUploaded = FilesUploaded + 1
@@ -688,7 +692,8 @@ Dim FileLen As Long
         'Check if the user has finished updating
         If UserList(inSox).CurrFile > NumFiles Then
             'Tell the user they have finished
-            Sox.SendData inSox, "****DONE****"
+            b() = StrConv("****DONE****", vbFromUnicode)
+            Socket.SendData inSox, b()
         Else
             'Send the next file
             SendFileRequest inSox, UserList(inSox).CurrFile
@@ -706,7 +711,8 @@ Dim FileLen As Long
         'Check if the user has finished updating
         If UserList(inSox).CurrFile > NumFiles Then
             'Tell the user they have finished
-            Sox.SendData inSox, "****DONE****"
+            b = StrConv("****DONE****", vbFromUnicode)
+            Socket.SendData inSox, b()
             UserList(inSox).ConnID = 0
             UserList(inSox).CurrFile = 0
             UserList(inSox).LastBytesSent = 0
@@ -720,7 +726,7 @@ Dim FileLen As Long
 
 End Sub
 
-Private Sub Sox_OnSendComplete(inSox As Long)
+Private Sub Socket_OnSendComplete(inSox As Long)
 
 'Clear information
 
@@ -728,12 +734,12 @@ Private Sub Sox_OnSendComplete(inSox As Long)
 
 End Sub
 
-Private Sub Sox_OnSendProgress(inSox As Long, bytesSent As Long, bytesRemaining As Long)
+Private Sub Socket_OnSendProgress(inSox As Long, bytesSent As Long, bytesRemaining As Long)
 
     'Update the sending information
     If UserList(inSox).CurrFile <= NumFiles Then FileNameLbl.Caption = FileListShortName(UserList(inSox).CurrFile)
     PercentLbl.Caption = Round(bytesSent / (bytesSent + bytesRemaining), 2) * 100 & "%"
-    ClientIPLbl.Caption = Sox.Address(inSox)
+    ClientIPLbl.Caption = Socket.Address(inSox)
     ClientIDLbl.Caption = inSox
 
     'Update the bytes remaining info

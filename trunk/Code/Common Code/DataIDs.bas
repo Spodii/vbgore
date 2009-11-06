@@ -44,6 +44,7 @@ Public Type DataCode
     Server_MakeObject As Byte
     Server_EraseObject As Byte
     Server_PlaySound As Byte
+    Server_PlaySound3D As Byte
     Server_Who As Byte
     Server_CharHP As Byte
     Server_CharMP As Byte
@@ -97,6 +98,8 @@ Public Type DataCode
     GM_Kick As Byte
     GM_Raise As Byte
     GM_SetGMLevel As Byte
+    GM_Thrall As Byte
+    GM_DeThrall As Byte
 End Type
 Public DataCode As DataCode
 
@@ -186,6 +189,7 @@ Public Sub InitDataCommands()
     End With
 
     With DataCode
+        .GM_Thrall = 2
         .Server_IconSpellExhaustion = 3
         .Comm_Shout = 4
         .Server_UserCharIndex = 5
@@ -263,6 +267,8 @@ Public Sub InitDataCommands()
         .Server_MailCompose = 77
         .GM_SetGMLevel = 78
         .Server_Message = 79
+        .GM_DeThrall = 80
+        .Server_PlaySound3D = 81
     End With
 
 End Sub

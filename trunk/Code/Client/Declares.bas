@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.2.1            ************
+'************            Official Release: Version 0.2.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -93,9 +93,8 @@ Option Explicit
 ' compiling your code for public usage just speed reasons
 
 'These two are mostly used for checking to make sure the encryption works
-Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Will print the packet read errors in debug.print
-Public Const DEBUG_PrintPacket_In As Boolean = False     'Shows packets coming in in chat box
-Public Const DEBUG_PrintPacket_Out As Boolean = False    'Shows packets going out in chat box
+Public Const DEBUG_PrintPacketReadErrors As Boolean = False 'Shows command IDs that arn't used being processed and such
+Public Const DEBUG_PrintPacket_In As Boolean = False        'Shows packets coming in in chat box
 
 'Set this to true to force updater check
 Public Const ForceUpdateCheck As Boolean = False
@@ -151,9 +150,6 @@ Public UserInventory(1 To MAX_INVENTORY_SLOTS) As Inventory
 
 'Used during login
 Public SendNewChar As Boolean
-
-'Control
-Public prgRun As Boolean 'When true the program ends
 
 Public sndBuf As DataBuffer
 Public ChatBufferChunk As Integer

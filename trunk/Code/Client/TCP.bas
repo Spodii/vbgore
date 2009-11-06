@@ -1,6 +1,10 @@
 Attribute VB_Name = "TCP"
 Option Explicit
 
+'Size of our buffer - the lower the value, the faster the send/recv, if more is sent or
+'recieved then buffer size, then becomes slower (recommended to leave as is)
+Public Const TCPBufferSize As Long = 512
+
 Sub Data_Server_Message(ByRef rBuf As DataBuffer)
 '*********************************************
 'Server sending a common message to client (reccomended you send
@@ -314,38 +318,34 @@ Sub Data_Server_Connect()
 '<>
 '*********************************************
 
-    If SocketOpen = 0 Then
-    
-        'Set the socket state
-        SocketOpen = 1
-    
-        'Load user config
-        Game_Config_Load
-    
-        'Unload the connect form
-        Unload frmConnect
-    
-        'Load main form
-        frmMain.Visible = True
-        frmMain.Show
-        frmMain.SetFocus
-    
-        'Load the engine
-        Engine_Init_TileEngine
-    
-        'Get the device
-        frmMain.Show
-        frmMain.SetFocus
-        DoEvents
-        DIDevice.Acquire
-    
-        'Init the Ping timer
-        frmMain.PingTmr.Enabled = True
-    
-        'Send the data
-        Data_Send
+    'Set the socket state
+    SocketOpen = 1
 
-    End If
+    'Load user config
+    Game_Config_Load
+
+    'Unload the connect form
+    Unload frmConnect
+
+    'Load main form
+    frmMain.Visible = True
+    frmMain.Show
+    frmMain.SetFocus
+
+    'Load the engine
+    Engine_Init_TileEngine
+
+    'Get the device
+    frmMain.Show
+    frmMain.SetFocus
+    DoEvents
+    DIDevice.Acquire
+
+    'Init the Ping timer
+    frmMain.PingTmr.Enabled = True
+
+    'Send the data
+    Data_Send
 
 End Sub
 
@@ -433,14 +433,12 @@ Dim TempInt As Integer
             'Not correct version
             MsgBox "Error! Your map version is not up to date with the server's map! Please run the updater!", vbOKOnly Or vbCritical
             EngineRun = False
-            prgRun = False
             IsUnloading = 1
         End If
     Else
         'Didn't find map
         MsgBox "Error! The requested map could not be found! Please run the updater!", vbOKOnly Or vbCritical
         EngineRun = False
-        prgRun = False
         IsUnloading = 1
     End If
 
@@ -476,57 +474,14 @@ Sub Data_Send()
 '*********************************************
 'Send data buffer to the server
 '*********************************************
-Dim TempBuffer() As Byte
-        
+
     'Check that we have data to send
     If SocketOpen = 0 Then DoEvents
     If UBound(sndBuf.Get_Buffer) > 0 Then
         If SocketOpen = 0 Then DoEvents
     
-        'Set our temp buffer
-        ReDim TempBuffer(UBound(sndBuf.Get_Buffer))
-        TempBuffer() = sndBuf.Get_Buffer
-        
-        'Crop off the last byte, which will always be 0 - bad way to do it, but oh well
-        ReDim Preserve TempBuffer(UBound(TempBuffer) - 1)
-        
-        'Uncomment this to see packets going out from the client
-        'Dim i As Long
-        'Dim S As String
-        'For i = LBound(TempBuffer) To UBound(TempBuffer)
-        '    S = S & TempBuffer(i) & " "
-        'Next i
-        'Debug.Print S
-    
-        'Encrypt our packet
-        Select Case EncryptionType
-        Case EncryptionTypeBlowfish
-            Encryption_Blowfish_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeCryptAPI
-            Encryption_CryptAPI_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeDES
-            Encryption_DES_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeGost
-            Encryption_Gost_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeRC4
-            Encryption_RC4_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeXOR
-            Encryption_XOR_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeSkipjack
-            Encryption_Skipjack_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeTEA
-            Encryption_TEA_EncryptByte TempBuffer(), EncryptionKey
-        Case EncryptionTypeTwofish
-            Encryption_Twofish_EncryptByte TempBuffer(), EncryptionKey
-        End Select
-        
-        'Display packet
-        If DEBUG_PrintPacket_Out Then
-            Engine_AddToChatTextBuffer "DataOut: " & StrConv(TempBuffer(), vbUnicode), -1
-        End If
-    
         'Send the data
-        frmMain.Sox.SendData SoxID, TempBuffer()
+        frmMain.Socket.SendData SoxID, sndBuf.Get_Buffer
         
         'Clear the buffer, get it ready for next use
         sndBuf.Clear
@@ -626,15 +581,15 @@ Sub Data_Server_EraseObject(ByRef rBuf As DataBuffer)
 '*********************************************
 
 Dim j As Integer
-Dim x As Byte
+Dim X As Byte
 Dim Y As Byte
 
-    x = rBuf.Get_Byte
+    X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
     'Loop through until we find the object on (X,Y) then kill it
     For j = 1 To LastObj
-        If OBJList(j).Pos.x = x Then
+        If OBJList(j).Pos.X = X Then
             If OBJList(j).Pos.Y = Y Then
                 Engine_OBJ_Erase j
                 Exit Sub
@@ -851,7 +806,7 @@ Sub Data_Server_MailMessage(ByRef rBuf As DataBuffer)
 '<Message(S-EX)><Subject(S)><WriterName(S)> Loop: <ObjGrhIndex(I)>
 '*********************************************
 
-Dim x As Byte
+Dim X As Byte
 
     ShowGameWindow(MailboxWindow) = 0
 
@@ -861,9 +816,9 @@ Dim x As Byte
     ReadMailData.Message = Engine_WordWrap(ReadMailData.Message, 60)
     ReadMailData.Subject = rBuf.Get_String
     ReadMailData.WriterName = rBuf.Get_String
-    For x = 1 To MaxMailObjs
-        ReadMailData.Obj(x) = rBuf.Get_Integer
-    Next x
+    For X = 1 To MaxMailObjs
+        ReadMailData.Obj(X) = rBuf.Get_Integer
+    Next X
 
 End Sub
 
@@ -878,7 +833,7 @@ Dim Body As Integer
 Dim Head As Integer
 Dim Heading As Byte
 Dim CharIndex As Integer
-Dim x As Byte
+Dim X As Byte
 Dim Y As Byte
 Dim Name As String
 Dim Weapon As Integer
@@ -893,7 +848,7 @@ Dim MP As Byte
     Head = rBuf.Get_Integer
     Heading = rBuf.Get_Byte
     CharIndex = rBuf.Get_Integer
-    x = rBuf.Get_Byte
+    X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
     Name = rBuf.Get_String
     Weapon = rBuf.Get_Integer
@@ -903,7 +858,7 @@ Dim MP As Byte
     MP = rBuf.Get_Byte
 
     'Create the character
-    Engine_Char_Make CharIndex, Body, Head, Heading, x, Y, Name, Weapon, Hair, Wings, HP, MP
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Name, Weapon, Hair, Wings, HP, MP
 
 End Sub
 
@@ -915,17 +870,17 @@ Sub Data_Server_MakeObject(ByRef rBuf As DataBuffer)
 '*********************************************
 
 Dim GrhIndex As Long
-Dim x As Byte
+Dim X As Byte
 Dim Y As Byte
 
 'Get the values
 
     GrhIndex = rBuf.Get_Long
-    x = rBuf.Get_Byte
+    X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
     'Create the object
-    If GrhIndex > 0 Then Engine_OBJ_Create GrhIndex, x, Y
+    If GrhIndex > 0 Then Engine_OBJ_Create GrhIndex, X, Y
 
 End Sub
 
@@ -933,18 +888,37 @@ Sub Data_Server_MoveChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Move a character
-'<CharIndex(I)><X(B)><Y(B)>
+'<CharIndex(I)><X(B)><Y(B)><Heading(B)>
 '*********************************************
 
 Dim CharIndex As Integer
-Dim x As Byte
-Dim Y As Byte
+Dim X As Integer
+Dim Y As Integer
+Dim nX As Integer
+Dim nY As Integer
+Dim Heading As Byte
 
     CharIndex = rBuf.Get_Integer
 
-    x = rBuf.Get_Byte
+    X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
-    Engine_Char_Move_ByPos CharIndex, x, Y
+    Heading = rBuf.Get_Byte
+    
+    'Make sure the char is the right starting position
+    Select Case Heading
+        Case NORTH: nX = 0: nY = -1
+        Case EAST: nX = 1: nY = 0
+        Case SOUTH: nX = 0: nY = 1
+        Case WEST: nX = -1: nY = 0
+        Case NORTHEAST: nX = 1: nY = -1
+        Case SOUTHEAST: nX = 1: nY = 1
+        Case SOUTHWEST: nX = -1: nY = 1
+        Case NORTHWEST: nX = -1: nY = -1
+    End Select
+    CharList(CharIndex).Pos.X = X - nX
+    CharList(CharIndex).Pos.Y = Y - nY
+    
+    Engine_Char_Move_ByPos CharIndex, X, Y
 
 End Sub
 
@@ -965,15 +939,32 @@ End Sub
 Sub Data_Server_PlaySound(ByRef rBuf As DataBuffer)
 
 '*********************************************
-'Play a wave
+'Play a wave file
 '<WaveNum(B)>
 '*********************************************
-
 Dim WaveNum As Byte
 
     WaveNum = rBuf.Get_Byte
 
-    'LoadWavetoDSBuffer Str$(WaveNum) & ".wav"
+    Engine_Sound_Play DSBuffer(WaveNum), DSBPLAY_DEFAULT
+
+End Sub
+
+Sub Data_Server_PlaySound3D(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Play a wave file with 3D effect
+'<WaveNum(B)><X(B)><Y(B)>
+'*********************************************
+Dim WaveNum As Byte
+Dim X As Integer
+Dim Y As Integer
+
+    WaveNum = rBuf.Get_Byte
+    X = rBuf.Get_Byte
+    Y = rBuf.Get_Byte
+    
+    Engine_Sound_Play3D WaveNum, X, Y
 
 End Sub
 
@@ -994,10 +985,10 @@ Dim Damage As Integer
     If CharIndex > UBound(CharList()) Then Exit Sub
 
     'Create the blood
-    Engine_Blood_Create CharList(CharIndex).Pos.x, CharList(CharIndex).Pos.Y
+    Engine_Blood_Create CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y
 
     'Create the damage
-    Engine_Damage_Create CharList(CharIndex).Pos.x, CharList(CharIndex).Pos.Y, Damage
+    Engine_Damage_Create CharList(CharIndex).Pos.X, CharList(CharIndex).Pos.Y, Damage
 
 End Sub
 
@@ -1008,22 +999,22 @@ Sub Data_Server_SetUserPosition(ByRef rBuf As DataBuffer)
 '<X(B)><Y(B)>
 '*********************************************
 
-Dim x As Byte
+Dim X As Byte
 Dim Y As Byte
 
 'Get the position
 
-    x = rBuf.Get_Byte
+    X = rBuf.Get_Byte
     Y = rBuf.Get_Byte
 
     'Check for a valid range
-    If x < XMinMapSize Then Exit Sub
-    If x > XMaxMapSize Then Exit Sub
+    If X < XMinMapSize Then Exit Sub
+    If X > XMaxMapSize Then Exit Sub
     If Y < YMinMapSize Then Exit Sub
     If Y > YMaxMapSize Then Exit Sub
 
     'Update the user's position
-    UserPos.x = x
+    UserPos.X = X
     UserPos.Y = Y
     CharList(UserCharIndex).Pos = UserPos
 
@@ -1124,7 +1115,7 @@ Dim CasterIndex As Integer
 Dim TargetIndex As Integer
 Dim TempIndex As Integer
 Dim SkillID As Byte
-Dim x As Long
+Dim X As Long
 Dim Y As Long
 
     SkillID = rBuf.Get_Byte
@@ -1136,156 +1127,156 @@ Dim Y As Long
     Case SkID.Heal
 
         'Set the position
-        x = CharList(CasterIndex).RealPos.x + 16
+        X = CharList(CasterIndex).RealPos.X + 16
         Y = CharList(CasterIndex).RealPos.Y
 
         'If not casted on self, bind to character
         If TargetIndex <> CasterIndex Then
-            TempIndex = Effect_Heal_Begin(x, Y, 3, 120, 1)
+            TempIndex = Effect_Heal_Begin(X, Y, 3, 120, 1)
             Effect(TempIndex).BindToChar = TargetIndex
             Effect(TempIndex).BindSpeed = 7
         Else
-            TempIndex = Effect_Heal_Begin(x, Y, 3, 120, 0)
+            TempIndex = Effect_Heal_Begin(X, Y, 3, 120, 0)
         End If
 
     Case SkID.Protection
 
         'Create the effect at (not bound to) the target character
-        x = CharList(TargetIndex).RealPos.x + 16
+        X = CharList(TargetIndex).RealPos.X + 16
         Y = CharList(TargetIndex).RealPos.Y
-        Effect_Protection_Begin x, Y, 11, 120, 40, 15
+        Effect_Protection_Begin X, Y, 11, 120, 40, 15
 
     Case SkID.Strengthen
 
         'Create the effect at (not bound to) the target character
-        x = CharList(TargetIndex).RealPos.x + 16
+        X = CharList(TargetIndex).RealPos.X + 16
         Y = CharList(TargetIndex).RealPos.Y
-        Effect_Strengthen_Begin x, Y, 12, 120, 40, 15
+        Effect_Strengthen_Begin X, Y, 12, 120, 40, 15
 
     Case SkID.Bless
 
         'Create the effect at (not bound to) the target character
-        x = CharList(TargetIndex).RealPos.x + 16
+        X = CharList(TargetIndex).RealPos.X + 16
         Y = CharList(TargetIndex).RealPos.Y
-        Effect_Bless_Begin x, Y, 3, 120, 40, 15
+        Effect_Bless_Begin X, Y, 3, 120, 40, 15
 
     Case SkID.SpikeField
 
         'Create the spike field depending on the direction the user is facing
-        x = CharList(CasterIndex).Pos.x
+        X = CharList(CasterIndex).Pos.X
         Y = CharList(CasterIndex).Pos.Y
         If CharList(CasterIndex).HeadHeading = NORTH Then
-            Engine_Effect_Create x - 1, Y + 1, 59
-            Engine_Effect_Create x, Y + 1, 59
-            Engine_Effect_Create x + 1, Y + 1, 59
+            Engine_Effect_Create X - 1, Y + 1, 59
+            Engine_Effect_Create X, Y + 1, 59
+            Engine_Effect_Create X + 1, Y + 1, 59
 
-            Engine_Effect_Create x - 2, Y, 59
-            Engine_Effect_Create x - 1, Y, 59
-            Engine_Effect_Create x, Y, 59
-            Engine_Effect_Create x + 1, Y, 59
-            Engine_Effect_Create x + 2, Y, 59
+            Engine_Effect_Create X - 2, Y, 59
+            Engine_Effect_Create X - 1, Y, 59
+            Engine_Effect_Create X, Y, 59
+            Engine_Effect_Create X + 1, Y, 59
+            Engine_Effect_Create X + 2, Y, 59
 
-            Engine_Effect_Create x - 2, Y - 1, 59
-            Engine_Effect_Create x - 1, Y - 1, 59
-            Engine_Effect_Create x, Y - 1, 59
-            Engine_Effect_Create x + 1, Y - 1, 59
-            Engine_Effect_Create x + 2, Y - 1, 59
+            Engine_Effect_Create X - 2, Y - 1, 59
+            Engine_Effect_Create X - 1, Y - 1, 59
+            Engine_Effect_Create X, Y - 1, 59
+            Engine_Effect_Create X + 1, Y - 1, 59
+            Engine_Effect_Create X + 2, Y - 1, 59
 
-            Engine_Effect_Create x - 2, Y - 2, 59
-            Engine_Effect_Create x - 1, Y - 2, 59
-            Engine_Effect_Create x, Y - 2, 59
-            Engine_Effect_Create x + 1, Y - 2, 59
-            Engine_Effect_Create x + 2, Y - 2, 59
+            Engine_Effect_Create X - 2, Y - 2, 59
+            Engine_Effect_Create X - 1, Y - 2, 59
+            Engine_Effect_Create X, Y - 2, 59
+            Engine_Effect_Create X + 1, Y - 2, 59
+            Engine_Effect_Create X + 2, Y - 2, 59
 
-            Engine_Effect_Create x - 1, Y - 3, 59
-            Engine_Effect_Create x, Y - 3, 59
-            Engine_Effect_Create x + 1, Y - 3, 59
+            Engine_Effect_Create X - 1, Y - 3, 59
+            Engine_Effect_Create X, Y - 3, 59
+            Engine_Effect_Create X + 1, Y - 3, 59
 
-            Engine_Effect_Create x, Y - 4, 59
+            Engine_Effect_Create X, Y - 4, 59
         ElseIf CharList(CasterIndex).HeadHeading = EAST Then
-            Engine_Effect_Create x - 1, Y - 1, 59
-            Engine_Effect_Create x - 1, Y, 59
-            Engine_Effect_Create x - 1, Y + 1, 59
+            Engine_Effect_Create X - 1, Y - 1, 59
+            Engine_Effect_Create X - 1, Y, 59
+            Engine_Effect_Create X - 1, Y + 1, 59
 
-            Engine_Effect_Create x, Y - 2, 59
-            Engine_Effect_Create x, Y - 1, 59
-            Engine_Effect_Create x, Y, 59
-            Engine_Effect_Create x, Y + 1, 59
-            Engine_Effect_Create x, Y + 2, 59
+            Engine_Effect_Create X, Y - 2, 59
+            Engine_Effect_Create X, Y - 1, 59
+            Engine_Effect_Create X, Y, 59
+            Engine_Effect_Create X, Y + 1, 59
+            Engine_Effect_Create X, Y + 2, 59
 
-            Engine_Effect_Create x + 1, Y - 2, 59
-            Engine_Effect_Create x + 1, Y - 1, 59
-            Engine_Effect_Create x + 1, Y, 59
-            Engine_Effect_Create x + 1, Y + 1, 59
-            Engine_Effect_Create x + 1, Y + 2, 59
+            Engine_Effect_Create X + 1, Y - 2, 59
+            Engine_Effect_Create X + 1, Y - 1, 59
+            Engine_Effect_Create X + 1, Y, 59
+            Engine_Effect_Create X + 1, Y + 1, 59
+            Engine_Effect_Create X + 1, Y + 2, 59
 
-            Engine_Effect_Create x + 2, Y - 2, 59
-            Engine_Effect_Create x + 2, Y - 1, 59
-            Engine_Effect_Create x + 2, Y, 59
-            Engine_Effect_Create x + 2, Y + 1, 59
-            Engine_Effect_Create x + 2, Y + 2, 59
+            Engine_Effect_Create X + 2, Y - 2, 59
+            Engine_Effect_Create X + 2, Y - 1, 59
+            Engine_Effect_Create X + 2, Y, 59
+            Engine_Effect_Create X + 2, Y + 1, 59
+            Engine_Effect_Create X + 2, Y + 2, 59
 
-            Engine_Effect_Create x + 3, Y - 1, 59
-            Engine_Effect_Create x + 3, Y, 59
-            Engine_Effect_Create x + 3, Y + 1, 59
+            Engine_Effect_Create X + 3, Y - 1, 59
+            Engine_Effect_Create X + 3, Y, 59
+            Engine_Effect_Create X + 3, Y + 1, 59
 
-            Engine_Effect_Create x + 4, Y, 59
+            Engine_Effect_Create X + 4, Y, 59
         ElseIf CharList(CasterIndex).HeadHeading = SOUTH Then
-            Engine_Effect_Create x - 1, Y - 1, 59
-            Engine_Effect_Create x, Y - 1, 59
-            Engine_Effect_Create x + 1, Y - 1, 59
+            Engine_Effect_Create X - 1, Y - 1, 59
+            Engine_Effect_Create X, Y - 1, 59
+            Engine_Effect_Create X + 1, Y - 1, 59
 
-            Engine_Effect_Create x - 2, Y, 59
-            Engine_Effect_Create x - 1, Y, 59
-            Engine_Effect_Create x, Y, 59
-            Engine_Effect_Create x + 1, Y, 59
-            Engine_Effect_Create x + 2, Y, 59
+            Engine_Effect_Create X - 2, Y, 59
+            Engine_Effect_Create X - 1, Y, 59
+            Engine_Effect_Create X, Y, 59
+            Engine_Effect_Create X + 1, Y, 59
+            Engine_Effect_Create X + 2, Y, 59
 
-            Engine_Effect_Create x - 2, Y + 1, 59
-            Engine_Effect_Create x - 1, Y + 1, 59
-            Engine_Effect_Create x, Y + 1, 59
-            Engine_Effect_Create x + 1, Y + 1, 59
-            Engine_Effect_Create x + 2, Y + 1, 59
+            Engine_Effect_Create X - 2, Y + 1, 59
+            Engine_Effect_Create X - 1, Y + 1, 59
+            Engine_Effect_Create X, Y + 1, 59
+            Engine_Effect_Create X + 1, Y + 1, 59
+            Engine_Effect_Create X + 2, Y + 1, 59
 
-            Engine_Effect_Create x - 2, Y + 2, 59
-            Engine_Effect_Create x - 1, Y + 2, 59
-            Engine_Effect_Create x, Y + 2, 59
-            Engine_Effect_Create x + 1, Y + 2, 59
-            Engine_Effect_Create x + 2, Y + 2, 59
+            Engine_Effect_Create X - 2, Y + 2, 59
+            Engine_Effect_Create X - 1, Y + 2, 59
+            Engine_Effect_Create X, Y + 2, 59
+            Engine_Effect_Create X + 1, Y + 2, 59
+            Engine_Effect_Create X + 2, Y + 2, 59
 
-            Engine_Effect_Create x - 1, Y + 3, 59
-            Engine_Effect_Create x, Y + 3, 59
-            Engine_Effect_Create x + 1, Y + 3, 59
+            Engine_Effect_Create X - 1, Y + 3, 59
+            Engine_Effect_Create X, Y + 3, 59
+            Engine_Effect_Create X + 1, Y + 3, 59
 
-            Engine_Effect_Create x, Y + 4, 59
+            Engine_Effect_Create X, Y + 4, 59
         ElseIf CharList(CasterIndex).HeadHeading = WEST Then
-            Engine_Effect_Create x + 1, Y - 1, 59
-            Engine_Effect_Create x + 1, Y, 59
-            Engine_Effect_Create x + 1, Y + 1, 59
+            Engine_Effect_Create X + 1, Y - 1, 59
+            Engine_Effect_Create X + 1, Y, 59
+            Engine_Effect_Create X + 1, Y + 1, 59
 
-            Engine_Effect_Create x, Y - 2, 59
-            Engine_Effect_Create x, Y - 1, 59
-            Engine_Effect_Create x, Y, 59
-            Engine_Effect_Create x, Y + 1, 59
-            Engine_Effect_Create x, Y + 2, 59
+            Engine_Effect_Create X, Y - 2, 59
+            Engine_Effect_Create X, Y - 1, 59
+            Engine_Effect_Create X, Y, 59
+            Engine_Effect_Create X, Y + 1, 59
+            Engine_Effect_Create X, Y + 2, 59
 
-            Engine_Effect_Create x - 1, Y - 2, 59
-            Engine_Effect_Create x - 1, Y - 1, 59
-            Engine_Effect_Create x - 1, Y, 59
-            Engine_Effect_Create x - 1, Y + 1, 59
-            Engine_Effect_Create x - 1, Y + 2, 59
+            Engine_Effect_Create X - 1, Y - 2, 59
+            Engine_Effect_Create X - 1, Y - 1, 59
+            Engine_Effect_Create X - 1, Y, 59
+            Engine_Effect_Create X - 1, Y + 1, 59
+            Engine_Effect_Create X - 1, Y + 2, 59
 
-            Engine_Effect_Create x - 2, Y - 2, 59
-            Engine_Effect_Create x - 2, Y - 1, 59
-            Engine_Effect_Create x - 2, Y, 59
-            Engine_Effect_Create x - 2, Y + 1, 59
-            Engine_Effect_Create x - 2, Y + 2, 59
+            Engine_Effect_Create X - 2, Y - 2, 59
+            Engine_Effect_Create X - 2, Y - 1, 59
+            Engine_Effect_Create X - 2, Y, 59
+            Engine_Effect_Create X - 2, Y + 1, 59
+            Engine_Effect_Create X - 2, Y + 2, 59
 
-            Engine_Effect_Create x - 3, Y - 1, 59
-            Engine_Effect_Create x - 3, Y, 59
-            Engine_Effect_Create x - 3, Y + 1, 59
+            Engine_Effect_Create X - 3, Y - 1, 59
+            Engine_Effect_Create X - 3, Y, 59
+            Engine_Effect_Create X - 3, Y + 1, 59
 
-            Engine_Effect_Create x - 4, Y, 59
+            Engine_Effect_Create X - 4, Y, 59
         End If
 
     End Select
@@ -1338,7 +1329,7 @@ Sub Data_User_KnownSkills(ByRef rBuf As DataBuffer)
 '*********************************************
 
 Dim KnowSkillList As Long
-Dim x As Byte
+Dim X As Byte
 Dim Y As Byte
 Dim i As Byte
 
@@ -1361,15 +1352,15 @@ Dim i As Byte
             UserKnowSkill(i) = 1
 
             'Update position for skill list
-            x = x + 1
-            If x > SkillListWidth Then
-                x = 1
+            X = X + 1
+            If X > SkillListWidth Then
+                X = 1
                 Y = Y + 1
             End If
 
             'Set the skill list ID and Position
             SkillList(SkillListSize).SkillID = i
-            SkillList(SkillListSize).x = SkillListX - (x * 32)
+            SkillList(SkillListSize).X = SkillListX - (X * 32)
             SkillList(SkillListSize).Y = SkillListY - (Y * 32)
 
         Else
