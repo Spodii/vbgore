@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{34229061-3750-4425-BA0F-5A197E65841A}#1.0#0"; "GOREsockClient.ocx"
+Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    Appearance      =   0  'Flat
    BackColor       =   &H00000000&
@@ -31,7 +31,7 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin GOREsock.GOREsockClient GOREsock 
+   Begin GOREsock.GOREsockServer GOREsock 
       Left            =   600
       Top             =   120
       _ExtentX        =   847
@@ -316,6 +316,7 @@ Dim BufUBound As Long
             Case .Server_MailMessage: Data_Server_MailMessage rBuf
             Case .Server_MailObjUpdate: Data_Server_MailObjUpdate rBuf
             Case .Server_MakeChar: Data_Server_MakeChar rBuf
+            Case .Server_MakeCharCached: Data_Server_MakeCharCached rBuf
             Case .Server_MakeEffect: Data_Server_MakeEffect rBuf
             Case .Server_MakeSlash: Data_Server_MakeSlash rBuf
             Case .Server_MakeObject: Data_Server_MakeObject rBuf

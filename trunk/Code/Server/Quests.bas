@@ -94,28 +94,7 @@ Dim i As Long
     
     'Learn skill reward
     If QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill > 0 Then
-        If Skill_ValidSkillForClass(UserList(UserIndex).Class, QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) Then
-            If UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1 Then
-                'User already knew the skill
-                s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
-                ConBuf.PreAllocate 3 + Len(s)
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 5
-                ConBuf.Put_String s
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-            Else
-                'User learns the new skill
-                s = Server_SkillIDtoSkillName(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill)
-                ConBuf.PreAllocate 3 + Len(s)
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 6
-                ConBuf.Put_String s
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                'Give the user the skill
-                UserList(UserIndex).KnownSkills(QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill) = 1
-                User_SendKnownSkills UserIndex
-            End If
-        End If
+        User_GiveSkill UserIndex, QuestData(UserList(UserIndex).Quest(UserQuestSlot)).FinishLearnSkill
     End If
 
     'Add the quest to the user's finished quest list

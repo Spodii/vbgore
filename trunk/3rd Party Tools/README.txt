@@ -32,6 +32,22 @@ It is included into vbGORE with the owner's permission.
 The guide for using CBFG can be found on the vbGORE site at:
 http://www.vbgore.com/index.php?title=Using_CBFG
 
+============================
+== Npc and Object Editors ==
+============================
+Created by: 
+Richardf (edited by Spodi)
+
+Originally designed by Spodi for use with the binary files
+used before the use of SQL in vbGORE. Now Re-tooled for 
+vbGORE 1.0.
+
+You can copy the EditorNPC.exe and the EditorObject.exe
+directly to the main vbGORE folder or if you wish you can
+Copy the contents of this folder and just choose to NOT
+overwrite any files. The only information that is not directly
+in these folders is the grh folder itself. Enjoy!
+
 ==================
 == Grh3RawMaker ==
 ==================

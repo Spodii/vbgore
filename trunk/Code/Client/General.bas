@@ -595,6 +595,9 @@ Dim TempInt As Integer
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelWidth
                 End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(1).GrhIndex).pixelHeight
+                End If
                 
             End If
             If ByFlags And 4 Then
@@ -603,12 +606,18 @@ Dim TempInt As Integer
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelWidth
                 End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(2).GrhIndex).pixelHeight
+                End If
             End If
             If ByFlags And 8 Then
                 MapData(X, Y).Graphic(3).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(3), MapData(X, Y).Graphic(3).GrhIndex
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelWidth
+                End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(3).GrhIndex).pixelHeight
                 End If
             End If
             If ByFlags And 16 Then
@@ -617,6 +626,9 @@ Dim TempInt As Integer
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelWidth
                 End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(4).GrhIndex).pixelHeight
+                End If
             End If
             If ByFlags And 32 Then
                 MapData(X, Y).Graphic(5).GrhIndex = MapBuf.Get_Long
@@ -624,12 +636,18 @@ Dim TempInt As Integer
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelWidth
                 End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(5).GrhIndex).pixelHeight
+                End If
             End If
             If ByFlags And 64 Then
                 MapData(X, Y).Graphic(6).GrhIndex = MapBuf.Get_Long
                 Engine_Init_Grh MapData(X, Y).Graphic(6), MapData(X, Y).Graphic(6).GrhIndex
                 If LargestTileSize < GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth Then
                     LargestTileSize = GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelWidth
+                End If
+                If LargestTileSize < GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelHeight Then
+                    LargestTileSize = GrhData(MapData(X, Y).Graphic(6).GrhIndex).pixelHeight
                 End If
             End If
             

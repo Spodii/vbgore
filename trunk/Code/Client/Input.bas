@@ -2325,6 +2325,10 @@ Dim i As Byte
                                 End If
                             End If
                         Next i
+                        'Clear and leave
+                        DragSourceWindow = 0
+                        DragItemSlot = 0
+                        Exit Sub
                     End If
                 End With
             End If
@@ -2373,7 +2377,6 @@ Dim i As Byte
                         'Clear and leave
                         DragSourceWindow = 0
                         DragItemSlot = 0
-                        Exit Sub
                     End If
                 End With
             End If

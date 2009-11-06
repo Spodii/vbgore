@@ -6,7 +6,7 @@ Private Const MaxSummons As Byte = 3        'Maximum number of characters on pla
 
 'Bless
 Private Const Bless_Cost As Single = 0.5    'Magic * Bless_Cost
-Private Const Bless_Length As Long = 300000 'How long the skill lasts
+Private Const Bless_Length As Long = 300 'How long the skill lasts
 Private Const Bless_Exhaust As Long = 3500  'Exhaustion time
 Private Const Bless_Sfx As Byte = 8
 
@@ -47,7 +47,7 @@ Dim CharIndex As Integer
 Dim tIndex As Integer
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
@@ -172,7 +172,7 @@ Public Sub Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex A
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
@@ -221,7 +221,7 @@ Public Sub Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex A
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.BlessCounter = timeGetTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Bless_Exhaust
@@ -264,7 +264,7 @@ Public Sub Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex A
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -304,7 +304,7 @@ Public Sub Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.ProtectCounter = timeGetTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Pro_Exhaust
@@ -342,7 +342,7 @@ Public Sub Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     End If
     
     'Successfully casted
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -382,7 +382,7 @@ Public Sub Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.StrengthenCounter = timeGetTime + Str_Length
     NPCList(TargetIndex).Skills.Strengthen = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Str_Exhaust
@@ -420,7 +420,7 @@ Public Sub Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     End If
     
     'Successfully casted
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -460,7 +460,7 @@ Public Sub Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex 
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.BlessCounter = timeGetTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Bless_Exhaust
@@ -498,7 +498,7 @@ Public Sub Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex 
     End If
     
     'Upate the NPC's stats that was casted on
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -509,7 +509,7 @@ Public Sub Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
@@ -558,7 +558,7 @@ Public Sub Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.StrengthenCounter = timeGetTime + Str_Length
     NPCList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Str_Exhaust
@@ -601,7 +601,7 @@ Public Sub Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -612,7 +612,7 @@ Public Sub Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
 
     'Check if the caster knows the skill
@@ -661,7 +661,7 @@ Public Sub Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.ProtectCounter = timeGetTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = timeGetTime + Pro_Exhaust
@@ -704,7 +704,7 @@ Public Sub Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).flags.UpdateStats = 1
+    NPCList(TargetIndex).Flags.UpdateStats = 1
     
 End Sub
 
@@ -715,8 +715,8 @@ Public Sub Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
@@ -827,8 +827,8 @@ Public Sub Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
@@ -939,8 +939,8 @@ Public Sub Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
     
     'Check if the caster knows the skill
@@ -1052,8 +1052,8 @@ Public Sub Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetIndex As 
 
     'Check for invalid values
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
-    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
+    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
@@ -1175,7 +1175,7 @@ Public Sub Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIndex As
 
     'Check for invalid values
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Sub
-    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Sub
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
@@ -1334,6 +1334,7 @@ Dim Damage As Long
 
     'Loop through all the tiles, damaging any NPC on them
     'NORTH
+    On Error Resume Next
     If UserList(CasterIndex).Char.HeadHeading = NORTH Or UserList(CasterIndex).Char.HeadHeading = NORTHEAST Then
         If MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX - 1, aY + 1).NPCIndex, CasterIndex, Damage * 0.333
         If MapInfo(aMap).Data(aX, aY + 1).NPCIndex > 0 Then NPC_Damage MapInfo(aMap).Data(aX, aY + 1).NPCIndex, CasterIndex, Damage * 0.25
@@ -1458,6 +1459,8 @@ Dim Damage As Long
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map, PP_DisplaySpell
     
+    On Error GoTo 0
+    
 End Sub
 
 Public Sub Skill_Warcry_PC(ByVal CasterIndex As Integer)
@@ -1493,8 +1496,8 @@ Dim WarCursePower As Integer
     'Loop through all the alive and active NPCs
     WarCursePower = UserList(CasterIndex).Stats.ModStat(SID.Str)
     For LoopC = 1 To LastNPC
-        If NPCList(LoopC).flags.NPCActive Then
-            If NPCList(LoopC).flags.NPCAlive Then
+        If NPCList(LoopC).Flags.NPCActive Then
+            If NPCList(LoopC).Flags.NPCAlive Then
                 If NPCList(LoopC).Pos.Map = UserList(CasterIndex).Pos.Map Then
                     If NPCList(LoopC).Attackable Then
                         If NPCList(LoopC).Hostile Then

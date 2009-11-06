@@ -129,7 +129,7 @@ Private Sub ClickExit()
 
     'Save the game ini
     Var_Write DataPath & "Game.ini", "INIT", "Name", NameTxt.Text
-    Var_Write DataPath & "Game.ini", "INIT", "SavePass", Val(SavePass) * -1
+    Var_Write DataPath & "Game.ini", "INIT", "SavePass", -CInt(SavePass)
     If Not SavePass Then
         Var_Write DataPath & "Game.ini", "INIT", "Password", ""
     Else

@@ -384,6 +384,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                                 Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
+                                User_UpdateModStats UserIndex
                             End If
                         End If                  'Protection
                         If UserList(UserIndex).Counters.ProtectCounter > 0 Then
@@ -394,6 +395,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                                 Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
+                                User_UpdateModStats UserIndex
                             End If
                         End If                  'Strengthen
                         If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
@@ -404,6 +406,7 @@ Dim UserIndex As Integer
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                                 Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_StatusIcons
+                                User_UpdateModStats UserIndex
                             End If
                         End If                  'Spell exhaustion
                         If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
@@ -1720,7 +1723,7 @@ Public Function Server_InMapBounds(ByVal Map As Long, ByVal X As Integer, ByVal 
     
 End Function
 
-Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, ByVal Heading As Byte, Optional ByVal CheckWarps As Boolean = False) As Boolean
+Public Function Server_LegalPos(ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, ByVal Heading As Byte, Optional ByVal CheckWarps As Boolean = False, Optional ByVal IgnoreSlaves As Boolean = False) As Boolean
 
 '*****************************************************************
 'Checks to see if a tile position is legal
@@ -1765,8 +1768,16 @@ Dim tmpBlocked As Byte
             Exit Function
         End If
         If .NPCIndex > 0 Then
-            Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
-            Exit Function
+            'Check if we count whether our slave NPCs count as blocked or not
+            If IgnoreSlaves Then
+                If NPCList(.NPCIndex).OwnerIndex = 0 Then
+                    Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                    Exit Function
+                End If
+            Else
+                Log "Rtrn Server_LegalPos = " & Server_LegalPos, CodeTracker '//\\LOGLINE//\\
+                Exit Function
+            End If
         End If
         
         'Check for a warp

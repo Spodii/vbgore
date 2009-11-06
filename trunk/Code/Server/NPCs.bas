@@ -76,27 +76,37 @@ Dim X As Long
             Server_HeadToPos HeadingLoop, nPos
 
             'If a legal pos and a user is found attack
-            If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex > 0 Then
-                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex
-            
-                'Get the damage
-                Damage = NPC_AttackUser(NPCIndex, X)
-
-                'Send the attack packet
-                ConBuf.PreAllocate 12
-                ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
-                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                ConBuf.Put_Integer UserList(X).Char.CharIndex
-                ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-                ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-                If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
-                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-
-                'Apply damage
-                NPC_AttackUser_ApplyDamage NPCIndex, X, Damage
-                NPC_AI_Attack = 1
-                Exit Function
-
+            If nPos.X > 0 Then
+                If nPos.Y > 0 Then
+                    If nPos.X <= MapInfo(nPos.Map).Width Then
+                        If nPos.Y <= MapInfo(nPos.Map).Height Then
+                        
+                            If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex > 0 Then
+                                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex
+                            
+                                'Get the damage
+                                Damage = NPC_AttackUser(NPCIndex, X)
+                
+                                'Send the attack packet
+                                ConBuf.PreAllocate 12
+                                ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
+                                ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                ConBuf.Put_Integer UserList(X).Char.CharIndex
+                                ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                                ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                                If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
+                                Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                
+                                'Apply damage
+                                NPC_AttackUser_ApplyDamage NPCIndex, X, Damage
+                                NPC_AI_Attack = 1
+                                Exit Function
+                
+                            End If
+                        
+                        End If
+                    End If
+                End If
             End If
             
         Next HeadingLoop
@@ -161,30 +171,38 @@ Dim X As Long
             Server_HeadToPos HeadingLoop, nPos
 
             'If a legal pos and a NPC is found attack
-            If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
-                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
-                If NPCList(X).Attackable Then
-                    If NPCList(X).Hostile Then
-                        If NPCList(X).OwnerIndex <> NotSlaveOfUserIndex Then
-                        
-                            'Get the damage
-                            Damage = NPC_AttackNPC(NPCIndex, X)
-            
-                            'Send the attack packet
-                            ConBuf.PreAllocate 12
-                            ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
-                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-                            ConBuf.Put_Integer NPCList(X).Char.CharIndex
-                            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
-                            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
-                            If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
-                            Data_Send ToNPCArea, X, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
-            
-                            'Apply damage
-                            NPC_Damage X, 0, Damage, NPCList(NPCIndex).Char.CharIndex
-                            NPC_AI_AttackNPC = 1
-                            Exit Function
-                        
+            If nPos.X > 0 Then
+                If nPos.Y > 0 Then
+                    If nPos.X <= MapInfo(nPos.Map).Width Then
+                        If nPos.Y <= MapInfo(nPos.Map).Height Then
+                            If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
+                                X = MapInfo(nPos.Map).Data(nPos.X, nPos.Y).NPCIndex
+                                If NPCList(X).Attackable Then
+                                    If NPCList(X).Hostile Then
+                                        If NPCList(X).OwnerIndex <> NotSlaveOfUserIndex Then
+                                        
+                                            'Get the damage
+                                            Damage = NPC_AttackNPC(NPCIndex, X)
+                            
+                                            'Send the attack packet
+                                            ConBuf.PreAllocate 12
+                                            ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
+                                            ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+                                            ConBuf.Put_Integer NPCList(X).Char.CharIndex
+                                            ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+                                            ConBuf.Put_Byte NPCList(NPCIndex).AttackSfx
+                                            If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
+                                            Data_Send ToNPCArea, X, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
+                            
+                                            'Apply damage
+                                            NPC_Damage X, 0, Damage, NPCList(NPCIndex).Char.CharIndex
+                                            NPC_AI_AttackNPC = 1
+                                            Exit Function
+                                        
+                                        End If
+                                    End If
+                                End If
+                            End If
                         End If
                     End If
                 End If
@@ -669,8 +687,8 @@ Dim Y As Integer
     Log "Call NPC_AI_ClosestChar(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
     
     'Check for a valid, active NPC
-    If NPCList(NPCIndex).flags.NPCAlive = 0 Then Exit Function
-    If NPCList(NPCIndex).flags.NPCActive = 0 Then Exit Function
+    If NPCList(NPCIndex).Flags.NPCAlive = 0 Then Exit Function
+    If NPCList(NPCIndex).Flags.NPCActive = 0 Then Exit Function
     
     'Expand the search range
     For tX = 1 To SearchX
@@ -742,8 +760,8 @@ Dim Y As Integer
     Log "Call NPC_AI_ClosestPC(" & NPCIndex & "," & SearchX & "," & SearchY & ")", CodeTracker '//\\LOGLINE//\\
     
     'Check for a valid, active NPC
-    If NPCList(NPCIndex).flags.NPCAlive = 0 Then Exit Function
-    If NPCList(NPCIndex).flags.NPCActive = 0 Then Exit Function
+    If NPCList(NPCIndex).Flags.NPCAlive = 0 Then Exit Function
+    If NPCList(NPCIndex).Flags.NPCActive = 0 Then Exit Function
     
     'Expand the search range
     For tX = 1 To SearchX
@@ -796,9 +814,9 @@ Dim Y As Integer
                 For Y = NPCList(NPCIndex).Pos.Y - tY To NPCList(NPCIndex).Pos.Y + tY Step tY
                 
                     'Make sure tile is legal
-                    If X >= 1 Then
+                    If X > 0 Then
                         If X <= MapInfo(NPCList(NPCIndex).Pos.Map).Width Then
-                            If Y >= 1 Then
+                            If Y > 0 Then
                                 If Y <= MapInfo(NPCList(NPCIndex).Pos.Map).Height Then
                                 
                                     'Look for a npc
@@ -934,7 +952,7 @@ Dim Hit As Long
     End If
     
     'Don't allow if not logged in completely
-    If UserList(UserIndex).flags.UserLogged = 0 Then
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
         Log "NPC_AttackUser: User " & UserIndex & " (" & UserList(UserIndex).Name & ") not logged in - aborting", CodeTracker '//\\LOGLINE//\\
         NPC_AttackUser = -1
         Exit Function
@@ -1032,9 +1050,9 @@ Dim FlagSizes As Byte
     ConBuf.Put_Byte ChangeFlags
     If ChangeFlags And 1 Then ConBuf.Put_Integer Body
     If ChangeFlags And 2 Then ConBuf.Put_Integer Head
-    If ChangeFlags And 8 Then ConBuf.Put_Integer Weapon
-    If ChangeFlags And 16 Then ConBuf.Put_Integer Hair
-    If ChangeFlags And 32 Then ConBuf.Put_Integer Wings
+    If ChangeFlags And 4 Then ConBuf.Put_Integer Weapon
+    If ChangeFlags And 8 Then ConBuf.Put_Integer Hair
+    If ChangeFlags And 16 Then ConBuf.Put_Integer Wings
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map, PP_ChangeChar
 
 End Sub
@@ -1048,7 +1066,7 @@ Public Sub NPC_Close(ByVal NPCIndex As Integer, Optional ByVal CleanArray As Byt
     Log "Call NPC_Close(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Close down the NPC
-    NPCList(NPCIndex).flags.NPCActive = 0
+    NPCList(NPCIndex).Flags.NPCActive = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).Index = 0
     CharList(NPCList(NPCIndex).Char.CharIndex).CharType = 0
 
@@ -1080,7 +1098,7 @@ Dim t As Integer    'Holds the unaltered value of LastNPC
     t = LastNPC
 
     'Loop through the NPCs from the last NPC backwards to find the number of slots we can clear
-    Do Until NPCList(LastNPC).flags.NPCActive = 1
+    Do Until NPCList(LastNPC).Flags.NPCActive = 1
         LastNPC = LastNPC - 1
         If LastNPC = 0 Then Exit Do
     Loop
@@ -1320,7 +1338,7 @@ Sub NPC_EraseChar(ByVal NPCIndex As Integer)
 
     'Clear the variables
     NPCList(NPCIndex).Char.CharIndex = 0
-    NPCList(NPCIndex).flags.NPCAlive = 0
+    NPCList(NPCIndex).Flags.NPCAlive = 0
 
     'Set at the respawn spot
     NPCList(NPCIndex).Pos.Map = NPCList(NPCIndex).StartPos.Map
@@ -1340,8 +1358,8 @@ Dim i As Byte
     Log "Call NPC_Kill(" & NPCIndex & ")", CodeTracker '//\\LOGLINE//\\
     
     'If thralled, remove them
-    If NPCList(NPCIndex).flags.Thralled Then
-        NPCList(NPCIndex).flags.NPCActive = 0
+    If NPCList(NPCIndex).Flags.Thralled Then
+        NPCList(NPCIndex).Flags.NPCActive = 0
         
         'If they were bounded as a slave (summon) NPC, change the user's summon count
         If NPCList(NPCIndex).OwnerIndex > 0 Then
@@ -1383,13 +1401,15 @@ Dim i As Byte
 
 End Sub
 
-Public Sub NPC_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer)
+Public Sub NPC_MakeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, ByVal Map As Integer, ByVal X As Integer, ByVal Y As Integer, Optional ByVal SendPacket As Boolean = True)
 
 '*****************************************************************
 'Makes and places a NPC character
 '*****************************************************************
 Dim SndHP As Byte
 Dim SndMP As Byte
+Dim Flags As Integer
+Dim PacketSize As Long
 
     Log "Call NPC_MakeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Map & "," & X & "," & Y & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1397,7 +1417,7 @@ Dim SndMP As Byte
     MapInfo(Map).Data(X, Y).NPCIndex = NPCIndex
 
     'Set alive flag
-    NPCList(NPCIndex).flags.NPCAlive = 1
+    NPCList(NPCIndex).Flags.NPCAlive = 1
 
     'Set the hp/mp to send
     If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
@@ -1405,33 +1425,159 @@ Dim SndMP As Byte
 
     'NPCs wont be created with active spells
     ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
-
-    'Send make character command to clients
-    ConBuf.PreAllocate 22 + Len(NPCList(NPCIndex).Name)
-    ConBuf.Put_Byte DataCode.Server_MakeChar
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
-    ConBuf.Put_Byte NPCList(NPCIndex).Char.Heading
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
-    ConBuf.Put_Byte X
-    ConBuf.Put_Byte Y
-    ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
-    ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
-    ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
-    ConBuf.Put_Byte SndHP
-    ConBuf.Put_Byte SndMP
-    ConBuf.Put_Byte NPCList(NPCIndex).ChatID
-    If NPCList(NPCIndex).OwnerIndex > 0 Then
-        ConBuf.Put_Byte ClientCharType_Slave
-        ConBuf.Put_Integer UserList(NPCList(NPCIndex).OwnerIndex).Char.CharIndex
+    
+    'Find out what information needs to be sent
+    'Typical users do NOT need to worry about the packet cache system!
+    'Caching will only work when sending to a single client
+    If sndRoute = ToIndex Then
+        If sndIndex > LastUser Or sndIndex < 1 Then Exit Sub
+        PacketSize = 2
+        With UserList(sndIndex).PacketCache.Server_MakeChar
+            If NPCList(NPCIndex).Char.Body <> .Body Then
+                Flags = Flags Or 1
+                .Body = NPCList(NPCIndex).Char.Body
+                PacketSize = PacketSize + 2
+            End If
+            If NPCList(NPCIndex).Char.Head <> .Head Then
+                Flags = Flags Or 2
+                .Head = NPCList(NPCIndex).Char.Head
+                PacketSize = PacketSize + 2
+            End If
+            If NPCList(NPCIndex).Char.Heading <> .Heading Then
+                Flags = Flags Or 4
+                .Heading = NPCList(NPCIndex).Char.Heading
+                PacketSize = PacketSize + 1
+            End If
+            If X <> .X Then
+                Flags = Flags Or 8
+                .X = X
+                PacketSize = PacketSize + 1
+            End If
+            If Y <> .Y Then
+                Flags = Flags Or 16
+                .Y = Y
+                PacketSize = PacketSize + 1
+            End If
+            If NPCList(NPCIndex).BaseStat(SID.Speed) <> .Speed Then
+                Flags = Flags Or 32
+                .Speed = NPCList(NPCIndex).BaseStat(SID.Speed)
+                PacketSize = PacketSize + 1
+            End If
+            If NPCList(NPCIndex).Name <> .Name Then
+                Flags = Flags Or 64
+                .Name = NPCList(NPCIndex).Name
+                PacketSize = PacketSize + 1 + Len(.Name)
+            End If
+            If NPCList(NPCIndex).Char.Weapon <> .Weapon Then
+                Flags = Flags Or 128
+                .Weapon = NPCList(NPCIndex).Char.Weapon
+                PacketSize = PacketSize + 2
+            End If
+            If NPCList(NPCIndex).Char.Hair <> .Hair Then
+                Flags = Flags Or 256
+                .Hair = NPCList(NPCIndex).Char.Hair
+                PacketSize = PacketSize + 2
+            End If
+            If NPCList(NPCIndex).Char.Wings <> .Wings Then
+                Flags = Flags Or 512
+                .Wings = NPCList(NPCIndex).Char.Wings
+                PacketSize = PacketSize + 2
+            End If
+            If SndHP <> .HP Then
+                Flags = Flags Or 1024
+                .HP = SndHP
+                PacketSize = PacketSize + 1
+            End If
+            If SndMP <> .MP Then
+                Flags = Flags Or 2048
+                .MP = SndMP
+                PacketSize = PacketSize + 1
+            End If
+            If NPCList(NPCIndex).ChatID <> .ChatID Then
+                Flags = Flags Or 4096
+                .ChatID = NPCList(NPCIndex).ChatID
+                PacketSize = PacketSize + 1
+            End If
+            If NPCList(NPCIndex).OwnerIndex > 0 Then
+                If ClientCharType_Slave <> .CharType Then
+                    Flags = Flags Or 8192
+                    .CharType = ClientCharType_Slave
+                    PacketSize = PacketSize + 1
+                End If
+            Else
+                If ClientCharType_NPC <> .CharType Then
+                    Flags = Flags Or 8192
+                    .CharType = ClientCharType_NPC
+                    PacketSize = PacketSize + 1
+                End If
+            End If
+            
+        End With
     Else
-        ConBuf.Put_Byte ClientCharType_NPC
+        PacketSize = 22 + Len(NPCList(NPCIndex).Name)
     End If
     
+    'Send make character command to clients
+    If SendPacket Then
+        ConBuf.PreAllocate PacketSize
+    Else
+        ConBuf.Allocate PacketSize
+    End If
+    
+    'Check whether to send cached or not
+    'CACHED
+    If sndRoute = ToIndex Then
+        ConBuf.Put_Byte DataCode.Server_MakeCharCached
+        ConBuf.Put_Integer Flags
+        If Flags And 1 Then ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
+        If Flags And 2 Then ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
+        If Flags And 4 Then ConBuf.Put_Byte NPCList(NPCIndex).Char.Heading
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+        If Flags And 8 Then ConBuf.Put_Byte X
+        If Flags And 16 Then ConBuf.Put_Byte Y
+        If Flags And 32 Then ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
+        If Flags And 64 Then ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
+        If Flags And 128 Then ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
+        If Flags And 256 Then ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
+        If Flags And 512 Then ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
+        If Flags And 1024 Then ConBuf.Put_Byte SndHP
+        If Flags And 2048 Then ConBuf.Put_Byte SndMP
+        If Flags And 4096 Then ConBuf.Put_Byte NPCList(NPCIndex).ChatID
+        If NPCList(NPCIndex).OwnerIndex > 0 Then
+            If Flags And 8192 Then ConBuf.Put_Byte ClientCharType_Slave
+            ConBuf.Put_Integer UserList(NPCList(NPCIndex).OwnerIndex).Char.CharIndex
+        Else
+            If Flags And 8192 Then ConBuf.Put_Byte ClientCharType_NPC
+        End If
+        
+    'NOT CACHED
+    Else
+        ConBuf.Put_Byte DataCode.Server_MakeChar
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
+        ConBuf.Put_Byte NPCList(NPCIndex).Char.Heading
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
+        ConBuf.Put_Byte X
+        ConBuf.Put_Byte Y
+        ConBuf.Put_Byte NPCList(NPCIndex).BaseStat(SID.Speed)   'We dont use modstat on speed since for one it may not have been updated
+        ConBuf.Put_String NPCList(NPCIndex).Name                ' yet, along with theres nothing to mod the stat
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.Weapon
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.Hair
+        ConBuf.Put_Integer NPCList(NPCIndex).Char.Wings
+        ConBuf.Put_Byte SndHP
+        ConBuf.Put_Byte SndMP
+        ConBuf.Put_Byte NPCList(NPCIndex).ChatID
+        If NPCList(NPCIndex).OwnerIndex > 0 Then
+            ConBuf.Put_Byte ClientCharType_Slave
+            ConBuf.Put_Integer UserList(NPCList(NPCIndex).OwnerIndex).Char.CharIndex
+        Else
+            ConBuf.Put_Byte ClientCharType_NPC
+        End If
+    End If
+    
+    
     'Send the NPC
-    Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
+    If SendPacket Then Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
 
 End Sub
 
@@ -1500,7 +1646,7 @@ Dim LoopC As Long
             LoopC = 0
             Exit Do
         End If
-    Loop While NPCList(LoopC).flags.NPCActive = 1
+    Loop While NPCList(LoopC).Flags.NPCActive = 1
 
     NPC_NextOpen = LoopC
     
@@ -1536,7 +1682,7 @@ Dim CharIndex As Integer
 
     'Set vars
     NPCList(NPCIndex).Pos = TempPos
-    NPCList(NPCIndex).flags.NPCAlive = 1
+    NPCList(NPCIndex).Flags.NPCAlive = 1
 
     'Make NPC Char
     If BypassUpdate = 0 Then

@@ -1108,7 +1108,7 @@ Sub Engine_Char_Erase(ByVal CharIndex As Integer)
 
 End Sub
 
-Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Long, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
+Sub Engine_Char_Make(ByVal CharIndex As Integer, ByVal Body As Integer, ByVal Head As Integer, ByVal Heading As Byte, ByVal X As Integer, ByVal Y As Integer, ByVal Speed As Byte, ByVal Name As String, ByVal Weapon As Integer, ByVal Hair As Integer, ByVal Wings As Integer, ByVal ChatID As Byte, ByVal CharType As Byte, Optional ByVal HP As Byte = 100, Optional ByVal MP As Byte = 100)
 
 '*****************************************************************
 'Makes a new character and puts it on the map
@@ -2405,7 +2405,7 @@ Dim ln2 As String
         'Loop until we reach the BEGINFILE line, stating the data is going to start coming in
         Do
             Line Input #FileNum, ln
-        Loop While UCase$(ln) <> "BEGINFILE"
+        Loop While UCase$(Left$(ln, 9)) <> "BEGINFILE"
         
         'Loop through the data
         Do
@@ -3455,7 +3455,11 @@ Dim i As Integer
     For i = 1 To LastChar
         If CharList(i).Active Then
             If CharList(i).Pos.X = X Then
-                If CharList(i).Pos.Y = Y Then Exit Function
+                If CharList(i).Pos.Y = Y Then
+                    If CharList(i).OwnerChar <> UserCharIndex Then
+                        Exit Function
+                    End If
+                End If
             End If
         End If
     Next i

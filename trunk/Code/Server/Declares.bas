@@ -433,6 +433,25 @@ Type KnownSkills    'Known skills by the user
     SpikeField As Byte
     Spike As Byte
 End Type
+Type Cache_Server_MakeChar
+    Body As Integer
+    Head As Integer
+    Heading As Byte
+    X As Byte
+    Y As Byte
+    Speed As Byte
+    Name As String
+    Weapon As Integer
+    Hair As Integer
+    Wings As Integer
+    HP As Byte
+    MP As Byte
+    ChatID As Byte
+    CharType As Byte
+End Type
+Type PacketCache
+    Server_MakeChar As Cache_Server_MakeChar
+End Type
 Type User   'Holds data for a user
     Name As String          'Name of the user
     Char As Char            'Defines users looks
@@ -457,8 +476,9 @@ Type User   'Holds data for a user
     WingsEqpSlot As Byte            'Slot of the equipted Wings
     Counters As UserCounters        'Declares the user counters
     Stats As UserStats              'Declares the user stats
-    flags As UserFlags              'Declares the user Flags
+    Flags As UserFlags              'Declares the user Flags
     Skills As Skills                'Declares the skills casted on the user
+    PacketCache As PacketCache      'Typical users do NOT need to worry about the packet cache at all and just let it do its job
     NumSlaves As Byte               'Number of "slave" (ie summoned or pet) NPCs the user has
     SlaveNPCIndex() As Integer      'NPC index of the slaves (not CharIndex since you can't slave a PC)
     KnownSkills(1 To NumSkills) As Byte         'Declares the skills known by the user
@@ -506,7 +526,7 @@ Type NPC    'Holds all the NPC variables
     OwnerIndex As Integer   'The user index the NPC is bound to (ie summoned or a pet)
     ProjectileRotateSpeed As Byte   'If a projectile, how fast it rotates
     Skills As Skills                'Declares the skills casted on the NPC
-    flags As NPCFlags               'Declares the NPC's Flags
+    Flags As NPCFlags               'Declares the NPC's Flags
     Counters As NPCCounters         'Declares the NPC's counters
     NumVendItems As Byte            'Number of items the NPC is vending
     NumDropItems As Byte            'Number of items the NPC is dropping
@@ -562,6 +582,7 @@ Public Const OBJTYPE_USEONCE As Byte = 1    'Objects that can be used only once
 Public Const OBJTYPE_WEAPON As Byte = 2     'Weapons of all types
 Public Const OBJTYPE_ARMOR As Byte = 3      'Body armors
 Public Const OBJTYPE_WINGS As Byte = 4      'Wings
+Public Const OBJTYPE_USEINFINITE As Byte = 5    'USEONCE object, minus the removal after usage
 
 'Constants for headings
 Public Const NORTH As Byte = 1

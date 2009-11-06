@@ -625,6 +625,8 @@ Dim Byt1 As Byte
         Case 134
             Str1 = rBuf.Get_String
             Engine_AddToChatTextBuffer Replace$(Message(134), "<name>", Str1), FontColor_Quest
+        Case 137
+            Engine_AddToChatTextBuffer Message(137), FontColor_Info
     End Select
 
 End Sub
@@ -1222,6 +1224,78 @@ Dim i As Long
 
 End Sub
 
+Sub Data_Server_MakeCharCached(ByRef rBuf As DataBuffer)
+
+'*********************************************
+'Create a character and set their information
+'<Flags(I)><Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)>
+' <HP%(B)><MP%(B)><ChatID(B)><CharType(B)> (<OwnerCharIndex(I)>)
+'*********************************************
+Dim flags As Integer
+Dim Body As Integer
+Dim Head As Integer
+Dim Heading As Byte
+Dim CharIndex As Integer
+Dim X As Byte
+Dim Y As Byte
+Dim Speed As Byte
+Dim Name As String
+Dim Weapon As Integer
+Dim Hair As Integer
+Dim Wings As Integer
+Dim HP As Byte
+Dim MP As Byte
+Dim ChatID As Byte
+Dim CharType As Byte
+Dim OwnerChar As Integer
+
+    'Retrieve all the information
+    flags = rBuf.Get_Integer
+    If flags And 1 Then Body = rBuf.Get_Integer Else Body = PacketCache.Server_MakeChar.Body
+    If flags And 2 Then Head = rBuf.Get_Integer Else Head = PacketCache.Server_MakeChar.Head
+    If flags And 4 Then Heading = rBuf.Get_Byte Else Heading = PacketCache.Server_MakeChar.Heading
+    CharIndex = rBuf.Get_Integer
+    If flags And 8 Then X = rBuf.Get_Byte Else X = PacketCache.Server_MakeChar.X
+    If flags And 16 Then Y = rBuf.Get_Byte Else Y = PacketCache.Server_MakeChar.Y
+    If flags And 32 Then Speed = rBuf.Get_Byte Else Speed = PacketCache.Server_MakeChar.Speed
+    If flags And 64 Then Name = rBuf.Get_String Else Name = PacketCache.Server_MakeChar.Name
+    If flags And 128 Then Weapon = rBuf.Get_Integer Else Weapon = PacketCache.Server_MakeChar.Weapon
+    If flags And 256 Then Hair = rBuf.Get_Integer Else Hair = PacketCache.Server_MakeChar.Hair
+    If flags And 512 Then Wings = rBuf.Get_Integer Else Wings = PacketCache.Server_MakeChar.Wings
+    If flags And 1024 Then HP = rBuf.Get_Byte Else HP = PacketCache.Server_MakeChar.HP
+    If flags And 2048 Then MP = rBuf.Get_Byte Else MP = PacketCache.Server_MakeChar.MP
+    If flags And 4096 Then ChatID = rBuf.Get_Byte Else ChatID = PacketCache.Server_MakeChar.ChatID
+    If flags And 8192 Then CharType = rBuf.Get_Byte Else CharType = PacketCache.Server_MakeChar.CharType
+    
+    'Check for the owner char index if the char is a slave NPC
+    If CharType = ClientCharType_Slave Then OwnerChar = rBuf.Get_Integer
+    
+    'Store the new values for the cache
+    With PacketCache.Server_MakeChar
+        .Body = Body
+        .Head = Head
+        .Heading = Heading
+        .X = X
+        .Y = Y
+        .Speed = Speed
+        .Name = Name
+        .Weapon = Weapon
+        .Hair = Hair
+        .Wings = Wings
+        .HP = HP
+        .MP = MP
+        .ChatID = ChatID
+        .CharType = CharType
+    End With
+  
+    'Create the character
+    Engine_Char_Make CharIndex, Body, Head, Heading, X, Y, Speed, Name, Weapon, Hair, Wings, ChatID, CharType, HP, MP
+
+    'Apply the owner index value
+    CharList(CharIndex).OwnerChar = OwnerChar
+
+End Sub
+
 Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
@@ -1229,7 +1303,6 @@ Sub Data_Server_MakeChar(ByRef rBuf As DataBuffer)
 '<Body(I)><Head(I)><Heading(B)><CharIndex(I)><X(B)><Y(B)><Speed(B)><Name(S)><Weapon(I)><Hair(I)><Wings(I)>
 ' <HP%(B)><MP%(B)><ChatID(B)><CharType(B)> (<OwnerCharIndex(I)>)
 '*********************************************
-
 Dim Body As Integer
 Dim Head As Integer
 Dim Heading As Byte

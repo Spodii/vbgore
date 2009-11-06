@@ -93,9 +93,9 @@ Dim PutSlot As Byte
     If Amount <= 0 Then Exit Sub
     
     'Check for a valid distance from the banker NPC
-    If UserList(UserIndex).flags.TradeWithNPC > 0 Then
-        With NPCList(UserList(UserIndex).flags.TradeWithNPC)
-            If NPCList(UserList(UserIndex).flags.TradeWithNPC).AI <> 6 Then Exit Sub    'Not a banker
+    If UserList(UserIndex).Flags.TradeWithNPC > 0 Then
+        With NPCList(UserList(UserIndex).Flags.TradeWithNPC)
+            If NPCList(UserList(UserIndex).Flags.TradeWithNPC).AI <> 6 Then Exit Sub    'Not a banker
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, .Pos.X, .Pos.Y, MaxServerDistanceX, MaxServerDistanceY) = 0 Then Exit Sub  'Out of range
         End With
     Else
@@ -189,9 +189,9 @@ Dim Slot As Byte
     If Amount <= 0 Then Exit Sub
     
     'Check for a valid distance from the banker NPC
-    If UserList(UserIndex).flags.TradeWithNPC > 0 Then
-        With NPCList(UserList(UserIndex).flags.TradeWithNPC)
-            If NPCList(UserList(UserIndex).flags.TradeWithNPC).AI <> 6 Then Exit Sub    'Not a banker
+    If UserList(UserIndex).Flags.TradeWithNPC > 0 Then
+        With NPCList(UserList(UserIndex).Flags.TradeWithNPC)
+            If NPCList(UserList(UserIndex).Flags.TradeWithNPC).AI <> 6 Then Exit Sub    'Not a banker
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, .Pos.X, .Pos.Y, MaxServerDistanceX, MaxServerDistanceY) = 0 Then Exit Sub  'Out of range
         End With
     Else
@@ -605,14 +605,14 @@ Dim GMLevel As Byte
     GMLevel = rBuf.Get_Byte
     
     'Make sure the one using the command is admin
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Get the target user's ID
     TargetIndex = User_NameToIndex(TargetName)
     
     'Set the GM level (if online)
     If TargetIndex > 0 Then
-        UserList(TargetIndex).flags.GMLevel = GMLevel
+        UserList(TargetIndex).Flags.GMLevel = GMLevel
     Else
         'Make sure the user exists
         If Server_UserExist(TargetName) Then
@@ -666,7 +666,7 @@ Dim i As Long
     Amount = rBuf.Get_Integer
     
     'Check for invalid values
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     If NPCIndex <= 0 Then
         Log "Data_GM_Thrall: Invalid NPCIndex (" & NPCIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -706,14 +706,7 @@ Dim i As Long
             NPC_Close tIndex
             Exit Sub
         End If
-        
-        'Set up the NPC on the map / char array
-        MapInfo(NPCList(tIndex).Pos.Map).Data(NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y).NPCIndex = tIndex
-        CharIndex = Server_NextOpenCharIndex
-        NPCList(NPCIndex).Char.CharIndex = CharIndex
-        CharList(CharIndex).Index = NPCIndex
-        CharList(CharIndex).CharType = CharType_NPC
-        
+
         'Display the NPC
         NPC_Spawn tIndex
         NPC_MakeChar ToMap, UserIndex, tIndex, NPCList(tIndex).Pos.Map, NPCList(tIndex).Pos.X, NPCList(tIndex).Pos.Y
@@ -735,18 +728,26 @@ Dim Y As Long
     Log "Call Data_GM_DeThrall([" & ByteArrayToStr(rBuf.Get_Buffer) & "]," & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
     'Check for invalid values
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Loop through the nearby tiles
     For X = UserList(UserIndex).Pos.X - 4 To UserList(UserIndex).Pos.X + 4
         For Y = UserList(UserIndex).Pos.Y - 4 To UserList(UserIndex).Pos.Y + 4
             
             'Check for a thralled NPC
-            If MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex Then
-                NPCIndex = MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex
-                If NPCList(NPCIndex).flags.Thralled Then
-                    If NPCList(NPCIndex).OwnerIndex = 0 Then
-                        NPC_Kill NPCIndex
+            If X > 0 Then
+                If Y > 0 Then
+                    If X <= MapInfo(UserList(UserIndex).Pos.Map).Width Then
+                        If Y <= MapInfo(UserList(UserIndex).Pos.Map).Height Then
+                            If MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex Then
+                                NPCIndex = MapInfo(UserList(UserIndex).Pos.Map).Data(X, Y).NPCIndex
+                                If NPCList(NPCIndex).Flags.Thralled Then
+                                    If NPCList(NPCIndex).OwnerIndex = 0 Then
+                                        NPC_Kill NPCIndex
+                                    End If
+                                End If
+                            End If
+                        End If
                     End If
                 End If
             End If
@@ -772,7 +773,7 @@ Dim i As Long
     IP = rBuf.Get_String
     
     'Check that the user is an admin
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Check for a valid IP
     If LenB(IP) = 0 Then Exit Sub
@@ -818,7 +819,7 @@ Dim i As Long
     Reason = rBuf.Get_String
     
     'Check the user admin ID
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Check for a reason and IP
     If LenB(Reason) = 0 Then Exit Sub
@@ -856,7 +857,7 @@ Dim i As Long
     
     'Check if anyone online is affected by the ban
     For i = 1 To LastUser
-        If UserList(i).flags.UserLogged Then
+        If UserList(i).Flags.UserLogged Then
             If Server_IPisBanned(frmMain.GOREsock.Address(i), Reason) Then
                 ConBuf.PreAllocate 3 + Len(Reason)
                 ConBuf.Put_Byte DataCode.Server_Message
@@ -888,7 +889,7 @@ Dim nPos As WorldPos
     TargetIndex = User_NameToIndex(TargetName)
 
     'Check the user admin ID
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'See if user online
     If TargetIndex <= 0 Then
@@ -918,7 +919,7 @@ Dim i As Byte
     TargetIndex = User_NameToIndex(TargetName)
 
     'Check the user admin ID
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'Check if the user is online
     If TargetIndex <= 0 Then
@@ -968,7 +969,7 @@ Dim RaiseValue As Long
     TargetIndex = User_NameToIndex(TargetName)
 
     'Check the user admin ID
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'See if user online
     If TargetIndex <= 0 Then
@@ -1029,17 +1030,17 @@ Dim TargetIndex As Integer
         If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(TargetIndex).Pos.X, UserList(TargetIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) = 1 Then
                     
             'Put the user in their trade request flag
-            UserList(UserIndex).flags.TradeWith = TargetIndex
+            UserList(UserIndex).Flags.TradeWith = TargetIndex
             
             'Check if the user has them in their trade flag
-            If UserList(TargetIndex).flags.TradeWith = UserIndex Then
+            If UserList(TargetIndex).Flags.TradeWith = UserIndex Then
             
                 'Woot, they want to trade with eachother - isn't that CUTE!!! ^_^
                 TradeTable_Create UserIndex, TargetIndex
                 
                 'Clear the tradewith flags
-                UserList(UserIndex).flags.TradeWith = 0
-                UserList(TargetIndex).flags.TradeWith = 0
+                UserList(UserIndex).Flags.TradeWith = 0
+                UserList(TargetIndex).Flags.TradeWith = 0
                 
             Else
             
@@ -1102,7 +1103,7 @@ Sub Data_User_Trade_Cancel(ByVal UserIndex As Integer)
 '<>
 '*****************************************************************
 
-    TradeTable_Close UserList(UserIndex).flags.TradeTable
+    TradeTable_Close UserList(UserIndex).Flags.TradeTable
 
 End Sub
 
@@ -1123,7 +1124,7 @@ Dim nPos As WorldPos
     TargetIndex = User_NameToIndex(TargetName)
 
     'Check the user admin ID
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
 
     'See if user online
     If TargetIndex <= 0 Then
@@ -1255,7 +1256,7 @@ Dim tIndex As Integer
             Log "Send ToIndex(" & sndIndex & "): " & ByteArrayToStr(sndData), PacketOut '//\\LOGLINE//\\
             If sndIndex < 1 Then Exit Sub
             If sndIndex > LastUser Then Exit Sub
-            If UserList(sndIndex).flags.UserLogged = 0 Then Exit Sub
+            If UserList(sndIndex).Flags.UserLogged = 0 Then Exit Sub
             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
             CopyPos = UserList(sndIndex).BufferSize + 1
             ReDim Preserve UserList(sndIndex).SendBuffer(UserList(sndIndex).BufferSize + CopySize)
@@ -1267,7 +1268,7 @@ Dim tIndex As Integer
         Case ToAll
             Log "Send ToAll: " & ByteArrayToStr(sndData), PacketOut '//\\LOGLINE//\\
             For LoopC = 1 To LastUser
-                If UserList(LoopC).flags.UserLogged Then
+                If UserList(LoopC).Flags.UserLogged Then
                     If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                     CopyPos = UserList(LoopC).BufferSize + 1
                     ReDim Preserve UserList(LoopC).SendBuffer(UserList(LoopC).BufferSize + CopySize)
@@ -1283,7 +1284,7 @@ Dim tIndex As Integer
             If sndMap = 0 Then Exit Sub
             For LoopC = 1 To MapInfo(sndMap).NumUsers
                 tIndex = MapUsers(sndMap).Index(LoopC)
-                If UserList(tIndex).flags.UserLogged Then
+                If UserList(tIndex).Flags.UserLogged Then
                     If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                     CopyPos = UserList(tIndex).BufferSize + 1
                     ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1300,7 +1301,7 @@ Dim tIndex As Integer
             If sndMap > 0 Then
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
-                    If UserList(tIndex).flags.UserLogged Then
+                    If UserList(tIndex).Flags.UserLogged Then
                         If Server_RectDistance(UserList(sndIndex).Pos.X, UserList(sndIndex).Pos.Y, UserList(tIndex).Pos.X, UserList(tIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                             CopyPos = UserList(tIndex).BufferSize + 1
@@ -1321,7 +1322,7 @@ Dim tIndex As Integer
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
                     If tIndex <> sndIndex Then
-                        If UserList(tIndex).flags.UserLogged Then
+                        If UserList(tIndex).Flags.UserLogged Then
                             If Server_RectDistance(UserList(sndIndex).Pos.X, UserList(sndIndex).Pos.Y, UserList(tIndex).Pos.X, UserList(tIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                                 If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                                 CopyPos = UserList(tIndex).BufferSize + 1
@@ -1343,7 +1344,7 @@ Dim tIndex As Integer
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
                     If tIndex <> sndIndex Then
-                        If UserList(tIndex).flags.UserLogged Then
+                        If UserList(tIndex).Flags.UserLogged Then
                             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                             CopyPos = UserList(tIndex).BufferSize + 1
                             ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1363,7 +1364,7 @@ Dim tIndex As Integer
                     tIndex = GroupData(UserList(sndIndex).GroupIndex).Users(LoopC)
                     If tIndex <> LoopC Then
                         If UserList(tIndex).Pos.Map = UserList(sndIndex).Pos.Map Then
-                            If UserList(tIndex).flags.UserLogged Then
+                            If UserList(tIndex).Flags.UserLogged Then
                                 If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                                 CopyPos = UserList(tIndex).BufferSize + 1
                                 ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1383,7 +1384,7 @@ Dim tIndex As Integer
                 For LoopC = 1 To GroupData(UserList(sndIndex).GroupIndex).NumUsers
                     tIndex = GroupData(UserList(sndIndex).GroupIndex).Users(LoopC)
                     If tIndex <> LoopC Then
-                        If UserList(tIndex).flags.UserLogged Then
+                        If UserList(tIndex).Flags.UserLogged Then
                             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                             CopyPos = UserList(tIndex).BufferSize + 1
                             ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1401,7 +1402,7 @@ Dim tIndex As Integer
             If UserList(sndIndex).GroupIndex > 0 Then
                 For LoopC = 1 To GroupData(UserList(sndIndex).GroupIndex).NumUsers
                     tIndex = GroupData(UserList(sndIndex).GroupIndex).Users(LoopC)
-                    If UserList(tIndex).flags.UserLogged Then
+                    If UserList(tIndex).Flags.UserLogged Then
                         If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                         CopyPos = UserList(tIndex).BufferSize + 1
                         ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1419,7 +1420,7 @@ Dim tIndex As Integer
             If sndMap > 0 Then
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
-                    If UserList(tIndex).flags.UserLogged Then
+                    If UserList(tIndex).Flags.UserLogged Then
                         If Server_RectDistance(NPCList(sndIndex).Pos.X, NPCList(sndIndex).Pos.Y, UserList(tIndex).Pos.X, UserList(tIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
                             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                             CopyPos = UserList(tIndex).BufferSize + 1
@@ -1440,7 +1441,7 @@ Dim tIndex As Integer
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
                     If tIndex <> sndIndex Then   'Dont send to the user who moved
-                        If UserList(tIndex).flags.UserLogged Then
+                        If UserList(tIndex).Flags.UserLogged Then
                             If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                             CopyPos = UserList(tIndex).BufferSize + 1
                             ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1467,7 +1468,7 @@ Dim tIndex As Integer
             If sndMap > 0 Then
                 For LoopC = 1 To MapInfo(sndMap).NumUsers
                     tIndex = MapUsers(sndMap).Index(LoopC)
-                    If UserList(tIndex).flags.UserLogged Then
+                    If UserList(tIndex).Flags.UserLogged Then
                         If DEBUG_RecordPacketsOut Then DebugPacketsOut(sndData(0)) = DebugPacketsOut(sndData(0)) + 1
                         CopyPos = UserList(tIndex).BufferSize + 1
                         ReDim Preserve UserList(tIndex).SendBuffer(UserList(tIndex).BufferSize + CopySize)
@@ -1525,7 +1526,7 @@ Sub Data_Send_Buffer(ByVal UserIndex As Integer)
     End If
 
     'Check if we are disconnecting
-    If UserList(UserIndex).flags.Disconnecting = 1 Then
+    If UserList(UserIndex).Flags.Disconnecting = 1 Then
         Server_CloseSocket UserIndex
     End If
 
@@ -1760,7 +1761,7 @@ Dim Y As Long
     ObjIndex = rBuf.Get_Byte
 
     'Check for invalid values
-    If UserList(UserIndex).flags.LastViewedMail <= 0 Then Exit Sub
+    If UserList(UserIndex).Flags.LastViewedMail <= 0 Then Exit Sub
     If ObjIndex > MaxMailObjs Then
         Log "Data_Server_MailItemTake: Invalid object index (" & ObjIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -1781,7 +1782,7 @@ Dim Y As Long
     End If
 
     'Get the item information and check if theres an item
-    MsgData = Load_Mail(UserList(UserIndex).MailID(UserList(UserIndex).flags.LastViewedMail))
+    MsgData = Load_Mail(UserList(UserIndex).MailID(UserList(UserIndex).Flags.LastViewedMail))
     If MsgData.Obj(ObjIndex).ObjIndex <= 0 Then
         Log "Data_Server_MailItemTake: Invalid object index (" & MsgData.Obj(ObjIndex).ObjIndex & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -1817,7 +1818,7 @@ Dim Y As Long
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
     
     'Save the changes done to the mail
-    Save_Mail UserList(UserIndex).MailID(UserList(UserIndex).flags.LastViewedMail), MsgData
+    Save_Mail UserList(UserIndex).MailID(UserList(UserIndex).Flags.LastViewedMail), MsgData
 
 End Sub
 
@@ -1872,7 +1873,7 @@ Dim NumObjs As Byte
     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Mail
 
     'Remember the last message the user viewed
-    UserList(UserIndex).flags.LastViewedMail = MessageID
+    UserList(UserIndex).Flags.LastViewedMail = MessageID
 
     'If the mail was new, then make it old (and save it)
     If MsgData.New = 1 Then
@@ -1901,7 +1902,7 @@ Dim i As Long
 
     For LoopC = 1 To LastUser
         If LenB(UserList(LoopC).Name) Then
-            If UserList(LoopC).flags.UserLogged Then
+            If UserList(LoopC).Flags.UserLogged Then
                 intNumUsers = intNumUsers + 1
                 ReDim Preserve UserNames(1 To intNumUsers)
                 UserNames(intNumUsers) = UserList(LoopC).Name
@@ -1950,7 +1951,7 @@ Dim tPos As WorldPos
     nPos.Y = rBuf.Get_Byte
     
     'Confirm that the user is a GM
-    If UserList(UserIndex).flags.GMLevel = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.GMLevel = 0 Then Exit Sub
     
     'Check if the location is valid - if not, get the closest legal position
     Server_ClosestLegalPos nPos, tPos
@@ -1991,7 +1992,7 @@ Dim StatID As Byte
     StatID = rBuf.Get_Byte
 
     'Check for invalid values
-    If UserList(UserIndex).flags.UserLogged = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.UserLogged = 0 Then Exit Sub
     If StatID <= 0 Then
         Log "Data_User_BaseStat: Invalid stat ID (" & StatID & ")", InvalidPacketData '//\\LOGLINE//\\
         Exit Sub
@@ -2059,14 +2060,14 @@ Dim SkillID As Byte
     If Not Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) Then Exit Sub
     
     'Clear the pending quest NPC
-    UserList(UserIndex).flags.QuestNPC = 0
+    UserList(UserIndex).Flags.QuestNPC = 0
     
     'Turn TargetCharIndex into the TargetIndex - get the array index, not char index
     If TargetCharIndex = 0 Then
         TargetIndex = UserIndex
         TargetType = CharType_PC
-        UserList(UserIndex).flags.TargetIndex = 0
-        UserList(UserIndex).flags.Target = 0
+        UserList(UserIndex).Flags.TargetIndex = 0
+        UserList(UserIndex).Flags.Target = 0
     Else
         TargetIndex = CharList(TargetCharIndex).Index
         'Since PCs and NPCs are in different arrays, we have to pass which one the TargetIndex belongs to, too
@@ -2584,17 +2585,17 @@ Sub Data_User_Group_Join(ByVal UserIndex As Integer)
     If UserList(UserIndex).GroupIndex > 0 Then Exit Sub
     If UserList(UserIndex).Counters.GroupCounter < timeGetTime Then
         UserList(UserIndex).Counters.GroupCounter = 0
-        UserList(UserIndex).flags.InviteGroup = 0
+        UserList(UserIndex).Flags.InviteGroup = 0
         Exit Sub
     End If
-    If UserList(UserIndex).flags.InviteGroup = 0 Then
+    If UserList(UserIndex).Flags.InviteGroup = 0 Then
         UserList(UserIndex).Counters.GroupCounter = 0
-        UserList(UserIndex).flags.InviteGroup = 0
+        UserList(UserIndex).Flags.InviteGroup = 0
         Exit Sub
     End If
     
     'Join the group
-    Group_AddUser UserIndex, UserList(UserIndex).flags.InviteGroup
+    Group_AddUser UserIndex, UserList(UserIndex).Flags.InviteGroup
 
 End Sub
 
@@ -2690,10 +2691,10 @@ Dim s As String
 
 'Make sure the user has a quests pending
 
-    If UserList(UserIndex).flags.QuestNPC = 0 Then Exit Sub
+    If UserList(UserIndex).Flags.QuestNPC = 0 Then Exit Sub
 
     'Check the distance of the user to the NPC
-    QuestNPC = UserList(UserIndex).flags.QuestNPC
+    QuestNPC = UserList(UserIndex).Flags.QuestNPC
     If NPCList(QuestNPC).Pos.Map = UserList(UserIndex).Pos.Map Then
         If Server_RectDistance(NPCList(QuestNPC).Pos.X, NPCList(QuestNPC).Pos.Y, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, MaxServerDistanceX + 2, MaxServerDistanceY + 2) Then 'Add a little bit extra to distance, in case NPC moves
 
@@ -2704,7 +2705,7 @@ Dim s As String
                 ConBuf.Put_Byte 62
                 ConBuf.Put_Long QuestData(NPCList(QuestNPC).Quest).AcceptReqLvl
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
-                UserList(UserIndex).flags.QuestNPC = 0
+                UserList(UserIndex).Flags.QuestNPC = 0
                 Exit Sub
             End If
             If QuestData(NPCList(QuestNPC).Quest).AcceptReqObj > 0 Then
@@ -2723,7 +2724,7 @@ Dim s As String
                     ConBuf.Put_Integer QuestData(NPCList(QuestNPC).Quest).AcceptReqObjAmount
                     ConBuf.Put_String ObjData.Name(QuestData(NPCList(QuestNPC).Quest).AcceptReqObj)
                     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
-                    UserList(UserIndex).flags.QuestNPC = 0
+                    UserList(UserIndex).Flags.QuestNPC = 0
                     Exit Sub
                 End If
             End If
@@ -2740,7 +2741,7 @@ Dim s As String
                     ConBuf.Put_Byte 134
                     ConBuf.Put_String QuestData(QuestData(NPCList(QuestNPC).Quest).AcceptReqFinishQuest).Name
                     Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
-                    UserList(UserIndex).flags.QuestNPC = 0
+                    UserList(UserIndex).Flags.QuestNPC = 0
                     Exit Sub
                 End If
             End If
@@ -2753,7 +2754,7 @@ Dim s As String
                 'Uhoh, the user has no more quest room!
                 If i > MaxQuests Then
                     Data_Send ToIndex, UserIndex, cMessage(12).Data
-                    UserList(UserIndex).flags.QuestNPC = 0
+                    UserList(UserIndex).Flags.QuestNPC = 0
                     Exit Sub
                 End If
 
@@ -2849,7 +2850,7 @@ Dim Slot As Byte
     Amount = rBuf.Get_Integer
     
     'Set the NPC index to trade with
-    NPCIndex = UserList(UserIndex).flags.TradeWithNPC
+    NPCIndex = UserList(UserIndex).Flags.TradeWithNPC
 
     'Check for invalid values
     If NPCIndex < 1 Then Exit Sub
@@ -2857,7 +2858,7 @@ Dim Slot As Byte
     If NPCList(NPCIndex).NumVendItems < 1 Then Exit Sub
     If Slot <= 0 Then Exit Sub
     If Slot > MAX_INVENTORY_SLOTS Then Exit Sub
-    If UserList(UserIndex).flags.TradeWithNPC <= 0 Then Exit Sub
+    If UserList(UserIndex).Flags.TradeWithNPC <= 0 Then Exit Sub
     If Amount < 0 Then Exit Sub
     If Amount > UserList(UserIndex).Object(Slot).Amount Then Exit Sub
     If UserList(UserIndex).Object(Slot).ObjIndex < 1 Then Exit Sub
@@ -2942,14 +2943,14 @@ Dim Slot As Byte
     Amount = rBuf.Get_Integer
 
     'Set the NPC index to trade with
-    NPCIndex = UserList(UserIndex).flags.TradeWithNPC
+    NPCIndex = UserList(UserIndex).Flags.TradeWithNPC
 
     'Check for invalid values
     If NPCIndex <= 0 Then Exit Sub
     If NPCIndex > LastNPC Then Exit Sub
     If Slot > NPCList(NPCIndex).NumVendItems Then Exit Sub
     If Slot <= 0 Then Exit Sub
-    If UserList(UserIndex).flags.TradeWithNPC <= 0 Then Exit Sub
+    If UserList(UserIndex).Flags.TradeWithNPC <= 0 Then Exit Sub
     If NPCList(NPCIndex).VendItems(Slot).ObjIndex <= 0 Then Exit Sub
     If NPCList(NPCIndex).VendItems(Slot).Amount = 0 Then Exit Sub
     If Amount < 0 Then Exit Sub
@@ -3095,16 +3096,16 @@ Dim Index As Integer
     
         'Make sure the index is a valid PC
         If Index > LastUser Then Exit Sub
-        If UserList(Index).flags.Disconnecting = 1 Then Exit Sub
-        If UserList(Index).flags.UserLogged = 0 Then Exit Sub
+        If UserList(Index).Flags.Disconnecting = 1 Then Exit Sub
+        If UserList(Index).Flags.UserLogged = 0 Then Exit Sub
 
         'Check the distance from the user
         If UserList(UserIndex).Pos.Map = UserList(Index).Pos.Map Then
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(Index).Pos.X, UserList(Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
     
                 'Valid distance, set as the new target
-                UserList(UserIndex).flags.TargetIndex = UserList(Index).Char.CharIndex
-                UserList(UserIndex).flags.Target = CharType_PC
+                UserList(UserIndex).Flags.TargetIndex = UserList(Index).Char.CharIndex
+                UserList(UserIndex).Flags.Target = CharType_PC
                 ConBuf.PreAllocate 3
                 ConBuf.Put_Byte DataCode.User_Target
                 ConBuf.Put_Integer UserList(Index).Char.CharIndex
@@ -3119,15 +3120,15 @@ Dim Index As Integer
     
         'Make sure the index is a valid NPC
         If Index > LastNPC Then Exit Sub
-        If NPCList(Index).flags.NPCAlive = 0 Then Exit Sub
+        If NPCList(Index).Flags.NPCAlive = 0 Then Exit Sub
         
         'Check the distance from the user
         If UserList(UserIndex).Pos.Map = NPCList(Index).Pos.Map Then
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(Index).Pos.X, NPCList(Index).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
     
                 'Valid distance, set as the new target
-                UserList(UserIndex).flags.TargetIndex = NPCList(Index).Char.CharIndex
-                UserList(UserIndex).flags.Target = CharType_NPC
+                UserList(UserIndex).Flags.TargetIndex = NPCList(Index).Char.CharIndex
+                UserList(UserIndex).Flags.Target = CharType_NPC
                 ConBuf.PreAllocate 3
                 ConBuf.Put_Byte DataCode.User_Target
                 ConBuf.Put_Integer NPCList(Index).Char.CharIndex
@@ -3142,11 +3143,11 @@ Dim Index As Integer
 Deselect:
     
     'The target wasn't valid, check if the user has a target already
-    If UserList(UserIndex).flags.Target > 0 Then
+    If UserList(UserIndex).Flags.Target > 0 Then
         
         'Clear the user's target
-        UserList(UserIndex).flags.Target = 0
-        UserList(UserIndex).flags.TargetIndex = 0
+        UserList(UserIndex).Flags.Target = 0
+        UserList(UserIndex).Flags.TargetIndex = 0
         ConBuf.PreAllocate 3
         ConBuf.Put_Byte DataCode.User_Target
         ConBuf.Put_Integer 0
@@ -3208,7 +3209,7 @@ Dim tIndex As Integer
     ConBuf.Put_String UserList(UserIndex).Name
     ConBuf.Put_Integer (Group_InviteTime \ 1000)
     Data_Send ToIndex, tIndex, ConBuf.Get_Buffer
-    UserList(tIndex).flags.InviteGroup = UserList(UserIndex).GroupIndex
+    UserList(tIndex).Flags.InviteGroup = UserList(UserIndex).GroupIndex
     UserList(tIndex).Counters.GroupCounter = timeGetTime + Group_InviteTime
     
 End Sub
@@ -3243,7 +3244,7 @@ Sub Server_CloseSocket(ByVal UserIndex As Integer)
     If UserIndex > 0 Then
         If UserIndex <= LastUser Then
             
-            UserList(UserIndex).flags.Disconnecting = 0
+            UserList(UserIndex).Flags.Disconnecting = 0
     
             'Send the buffer
             Data_Send_Buffer UserIndex
@@ -3252,13 +3253,13 @@ Sub Server_CloseSocket(ByVal UserIndex As Integer)
             frmMain.GOREsock.Shut UserIndex
     
             'If the user hasn't been closed, close it
-            If UserList(UserIndex).flags.UserLogged = 1 Then User_Close UserIndex
+            If UserList(UserIndex).Flags.UserLogged = 1 Then User_Close UserIndex
     
             'If User_Close was called, the array may have been resized, so make sure we are still in bounds
             If UserIndex > LastUser Then Exit Sub
     
             'Set to 0 again, just in case
-            UserList(UserIndex).flags.UserLogged = 0
+            UserList(UserIndex).Flags.UserLogged = 0
         
         End If
     End If
@@ -3278,7 +3279,7 @@ Dim i As Byte
 
     Log "Call User_Close(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    UserList(UserIndex).flags.Disconnecting = 0
+    UserList(UserIndex).Flags.Disconnecting = 0
 
     'Save temps
     Map = (UserList(UserIndex).Pos.Map)
@@ -3302,7 +3303,7 @@ Dim i As Byte
     End If
     
     'Set logged to false
-    UserList(UserIndex).flags.UserLogged = 0
+    UserList(UserIndex).Flags.UserLogged = 0
 
     'Save user
     Save_User UserList(UserIndex), UserIndex
@@ -3372,7 +3373,7 @@ Sub User_CleanArray()
     If LastUser = 0 Then Exit Sub
 
     'Update the last user value
-    Do Until UserList(LastUser).flags.UserLogged = 1
+    Do Until UserList(LastUser).Flags.UserLogged = 1
         LastUser = LastUser - 1
         If LastUser = 0 Then Exit Do
     Loop
@@ -3454,7 +3455,7 @@ Dim j As Long
     Log "Call User_Connect(" & UserIndex & "," & strName & "," & Password & "," & NewUser & ")", CodeTracker '//\\LOGLINE//\\
 
     'Make sure the user is not in use
-    If UserList(UserIndex).flags.UserLogged Then
+    If UserList(UserIndex).Flags.UserLogged Then
         Log "User_Connect: User already logged in", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -3491,7 +3492,7 @@ Dim j As Long
         If Not Server_UserExist(strName) Then
     
             'Tell the client we're disconnecting
-            UserList(UserIndex).flags.UserLogged = 1    'This is required to make the packet go through
+            UserList(UserIndex).Flags.UserLogged = 1    'This is required to make the packet go through
             ConBuf.PreAllocate 3 + Len(strName)
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 80
@@ -3506,13 +3507,13 @@ Dim j As Long
         ZeroMemory UserList(UserIndex), Len(UserList(UserIndex))    'Empty the character variables
         UserList(UserIndex).BufferSize = -1                         'Set the buffer start position (-1 = no buffer)
         Set UserList(UserIndex).Stats = New UserStats               'Create the stats class
-        UserList(UserIndex).flags.CreatedStats = 1
+        UserList(UserIndex).Flags.CreatedStats = 1
         UserList(UserIndex).Stats.UserIndex = UserIndex             'Set the user index
         
     End If
     
     'Set the user as logged in
-    UserList(UserIndex).flags.UserLogged = 1
+    UserList(UserIndex).Flags.UserLogged = 1
     
     'Check if the user is on the correct server (pass the map just in case its a new char since they have the map already)
     If User_CorrectServer(strName, UserIndex, UserList(UserIndex).Pos.Map) = 0 Then
@@ -3542,7 +3543,7 @@ Dim j As Long
         Data_Send_Buffer UserIndex
         
         'Disconnect the user currently on
-        UserList(j).flags.Disconnecting = 1
+        UserList(j).Flags.Disconnecting = 1
         
         Exit Sub
         
@@ -3742,7 +3743,7 @@ Dim i As Byte
     Log "Call User_Connect(" & UserIndex & "," & Name & "," & Password & "," & Body & "," & Head & "," & Class & ")", CodeTracker '//\\LOGLINE//\\
 
     'Make sure the user is not in use
-    If UserList(UserIndex).flags.UserLogged Then Exit Sub
+    If UserList(UserIndex).Flags.UserLogged Then Exit Sub
 
     'Check for a valid body and head
     If Head <> 1 Then Exit Sub
@@ -3782,7 +3783,7 @@ Dim i As Byte
     UserList(UserIndex).BufferSize = -1
     
     'Set the user as logged in
-    UserList(UserIndex).flags.UserLogged = 1
+    UserList(UserIndex).Flags.UserLogged = 1
 
     'Check for character file
     If Server_UserExist(Name) Then
@@ -3796,11 +3797,11 @@ Dim i As Byte
 
     'Set the stats class
     Set UserList(UserIndex).Stats = New UserStats
-    UserList(UserIndex).flags.CreatedStats = 1
+    UserList(UserIndex).Flags.CreatedStats = 1
     UserList(UserIndex).Stats.UserIndex = UserIndex
 
     'This is for testing purposes only - remove this in any public release!
-    UserList(UserIndex).flags.GMLevel = 1
+    UserList(UserIndex).Flags.GMLevel = 1
 
     'Set the user's variables
     UserList(UserIndex).Name = Name
@@ -3884,7 +3885,7 @@ Dim i As Byte
     Next i
     
     'Disconnect the user so we can re-connect them through the connect sub
-    UserList(UserIndex).flags.UserLogged = 0
+    UserList(UserIndex).Flags.UserLogged = 0
 
     'Go through regular connecting routine
     User_Connect UserIndex, Name, Password, True

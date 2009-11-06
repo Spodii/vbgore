@@ -23,6 +23,61 @@ Dim Slot As Long
 
 End Function
 
+Public Sub User_GiveSkill(ByVal UserIndex As Integer, ByVal SkillID As Byte)
+
+'*****************************************************************
+'Gives a user a skill they don't know, or tells them they already know it
+'*****************************************************************
+Dim s As String
+
+    'Check for a valid skill ID
+    If SkillID <= 0 Then Exit Sub
+    If SkillID > NumSkills Then Exit Sub
+
+    'Store the skill name
+    s = Server_SkillIDtoSkillName(SkillID)
+
+    'Make sure the user can learn the skill
+    If Skill_ValidSkillForClass(UserList(UserIndex).Class, SkillID) Then
+    
+        'Check whether the user knows the skill or not
+        If UserList(UserIndex).KnownSkills(SkillID) = 1 Then
+        
+            'User already knew the skill
+            ConBuf.PreAllocate 3 + Len(s)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 5
+            ConBuf.Put_String s
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            
+        Else
+        
+            'User learns the new skill
+            ConBuf.PreAllocate 3 + Len(s)
+            ConBuf.Put_Byte DataCode.Server_Message
+            ConBuf.Put_Byte 6
+            ConBuf.Put_String s
+            Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+            
+            'Give the user the skill
+            UserList(UserIndex).KnownSkills(SkillID) = 1
+            User_SendKnownSkills UserIndex
+            
+        End If
+    
+    Else
+    
+        'User can't learn the skill
+        ConBuf.PreAllocate 3 + Len(s)
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte 137
+        ConBuf.Put_String s
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        
+    End If
+
+End Sub
+
 Public Sub User_AddObjToInv(ByVal UserIndex As Integer, ByRef Object As Obj)
 
 '*****************************************************************
@@ -95,22 +150,22 @@ Dim TargetIndex As Integer
 Dim Damage As Long
 
     'Check for a valid cached target
-    If UserList(UserIndex).flags.TargetIndex < 1 Then Exit Sub
-    If UserList(UserIndex).flags.TargetIndex > LastChar Then Exit Sub
+    If UserList(UserIndex).Flags.TargetIndex < 1 Then Exit Sub
+    If UserList(UserIndex).Flags.TargetIndex > LastChar Then Exit Sub
     
     'Get the target index based on the NPCList() or UserList() arrays instead of CharList() value
-    TargetIndex = CharList(UserList(UserIndex).flags.TargetIndex).Index
+    TargetIndex = CharList(UserList(UserIndex).Flags.TargetIndex).Index
     
     'Check for a valid target index
     If TargetIndex = 0 Then Exit Sub
 
     'Check if a NPC or PC
-    Select Case UserList(UserIndex).flags.Target
+    Select Case UserList(UserIndex).Flags.Target
         Case CharType_PC  'PC
         
             'Check for a valid PC
-            If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Sub
-            If UserList(TargetIndex).flags.Disconnecting = 1 Then Exit Sub
+            If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Sub
+            If UserList(TargetIndex).Flags.Disconnecting = 1 Then Exit Sub
             
             With UserList(TargetIndex).Pos
                 TargetPos.Map = .Map
@@ -122,7 +177,7 @@ Dim Damage As Long
             
             'Check for a valid NPC
             If NPCList(TargetIndex).Attackable = 0 Then Exit Sub
-            If NPCList(TargetIndex).flags.NPCAlive = 0 Then Exit Sub
+            If NPCList(TargetIndex).Flags.NPCAlive = 0 Then Exit Sub
             
             With NPCList(TargetIndex).Pos
                 TargetPos.Map = .Map
@@ -161,7 +216,7 @@ Dim Damage As Long
         UserList(UserIndex).Char.Heading = NewHeading
         UserList(UserIndex).Char.HeadHeading = NewHeading
         
-        Select Case UserList(UserIndex).flags.Target
+        Select Case UserList(UserIndex).Flags.Target
         
             'Attacking user
             Case CharType_PC
@@ -264,7 +319,7 @@ Dim UseSfx As Byte
     'Check for ranged attack
     If UserList(UserIndex).WeaponEqpObjIndex > 0 Then
         If ObjData.WeaponRange(UserList(UserIndex).WeaponEqpObjIndex) > 1 Then
-            If UserList(UserIndex).flags.TargetIndex = 0 Then Exit Sub
+            If UserList(UserIndex).Flags.TargetIndex = 0 Then Exit Sub
             User_Attack_Ranged UserIndex
             Exit Sub
         End If
@@ -275,7 +330,7 @@ Dim UseSfx As Byte
     Server_HeadToPos Heading, AttackPos
 
     'Exit if not legal
-    If AttackPos.X < 1 Or AttackPos.X > MapInfo(UserList(UserIndex).Pos.Map).Width Or AttackPos.Y <= 1 Or AttackPos.Y > MapInfo(UserList(UserIndex).Pos.Map).Height Then
+    If AttackPos.X < 1 Or AttackPos.X > MapInfo(UserList(UserIndex).Pos.Map).Width Or AttackPos.Y < 1 Or AttackPos.Y > MapInfo(UserList(UserIndex).Pos.Map).Height Then
         Log "User_Attack: Trying to attack an illegal position - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -334,43 +389,45 @@ Dim UseSfx As Byte
         Log "User_Attack: Found a NPC to attack", CodeTracker '//\\LOGLINE//\\
         TargetIndex = MapInfo(AttackPos.Map).Data(AttackPos.X, AttackPos.Y).NPCIndex
         If NPCList(TargetIndex).Attackable Then
-            
-            'If NPC has no health, they can not be attacked
-            If NPCList(TargetIndex).ModStat(SID.MaxHP) = 0 Then
-                Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-                Exit Sub
-            End If
-            If NPCList(TargetIndex).BaseStat(SID.MaxHP) = 0 Then
-                Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
-                Exit Sub
-            End If
-            
-            Damage = User_AttackNPC(UserIndex, TargetIndex)
-
-            If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) > 0 Then
-            
-                ConBuf.PreAllocate 12
-                ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
-                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-                ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
-                ConBuf.Put_Byte UseSfx
+            If NPCList(TargetIndex).OwnerIndex <> UserIndex Then
+                
+                'If NPC has no health, they can not be attacked
+                If NPCList(TargetIndex).ModStat(SID.MaxHP) = 0 Then
+                    Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+                    Exit Sub
+                End If
+                If NPCList(TargetIndex).BaseStat(SID.MaxHP) = 0 Then
+                    Log "User_Attack: NPC's MaxHP = 0 - aborting", CodeTracker '//\\LOGLINE//\\
+                    Exit Sub
+                End If
+                
+                Damage = User_AttackNPC(UserIndex, TargetIndex)
     
-            Else
+                If ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex) > 0 Then
                 
-                ConBuf.PreAllocate 8
-                ConBuf.Put_Byte DataCode.Combo_SoundRotateDamage
-                ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
-                ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
-                ConBuf.Put_Byte UseSfx
+                    ConBuf.PreAllocate 12
+                    ConBuf.Put_Byte DataCode.Combo_SlashSoundRotateDamage
+                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                    ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+                    ConBuf.Put_Long ObjData.UseGrh(UserList(UserIndex).WeaponEqpObjIndex)
+                    ConBuf.Put_Byte UseSfx
+        
+                Else
+                    
+                    ConBuf.PreAllocate 8
+                    ConBuf.Put_Byte DataCode.Combo_SoundRotateDamage
+                    ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
+                    ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
+                    ConBuf.Put_Byte UseSfx
+                    
+                End If
+                
+                If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
+                Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
+                        
+                NPC_Damage TargetIndex, UserIndex, Damage
                 
             End If
-            
-            If Damage > 32000 Then ConBuf.Put_Integer 32000 Else ConBuf.Put_Integer Damage
-            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
-                    
-            NPC_Damage TargetIndex, UserIndex, Damage
-
         Else
         
             Log "User_Attack: NPC is non-attackable", CodeTracker '//\\LOGLINE//\\
@@ -860,7 +917,7 @@ Public Function User_CorrectServer(ByVal UserName As String, ByVal UserIndex As 
     
         'Incorrect server, tell the user to change after saving their character
         Save_User UserList(UserIndex), UserIndex
-        UserList(UserIndex).flags.DoNotSave = 1
+        UserList(UserIndex).Flags.DoNotSave = 1
         
         ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_ChangeServer
@@ -1099,8 +1156,8 @@ Dim TempPos As WorldPos
     End If
     
     'Remove the targeted NPC
-    UserList(UserIndex).flags.Target = 0
-    UserList(UserIndex).flags.TargetIndex = 0
+    UserList(UserIndex).Flags.Target = 0
+    UserList(UserIndex).Flags.TargetIndex = 0
     ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.User_Target
     ConBuf.Put_Integer 0
@@ -1241,7 +1298,7 @@ Dim MsgData As MailData
             FoundSomething = 1
             '*** Check for NPC banker ***
             If NPCList(TempIndex).AI = 6 Then
-                UserList(UserIndex).flags.TradeWithNPC = TempIndex
+                UserList(UserIndex).Flags.TradeWithNPC = TempIndex
                 ConBuf.Put_Byte DataCode.User_Bank_Open
                 For LoopC = 1 To MAX_INVENTORY_SLOTS
                     If UserList(UserIndex).Bank(LoopC).ObjIndex > 0 Then
@@ -1342,9 +1399,9 @@ Dim MsgData As MailData
 
         'Validate distance
         If FoundChar = 0 Then
-            If UserList(UserIndex).flags.Target Then
-                UserList(UserIndex).flags.Target = 0
-                UserList(UserIndex).flags.TargetIndex = 0
+            If UserList(UserIndex).Flags.Target Then
+                UserList(UserIndex).Flags.Target = 0
+                UserList(UserIndex).Flags.TargetIndex = 0
                 ConBuf.PreAllocate 3
                 ConBuf.Put_Byte DataCode.User_Target
                 ConBuf.Put_Integer 0
@@ -1353,16 +1410,16 @@ Dim MsgData As MailData
             Exit Sub
         ElseIf FoundChar = 1 Then
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, UserList(TempIndex).Pos.X, UserList(TempIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
-                UserList(UserIndex).flags.Target = 1
-                UserList(UserIndex).flags.TargetIndex = TempCharIndex
+                UserList(UserIndex).Flags.Target = 1
+                UserList(UserIndex).Flags.TargetIndex = TempCharIndex
                 ConBuf.PreAllocate 3
                 ConBuf.Put_Byte DataCode.User_Target
                 ConBuf.Put_Integer UserList(TempIndex).Char.CharIndex
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             Else
-                If UserList(UserIndex).flags.Target Then
-                    UserList(UserIndex).flags.Target = 0
-                    UserList(UserIndex).flags.TargetIndex = 0
+                If UserList(UserIndex).Flags.Target Then
+                    UserList(UserIndex).Flags.Target = 0
+                    UserList(UserIndex).Flags.TargetIndex = 0
                     ConBuf.PreAllocate 3
                     ConBuf.Put_Byte DataCode.User_Target
                     ConBuf.Put_Integer 0
@@ -1371,16 +1428,16 @@ Dim MsgData As MailData
             End If
         ElseIf FoundChar = 2 Then
             If Server_RectDistance(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y, NPCList(TempIndex).Pos.X, NPCList(TempIndex).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
-                UserList(UserIndex).flags.Target = 2
-                UserList(UserIndex).flags.TargetIndex = TempCharIndex
+                UserList(UserIndex).Flags.Target = 2
+                UserList(UserIndex).Flags.TargetIndex = TempCharIndex
                 ConBuf.PreAllocate 3
                 ConBuf.Put_Byte DataCode.User_Target
                 ConBuf.Put_Integer NPCList(TempIndex).Char.CharIndex
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
             Else
-                If UserList(UserIndex).flags.Target Then
-                    UserList(UserIndex).flags.Target = 0
-                    UserList(UserIndex).flags.TargetIndex = 0
+                If UserList(UserIndex).Flags.Target Then
+                    UserList(UserIndex).Flags.Target = 0
+                    UserList(UserIndex).Flags.TargetIndex = 0
                     ConBuf.PreAllocate 3
                     ConBuf.Put_Byte DataCode.User_Target
                     ConBuf.Put_Integer 0
@@ -1481,6 +1538,8 @@ Public Sub User_MoveChar(ByVal UserIndex As Integer, ByVal nHeading As Byte, ByV
 'Moves a User from one tile to another
 '*****************************************************************
 Dim nPos As WorldPos
+Dim i As Integer
+Dim NewHeading As Byte
 
     Log "Call User_MoveChar(" & UserIndex & "," & nHeading & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -1505,21 +1564,21 @@ Dim nPos As WorldPos
     End If
     
     'Clear the pending quest NPC number and trading NPC
-    UserList(UserIndex).flags.QuestNPC = 0
-    UserList(UserIndex).flags.TradeWithNPC = 0
+    UserList(UserIndex).Flags.QuestNPC = 0
+    UserList(UserIndex).Flags.TradeWithNPC = 0
 
     'Do the speed-hack calculations
-    UserList(UserIndex).flags.StepCounter = UserList(UserIndex).flags.StepCounter + 1
+    UserList(UserIndex).Flags.StepCounter = UserList(UserIndex).Flags.StepCounter + 1
     If Running Then UserList(UserIndex).Counters.StepsRan = UserList(UserIndex).Counters.StepsRan + 1
-    If UserList(UserIndex).flags.StepCounter > 4 Then
+    If UserList(UserIndex).Flags.StepCounter > 4 Then
         If UserList(UserIndex).Counters.MoveCounter + (Server_WalkTimePerTile(UserList(UserIndex).Stats.ModStat(SID.Speed) + (Running * RunningSpeed)) * UserList(UserIndex).Counters.StepsRan) > timeGetTime Then
             'Undo the changes we made to the flags, then exit
-            UserList(UserIndex).flags.StepCounter = UserList(UserIndex).flags.StepCounter - 1
+            UserList(UserIndex).Flags.StepCounter = UserList(UserIndex).Flags.StepCounter - 1
             If Running Then UserList(UserIndex).Counters.StepsRan = UserList(UserIndex).Counters.StepsRan - 1
             Exit Sub
         End If
         UserList(UserIndex).Counters.MoveCounter = timeGetTime - 125 '-125 for a little more fluency (take into consideration lag)
-        UserList(UserIndex).flags.StepCounter = 0
+        UserList(UserIndex).Flags.StepCounter = 0
         UserList(UserIndex).Counters.StepsRan = 0
     End If
 
@@ -1528,7 +1587,7 @@ Dim nPos As WorldPos
     Server_HeadToPos nHeading, nPos
 
     'Move if legal pos
-    If Server_LegalPos(UserList(UserIndex).Pos.Map, nPos.X, nPos.Y, nHeading) Then
+    If Server_LegalPos(UserList(UserIndex).Pos.Map, nPos.X, nPos.Y, nHeading, , True) Then
     
         'Send the movement
         ConBuf.PreAllocate 6
@@ -1549,6 +1608,24 @@ Dim nPos As WorldPos
         UserList(UserIndex).Char.Heading = nHeading
         UserList(UserIndex).Char.HeadHeading = nHeading
         MapInfo(UserList(UserIndex).Pos.Map).Data(UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y).UserIndex = UserIndex
+        
+        'If there is a slave that belongs to the user on the tile, switch places with it
+        If MapInfo(UserList(UserIndex).Pos.Map).Data(nPos.X, nPos.Y).NPCIndex > 0 Then
+            i = MapInfo(UserList(UserIndex).Pos.Map).Data(nPos.X, nPos.Y).NPCIndex
+            If NPCList(i).OwnerIndex = UserIndex Then
+                Select Case nHeading
+                    Case NORTH: NewHeading = SOUTH
+                    Case EAST: NewHeading = WEST
+                    Case SOUTH: NewHeading = NORTH
+                    Case WEST: NewHeading = EAST
+                    Case NORTHEAST: NewHeading = SOUTHWEST
+                    Case SOUTHEAST: NewHeading = NORTHWEST
+                    Case NORTHWEST: NewHeading = SOUTHEAST
+                    Case SOUTHWEST: NewHeading = NORTHEAST
+                End Select
+                NPC_MoveChar i, NewHeading
+            End If
+        End If
 
         'Do tile events
         Server_DoTileEvents UserIndex, UserList(UserIndex).Pos.Map, UserList(UserIndex).Pos.X, UserList(UserIndex).Pos.Y
@@ -1829,7 +1906,7 @@ Dim LoopC As Integer
             ConBuf.Put_Long ObjData.Value(NPCList(NPCIndex).VendItems(LoopC).ObjIndex)
         Next LoopC
         Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Trading
-        UserList(UserIndex).flags.TradeWithNPC = NPCIndex
+        UserList(UserIndex).Flags.TradeWithNPC = NPCIndex
     End If
 
 End Sub
@@ -1925,18 +2002,23 @@ Dim i As Long
         User_MakeChar ToIndex, UserIndex, MapUsers(Map).Index(X), Map, UserList(MapUsers(Map).Index(X)).Pos.X, UserList(MapUsers(Map).Index(X)).Pos.Y
     Next X
 
+    'Clear the buffer
+    ConBuf.Clear
+
     'Place chars and objects
     For Y = 1 To MapInfo(Map).Height
         For X = 1 To MapInfo(Map).Width
             
             'NPC update
-            If MapInfo(Map).Data(X, Y).NPCIndex Then NPC_MakeChar ToIndex, UserIndex, MapInfo(Map).Data(X, Y).NPCIndex, Map, X, Y
+            If MapInfo(Map).Data(X, Y).NPCIndex Then
+                NPC_MakeChar ToIndex, UserIndex, MapInfo(Map).Data(X, Y).NPCIndex, Map, X, Y, False
+            End If
             
             'Object update
             If MapInfo(Map).ObjTile(X, Y).NumObjs > 0 Then
                 For i = 1 To MapInfo(Map).ObjTile(X, Y).NumObjs
                     If MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex Then
-                        ConBuf.PreAllocate 7
+                        ConBuf.Allocate 7
                         ConBuf.Put_Byte DataCode.Server_MakeObject
                         ConBuf.Put_Long ObjData.GrhIndex(MapInfo(Map).ObjTile(X, Y).ObjInfo(i).ObjIndex)
                         ConBuf.Put_Byte X
@@ -1948,6 +2030,9 @@ Dim i As Long
 
         Next X
     Next Y
+
+    'Send the buffer if it exists
+    If ConBuf.HasBuffer Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, Map
 
 End Sub
 
@@ -1964,7 +2049,7 @@ Dim i As Integer
 
     Log "Call User_UpdateModStats(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    If UserList(UserIndex).flags.UserLogged = 0 Then
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
         Log "User_UpdateModStats: UserLogged = 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2091,7 +2176,7 @@ Dim ObjIndex As Integer
 
     'Check for invalid values
     On Error GoTo ErrOut
-    If UserList(UserIndex).flags.UserLogged = 0 Then
+    If UserList(UserIndex).Flags.UserLogged = 0 Then
         Log "User_UseInvItem: UserLogged = 0 - aborting", CodeTracker '//\\LOGLINE//\\
         Exit Sub
     End If
@@ -2158,12 +2243,14 @@ Dim ObjIndex As Integer
 
     Select Case ObjData.ObjType(ObjIndex)
         
-        Case OBJTYPE_USEONCE
+        Case OBJTYPE_USEONCE, OBJTYPE_USEINFINITE
             Log "User_UseInvItem: ObjType = OBJTYPE_USEONCE", CodeTracker '//\\LOGLINE//\\
     
             'Remove from inventory
-            UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
-            If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
+            If ObjData.ObjType(ObjIndex) = OBJTYPE_USEONCE Then
+                UserList(UserIndex).Object(Slot).Amount = UserList(UserIndex).Object(Slot).Amount - 1
+                If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
+            End If
             
             'Set the paper-doll
             User_ChangeChar ToMap, UserIndex, UserIndex, ObjData.SpriteBody(ObjIndex), ObjData.SpriteHead(ObjIndex), ObjData.SpriteWeapon(ObjIndex), ObjData.SpriteHair(ObjIndex), ObjData.SpriteWings(ObjIndex)
@@ -2295,9 +2382,9 @@ Dim LoopC As Long
     End If
     
     'Clear the pending quest NPC number and trading NPC, along with speedhack flags
-    UserList(UserIndex).flags.QuestNPC = 0
-    UserList(UserIndex).flags.TradeWithNPC = 0
-    UserList(UserIndex).flags.StepCounter = 0
+    UserList(UserIndex).Flags.QuestNPC = 0
+    UserList(UserIndex).Flags.TradeWithNPC = 0
+    UserList(UserIndex).Flags.StepCounter = 0
     UserList(UserIndex).Counters.MoveCounter = timeGetTime
     UserList(UserIndex).Counters.StepsRan = 0
 
@@ -2347,7 +2434,7 @@ Dim LoopC As Long
         If CorrectServer = 0 Then
 
             'Disconnect the user
-            UserList(UserIndex).flags.Disconnecting = 1
+            UserList(UserIndex).Flags.Disconnecting = 1
         
         'User is already on the correct server
         Else

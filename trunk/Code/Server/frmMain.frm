@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCN.OCX"
 Object = "{8C7E6A5F-7B1B-4F49-88E3-63DE66B8AFD8}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
@@ -198,8 +198,8 @@ Private Sub mnufps_Click()
     Save_FPS
         
     'Load the graph
-    Shell App.Path & "\ToolServerFPSViewer.exe", vbMaximizedFocus
-    
+    Shell App.Path & "\ToolServerFPSViewer.exe " & Chr$(34) & LogPath & ServerID & "\serverfps.txt" & Chr$(34), vbMaximizedFocus
+
 End Sub
 
 Private Sub mnubrowselog_Click()                                                                                    '//\\LOGLINE//\\

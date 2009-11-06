@@ -62,6 +62,7 @@ Public Type DataCode
     Server_UserCharIndex As Byte
     Server_SetUserPosition As Byte
     Server_MakeChar As Byte
+    Server_MakeCharCached As Byte
     Server_EraseChar As Byte
     Server_MoveChar As Byte
     Server_ChangeChar As Byte
@@ -371,7 +372,8 @@ Public Sub InitDataCommands()
         .Combo_ProjectileSoundRotateDamage = 107
         .Combo_SoundRotateDamage = 108
         .Combo_SlashSoundRotateDamage = 109
- 
+        .Server_MakeCharCached = 110
+        
         'This values can be used over again since they aren't used in their own packet header
         .Comm_FontType_Fight = 1
         .Comm_FontType_Info = 2

@@ -216,6 +216,28 @@ Public Const LootDelay As Long = 500    ' - changing these lower wont make it fa
 Public LastAttackTime As Long
 Public LastLootTime As Long
 
+'Cached packets
+Type Cache_Server_MakeChar
+    Body As Integer
+    Head As Integer
+    Heading As Byte
+    X As Byte
+    Y As Byte
+    Speed As Byte
+    Name As String
+    Weapon As Integer
+    Hair As Integer
+    Wings As Integer
+    HP As Byte
+    MP As Byte
+    ChatID As Byte
+    CharType As Byte
+End Type
+Type PacketCache
+    Server_MakeChar As Cache_Server_MakeChar
+End Type
+Public PacketCache As PacketCache
+
 'Item description variables
 Public ItemDescWidth As Long
 Public ItemDescLine(1 To 10) As String  'Allow 10 lines maximum
