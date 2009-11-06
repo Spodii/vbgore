@@ -30,15 +30,15 @@ Begin VB.Form frmMain
    ScaleWidth      =   800
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
-   Begin VB.Timer ShutdownTimer 
+   Begin VB.Timer PTDTmr 
       Enabled         =   0   'False
-      Interval        =   200
+      Interval        =   1000
       Left            =   600
       Top             =   120
    End
-   Begin VB.Timer PingTmr 
+   Begin VB.Timer ShutdownTimer 
       Enabled         =   0   'False
-      Interval        =   1000
+      Interval        =   200
       Left            =   120
       Top             =   120
    End
@@ -50,6 +50,7 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 
 Option Explicit
+
 Implements DirectXEvent8
 
 Private NC As Byte
@@ -192,6 +193,7 @@ Dim j As Long
                 If TargetCharIndex > 0 Then
                     If Engine_Distance(CharList(UserCharIndex).Pos.X, CharList(UserCharIndex).Pos.Y, CharList(TargetCharIndex).Pos.X, CharList(TargetCharIndex).Pos.Y) <= UserAttackRange Then
                         LastAttackTime = timeGetTime
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Attack
                         sndBuf.Put_Byte CharList(UserCharIndex).Heading
                     Else
@@ -200,6 +202,7 @@ Dim j As Long
                 End If
             Else
                 LastAttackTime = timeGetTime
+                sndBuf.Allocate 2
                 sndBuf.Put_Byte DataCode.User_Attack
                 sndBuf.Put_Byte CharList(UserCharIndex).Heading
             End If
@@ -291,26 +294,31 @@ Dim j As Long
                             WriteMailData.ObjAmount(j) = CInt(AmountWindowValue)
                         'Buy from NPC
                         ElseIf AmountWindowUsage = AW_ShopToInv Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
                         'Sell to NPC
                         ElseIf AmountWindowUsage = AW_InvToShop Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
                         'Take from bank
                         ElseIf AmountWindowUsage = AW_BankToInv Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Bank_TakeItem
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
                         'Put in bank
                         ElseIf AmountWindowUsage = AW_InvToBank Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Bank_PutItem
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
                         'Drop on ground
                         Else
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Drop
                             sndBuf.Put_Byte AmountWindowItemIndex
                             sndBuf.Put_Integer CInt(AmountWindowValue)
@@ -339,6 +347,7 @@ Dim j As Long
                                     Exit For
                                 End If
                             Next i
+                            sndBuf.Allocate 6 + Len(WriteMailData.RecieverName) + Len(WriteMailData.Subject) + Len(WriteMailData.Message)
                             sndBuf.Put_Byte DataCode.Server_MailCompose
                             sndBuf.Put_String WriteMailData.RecieverName
                             sndBuf.Put_String WriteMailData.Subject
@@ -346,6 +355,7 @@ Dim j As Long
                             sndBuf.Put_Byte i   'Number of objects
                             If i > 0 Then
                                 For j = 1 To i
+                                    sndBuf.Allocate 3
                                     sndBuf.Put_Byte WriteMailData.ObjIndex(j)
                                     sndBuf.Put_Integer WriteMailData.ObjAmount(j)
                                 Next j
@@ -453,6 +463,7 @@ Dim j As Long
                         TempS = Split(SplitCommandFromString(EnterTextBuffer), " ")
                         If UBound(TempS) > 0 Then
                             If IsNumeric(TempS(1)) Then
+                                sndBuf.Allocate 3 + Len(TempS(0))
                                 sndBuf.Put_Byte DataCode.GM_SetGMLevel
                                 sndBuf.Put_String TempS(0)
                                 sndBuf.Put_Byte CByte(TempS(1))
@@ -465,6 +476,7 @@ Dim j As Long
                         TempS() = Split(SplitCommandFromString(EnterTextBuffer), " ")
                         If UBound(TempS) > 0 Then
                             If IsNumeric(TempS(1)) Then
+                                sndBuf.Allocate 6 + Len(TempS(0))
                                 sndBuf.Put_Byte DataCode.GM_Raise
                                 sndBuf.Put_String TempS(0)
                                 sndBuf.Put_Long CLng(TempS(1))
@@ -472,6 +484,7 @@ Dim j As Long
                         End If
                     Else
                         '*** No commands sent, send as text ***
+                        sndBuf.Allocate 2 + Len(EnterTextBuffer)
                         sndBuf.Put_Byte DataCode.Comm_Talk
                         sndBuf.Put_String EnterTextBuffer
                         
@@ -634,6 +647,7 @@ Dim i As Integer
         If LastClickedWindow = MailboxWindow Then
             If ShowGameWindow(MailboxWindow) Then
                 If SelMessage > 0 Then
+                    sndBuf.Allocate 2
                     sndBuf.Put_Byte DataCode.Server_MailDelete
                     sndBuf.Put_Byte SelMessage
                 End If
@@ -648,33 +662,43 @@ Dim i As Integer
                 If Not ShowGameWindow(WriteMessageWindow) Then
                     Select Case KeyCode
                     Case vbKey1
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Dots
                     Case vbKey2
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Exclimation
                     Case vbKey3
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Question
                     Case vbKey4
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Surprised
                     Case vbKey5
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Heart
                     Case vbKey6
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Hearts
                     Case vbKey7
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.HeartBroken
                     Case vbKey8
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Utensils
                     Case vbKey9
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.Meat
                     Case vbKey0
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_Emote
                         sndBuf.Put_Byte EmoID.ExcliQuestion
                     End Select
@@ -688,19 +712,18 @@ Dim i As Integer
 
 End Sub
 
-Private Sub PingTmr_Timer()
+Private Sub PTDTmr_Timer()
 
-    'Ping the server
-    sndBuf.Put_Byte DataCode.Server_Ping
-    PingSTime = timeGetTime
-    NonRetPings = NonRetPings + 1
-    If NonRetPings > 200 Then IsUnloading = 1    'Recommended you change the > 200 to > 5 for an official release!
+    sndBuf.Put_Byte DataCode.Server_PTD
+    PTDSTime = timeGetTime
 
 End Sub
 
 Private Sub ShutdownTimer_Timer()
 
     On Error Resume Next    'Who cares about an error if we are closing down
+    
+    'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
 
     'Close down the socket
     GOREsock_ShutDown
@@ -709,9 +732,13 @@ Private Sub ShutdownTimer_Timer()
         GOREsock_Terminate
     Else
 
-        'Quit the client - we must user a timer since DoEvents wont work (since we're not multithreaded)
+        'Unload the engine
         Engine_Init_UnloadTileEngine
+        
+        'Unload the forms
         Engine_UnloadAllForms
+        
+        'Unload everything else
         End
 
     End If
@@ -736,3 +763,4 @@ Dim i As Integer
     SplitCommandFromString = Left$(SplitCommandFromString, Len(SplitCommandFromString) - 1)
 
 End Function
+

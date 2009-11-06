@@ -56,7 +56,6 @@ Public Type DataCode
     Server_IconIronSkin As Byte
     Server_IconSpellExhaustion As Byte
     Server_SetCharDamage As Byte
-    Server_Ping As Byte
     Server_Help As Byte
     Server_Disconnect As Byte
     Server_Connect As Byte
@@ -66,6 +65,7 @@ Public Type DataCode
     Server_MakeSlash As Byte
     Server_MailObjUpdate As Byte
     Server_MakeEffect As Byte
+    Server_PTD As Byte
     Map_LoadMap As Byte
     Map_DoneLoadingMap As Byte
     Map_DoneSwitching As Byte
@@ -260,7 +260,7 @@ Public Sub InitDataCommands()
         .Comm_FontType_Talk = 57
         .Server_Help = 58
         .User_Desc = 59
-        .Server_Ping = 60
+        .Server_PTD = 60
         .User_Target = 61
         .User_Trade_StartNPCTrade = 62
         .User_Trade_SellToNPC = 63
@@ -292,7 +292,9 @@ Public Sub InitDataCommands()
         .User_Bank_TakeItem = 89
         .User_Bank_UpdateSlot = 90
         
-        .Comm_UseBubble = 128   'Value 128 can be used over again since this does not count as an ID in itself
+        'Value 128 can be used over again since this does not count as an ID in itself - just ignore this variable! ;)
+        .Comm_UseBubble = 128
+        
     End With
 
 End Sub

@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.1            ************
+'************            Official Release: Version 0.3.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -173,6 +173,9 @@ Public Const LootDelay As Long = 500    ' - changing these lower wont make it fa
 Public LastAttackTime As Long
 Public LastLootTime As Long
 
+'How many pings have failed
+Public FailedPings As Byte
+
 'If the map is loading (used to be used for the downloading status of maps)
 Public DownloadingMap As Boolean
 
@@ -218,8 +221,7 @@ Public SendNewChar As Boolean
 
 Public sndBuf As DataBuffer
 Public ChatBufferChunk As Integer
-Public PingSTime As Long
-Public Ping As Long
+Public PTD As Long
 Public SoxID As Long
 Public SocketOpen As Byte
 Public TargetCharIndex As Integer
@@ -238,8 +240,7 @@ Public Const BlockedSouth As Byte = 4
 Public Const BlockedWest As Byte = 8
 Public Const BlockedAll As Byte = 15
 
-'How many pings we have set with no return
-Public NonRetPings As Byte
+Public PTDSTime As Long
 
 'States if the project is unloading (has to give Sox time to unload)
 Public IsUnloading As Byte
@@ -267,7 +268,6 @@ Public Const MAXINT As Integer = 32767
 Public Const MAXBYTE As Byte = 255
 
 '********** OUTSIDE FUNCTIONS ***********
-'For Get and Write Var
 Public Declare Function GetKeyState Lib "User32" (ByVal nVirtKey As Long) As Integer
 Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long

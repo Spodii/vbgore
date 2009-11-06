@@ -33,25 +33,19 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -66,11 +60,11 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
         If NPCList(TargetIndex).Skills.Bless > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 9 + Len(UserList(CasterIndex).name)  '4 + "bless" = 9
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "bless"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -79,7 +73,7 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     
     'Display the bless icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Bless = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -89,25 +83,25 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.BlessCounter = CurrentTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Send the message to the caster
-    ConBuf.Clear
+    ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 40
-    ConBuf.Put_String NPCList(TargetIndex).Name
+    ConBuf.Put_String NPCList(TargetIndex).name
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -117,14 +111,14 @@ Public Function Skill_Bless_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
     UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.User_Rotate
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Bless_PCtoNPC = 1
     
 End Function
@@ -155,7 +149,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     
     'Display the protection icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Protect = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -165,18 +159,18 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.ProtectCounter = CurrentTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
 
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
@@ -187,7 +181,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     If CasterIndex <> TargetIndex Then
         NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
         NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
@@ -195,7 +189,7 @@ Public Function Skill_Protection_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     End If
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Protection_NPCtoNPC = 1
     
 End Function
@@ -226,7 +220,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     
     'Display the strengthen icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Strengthen = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -236,18 +230,18 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.StrengthenCounter = CurrentTime + Str_Length
     NPCList(TargetIndex).Skills.Strengthen = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
 
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
@@ -258,7 +252,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     If CasterIndex <> TargetIndex Then
         NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
         NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
@@ -266,7 +260,7 @@ Public Function Skill_Strengthen_NPCtoNPC(ByVal CasterIndex As Integer, ByVal Ta
     End If
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Strengthen_NPCtoNPC = 1
     
 End Function
@@ -297,7 +291,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     
     'Display the bless icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Bless = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -307,18 +301,18 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.BlessCounter = CurrentTime + Bless_Length
     NPCList(TargetIndex).Skills.Bless = NPCList(CasterIndex).BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
 
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
@@ -329,7 +323,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     If CasterIndex <> TargetIndex Then
         NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
         NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
@@ -337,7 +331,7 @@ Public Function Skill_Bless_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetI
     End If
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Bless_NPCtoNPC = 1
     
 End Function
@@ -349,25 +343,19 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Strengthen) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -382,11 +370,11 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
         If NPCList(TargetIndex).Skills.Strengthen > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 10 + Len(UserList(CasterIndex).name) '4 + "strengthen" = 10
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "strengthen"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -395,7 +383,7 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     
     'Display the strengthen icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Strengthen = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -405,25 +393,25 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.StrengthenCounter = CurrentTime + Str_Length
     NPCList(TargetIndex).Skills.Strengthen = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Send the message to the caster
-    ConBuf.Clear
+    ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 46
-    ConBuf.Put_String NPCList(TargetIndex).Name
+    ConBuf.Put_String NPCList(TargetIndex).name
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
 
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -433,14 +421,14 @@ Public Function Skill_Strengthen_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
     UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.User_Rotate
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Strengthen_PCtoNPC = 1
     
 End Function
@@ -452,25 +440,19 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Protection) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -485,11 +467,11 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
         If NPCList(TargetIndex).Skills.Protect > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 14 + Len(UserList(CasterIndex).name) '4 + "protection" = 14
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "protection"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -498,7 +480,7 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     
     'Display the protection icon (only if it isn't already displayed)
     If NPCList(TargetIndex).Skills.Protect = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer NPCList(TargetIndex).Char.CharIndex
@@ -508,25 +490,25 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     'Apply the spell's effects
     NPCList(TargetIndex).Counters.ProtectCounter = CurrentTime + Pro_Length
     NPCList(TargetIndex).Skills.Protect = UserList(CasterIndex).Stats.BaseStat(SID.Mag)
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Send the message to the caster
-    ConBuf.Clear
+    ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 44
-    ConBuf.Put_String NPCList(TargetIndex).Name
+    ConBuf.Put_String NPCList(TargetIndex).name
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
     
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -536,14 +518,14 @@ Public Function Skill_Protection_PCtoNPC(ByVal CasterIndex As Integer, ByVal Tar
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
     UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.User_Rotate
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
     
     'Successfully casted
-    NPCList(TargetIndex).Flags.UpdateStats = 1
+    NPCList(TargetIndex).flags.UpdateStats = 1
     Skill_Protection_PCtoNPC = 1
     
 End Function
@@ -555,27 +537,21 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
+    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Bless) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Bless_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -590,11 +566,11 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
         If UserList(TargetIndex).Skills.Bless > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 9 + Len(UserList(CasterIndex).name)  '4 + "bless" = 9
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "bless"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -603,7 +579,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     
     'Display the bless icon (only if it isn't already displayed)
     If UserList(TargetIndex).Skills.Bless = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconBlessed
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
@@ -617,7 +593,7 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Bless_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -625,16 +601,16 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 3 + Len(UserList(TargetIndex).name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 40
-        ConBuf.Put_String UserList(TargetIndex).Name
+        ConBuf.Put_String UserList(TargetIndex).name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         
         'Face the caster to the target
         UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
         UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
@@ -643,15 +619,15 @@ Public Function Skill_Bless_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInd
     End If
     
     'Send the message to the target
-    ConBuf.Clear
+    ConBuf.PreAllocate 5 + Len(UserList(CasterIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 41
-    ConBuf.Put_String UserList(CasterIndex).Name
+    ConBuf.Put_String UserList(CasterIndex).name
     ConBuf.Put_Integer UserList(CasterIndex).Skills.Bless
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
     
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Bless
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -670,27 +646,21 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
+    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Strengthen) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Str_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -705,11 +675,11 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         If UserList(TargetIndex).Skills.Strengthen > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 14 + Len(UserList(CasterIndex).name) '4 + "strengthen" = 14
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "strengthen"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -718,7 +688,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Display the strengthen icon (only if it isn't already displayed)
     If UserList(TargetIndex).Skills.Strengthen = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconStrengthened
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
@@ -732,7 +702,7 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Str_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -740,16 +710,16 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 3 + Len(UserList(TargetIndex).name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 46
-        ConBuf.Put_String UserList(TargetIndex).Name
+        ConBuf.Put_String UserList(TargetIndex).name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         
         'Face the caster to the target
         UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
         UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
@@ -758,15 +728,15 @@ Public Function Skill_Strengthen_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     End If
     
     'Send the message to the target
-    ConBuf.Clear
+    ConBuf.PreAllocate 5 + Len(UserList(CasterIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 47
-    ConBuf.Put_String UserList(CasterIndex).Name
+    ConBuf.Put_String UserList(CasterIndex).name
     ConBuf.Put_Integer UserList(CasterIndex).Skills.Strengthen
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
     
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Strengthen
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -785,27 +755,21 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
+    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
     
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Protection) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
     
     'Check for enough mana to cast
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Pro_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     
@@ -820,11 +784,11 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
         If UserList(TargetIndex).Skills.Protect > UserList(CasterIndex).Stats.ModStat(SID.Mag) Then
             
             'Power of what we are casting is weaker then what is already applied
-            ConBuf.Clear
+            ConBuf.PreAllocate 14 + Len(UserList(CasterIndex).name) '4 + "protection" = 14
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 39
             ConBuf.Put_String "protection"
-            ConBuf.Put_String UserList(CasterIndex).Name
+            ConBuf.Put_String UserList(CasterIndex).name
             Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
             Exit Function
             
@@ -833,7 +797,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Display the protection icon (only if it isn't already displayed)
     If UserList(TargetIndex).Skills.Protect = 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconProtected
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(TargetIndex).Char.CharIndex
@@ -847,7 +811,7 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Add the spell exhaustion and display it
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Pro_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -855,16 +819,16 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     
     'Send the message to the caster
     If TargetIndex <> CasterIndex Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 3 + Len(UserList(TargetIndex).name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 44
-        ConBuf.Put_String UserList(TargetIndex).Name
+        ConBuf.Put_String UserList(TargetIndex).name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         
         'Face the caster to the target
         UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
         UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
@@ -873,15 +837,15 @@ Public Function Skill_Protection_PCtoPC(ByVal CasterIndex As Integer, ByVal Targ
     End If
     
     'Send the message to the target
-    ConBuf.Clear
+    ConBuf.PreAllocate 5 + Len(UserList(CasterIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 45
-    ConBuf.Put_String UserList(CasterIndex).Name
+    ConBuf.Put_String UserList(CasterIndex).name
     ConBuf.Put_Integer UserList(CasterIndex).Skills.Protect
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
     
     'Display the effect on the map
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Protection
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -900,27 +864,21 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
-    If UserList(TargetIndex).Flags.SwitchingMaps Then Exit Function
-    If UserList(TargetIndex).Flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
+    If UserList(TargetIndex).flags.SwitchingMaps Then Exit Function
+    If UserList(TargetIndex).flags.UserLogged = 0 Then Exit Function
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * Heal_Cost Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Cost)
@@ -930,14 +888,14 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     'Create casting effect
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -949,16 +907,16 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
 
     'Message to the caster
     If CasterIndex <> TargetIndex Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 3 + Len(UserList(TargetIndex).name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 42
-        ConBuf.Put_String UserList(TargetIndex).Name
+        ConBuf.Put_String UserList(TargetIndex).name
         Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
         
         'Face the caster to the target
         UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, UserList(TargetIndex).Pos)
         UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
@@ -967,10 +925,10 @@ Public Function Skill_Heal_PCtoPC(ByVal CasterIndex As Integer, ByVal TargetInde
     End If
     
     'Message to the target
-    ConBuf.Clear
+    ConBuf.PreAllocate 5 + Len(UserList(CasterIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 43
-    ConBuf.Put_String UserList(CasterIndex).Name
+    ConBuf.Put_String UserList(CasterIndex).name
     ConBuf.Put_Integer UserList(CasterIndex).Stats.BaseStat(SID.Mag)
     Data_Send ToIndex, TargetIndex, ConBuf.Get_Buffer
     
@@ -995,14 +953,14 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
 
     'Apply spell exhaustion
     NPCList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, NPCList(CasterIndex).Pos.Map
 
     'Create casting effect
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
@@ -1016,7 +974,7 @@ Public Function Skill_Heal_NPCtoNPC(ByVal CasterIndex As Integer, ByVal TargetIn
     If CasterIndex <> TargetIndex Then
         NPCList(CasterIndex).Char.Heading = Server_FindDirection(NPCList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
         NPCList(CasterIndex).Char.HeadHeading = NPCList(CasterIndex).Char.Heading
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_Rotate
         ConBuf.Put_Integer NPCList(CasterIndex).Char.CharIndex
         ConBuf.Put_Byte NPCList(CasterIndex).Char.Heading
@@ -1035,25 +993,19 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
 '*****************************************************************
 
     'Check for invalid values
-    If UserList(CasterIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(CasterIndex).flags.SwitchingMaps Then Exit Function
     If UserList(CasterIndex).Counters.SpellExhaustion > 0 Then Exit Function
-    If UserList(CasterIndex).Flags.UserLogged = 0 Then Exit Function
+    If UserList(CasterIndex).flags.UserLogged = 0 Then Exit Function
 
     'Check if the caster knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Heal) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < UserList(CasterIndex).Stats.BaseStat(SID.Mag) * Heal_Cost Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Cost)
@@ -1063,14 +1015,14 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Heal_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     'Create casting effect
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Heal
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -1081,16 +1033,16 @@ Public Function Skill_Heal_PCtoNPC(ByVal CasterIndex As Integer, ByVal TargetInd
     NPC_Heal TargetIndex, (UserList(CasterIndex).Stats.ModStat(SID.Mag) * Heal_Value)
     
     'Message to the caster
-    ConBuf.Clear
+    ConBuf.PreAllocate 3 + Len(NPCList(TargetIndex).name)
     ConBuf.Put_Byte DataCode.Server_Message
     ConBuf.Put_Byte 42
-    ConBuf.Put_String NPCList(TargetIndex).Name
+    ConBuf.Put_String NPCList(TargetIndex).name
     Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
     
     'Face the caster to the target
     UserList(CasterIndex).Char.Heading = Server_FindDirection(UserList(CasterIndex).Pos, NPCList(TargetIndex).Pos)
     UserList(CasterIndex).Char.HeadHeading = UserList(CasterIndex).Char.Heading
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.User_Rotate
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
     ConBuf.Put_Byte UserList(CasterIndex).Char.Heading
@@ -1109,21 +1061,18 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
 
     'Check for invalid values
     If UserIndex = 0 Then Exit Function
-    If UserList(UserIndex).Flags.SwitchingMaps Then Exit Function
+    If UserList(UserIndex).flags.SwitchingMaps Then Exit Function
 
     'Check for the skill in the user posession
     If UserList(UserIndex).KnownSkills(SkID.IronSkin) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, UserIndex, cMessage(37).Data
         Exit Function
     End If
 
     'Check if still exhausted
     If UserList(UserIndex).Counters.SpellExhaustion > 0 Then Exit Function
     UserList(UserIndex).Counters.SpellExhaustion = CurrentTime + 2000
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -1131,7 +1080,7 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
 
     'Remove the Iron Skin
     If UserList(UserIndex).Skills.IronSkin = 1 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 0
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -1139,14 +1088,14 @@ Public Function Skill_IronSkin_PC(ByVal UserIndex As Integer) As Byte
 
     Else 'Enable the Iron Skin
         UserList(UserIndex).Skills.IronSkin = 1
-        ConBuf.Clear
+        ConBuf.PreAllocate 6
         ConBuf.Put_Byte DataCode.User_CastSkill
         ConBuf.Put_Byte SkID.IronSkin
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map
 
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_IconIronSkin
         ConBuf.Put_Byte 1
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -1182,26 +1131,20 @@ Dim Damage As Integer
 
     'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.SpikeField) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
 
     'Check for enough mana
     If UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) < Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 38
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(38).Data
         Exit Function
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) = UserList(CasterIndex).Stats.BaseStat(SID.MinMAN) - Int(UserList(CasterIndex).Stats.ModStat(SID.Mag) * 0.5)
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + 3000
-    ConBuf.Clear
+    ConBuf.PreAllocate 4
     ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
     ConBuf.Put_Byte 1
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -1333,7 +1276,7 @@ Dim Damage As Integer
     End If
 
     'Display the user casting it on other people's screens
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.SpikeField
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -1358,26 +1301,20 @@ Dim WarCursePower As Integer
     
     'Check if the user knows the skill
     If UserList(CasterIndex).KnownSkills(SkID.Warcry) = 0 Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 37
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(37).Data
         Exit Function
     End If
 
     'Check for enough endurance
     If UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) < Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * Warcry_Cost) Then
-        ConBuf.Clear
-        ConBuf.Put_Byte DataCode.Server_Message
-        ConBuf.Put_Byte 48
-        Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+        Data_Send ToIndex, CasterIndex, cMessage(48).Data
         Exit Function
     End If
     UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) = UserList(CasterIndex).Stats.BaseStat(SID.MinSTA) - Int(UserList(CasterIndex).Stats.ModStat(SID.Str) * Warcry_Cost)
 
     'Apply spell exhaustion
     UserList(CasterIndex).Counters.SpellExhaustion = CurrentTime + Warcry_Exhaust
-    ConBuf.Clear
+    ConBuf.PreAllocate 6
     ConBuf.Put_Byte DataCode.User_CastSkill
     ConBuf.Put_Byte SkID.Warcry
     ConBuf.Put_Integer UserList(CasterIndex).Char.CharIndex
@@ -1385,16 +1322,13 @@ Dim WarCursePower As Integer
     Data_Send ToMap, CasterIndex, ConBuf.Get_Buffer, UserList(CasterIndex).Pos.Map
 
     'Cast on all attackable hostile NPCs in the PC area
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Server_Message
-    ConBuf.Put_Byte 49
-    Data_Send ToIndex, CasterIndex, ConBuf.Get_Buffer
+    Data_Send ToIndex, CasterIndex, cMessage(49).Data
 
     'Loop through all the alive and active NPCs
     WarCursePower = UserList(CasterIndex).Stats.ModStat(SID.Str)
     For LoopC = 1 To NumNPCs
-        If NPCList(LoopC).Flags.NPCActive Then
-            If NPCList(LoopC).Flags.NPCAlive Then
+        If NPCList(LoopC).flags.NPCActive Then
+            If NPCList(LoopC).flags.NPCAlive Then
                 If NPCList(LoopC).Pos.Map = UserList(CasterIndex).Pos.Map Then
                     If NPCList(LoopC).Attackable Then
                         If NPCList(LoopC).Hostile Then
@@ -1402,15 +1336,15 @@ Dim WarCursePower As Integer
                                 If Server_RectDistance(UserList(CasterIndex).Pos.X, UserList(CasterIndex).Pos.Y, NPCList(LoopC).Pos.X, NPCList(LoopC).Pos.Y, MaxServerDistanceX, MaxServerDistanceY) Then
 
                                     'Tell the users in the screen that the NPC is weaker
-                                    ConBuf.Clear
+                                    ConBuf.PreAllocate 3 + Len(NPCList(LoopC).name)
                                     ConBuf.Put_Byte DataCode.Server_Message
                                     ConBuf.Put_Byte 50
-                                    ConBuf.Put_String NPCList(LoopC).Name
+                                    ConBuf.Put_String NPCList(LoopC).name
                                     Data_Send ToNPCArea, LoopC, ConBuf.Get_Buffer
                                     
                                     'Warcurse icon
                                     If NPCList(LoopC).Skills.WarCurse = 0 Then
-                                        ConBuf.Clear
+                                        ConBuf.PreAllocate 4
                                         ConBuf.Put_Byte DataCode.Server_IconWarCursed
                                         ConBuf.Put_Byte 1
                                         ConBuf.Put_Integer NPCList(LoopC).Char.CharIndex

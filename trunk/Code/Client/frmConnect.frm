@@ -120,24 +120,22 @@ Private Sub InitSoxSocket()
 
     'Save the game ini
     Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Name", UserName)
-    If SavePassChk.Value = 0 Then
+    If SavePassChk.Value = 0 Then   'If the password wont be saved, clear it out
         Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", "")
     Else
         Call Engine_Var_Write(DataPath & "Game.ini", "INIT", "Password", UserPassword)
     End If
     
     'Clean out the socket so we can make a fresh new connection
-    If SoxID > 0 Then GOREsock_Shut SoxID
-    GOREsock_ShutDown
-    DoEvents
-    GOREsock_UnHook
-    DoEvents
-    
+    If GOREsock_Loaded Then GOREsock_Terminate
+
     'Set up the socket
-    GOREsock_Hook
+    DoEvents
+    GOREsock_Initialize frmMain.hWnd
     DoEvents
     SoxID = GOREsock_Connect("127.0.0.1", 10200)
-
+    
+    'If the SoxID = -1, then the connection failed, elsewise, we're good to go! W00t! ^_^
     If SoxID = -1 Then
         MsgBox "Unable to connect to the game server!" & vbCrLf & "Either the server is down or you are not connected to the internet.", vbOKOnly Or vbCritical
     Else

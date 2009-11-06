@@ -576,9 +576,16 @@ Public Type Projectile
     Grh As Grh
 End Type
 
+Public Type TexInfo
+    X As Long
+    Y As Long
+    MipLevels As Long
+    BmpFormat As Long
+End Type
+
 '********** Public ARRAYS ***********
 Public GrhData() As GrhData             'Holds data for the graphic structure
-Public SurfaceSize() As Point           'Holds the size of the surfaces for SurfaceDB()
+Public SurfaceSize() As TexInfo         'Holds the size of the surfaces for SurfaceDB()
 Public BodyData() As BodyData           'Holds data about body structure
 Public HeadData() As HeadData           'Holds data about head structure
 Public HairData() As HairData           'Holds data about hair structure
@@ -1056,6 +1063,7 @@ Sub Engine_ChangeHeading(ByVal Direction As Byte)
     
     'Only rotate if the user is not already facing that direction
     If CharList(UserCharIndex).Heading <> Direction Then
+        sndBuf.Allocate 2
         sndBuf.Put_Byte DataCode.User_Rotate
         sndBuf.Put_Byte Direction
     End If
@@ -1837,7 +1845,7 @@ Dim SY As Integer
 Dim X As Byte
 Dim Y As Byte
 Dim L As Long
-    
+
     'Set the user's position to sX/sY
     SX = CharList(UserCharIndex).Pos.X
     SY = CharList(UserCharIndex).Pos.Y
@@ -2026,13 +2034,14 @@ Dim i As Byte
     'Set format for windowed mode
     If Windowed Then
         D3DWindow.Windowed = 1  'State that using windowed mode
-        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
+        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC
         D3DWindow.BackBufferFormat = DispMode.Format    'Use format just retrieved
     Else
         DispMode.Format = DispMode.Format
         DispMode.Width = 800
         DispMode.Height = 600
-        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY
+        DispMode.Format = D3DFMT_X8R8G8B8
+        D3DWindow.SwapEffect = D3DSWAPEFFECT_COPY_VSYNC
         D3DWindow.BackBufferCount = 1
         D3DWindow.BackBufferFormat = DispMode.Format
         D3DWindow.BackBufferWidth = 800
@@ -2846,7 +2855,6 @@ Sub Engine_Init_Texture(ByVal TextureNum As Integer)
 '*****************************************************************
 'Loads a texture into memory
 '*****************************************************************
-
 Dim TexInfo As D3DXIMAGE_INFO_A
 Dim FilePath As String
 
@@ -2861,17 +2869,26 @@ Dim FilePath As String
     
     'Check if the texture exists
     If Engine_FileExist(FilePath, vbNormal) = False Then
-        MsgBox "Error! Could not find the following texture file:" & vbCrLf & FilePath, vbOKOnly
+        MsgBox "Error! Could not find the following texture file:" & vbNewLine & FilePath, vbOKOnly
         IsUnloading = 1
         Exit Sub
     End If
 
-    'Set the texture
-    Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_POINT, D3DX_FILTER_POINT, &HFF000000, TexInfo, ByVal 0)
-
-    'Set the size
-    SurfaceSize(TextureNum).X = TexInfo.Width
-    SurfaceSize(TextureNum).Y = TexInfo.Height
+    If SurfaceSize(TextureNum).X = 0 Then   'We need to get the size
+    
+        'Set the texture (and get the dimensions)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, D3DX_DEFAULT, D3DX_DEFAULT, D3DX_DEFAULT, 0, D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, &HFF000000, TexInfo, ByVal 0)
+        SurfaceSize(TextureNum).X = TexInfo.Width
+        SurfaceSize(TextureNum).Y = TexInfo.Height
+        SurfaceSize(TextureNum).MipLevels = TexInfo.MipLevels
+        SurfaceSize(TextureNum).BmpFormat = TexInfo.Format
+        
+    Else
+        
+        'Set the texture (without getting the dimensions)
+        Set SurfaceDB(TextureNum) = D3DX.CreateTextureFromFileEx(D3DDevice, FilePath, SurfaceSize(TextureNum).X, SurfaceSize(TextureNum).Y, SurfaceSize(TextureNum).MipLevels, 0, SurfaceSize(TextureNum).BmpFormat, D3DPOOL_MANAGED, D3DX_FILTER_NONE, D3DX_FILTER_NONE, &HFF000000, ByVal 0, ByVal 0)
+    
+    End If
 
     'Set the texture timer
     SurfaceTimer(TextureNum) = SurfaceTimerMax
@@ -3427,6 +3444,7 @@ Dim tY As Integer
                                                     Engine_ConvertCPtoTP 0, 0, MousePos.X, MousePos.Y, tX, tY
             
                                                     'Send left click
+                                                    sndBuf.Allocate 3
                                                     sndBuf.Put_Byte DataCode.User_LeftClick
                                                     sndBuf.Put_Byte CByte(tX)
                                                     sndBuf.Put_Byte CByte(tY)
@@ -3495,16 +3513,19 @@ Dim j As Byte
                     LastClickedWindow = StatWindow
                     'Raise str
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddStr.X, .Screen.Y + .AddStr.Y, .AddStr.Width, .AddStr.Height) Then
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Str
                     End If
                     'Raise agi
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddAgi.X, .Screen.Y + .AddAgi.Y, .AddAgi.Width, .AddAgi.Height) Then
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Agi
                     End If
                     'Raise mag
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .AddMag.X, .Screen.Y + .AddMag.Y, .AddMag.Width, .AddMag.Height) Then
+                        sndBuf.Allocate 2
                         sndBuf.Put_Byte DataCode.User_BaseStat
                         sndBuf.Put_Byte SID.Mag
                     End If
@@ -3587,16 +3608,19 @@ Dim j As Byte
                                             WriteMailData.ObjAmount(j) = 1
                                         'Sell item to shopkeeper
                                         ElseIf ShowGameWindow(ShopWindow) Then
+                                            sndBuf.Allocate 4
                                             sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
                                             sndBuf.Put_Byte i
                                             sndBuf.Put_Integer 1
                                         'Put item in the bank
                                         ElseIf ShowGameWindow(BankWindow) Then
+                                            sndBuf.Allocate 4
                                             sndBuf.Put_Byte DataCode.User_Bank_PutItem
                                             sndBuf.Put_Byte i
                                             sndBuf.Put_Integer 1
                                         'Drop item on ground
                                         Else
+                                            sndBuf.Allocate 4
                                             sndBuf.Put_Byte DataCode.User_Drop
                                             sndBuf.Put_Byte i
                                             sndBuf.Put_Integer 1
@@ -3646,6 +3670,7 @@ Dim j As Byte
                                 End If
                             Else
                                 If Game_ClickItem(i) Then
+                                    sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.User_Use
                                     sndBuf.Put_Byte i
                                 End If
@@ -3671,6 +3696,7 @@ Dim j As Byte
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If Game_ClickItem(i, 2) > 0 Then
+                                sndBuf.Allocate 4
                                 sndBuf.Put_Byte DataCode.User_Trade_BuyFromNPC
                                 sndBuf.Put_Byte i
                                 sndBuf.Put_Integer 1
@@ -3696,6 +3722,7 @@ Dim j As Byte
                     For i = 1 To 49
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                             If Game_ClickItem(i, 3) > 0 Then
+                                sndBuf.Allocate 4
                                 sndBuf.Put_Byte DataCode.User_Bank_TakeItem
                                 sndBuf.Put_Byte i
                                 sndBuf.Put_Integer 1
@@ -3734,12 +3761,14 @@ Dim j As Byte
                     If SelMessage > 0 Then
                         'Check if Delete was clicked
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .DeleteLbl.X, .Screen.Y + .DeleteLbl.Y, .DeleteLbl.Width, .DeleteLbl.Height) Then
+                            sndBuf.Allocate 2
                             sndBuf.Put_Byte DataCode.Server_MailDelete
                             sndBuf.Put_Byte SelMessage
                             Exit Function
                         End If
                         'Check if Read was clicked
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .ReadLbl.X, .Screen.Y + .ReadLbl.Y, .ReadLbl.Width, .ReadLbl.Height) Then
+                            sndBuf.Allocate 2
                             sndBuf.Put_Byte DataCode.Server_MailMessage
                             sndBuf.Put_Byte SelMessage
                             Exit Function
@@ -3750,6 +3779,7 @@ Dim j As Byte
                         For i = 1 To (.List.Height \ Font_Default.CharHeight)
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .List.X + .List.X, .Screen.Y + .List.Y + ((i - 1) * Font_Default.CharHeight), .List.Width, Font_Default.CharHeight) Then
                                 If SelMessage = i Then
+                                    sndBuf.Allocate 2
                                     sndBuf.Put_Byte DataCode.Server_MailMessage
                                     sndBuf.Put_Byte i
                                 Else
@@ -3776,6 +3806,7 @@ Dim j As Byte
                     'Click an item
                     For i = 1 To MaxMailObjs
                         If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X + .Image(i).X, .Screen.Y + .Image(i).Y, .Image(i).Width, .Image(i).Height) Then
+                            sndBuf.Allocate 2
                             sndBuf.Put_Byte DataCode.Server_MailItemTake
                             sndBuf.Put_Byte i
                             Exit Function
@@ -4014,6 +4045,7 @@ Dim tY As Integer
                                 'Check if a sign was clicked
                                 If MapData(tX, tY).Sign Then Engine_AddToChatTextBuffer Signs(MapData(tX, tY).Sign), FontColor_Info
                                 'Send left click
+                                sndBuf.Allocate 3
                                 sndBuf.Put_Byte DataCode.User_RightClick
                                 sndBuf.Put_Byte CByte(tX)
                                 sndBuf.Put_Byte CByte(tY)
@@ -4197,6 +4229,7 @@ Dim i As Byte
                             If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Image(i).X + .Screen.X, .Image(i).Y + .Screen.Y, .Image(i).Width, .Image(i).Height) Then
                                 If DragItemSlot <> i Then
                                     'Switch slots
+                                    sndBuf.Allocate 3
                                     sndBuf.Put_Byte DataCode.User_ChangeInvSlot
                                     sndBuf.Put_Byte DragItemSlot
                                     sndBuf.Put_Byte i
@@ -4240,6 +4273,7 @@ Dim i As Byte
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                         'Single item
                         If UserInventory(DragItemSlot).Amount = 1 Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Bank_PutItem
                             sndBuf.Put_Byte DragItemSlot
                             sndBuf.Put_Integer 1
@@ -4267,6 +4301,7 @@ Dim i As Byte
                     If Engine_Collision_Rect(MousePos.X, MousePos.Y, 1, 1, .Screen.X, .Screen.Y, .Screen.Width, .Screen.Height) Then
                         'Single item
                         If UserInventory(DragItemSlot).Amount = 1 Then
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Trade_SellToNPC
                             sndBuf.Put_Byte DragItemSlot
                             sndBuf.Put_Integer 1
@@ -4320,6 +4355,7 @@ Dim i As Byte
                             AmountWindowItemIndex = DragItemSlot
                             AmountWindowUsage = AW_BankToInv
                         Else
+                            sndBuf.Allocate 4
                             sndBuf.Put_Byte DataCode.User_Bank_TakeItem
                             sndBuf.Put_Byte DragItemSlot
                             sndBuf.Put_Integer 1
@@ -4558,6 +4594,7 @@ Dim aY As Integer
         If GetAsyncKeyState(vbKeyShift) Then Running = 1
 
         'Send the information to the server
+        sndBuf.Allocate 4
         sndBuf.Put_Byte DataCode.User_Move
         
         'Running or not
@@ -4583,6 +4620,7 @@ Dim aY As Integer
 
         'Only rotate if the user is not already facing that direction
         If CharList(UserCharIndex).Heading <> Direction Then
+            sndBuf.Allocate 2
             sndBuf.Put_Byte DataCode.User_Rotate
             sndBuf.Put_Byte Direction
         End If
@@ -5675,7 +5713,10 @@ Private Sub Engine_Render_GUI_Window(WindowIndex As Byte)
 'Render a GUI window
 '*****************************************************************
 Dim TempGrh As Grh
+Dim t As String
+Dim s() As String
 Dim i As Byte
+Dim j As Long
 
     TempGrh.FrameCounter = 1
 
@@ -5789,11 +5830,20 @@ Dim i As Byte
                 End If
             End If
             'Message body text box
-            If LenB(WriteMailData.Message) Then Engine_Render_Text Engine_WordWrap(WriteMailData.Message, GameWindow.WriteMessage.Message.Width), .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
+            t = Engine_WordWrap(WriteMailData.Message, GameWindow.WriteMessage.Message.Width)
+            If LenB(WriteMailData.Message) Then Engine_Render_Text t, .Screen.X + .Message.X, .Screen.Y + .Message.Y, -1
             If WMSelCon = wmMessage Then
                 If timeGetTime Mod CursorFlashRate * 2 < CursorFlashRate Then
+                    If InStr(1, t, vbNewLine) Then
+                        s = Split(t, vbNewLine)
+                        i = UBound(s)
+                        j = Engine_GetTextWidth(s(i))
+                    Else
+                        i = 0   'Ubound
+                        j = Engine_GetTextWidth(t)  'Size
+                    End If
                     TempGrh.GrhIndex = 39
-                    Engine_Render_Grh TempGrh, .Screen.X + .Message.X + Engine_GetTextWidth(WriteMailData.Message), .Screen.Y + .Message.Y, 0, 0, False
+                    Engine_Render_Grh TempGrh, .Screen.X + .Message.X + j, .Screen.Y + .Message.Y + (i * Font_Default.CharHeight), 0, 0, False
                 End If
             End If
             'Objects
@@ -6407,9 +6457,11 @@ Dim Angle As Single
         
         'Check if it is close enough to the target to remove
         For j = 1 To LastProjectile
-            If Abs(ProjectileList(j).X - ProjectileList(j).tX) < 20 Then
-                If Abs(ProjectileList(j).Y - ProjectileList(j).tY) < 20 Then
-                    Engine_Projectile_Erase j
+            If ProjectileList(j).Grh.GrhIndex Then
+                If Abs(ProjectileList(j).X - ProjectileList(j).tX) < 20 Then
+                    If Abs(ProjectileList(j).Y - ProjectileList(j).tY) < 20 Then
+                        Engine_Projectile_Erase j
+                    End If
                 End If
             End If
         Next j
@@ -6530,11 +6582,9 @@ Dim Angle As Single
         End If
     End If
 
-    'Not connected or high Ping
-    If NonRetPings > 2 Then Engine_Render_Text "Problems communicating with server..." & vbCrLf & "Past " & NonRetPings & " pings have been lost!", 200, 275, D3DColorARGB(255, 255, 0, 0)
-
     'Show FPS & Lag
-    Engine_Render_Text "FPS: " & FPS & vbCrLf & "Ping: " & Ping, 730, 2, -1
+    Engine_Render_Text "FPS: " & FPS, 720, 2, -1
+    Engine_Render_Text "PTD: " & PTD & " ms", 720, 15, -1
     
 End Sub
 
@@ -7124,7 +7174,7 @@ Dim i As Long
 Dim j As Long
 Dim KeyPhrase As Byte
 Dim TempColor As Long
-Dim ResetColor As Byte  'Required to get the last character in there
+Dim ResetColor As Byte
 
     'Check if we have the device
     If D3DDevice.TestCooperativeLevel <> D3D_OK Then Exit Sub
@@ -7156,7 +7206,7 @@ Dim ResetColor As Byte  'Required to get the last character in there
                 Ascii = Asc(Mid$(TempStr(i), j, 1))
                 
                 'Check for a key phrase
-                If Ascii = 124 Then
+                If Ascii = 124 Then 'If Ascii = "|"
                     KeyPhrase = (Not KeyPhrase)
                     If KeyPhrase Then TempColor = D3DColorARGB(255, 255, 0, 0) Else ResetColor = 1
                 Else
@@ -7421,6 +7471,7 @@ Sub Engine_UseQuickBar(ByVal Slot As Byte)
         'Use an item
     Case QuickBarType_Item
         If QuickBarID(Slot).ID > 0 Then
+            sndBuf.Allocate 2
             sndBuf.Put_Byte DataCode.User_Use
             sndBuf.Put_Byte QuickBarID(Slot).ID
         End If
@@ -7431,6 +7482,7 @@ Sub Engine_UseQuickBar(ByVal Slot As Byte)
             If LastAttackTime + AttackDelay < timeGetTime Then
                 If CharList(UserCharIndex).CharStatus.Exhausted = 0 Then
                     LastAttackTime = timeGetTime
+                    sndBuf.Allocate 4
                     sndBuf.Put_Byte DataCode.User_CastSkill
                     sndBuf.Put_Byte QuickBarID(Slot).ID
                     sndBuf.Put_Integer TargetCharIndex
@@ -7601,7 +7653,7 @@ Public Function Engine_Music_Play(ByVal BufferNumber As Long) As Boolean
 'Plays the mp3 in the specified buffer
 '************************************************************
     On Error GoTo Error_Handler
-    
+
     DirectShow_Control(BufferNumber).Run
 
     Engine_Music_Play = True

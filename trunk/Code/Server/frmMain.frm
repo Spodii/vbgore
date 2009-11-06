@@ -28,31 +28,43 @@ Begin VB.Form frmMain
    StartUpPosition =   2  'CenterScreen
    Begin VB.Menu mnu 
       Caption         =   "menu"
-      Begin VB.Menu mnulogs 
-         Caption         =   "Logs"
-         Begin VB.Menu mnugeneral 
-            Caption         =   "&General"
+      Begin VB.Menu mnudebug 
+         Caption         =   "Debugging"
+         Begin VB.Menu mnulogs 
+            Caption         =   "Logs"
+            Begin VB.Menu mnugeneral 
+               Caption         =   "&General"
+            End
+            Begin VB.Menu mnucodetracker 
+               Caption         =   "Code &Tracker"
+            End
+            Begin VB.Menu mnuin 
+               Caption         =   "Packets &In"
+            End
+            Begin VB.Menu mnuout 
+               Caption         =   "Packets &Out"
+            End
+            Begin VB.Menu mnucritical 
+               Caption         =   "&Critical"
+            End
+            Begin VB.Menu mnupacket 
+               Caption         =   "Invalid &Packets"
+            End
+            Begin VB.Menu mnusep2 
+               Caption         =   "-"
+            End
+            Begin VB.Menu mnubrowselog 
+               Caption         =   "&Browse..."
+            End
          End
-         Begin VB.Menu mnucodetracker 
-            Caption         =   "Code &Tracker"
+         Begin VB.Menu mnupacketout 
+            Caption         =   "Packets out count"
          End
-         Begin VB.Menu mnuin 
-            Caption         =   "Packets &In"
+         Begin VB.Menu mnupacketin 
+            Caption         =   "Packets in count"
          End
-         Begin VB.Menu mnuout 
-            Caption         =   "Packets &Out"
-         End
-         Begin VB.Menu mnucritical 
-            Caption         =   "&Critical"
-         End
-         Begin VB.Menu mnupacket 
-            Caption         =   "Invalid &Packets"
-         End
-         Begin VB.Menu mnusep2 
-            Caption         =   "-"
-         End
-         Begin VB.Menu mnubrowselog 
-            Caption         =   "&Browse..."
+         Begin VB.Menu mnufps 
+            Caption         =   "Server FPS graph"
          End
       End
       Begin VB.Menu mnusep 
@@ -94,6 +106,9 @@ Private Sub Form_Load()
         mnucodetracker.Enabled = False
         mnucritical.Enabled = False
     End If                                  '//\\LOGLINE//\\
+    If Not DEBUG_RecordPacketsOut Then mnupacketout.Enabled = False
+    If Not DEBUG_RecordPacketsIn Then mnupacketin.Enabled = False
+    If Not DEBUG_MapFPS Then mnufps.Enabled = False
     
     'Create conversion buffer
     Set ConBuf = New DataBuffer
@@ -115,6 +130,9 @@ Private Sub Form_Load()
     Me.Refresh
     MySQL_Init
     
+    'Generate the packet keys
+    GenerateEncryptionKeys
+    
     'Start the server
     StartServer
 
@@ -132,28 +150,57 @@ Private Sub Form_Unload(Cancel As Integer)
     UnloadServer = 1
 
 End Sub
+Private Sub mnufps_Click()
+    
+    'Save the FPS values
+    Save_FPS
+        
+    'Load the graph
+    Shell App.Path & "\ToolServerFPSViewer.exe", vbMaximizedFocus
+    
+End Sub
 
-Private Sub mnubrowselog_Click()                                                    '//\\LOGLINE//\\
-    Shell "explorer " & LogPath                                                     '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnucritical_Click()                                                     '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CriticalError.log"       '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnucodetracker_Click()                                                  '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CodeTracker.log"         '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnugeneral_Click()                                                      '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "General.log"             '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnuin_Click()                                                           '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketIn.log"            '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnuout_Click()                                                          '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketOut.log"           '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
-Private Sub mnupacket_Click()                                                       '//\\LOGLINE//\\
-    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "InvalidPacketData.log"   '//\\LOGLINE//\\
-End Sub                                                                             '//\\LOGLINE//\\
+Private Sub mnubrowselog_Click()                                                                        '//\\LOGLINE//\\
+    Shell "explorer " & LogPath, vbMaximizedFocus                                                       '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnucritical_Click()                                                                         '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CriticalError.log", vbMaximizedFocus         '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnucodetracker_Click()                                                                      '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "CodeTracker.log", vbMaximizedFocus           '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnugeneral_Click()                                                                          '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "General.log", vbMaximizedFocus               '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnuin_Click()                                                                               '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketIn.log", vbMaximizedFocus              '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnuout_Click()                                                                              '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "PacketOut.log", vbMaximizedFocus             '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+Private Sub mnupacket_Click()                                                                           '//\\LOGLINE//\\
+    If DEBUG_UseLogging Then Shell "notepad " & LogPath & "InvalidPacketData.log", vbMaximizedFocus     '//\\LOGLINE//\\
+End Sub                                                                                                 '//\\LOGLINE//\\
+
+Private Sub mnupacketin_Click()
+
+    'Save the file
+    Save_PacketsIn
+    
+    'Display the file
+    Shell "notepad " & LogPath & "packetsin.txt", vbMaximizedFocus
+
+End Sub
+
+Private Sub mnupacketout_Click()
+
+    'Save the file
+    Save_PacketsOut
+    
+    'Display the file
+    Shell "notepad " & LogPath & "packetsout.txt", vbMaximizedFocus
+
+End Sub
 
 Private Sub mnushutdown_Click()
 
@@ -171,6 +218,8 @@ Private Sub StartServer()
 'Load up server
 '*****************************************************************
 Dim LoopC As Long
+Dim s() As String
+Dim i As Long
 
     Log "Call StartServer", CodeTracker '//\\LOGLINE//\\
     
@@ -179,6 +228,7 @@ Dim LoopC As Long
     
     'Set up debug packets out
     If DEBUG_RecordPacketsOut Then ReDim DebugPacketsOut(0 To 255)
+    If DEBUG_RecordPacketsIn Then ReDim DebugPacketsIn(0 To 255)
 
     '*** Database ***
     
@@ -213,10 +263,35 @@ Dim LoopC As Long
         UserList(LoopC).ConnID = -1
     Next LoopC
 
-    'Set up the help lines
+    'Set up the help lines - if you add/remove lines, make sure you update NumHelpLines!
     HelpLine(1) = "To move, use W A S D or arrow keys."
     HelpLine(2) = "To attack, use Ctrl, and get objects with Alt."
     HelpLine(3) = "As many help lines as you want can be added..."
+    
+    '*** Build cached messages ***
+    frmMain.Caption = "Caching constant packets..."
+    frmMain.Refresh
+    
+    'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
+    Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
+                                "51,57,60,61,64,69,70,79,81,82,83,84,85"
+    
+    'Split up the messages
+    s = Split(cMessages, ",")
+    
+    'Find the highest index needed and resize the array accordingly
+    For LoopC = 0 To UBound(s)
+        If Val(s(LoopC)) > i Then i = Val(s(LoopC))
+    Next LoopC
+    ReDim cMessage(1 To i)
+    
+    'Loop through the messages, and set the data
+    For LoopC = 0 To UBound(s)
+        ConBuf.PreAllocate 2
+        ConBuf.Put_Byte DataCode.Server_Message
+        ConBuf.Put_Byte CByte(s(LoopC))
+        cMessage(Val(s(LoopC))).Data = ConBuf.Get_Buffer
+    Next LoopC
 
     '*** Load data ***
     frmMain.Caption = "Loading configuration..."
@@ -244,10 +319,10 @@ Dim LoopC As Long
     frmMain.Caption = "Loading sockets..."
     frmMain.Refresh
     
-    GOREsock_Initialize Me.hWnd
+    GOREsock_Initialize Me.hwnd
     
     'Change the 127.0.0.1 to 0.0.0.0 or your internal IP to make the server public
-    LocalSoxID = GOREsock_Listen("127.0.0.1", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
+    LocalSoxID = GOREsock_Listen("0.0.0.0", Val(Var_Get(ServerDataPath & "Server.ini", "INIT", "GamePort")))
     GOREsock_SetOption LocalSoxID, soxSO_TCP_NODELAY, True
 
     '*** Misc ***

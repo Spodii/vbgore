@@ -116,9 +116,8 @@ Public Property Let ModStat(ByVal StatID As Byte, ByVal Value As Long)
 End Property
 
 Public Sub SendUpdatedStats()
-
+Dim SendSize As Long
 Dim i As Long
-Dim j As Byte   'States if we send the packet (if stats have changed)
 
     Log "Call SendUpdatedStats", CodeTracker '//\\LOGLINE//\\
 
@@ -130,46 +129,55 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     
     'Update the speed
     If UpdateModStats(SID.Speed) Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_SetCharSpeed
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Byte ModStat(SID.Speed)
         Data_Send ToMap, UserIndex, ConBuf.Get_Buffer, , PP_High
     End If
-
-    'Get the buffer ready
-    ConBuf.Clear
-
-    'Send updated user stats
+    
+    'Figure out the send size
     For i = 1 To NumStats
-
-        'Update base stats
-        If UpdateBaseStats(i) Then
-            ConBuf.Put_Byte DataCode.User_BaseStat
-            ConBuf.Put_Byte i
-            ConBuf.Put_Long BaseStat(i)
-            UpdateBaseStats(i) = 0
-            j = 1
-        End If
-
-        'Update mod stats
-        If UpdateModStats(i) Then
-            ConBuf.Put_Byte DataCode.User_ModStat
-            ConBuf.Put_Byte i
-            ConBuf.Put_Long ModStat(i)
-            UpdateModStats(i) = 0
-            j = 1
-        End If
-
+        If UpdateBaseStats(i) Then SendSize = SendSize + 6
+        If UpdateModStats(i) Then SendSize = SendSize + 6
     Next i
 
-    'Send the stats
-    If j Then Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Stat
+    'Don't even check if we need to send anything if SendSize = 0
+    If SendSize Then
+
+        'Allocate the memory needed
+        ConBuf.PreAllocate SendSize
+    
+        'Send updated user stats
+        For i = 1 To NumStats
+    
+            'Update base stats
+            If UpdateBaseStats(i) Then
+                ConBuf.Put_Byte DataCode.User_BaseStat
+                ConBuf.Put_Byte i
+                ConBuf.Put_Long BaseStat(i)
+                UpdateBaseStats(i) = 0
+            End If
+    
+            'Update mod stats
+            If UpdateModStats(i) Then
+                ConBuf.Put_Byte DataCode.User_ModStat
+                ConBuf.Put_Byte i
+                ConBuf.Put_Long ModStat(i)
+                UpdateModStats(i) = 0
+            End If
+    
+        Next i
+    
+        'Send the stats
+        Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer, , PP_Stat
+        
+    End If
 
     'Check the HP Percent
     If LastHPPercent <> CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100) Then
         LastHPPercent = CByte((BaseStats(SID.MinHP) / ModStats(SID.MaxHP)) * 100)
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_CharHP
         ConBuf.Put_Byte LastHPPercent
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -179,7 +187,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     'Check the MP Percent
     If LastMPPercent <> CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100) Then
         LastMPPercent = CByte((BaseStats(SID.MinMAN) / ModStats(SID.MaxMAN)) * 100)
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.Server_CharMP
         ConBuf.Put_Byte LastMPPercent
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -189,7 +197,7 @@ Dim j As Byte   'States if we send the packet (if stats have changed)
     'Check the speed
     If LastSpeed <> ModStats(SID.Speed) Then
         LastSpeed = ModStat(SID.Speed)
-        ConBuf.Clear
+        ConBuf.PreAllocate 7
         ConBuf.Put_Byte DataCode.Server_SetCharSpeed
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Long ModStats(SID.Speed)

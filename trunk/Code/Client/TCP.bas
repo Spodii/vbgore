@@ -1,5 +1,7 @@
 Attribute VB_Name = "TCP"
 Option Explicit
+Public PacketOutPos As Byte
+Public PacketInPos As Byte
 
 Sub Data_User_Bank_UpdateSlot(ByRef rBuf As DataBuffer)
 
@@ -54,6 +56,7 @@ Dim Slot As Byte
     
     'Show the bank window
     ShowGameWindow(BankWindow) = 1
+    LastClickedWindow = BankWindow
 
 End Sub
 
@@ -74,11 +77,13 @@ Dim Rotate As Byte
     
     'If the char doesn't exist, request to create it
     If AttackerIndex > LastChar Or CharList(AttackerIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer AttackerIndex
         Exit Sub
     End If
     If TargetIndex > LastChar Or CharList(TargetIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer TargetIndex
         Exit Sub
@@ -113,11 +118,13 @@ Dim Speed As Byte
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -471,9 +478,12 @@ Sub Data_Server_Connect()
     Unload frmConnect
 
     'Load main form
+    frmMain.PTDTmr.Enabled = True
+    Load frmMain
     frmMain.Visible = True
     frmMain.Show
     frmMain.SetFocus
+    DoEvents
 
     'Load the engine
     Engine_Init_TileEngine
@@ -483,9 +493,6 @@ Sub Data_Server_Connect()
     frmMain.SetFocus
     DoEvents
     DIDevice.Acquire
-
-    'Init the Ping timer
-    frmMain.PingTmr.Enabled = True
 
     'Send the data
     Data_Send
@@ -641,21 +648,13 @@ Dim TempBuffer() As Byte
     
         'Assign to the temp buffer
         TempBuffer() = sndBuf.Get_Buffer
-        
-        'Encrypt the packet
-        Select Case PacketEncType
-            Case PacketEncTypeXOR
-                Encryption_XOR_EncryptByte TempBuffer(), PacketEncKey
-            Case PacketEncTypeRC4
-                Encryption_RC4_EncryptByte TempBuffer(), PacketEncKey
-        End Select
     
         'Send the data
         GOREsock_SendData SoxID, TempBuffer
         
         'Clear the buffer, get it ready for next use
         sndBuf.Clear
-        
+  
     End If
 
 End Sub
@@ -725,11 +724,13 @@ Dim HP As Byte
 
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -754,11 +755,13 @@ Dim MP As Byte
 
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -820,11 +823,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -849,11 +854,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -878,11 +885,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -907,11 +916,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -936,11 +947,13 @@ Dim CharIndex As Integer
 
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -965,11 +978,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -994,11 +1009,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1201,11 +1218,13 @@ Dim Running As Byte
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1236,17 +1255,14 @@ Dim Running As Byte
 
 End Sub
 
-Sub Data_Server_Ping()
+Sub Data_Server_PTD()
 
 '*********************************************
-'We retrieved the ping response, so calculate how long it took
+'We retrieved the PTD response, calculate how long it took
 '<>
 '*********************************************
 
-    Ping = timeGetTime - PingSTime
-
-    'Reset the unreturned ping count
-    NonRetPings = 0
+    PTD = timeGetTime - PTDSTime
 
 End Sub
 
@@ -1297,11 +1313,13 @@ Dim Damage As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1387,11 +1405,13 @@ Dim IsOn As Byte
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1415,11 +1435,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1461,11 +1483,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1497,21 +1521,25 @@ Dim Y As Long
     'If the char doesn't exist, request to create it
     If TargetIndex = 0 Or CasterIndex = 0 Then Exit Sub
     If CasterIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CasterIndex
         Exit Sub
     End If
     If CharList(CasterIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CasterIndex
         Exit Sub
     End If
     If TargetIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer TargetIndex
         Exit Sub
     End If
     If CharList(TargetIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer TargetIndex
         Exit Sub
@@ -1715,11 +1743,13 @@ Dim Angle As Single
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1765,11 +1795,13 @@ Dim CharIndex As Integer
 
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1871,11 +1903,13 @@ Dim Heading As Byte
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -1920,11 +1954,13 @@ Dim CharIndex As Integer
     
     'If the char doesn't exist, request to create it
     If CharIndex > LastChar Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
     End If
     If CharList(CharIndex).Active = 0 Then
+        sndBuf.Allocate 3
         sndBuf.Put_Byte DataCode.User_RequestMakeChar
         sndBuf.Put_Integer CharIndex
         Exit Sub
@@ -2037,14 +2073,6 @@ Static X As Long
     If DEBUG_PrintPacket_In Then
         Engine_AddToChatTextBuffer "DataIn: " & StrConv(inData, vbUnicode), -1
     End If
-    
-    'Decrypt the packet
-    Select Case PacketEncType
-        Case PacketEncTypeXOR
-            Encryption_XOR_DecryptByte inData(), PacketEncKey
-        Case PacketEncTypeRC4
-            Encryption_RC4_DecryptByte inData(), PacketEncKey
-    End Select
 
     'Set up the data buffer
     Set rBuf = New DataBuffer
@@ -2110,7 +2138,7 @@ Static X As Long
             Case .Server_MakeProjectile: Data_Server_MakeProjectile rBuf
             Case .Server_Message: Data_Server_Message rBuf
             Case .Server_MoveChar: Data_Server_MoveChar rBuf
-            Case .Server_Ping: Data_Server_Ping
+            Case .Server_PTD: Data_Server_PTD
             Case .Server_PlaySound: Data_Server_PlaySound rBuf
             Case .Server_PlaySound3D: Data_Server_PlaySound3D rBuf
             Case .Server_SetCharDamage: Data_Server_SetCharDamage rBuf
@@ -2153,6 +2181,9 @@ End Sub
 Sub GOREsock_Connecting(inSox As Long)
 
     If SocketOpen = 0 Then
+        
+        PacketInPos = 0
+        PacketOutPos = 0
         
         Sleep 50
         DoEvents

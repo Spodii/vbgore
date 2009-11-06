@@ -1860,14 +1860,28 @@ Dim b As Byte
         
         'Only use graphics in use
         If GrhData(CurrentGrh).NumFrames > 0 Then
-        
-            'If the appropriate flags are ticked
+            
+            'Reset variable
             b = 0
-            For j = frmTSOpt.CatChk.LBound To frmTSOpt.CatChk.UBound
-                If frmTSOpt.CatChk(j).Value = 1 Then
-                    If GrhCatFlags(CurrentGrh) And (2 ^ j) Then b = 1
-                End If
-            Next j
+        
+            'Put uncategorized graphics in the Misc(Hidden) section
+            If GrhCatFlags(CurrentGrh) = 0 Then
+                If frmTSOpt.CatChk(7).Value = 1 Then b = 1
+            End If
+                
+            'If the appropriate flags are ticked
+            If Not b Then
+                For j = frmTSOpt.CatChk.LBound To frmTSOpt.CatChk.UBound
+                    If frmTSOpt.CatChk(j).Value = 1 Then
+                        If GrhCatFlags(CurrentGrh) And (2 ^ j) Then
+                            b = 1
+                            Exit For
+                        End If
+                    End If
+                Next j
+            End If
+                
+            'Draw the grh
             If b Then
 
                 'Set the graphic

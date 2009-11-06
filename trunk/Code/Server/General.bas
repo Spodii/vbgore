@@ -25,6 +25,7 @@ Private LastUpdate_NPCAI As Long
 Private LastUpdate_NPCCounters As Long
 Private LastUpdate_Maps As Long
 Private LastUpdate_Bandwidth As Long
+Private LastUpdate_ServerFPS As Long    'For DEBUG_MapFPS
 
 'To save excessive looping, flags are set to go with the next loop instead of a loop in their own
 Private UpdateUserStats As Byte     'If the user stats will update
@@ -46,7 +47,8 @@ Dim LoopStartTime As Long       'Time at the start of the update loop
 Dim UpdateUsers As Byte         'We only update users if one of the user counters go off
 Dim UpdateNPCs As Byte          'Same as above, but with NPCs
 Dim Elapsed As Long             'Time elapsed through the loop
-    
+Dim FPS As Long                 'Used for DEBUG_MapFPS
+
     'Set the server as running
     ServerRunning = 1
 
@@ -128,7 +130,7 @@ Dim Elapsed As Long             'Time elapsed through the loop
         DoEvents
         
         'Check if we have enough time to sleep
-        Elapsed = CurrentTime - LoopStartTime
+        Elapsed = timeGetTime - LoopStartTime
         If Elapsed < GameLoopTime Then
             If Elapsed >= 0 Then    'Make sure nothing weird happens, causing for a huge sleep time
                 Sleep Int(GameLoopTime - Elapsed)
@@ -144,6 +146,20 @@ Dim Elapsed As Long             'Time elapsed through the loop
             'Close the server
             Server_Unload
             
+        End If
+        
+        '*** Update FPS ***
+        If DEBUG_MapFPS Then
+            FPS = FPS + 1
+            If LastUpdate_ServerFPS + 1000 < timeGetTime Then
+                FPSIndex = FPSIndex + 1
+                ReDim Preserve ServerFPS(1 To FPSIndex) As ServerFPS
+                ServerFPS(FPSIndex).FPS = Round(FPS * (1000 / (timeGetTime - LastUpdate_ServerFPS)))    'This basically adjusts it if hte time is not exactly 1000ms
+                ServerFPS(FPSIndex).Users = NumUsers
+                ServerFPS(FPSIndex).NPCs = NumNPCs
+                FPS = 0
+                LastUpdate_ServerFPS = timeGetTime
+            End If
         End If
         
     Loop
@@ -206,7 +222,7 @@ Dim NPCIndex As Integer
                         If NPCList(NPCIndex).Counters.AggressiveCounter > 0 Then
                             If NPCList(NPCIndex).Counters.AggressiveCounter < CurrentTime Then
                                 NPCList(NPCIndex).Counters.AggressiveCounter = 0
-                                ConBuf.Clear
+                                ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.User_AggressiveFace
                                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
                                 ConBuf.Put_Byte 0
@@ -217,12 +233,12 @@ Dim NPCIndex As Integer
                             If NPCList(NPCIndex).Counters.WarCurseCounter < CurrentTime Then
                                 NPCList(NPCIndex).Counters.WarCurseCounter = 0
                                 NPCList(NPCIndex).Skills.WarCurse = 0
-                                ConBuf.Clear
+                                ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
                                 ConBuf.Put_Byte DataCode.Server_Message
                                 ConBuf.Put_Byte 1
                                 ConBuf.Put_String NPCList(NPCIndex).name
                                 Data_Send ToNPCArea, NPCIndex, ConBuf.Get_Buffer
-                                ConBuf.Clear
+                                ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.Server_IconWarCursed
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
@@ -232,7 +248,7 @@ Dim NPCIndex As Integer
                         If NPCList(NPCIndex).Counters.SpellExhaustion > 0 Then
                             If NPCList(NPCIndex).Counters.SpellExhaustion < CurrentTime Then
                                 NPCList(NPCIndex).Counters.SpellExhaustion = 0
-                                ConBuf.Clear
+                                ConBuf.PreAllocate 4
                                 ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
                                 ConBuf.Put_Byte 0
                                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
@@ -282,20 +298,14 @@ Dim UserIndex As Integer
             '*** Disconnection timers ***
             'Check if it has been idle for too long
             If UserList(UserIndex).Counters.IdleCount <= CurrentTime - IdleLimit Then
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 85
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                Data_Send ToIndex, UserIndex, cMessage(85).Data
                 Server_CloseSocket UserIndex
                 GoTo NextUser   'Skip to the next user
             End If
             
             'Check if the user was possible disconnected (or extremely laggy)
             If UserList(UserIndex).Counters.LastPacket <= CurrentTime - LastPacket Then
-                ConBuf.Clear
-                ConBuf.Put_Byte DataCode.Server_Message
-                ConBuf.Put_Byte 85
-                Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
+                Data_Send ToIndex, UserIndex, cMessage(85).Data
                 Server_CloseSocket UserIndex
                 GoTo NextUser   'Skip to the next user
             End If
@@ -318,7 +328,7 @@ Dim UserIndex As Integer
                 If UserList(UserIndex).Counters.BlessCounter > 0 Then
                     If UserList(UserIndex).Counters.BlessCounter < CurrentTime Then
                         UserList(UserIndex).Skills.Bless = 0
-                        ConBuf.Clear
+                        ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconBlessed
                         ConBuf.Put_Byte 0
                         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -328,7 +338,7 @@ Dim UserIndex As Integer
                 If UserList(UserIndex).Counters.ProtectCounter > 0 Then
                     If UserList(UserIndex).Counters.ProtectCounter < CurrentTime Then
                         UserList(UserIndex).Skills.Protect = 0
-                        ConBuf.Clear
+                        ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconProtected
                         ConBuf.Put_Byte 0
                         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -338,7 +348,7 @@ Dim UserIndex As Integer
                 If UserList(UserIndex).Counters.StrengthenCounter > 0 Then
                     If UserList(UserIndex).Counters.StrengthenCounter < CurrentTime Then
                         UserList(UserIndex).Skills.Strengthen = 0
-                        ConBuf.Clear
+                        ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconStrengthened
                         ConBuf.Put_Byte 0
                         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -348,7 +358,7 @@ Dim UserIndex As Integer
                 If UserList(UserIndex).Counters.SpellExhaustion > 0 Then
                     If UserList(UserIndex).Counters.SpellExhaustion < CurrentTime Then
                         UserList(UserIndex).Counters.SpellExhaustion = 0
-                        ConBuf.Clear
+                        ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.Server_IconSpellExhaustion
                         ConBuf.Put_Byte 0
                         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
@@ -358,7 +368,7 @@ Dim UserIndex As Integer
                 If UserList(UserIndex).Counters.AggressiveCounter > 0 Then
                     If UserList(UserIndex).Counters.AggressiveCounter < CurrentTime Then
                         UserList(UserIndex).Counters.AggressiveCounter = 0
-                        ConBuf.Clear
+                        ConBuf.PreAllocate 4
                         ConBuf.Put_Byte DataCode.User_AggressiveFace
                         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
                         ConBuf.Put_Byte 0
@@ -875,8 +885,8 @@ Public Function Server_UserExist(ByVal UserName As String) As Boolean
     DB_RS.Open "SELECT name FROM users WHERE `name`='" & UserName & "'", DB_Conn, adOpenStatic, adLockOptimistic
 
     'If End Of File = true, then the user doesn't exist
-    If DB_RS.EOF = True Then Server_UserExist = False Else Server_UserExist = True
-
+    Server_UserExist = Not DB_RS.EOF
+    
     'Close the recordset
     DB_RS.Close
     
@@ -1201,7 +1211,7 @@ Public Function CurrentTime() As Long
     
 End Function
 
-Private Sub Server_Unload()
+Public Sub Server_Unload()
 
 '*****************************************************************
 'Unload the server and all the variables
@@ -1234,17 +1244,10 @@ Dim s As String
         'Kill the database connection
         DB_Conn.Close
     
-        'Save the debug packets out
-        If DEBUG_RecordPacketsOut Then
-            s = vbNewLine
-            For LoopC = 0 To 255
-                s = s & LoopC & ": " & DebugPacketsOut(LoopC) & vbNewLine
-            Next LoopC
-            FileNum = FreeFile
-            Open App.Path & "\packetsout.txt" For Output As #FileNum
-                Write #FileNum, s
-            Close #FileNum
-        End If
+        'Save the debug files
+        If DEBUG_RecordPacketsOut Then Save_PacketsOut
+        If DEBUG_RecordPacketsIn Then Save_PacketsIn
+        If DEBUG_MapFPS Then Save_FPS
         
         'Kill the temp files
         Kill ServerTempPath & "*"
@@ -1267,6 +1270,7 @@ Dim s As String
         Erase QuestData
         Erase HelpLine
         Erase DebugPacketsOut
+        Erase DebugPacketsIn
         Erase MapUsers
         For LoopC = 1 To NumMaps
             Erase MapUsers(LoopC).Index

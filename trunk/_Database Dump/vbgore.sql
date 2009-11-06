@@ -4,7 +4,7 @@ Source Host: localhost
 Source Database: vbgore
 Target Host: localhost
 Target Database: vbgore
-Date: 2/10/2007 3:11:12 PM
+Date: 2/24/2007 12:08:01 PM
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -144,6 +144,7 @@ CREATE TABLE `quests` (
 -- ----------------------------
 CREATE TABLE `users` (
   `name` varchar(255) NOT NULL COMMENT 'Name',
+  `ip` varchar(255) NOT NULL COMMENT 'Holds the last 10 IPs used to connect to this account',
   `gm` tinyint(3) unsigned NOT NULL default '0',
   `password` varchar(255) NOT NULL COMMENT 'Password',
   `descr` varchar(255) NOT NULL COMMENT 'Description',
@@ -153,6 +154,8 @@ CREATE TABLE `users` (
   `knownskills` text NOT NULL COMMENT 'Skills known by the user (1 = known, 0 = unknown)',
   `completedquests` mediumtext NOT NULL COMMENT 'Defines the quests completed (not recommended to edit)',
   `currentquest` mediumtext NOT NULL COMMENT 'Quest(s) the user is currently on (do not edit)',
+  `date_create` date NOT NULL COMMENT 'The date the account was created',
+  `date_lastlogin` date NOT NULL COMMENT 'The date the user last logged in',
   `pos_x` tinyint(3) unsigned NOT NULL COMMENT 'X position',
   `pos_y` tinyint(3) unsigned NOT NULL COMMENT 'Y position',
   `pos_map` smallint(6) NOT NULL COMMENT 'Map',
@@ -191,11 +194,11 @@ CREATE TABLE `users` (
 -- ----------------------------
 -- Records 
 -- ----------------------------
-INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-02-10', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 4.535275', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-02-10', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 41.40327', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-02-10', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 86.26193', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-02-10', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 79.048', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
-INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-02-10', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 37.35362', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('1', 'Test Message', 'Game Admin', '2007-02-24', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 4.535275', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('2', 'Test Message', 'Game Admin', '2007-02-24', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 41.40327', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('3', 'Test Message', 'Game Admin', '2007-02-24', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 86.26193', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('4', 'Test Message', 'Game Admin', '2007-02-24', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 79.048', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
+INSERT INTO `mail` VALUES ('5', 'Test Message', 'Game Admin', '2007-02-24', 'This is a test message that simply shows the pwnification of the mailing system. Here, have a random number! 37.35362', '1', '5 6\r\n5 3\r\n3 8\r\n1 8\r\n6 8');
 INSERT INTO `mail_lastid` VALUES ('5');
 INSERT INTO `npcs` VALUES ('1', 'Headless Man', 'This man seems to want your help!', '0', '3', '0', '0', '0', '0', '0', '0', '1', '', '0', '0', '', '1', '0', '1', '0', '1', '3', '3', '0', '0', '3', '1', '1', '10', '10', '10');
 INSERT INTO `npcs` VALUES ('2', 'Bandit', 'Bald little rascal who wants your booty!', '3', '2', '5000', '1', '26', '0', '0', '1', '0', '1 2 50\r\n5 1 10\r\n6 1 10\r\n7 1 10', '10', '10', '', '0', '1', '1', '1', '0', '3', '3', '0', '0', '3', '1', '2', '15', '2', '2');
@@ -214,4 +217,4 @@ INSERT INTO `objects` VALUES ('7', 'Angel Wings', '100', '4', '0', '0', '1200', 
 INSERT INTO `objects` VALUES ('8', 'Ninja Stars', '100', '2', '4', '10', '11', '11', '100', '-1', '0', '-1', '-1', '-1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '6', '0', '0', '0', '0', '0', '0');
 INSERT INTO `objects` VALUES ('9', 'Big Star', '15', '1', '0', '0', '27', '14', '0', '-1', '-1', '-1', '-1', '-1', '0', '0', '0', '0', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0');
 INSERT INTO `quests` VALUES ('1', 'Kill Bandits', '1', 'Help me get revenge!', 'Thanks for the help! Kill 3 bandits that hide in the waterfall!', 'Just because I have no head doesn\'t mean I have no brain...', 'Sweet d00d, that\'ll show them whos boss! ^_^', '1', '0', '0', '50', '45', '0', '0', '1', '0', '0', '2', '3', '200', '400', '2', '60', '2');
-INSERT INTO `users` VALUES ('Spodi', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '32', '35', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '70', '50', '60', '50', '6', '50', '0');
+INSERT INTO `users` VALUES ('Spodi', '127.0.0.1', '1', 'f887eb538bb69342ac792536bcdaf02d', '', '1 1 5 0\r\n2 2 1 0\r\n3 3 1 0\r\n4 5 1 1\r\n5 6 1 1\r\n6 7 1 1\r\n7 8 1 0\r\n8 9 50 0', '', '1\r\n2\r\n3\r\n4\r\n5', '1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7', '', '', '2007-02-24', '2007-02-24', '34', '35', '1', '1', '1', '2', '1', '1', '3', '3', '5', '4', '6', '1', '1', '1', '1', '5', '100', '0', '1', '10', '0', '1', '1', '62', '50', '60', '50', '2', '50', '0');

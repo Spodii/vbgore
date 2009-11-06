@@ -4,11 +4,18 @@ Option Explicit
 'Credits goes to Fredrik Qvarfort for writing the algorithms in Visual Basic!
 
 '***** Packet encryption options *****
-Public Const PacketEncTypeNone As Byte = 0
-Public Const PacketEncTypeRC4 As Byte = 1
-Public Const PacketEncTypeXOR As Byte = 2
-Public Const PacketEncType As Byte = PacketEncTypeNone
-Public Const PacketEncKey As String = "L234)Zlka;2341DFLJK"
+Public Const PacketEncTypeNone As Byte = 0  'Use no encryption
+Public Const PacketEncTypeRC4 As Byte = 1   'Use RC4 encryption
+Public Const PacketEncTypeXOR As Byte = 2   'Use XOR encryption
+Public Const PacketEncTypeServerIn As Byte = PacketEncTypeXOR   'Encryption for server in (or client out) packets
+Public Const PacketEncTypeServerOut As Byte = PacketEncTypeNone 'Encryption for server out (or client in) packets
+
+'These are only used if the PacketEncType is not PacketEncTypeNone
+Public Const PacketEncKey1 As String = "al123vcAM !$@(2!@_#;241234vzxv!@$(*_DSZVc2123"  'First encryption key (any string works)
+Public Const PacketEncKey2 As String = "t123409-nsad DS:!$N$MN!U_AKLJ!1240naga!@$)ZZV"  'Second encryption key (any string works)
+Public Const PacketEncSeed As Long = 214    'The number to start from (any random value works)
+Public Const PacketEncKeys As Byte = 40     'Number of packet encryption keys
+Public PacketKeys() As String   'The array of keys generated to encrypt packets
 
 '***** RC4 *****
 Private m_sBoxRC4(0 To 255) As Integer
@@ -25,6 +32,64 @@ Private m_KeyS As String
 
 Private Declare Sub CopyMem Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Private Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
+
+Sub GenerateEncryptionKeys()
+
+'*****************************************************************
+'Generates a series of unique keys based off the parameters
+'It is recommended you change this routine a bit for better safety for public games
+'*****************************************************************
+Dim Seed As Long
+Dim Key1 As String
+Dim Key2 As String
+Dim B2() As Byte
+Dim b() As Byte
+Dim i As Long
+Dim j As Long
+Dim k As Long
+
+    'Set the start values
+    Seed = PacketEncSeed
+    Key1 = PacketEncKey1
+    Key2 = PacketEncKey2
+    
+    'Set the number of keys
+    ReDim PacketKeys(0 To PacketEncKeys - 1)
+    
+    'Crop down the keys if needed
+    If Len(Key2) > 32 Then Key2 = Left$(Key2, 32)
+    If Len(Key1) > 32 Then Key1 = Left$(Key1, 32)
+    
+    'Loop through the needed keys
+    For i = 0 To PacketEncKeys - 1
+    
+        'Generate a new seed
+        Seed = (i * Seed) - 1
+    
+        'Jumble up the keys through XOR randomization
+        b = StrConv(Key1, vbFromUnicode) 'Convert to a byte array
+        B2 = StrConv(Key2, vbFromUnicode)
+        For j = 0 To Len(Key1) - 1
+            Seed = Seed + j + 1         'Modify the seed based on the placement of the character
+            Do While Seed > 255         'Keep it in the byte range
+                Seed = Seed - 255
+            Loop
+            b(j) = b(j) Xor Seed        'XOR the character by the seed
+            B2(j) = B2(j) Xor CByte(Seed \ 2)
+        Next j
+        Key1 = StrConv(b, vbUnicode)     'Convert back to a string
+        Key2 = StrConv(B2, vbUnicode)
+            
+        'Jumble up the keys through encryption
+        Key2 = Encryption_RC4_EncryptString(Key2, Key1)
+        Key1 = Encryption_RC4_EncryptString(Key1, Key2)
+        
+        'Store the key
+        PacketKeys(i) = Key1
+        
+    Next i
+
+End Sub
 
 Private Function Encryption_Misc_FileExist(FileName As String) As Boolean
 

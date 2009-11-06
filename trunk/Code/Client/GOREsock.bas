@@ -325,7 +325,9 @@ End Function
 Private Sub GOREsock_GetData(inSox As Long) ' Extracts data from the WinSock Recv buffers and places it in our local buffer (data() array)
 Dim tmpRecvSize As Integer
 Dim tmpBuffer() As Byte
-    
+Dim Size As Integer
+Dim Pos As Long
+
     'Check for valid parameters
     If Not (inSox < 0 Or inSox > Portal.Sockets) Then
         If Sockets(inSox).GOREsock_State = soxIdle Then
@@ -350,10 +352,49 @@ Dim tmpBuffer() As Byte
                     'Get our data
                     Case Else
                         
-                        'Copy the actual data over to a new buffer, then send it to the program
-                        ReDim tmpBuffer(0 To tmpRecvSize - 1)
-                        apiCopyMemory tmpBuffer(0), GetBuffer(0), tmpRecvSize
-                        GOREsock_DataArrival inSox, tmpBuffer()
+                        If PacketEncTypeServerOut <> PacketEncTypeNone Then
+                        
+                            '*** Encrypted Receive ***
+                            Do
+                            
+                                'Get the size of the packet
+                                apiCopyMemory Size, GetBuffer(Pos), 2
+                                Pos = Pos + 2
+                                
+                                'Resize the buffer to fit the size of the packet
+                                ReDim tmpBuffer(0 To Size - 1)
+                                
+                                'Copy the data into the buffer
+                                apiCopyMemory tmpBuffer(0), GetBuffer(Pos), Size
+                                
+                                'Update the read position
+                                Pos = Pos + Size + 1
+                                
+                                'Decrypt the packet
+                                Select Case PacketEncTypeServerOut
+                                    Case PacketEncTypeXOR
+                                        Encryption_XOR_DecryptByte tmpBuffer(), PacketKeys(PacketInPos)
+                                    Case PacketEncTypeRC4
+                                        Encryption_RC4_DecryptByte tmpBuffer(), PacketKeys(PacketInPos)
+                                End Select
+                                PacketInPos = PacketInPos + 1
+                                If PacketInPos > PacketEncKeys - 1 Then PacketInPos = 0
+                                
+                                'Call the data handling routine
+                                GOREsock_DataArrival inSox, tmpBuffer()
+                                DoEvents
+                                
+                            Loop While Pos < tmpRecvSize - 3
+                            
+                        Else
+                        
+                            '*** Non-encrypted Receive ***
+                            'Copy the actual data over to a new buffer, then send it to the program
+                            ReDim tmpBuffer(0 To tmpRecvSize - 1)
+                            apiCopyMemory tmpBuffer(0), GetBuffer(0), tmpRecvSize
+                            GOREsock_DataArrival inSox, tmpBuffer()
+                        
+                        End If
                         
                 End Select
                 
@@ -467,6 +508,8 @@ Private Sub GOREsock_RaiseState(inSox As Long, inState As enmSoxState)
 End Sub
 
 Private Sub GOREsock_SendBuffer(inSox As Long)
+Dim i As Integer
+Dim b() As Byte
 
     'Check for invalid parameter
     If Not (inSox < 0 Or inSox > Portal.Sockets) Then
@@ -478,11 +521,58 @@ Private Sub GOREsock_SendBuffer(inSox As Long)
                 
                 'If we have data, send 'er over, cap'n!
                 If Send(inSox).Size + 1 > 0 Then
+                    
+                    '*** Encrypted send ***
+                    If PacketEncTypeServerIn <> PacketEncTypeNone Then
+                        
+                        'Encrypt the packet
+                        Select Case PacketEncTypeServerIn
+                            Case PacketEncTypeXOR
+                                Encryption_XOR_EncryptByte Send(inSox).Buffer(), PacketKeys(PacketOutPos)
+                            Case PacketEncTypeRC4
+                                Encryption_RC4_EncryptByte Send(inSox).Buffer(), PacketKeys(PacketOutPos)
+                        End Select
+                        
+                        'Add the length (this is so we can handle packets that get combined in the network)
+                        i = UBound(Send(inSox).Buffer) + 1
+                        Debug.Print PacketOutPos
+                        ReDim b(0 To i + 2)
+                        apiCopyMemory b(2), Send(inSox).Buffer(0), i
+                        apiCopyMemory b(0), i, 2
+                        ReDim Send(inSox).Buffer(0 To i + 2)
+                        apiCopyMemory Send(inSox).Buffer(0), b(0), UBound(Send(inSox).Buffer()) + 1
+                    
+                    End If
+                    
+                    'Send the data
                     If apiSend(Sockets(inSox).Socket, Send(inSox).Buffer(0), UBound(Send(inSox).Buffer) + 1, 0) <> GOREsock_ERROR Then
+                        
                         'All data send, clear the buffer
                         Let Send(inSox).Size = -1
                         Erase Send(inSox).Buffer
+                        
+                        '*** Encrypted send successfully ***
+                        If PacketEncTypeServerIn <> PacketEncTypeNone Then
+                            'Raise the encryption count
+                            PacketOutPos = PacketOutPos + 1
+                            If PacketOutPos > PacketEncKeys - 1 Then PacketOutPos = 0
+                        End If
+
+                    Else
+                    
+                        '*** Encrypted send fail ***
+                        'Send failed, unencrypt the packet so we can encrypt it again later
+                        If PacketEncTypeServerIn <> PacketEncTypeNone Then
+                            Select Case PacketEncTypeServerIn
+                                Case PacketEncTypeXOR
+                                    Encryption_XOR_EncryptByte Send(inSox).Buffer(), PacketKeys(PacketOutPos)
+                                Case PacketEncTypeRC4
+                                    Encryption_RC4_EncryptByte Send(inSox).Buffer(), PacketKeys(PacketOutPos)
+                            End Select
+                        End If
+                    
                     End If
+                
                 End If
                 
                 'Change the state of the socket (unless it is closing)

@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.3.1            ************
+'************            Official Release: Version 0.3.2            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -89,16 +89,18 @@ Attribute VB_Name = "Declares"
 Option Explicit
 
 'Used to record the number of packets coming in/out and what command ID they have
-Public Const DEBUG_UseLogging As Boolean = True                  '//\\LOGLINE//\\
-Public Const DEBUG_RecordPacketsOut As Boolean = False
+Public Const DEBUG_MapFPS As Boolean = True
+Public Const DEBUG_UseLogging As Boolean = True                '//\\LOGLINE//\\
+Public Const DEBUG_RecordPacketsOut As Boolean = True
+Public Const DEBUG_RecordPacketsIn As Boolean = True
 
 '********** Public CONSTANTS ***********
 
 'Change to 1 to enable database optimization on runtime
 Public Const OptimizeDatabase As Byte = 0
 
-'If we run the server in high priority (recommended to use unless on a test server)
-Public Const RunHighPriority As Byte = 0
+'If we run the server in high priority (recommended to use unless)
+Public Const RunHighPriority As Byte = 1
 
 'How long objects can be on the ground (in miliseconds) before being removed
 Public Const GroundObjLife As Long = 300000 '5 minutes
@@ -113,6 +115,9 @@ Public Const DelayTimeTalk As Long = 500    'Talking (in any form)
 'Change this value to add a cost to sending mail
 Public Const MailCost As Long = 0
 
+'Maximum allowed packets in per second from the client (used to prevent flooding)
+Public Const MaxPacketsInPerSec As Long = 25    'During testing, I never got this over 12, so this should be a safe number
+
 'Maximum amount of objects allowed on a single tile
 Public Const MaxObjsPerTile As Byte = 5
 
@@ -125,6 +130,14 @@ Public Const AGGRESSIVEFACETIME = 4000
 
 'Calculate the data in/out per sec or ont
 Public Const CalcTraffic As Boolean = True
+
+'Message of the day
+Public Const MOTD1 As String = "Welcome to vbGORE Version 0.3.2!"
+Public Const MOTD2 As String = "For help, please type |/help|"
+Public Const MOTD3 As String = "|Ctrl+W| for inventory, |Ctrl+S| for stats."
+Public Const MOTD4 As String = "Please visit our site at www.vbgore.com"
+Public Const MOTD5 As String = "Questions, code, help, etc can be found there. :)"
+Public Const MOTD6 As String = "Remember to go under the |waterfall| to fight some enemies!"
 
 'Sound constants
 Public Const SOUND_SWING As Byte = 7
@@ -523,6 +536,15 @@ Public DataOut As Long
 Public DataKBIn As Long
 Public DataKBOut As Long
 
+'Server FPS tracking (DEBUG_MapFPS)
+Public Type ServerFPS
+    FPS As Long         'FPS
+    Users As Integer    'Number of users
+    NPCs As Integer     'Number of NPCs
+End Type
+Public ServerFPS() As ServerFPS
+Public FPSIndex As Long
+
 'The number of bytes we need to send all of our known skills
 Public NumBytesForSkills As Long
 
@@ -533,7 +555,14 @@ Public UnloadServer As Byte
 Public Const NumHelpLines As Byte = 3
 Public HelpLine(1 To NumHelpLines) As String    'These are filled in on frmMain.StartServer
 
+'Packet messages that are cached so they don't have to built real-time
+Public Type CachedMessage
+    Data() As Byte
+End Type
+Public cMessage() As CachedMessage
+
 Public DebugPacketsOut() As Long
+Public DebugPacketsIn() As Long
 
 Public LastTimeGetTime As Long
 

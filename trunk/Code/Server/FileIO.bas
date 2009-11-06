@@ -37,7 +37,7 @@ Private Const MinLogFileSize As Long = 5242880   '5 MB                          
 ' values since the cropping routine can be pretty slow                                                              '//\\LOGLINE//\\
 Private Const MaxLogFileSize As Long = 10485760  '10 MB                                                             '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
-Private Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long            '//\\LOGLINE//\\
+Public Declare Function MakeSureDirectoryPathExists Lib "imagehlp.dll" (ByVal lpPath As String) As Long             '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
 Public Sub Log(ByVal Text As String, ByVal LogType As LogType)                                                      '//\\LOGLINE//\\
                                                                                                                     '//\\LOGLINE//\\
@@ -588,6 +588,7 @@ Dim DropStr As String
 Dim ItemSplit() As String
 Dim TempSplit() As String
 Dim i As Long
+Dim j As Byte
 
     Log "Call Save_NPCs_Temp", CodeTracker '//\\LOGLINE//\\
     
@@ -654,12 +655,13 @@ Dim i As Long
             If LenB(ShopStr) Then
                 Log "Load_NPC: Splitting ShopStr (" & ShopStr & ")", CodeTracker '//\\LOGLINE//\\
                 TempSplit = Split(ShopStr, vbNewLine)
-                ReDim .VendItems(1 To UBound(TempSplit) + 1)
-                .NumVendItems = UBound(TempSplit) + 1
-                For i = 0 To UBound(TempSplit)
+                j = UBound(TempSplit)   'Cache the ubound - it is much faster to cache it then call UBound twice or more!
+                ReDim .VendItems(1 To j + 1)
+                .NumVendItems = j + 1
+                For i = 0 To j
                     Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
                     ItemSplit = Split(TempSplit(i), " ")
-                    If UBound(ItemSplit) = 1 Then   'If ubound <> 1, we have an invalid item entry
+                    If j = 1 Then   'If ubound <> 1, we have an invalid item entry
                         .VendItems(i + 1).ObjIndex = Val(ItemSplit(0))
                         .VendItems(i + 1).Amount = Val(ItemSplit(1))
                     Else
@@ -672,13 +674,14 @@ Dim i As Long
             If LenB(DropStr) Then
                 Log "Load_NPC: Splitting DropStr (" & DropStr & ")", CodeTracker '//\\LOGLINE//\\
                 TempSplit = Split(DropStr, vbNewLine)
-                ReDim .DropItems(1 To UBound(TempSplit) + 1)
-                ReDim .DropRate(1 To UBound(TempSplit) + 1)
-                .NumDropItems = UBound(TempSplit) + 1
-                For i = 0 To UBound(TempSplit)
+                j = UBound(TempSplit)
+                ReDim .DropItems(1 To j + 1)
+                ReDim .DropRate(1 To j + 1)
+                .NumDropItems = j + 1
+                For i = 0 To j
                     Log "Save_NPCs_Temp: Splitting item information (" & TempSplit(i) & ")", CodeTracker '//\\LOGLINE//\\
                     ItemSplit = Split(TempSplit(i), " ")
-                    If UBound(ItemSplit) = 2 Then   'If ubound <> 2, we have an invalid item entry
+                    If j = 2 Then   'If ubound <> 2, we have an invalid item entry
                         .DropItems(i + 1).ObjIndex = Val(ItemSplit(0))
                         .DropItems(i + 1).Amount = Val(ItemSplit(1))
                         .DropRate(i + 1) = Val(ItemSplit(2))
@@ -1291,7 +1294,12 @@ Dim i As Long
         
         'Put the data in the recordset
         If LenB(Password) Then DB_RS!Password = Password    'If no password is passed, we don't need to update it
-        If NewUser Then DB_RS!name = .name
+        If NewUser Then
+            DB_RS!date_create = Date$
+            DB_RS!name = .name
+            DB_RS!ip = GOREsock_Address(UserChar.ConnID)
+        End If
+        DB_RS!date_lastlogin = Date$
         DB_RS!gm = .flags.GMLevel
         DB_RS!Descr = .Desc
         DB_RS!inventory = InvStr
@@ -1341,6 +1349,86 @@ Dim i As Long
     'Close the recordset
     DB_RS.Close
 
+End Sub
+
+Public Sub Save_PacketsIn()
+
+'*****************************************************************
+'Save the outbound packet records
+'*****************************************************************
+Dim LoopC As Long
+Dim FileNum As Byte
+Dim s As String
+    
+    'Build the string
+    For LoopC = 0 To 254
+        s = s & LoopC & ": " & DebugPacketsIn(LoopC) & vbNewLine
+    Next LoopC
+    s = s & "255: " & DebugPacketsIn(LoopC)    'Easy way to take off the last vbNewLine
+    
+    'Make sure the directory exists
+    MakeSureDirectoryPathExists LogPath
+    
+    'Delete the old file if it exists
+    If Server_FileExist(LogPath & "packetsin.txt", vbNo) Then Kill LogPath & "packetsin.txt"
+    
+    'Write to the file
+    FileNum = FreeFile
+    Open LogPath & "packetsin.txt" For Binary Access Write As #FileNum
+        Put #FileNum, , s
+    Close #FileNum
+
+End Sub
+
+Public Sub Save_PacketsOut()
+
+'*****************************************************************
+'Save the outbound packet records
+'*****************************************************************
+Dim LoopC As Long
+Dim FileNum As Byte
+Dim s As String
+    
+    'Build the string
+    For LoopC = 0 To 254
+        s = s & LoopC & ": " & DebugPacketsOut(LoopC) & vbNewLine
+    Next LoopC
+    s = s & "255: " & DebugPacketsOut(LoopC)    'Easy way to take off the last vbNewLine
+    
+    'Make sure the directory exists
+    MakeSureDirectoryPathExists LogPath
+    
+    'Delete the old file if it exists
+    If Server_FileExist(LogPath & "packetsout.txt", vbNo) Then Kill LogPath & "packetsout.txt"
+    
+    'Write to the file
+    FileNum = FreeFile
+    Open LogPath & "packetsout.txt" For Binary Access Write As #FileNum
+        Put #FileNum, , s
+    Close #FileNum
+
+End Sub
+
+Public Sub Save_FPS()
+
+'*****************************************************************
+'Save the FPS records
+'*****************************************************************
+Dim FileNum As Byte
+
+    'Make sure the directory exists
+    MakeSureDirectoryPathExists LogPath
+    
+    'Delete the old file if it exists
+    If Server_FileExist(LogPath & "serverfps.txt", vbNo) Then Kill LogPath & "serverfps.txt"
+    
+    'Write to the file
+    FileNum = FreeFile
+    Open LogPath & "serverfps.txt" For Binary Access Write As #FileNum
+        Put #FileNum, , FPSIndex
+        Put #FileNum, , ServerFPS()
+    Close #FileNum
+    
 End Sub
 
 Public Function Var_Get(ByVal File As String, ByVal Main As String, ByVal Var As String) As String

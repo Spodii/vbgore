@@ -69,6 +69,8 @@ End Type
 
 'Class module Defined
 Private Type typSocket
+    PacketInPos As Byte     'Used the find the key to encrypt/decrypt with
+    PacketOutPos As Byte
     Socket As Long ' The actual WinSock API socket number
     SocketAddr As typSocketAddr ' Info about the connection
     GOREsock_State As enmSoxState
@@ -118,7 +120,7 @@ Private Declare Function apiBind Lib "WS2_32" Alias "bind" (ByVal s As Long, add
 Private Declare Function apiListen Lib "WS2_32" Alias "listen" (ByVal s As Long, ByVal backlog As Long) As Long
 Private Declare Function apiConnect Lib "WS2_32" Alias "connect" (ByVal s As Long, name As typSocketAddr, ByVal namelen As Long) As Long
 Private Declare Function apiAccept Lib "WS2_32" Alias "accept" (ByVal s As Long, addr As typSocketAddr, addrlen As Long) As Long
-Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hWnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
+Private Declare Function apiWSAAsyncSelect Lib "WS2_32" Alias "WSAAsyncSelect" (ByVal s As Long, ByVal hwnd As Long, ByVal wMsg As Long, ByVal lEvent As Long) As Long
 Private Declare Function apiRecv Lib "WS2_32" Alias "recv" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
 Private Declare Function apiSend Lib "WS2_32" Alias "send" (ByVal s As Long, buf As Any, ByVal buflen As Long, ByVal flags As Long) As Long
 Private Declare Function apiGetSockOpt Lib "WS2_32" Alias "getsockopt" (ByVal s As Long, ByVal Level As Long, ByVal optname As Long, optval As Any, optlen As Long) As Long
@@ -128,8 +130,8 @@ Private Declare Function apiNToHS Lib "WS2_32" Alias "ntohs" (ByVal netshort As 
 Private Declare Function apiIPToNL Lib "WS2_32" Alias "inet_addr" (ByVal cp As String) As Long
 Private Declare Function apiNLToIP Lib "WS2_32" Alias "inet_ntoa" (ByVal inn As Long) As Long
 Private Declare Function apiShutDown Lib "WS2_32" Alias "shutdown" (ByVal s As Long, ByVal how As Long) As Long
-Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hWnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
-Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hWnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
+Private Declare Function apiCallWindowProc Lib "User32" Alias "CallWindowProcA" (ByVal lpPrevWndFunc As Long, ByVal hwnd As Long, ByVal Msg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Private Declare Function apiSetWindowLong Lib "User32" Alias "SetWindowLongA" (ByVal hwnd As Long, ByVal nIndex As Long, ByVal dwNewLong As Long) As Long
 Private Declare Function apiLStrLen Lib "kernel32" Alias "lstrlenA" (ByVal lpString As Any) As Long
 Private Declare Function apiLstrCpy Lib "kernel32" Alias "lstrcpyA" (ByVal lpString1 As String, ByVal lpString2 As Long) As Long
 Private Declare Sub apiCopyMemory Lib "kernel32" Alias "RtlMoveMemory" (pDst As Any, pSrc As Any, ByVal ByteLen As Long)
@@ -167,6 +169,8 @@ Dim tmpSocketAddr As typSocketAddr 'This stores the details of our new socket/cl
         Let Sockets(GOREsock_Accept).Socket = tmpSocket
         Let Sockets(GOREsock_Accept).SocketAddr = tmpSocketAddr 'Set the details of the new socket/client
         Let Sockets(GOREsock_Accept).GOREsock_uMsg = soxSERVER  'This is a Client Socket - It has connected to US
+        Let Sockets(GOREsock_Accept).PacketInPos = 0
+        Let Sockets(GOREsock_Accept).PacketOutPos = 0
         Let Send(GOREsock_Accept).Size = -1
         Erase Send(GOREsock_Accept).buffer
         Call GOREsock_RaiseState(GOREsock_Accept, soxConnecting) ' Could possibly leave this on soxDisconnected, and on Select Case GOREsock_State, thurn it on and set it ready to send data (Or set it to connecting)
@@ -291,6 +295,8 @@ Dim tmpSocketAddr As typSocketAddr
                         Let Sockets(GOREsock_Connect).Socket = tmpSocket
                         Let Sockets(GOREsock_Connect).SocketAddr = tmpSocketAddr 'Set the details of the new socket/client
                         Let Sockets(GOREsock_Connect).GOREsock_uMsg = soxCLIENT ' This is a Server connection - We have connected to it (Could even be another Client computer but the fact is we connected to it)
+                        Let Sockets(GOREsock_Connect).PacketInPos = 0
+                        Let Sockets(GOREsock_Connect).PacketOutPos = 0
                         Let Send(GOREsock_Connect).Size = -1
                         Erase Send(GOREsock_Connect).buffer
                         Call GOREsock_RaiseState(GOREsock_Connect, soxConnecting)
@@ -325,7 +331,9 @@ End Function
 Private Sub GOREsock_GetData(inSox As Long) ' Extracts data from the WinSock Recv buffers and places it in our local buffer (data() array)
 Dim tmpRecvSize As Integer
 Dim tmpBuffer() As Byte
-    
+Dim Size As Integer
+Dim Pos As Long
+
     'Check for valid parameters
     If Not (inSox < 0 Or inSox > Portal.Sockets) Then
         If Sockets(inSox).GOREsock_State = soxIdle Then
@@ -349,12 +357,53 @@ Dim tmpBuffer() As Byte
                         
                     'Get our data
                     Case Else
+                    
+                        If PacketEncTypeServerIn <> PacketEncTypeNone Then
                         
-                        'Copy the actual data over to a new buffer, then send it to the program
-                        ReDim tmpBuffer(0 To tmpRecvSize - 1)
-                        apiCopyMemory tmpBuffer(0), GetBuffer(0), tmpRecvSize
-                        GOREsock_DataArrival inSox, tmpBuffer()
+                            '*** Encrypted Receive ***
+                            Do
+                                
+                                'Get the size of the packet
+                                apiCopyMemory Size, GetBuffer(Pos), 2
+                                Pos = Pos + 2
+
+                                'Resize the buffer to fit the size of the packet
+                                ReDim tmpBuffer(0 To Size - 1)
+                                
+                                'Copy the data into the buffer
+                                apiCopyMemory tmpBuffer(0), GetBuffer(Pos), Size
+                                
+                                'Update the read position
+                                Pos = Pos + Size + 1
+                                
+                                'Decrypt the packet
+                                With Sockets(inSox)
+                                    Select Case PacketEncTypeServerIn
+                                        Case PacketEncTypeXOR
+                                            Encryption_XOR_DecryptByte tmpBuffer(), PacketKeys(.PacketInPos)
+                                        Case PacketEncTypeRC4
+                                            Encryption_RC4_DecryptByte tmpBuffer(), PacketKeys(.PacketInPos)
+                                    End Select
+                                    .PacketInPos = .PacketInPos + 1
+                                    If .PacketInPos > PacketEncKeys - 1 Then .PacketInPos = 0
+                                End With
+                                
+                                'Call the data handling routine
+                                GOREsock_DataArrival inSox, tmpBuffer()
+                                DoEvents
+                                
+                            Loop While Pos < tmpRecvSize - 3
                         
+                        Else
+
+                            '*** Non-encrypted Receive ***
+                            'Copy the actual data over to a new buffer, then send it to the program
+                            ReDim tmpBuffer(0 To tmpRecvSize - 1)
+                            apiCopyMemory tmpBuffer(0), GetBuffer(0), tmpRecvSize
+                            GOREsock_DataArrival inSox, tmpBuffer()
+                            
+                        End If
+                            
                 End Select
                 
                 'Change the socket state (unless it is closing)
@@ -437,6 +486,8 @@ Dim tmpSocketAddr As typSocketAddr
                             Let Sockets(GOREsock_Listen).Socket = tmpSocket
                             Let Sockets(GOREsock_Listen).SocketAddr = tmpSocketAddr 'Set the details of the new socket/client
                             Let Sockets(GOREsock_Listen).GOREsock_uMsg = soxSERVER
+                            Let Sockets(GOREsock_Listen).PacketInPos = 0
+                            Let Sockets(GOREsock_Listen).PacketOutPos = 0
                             Let Send(GOREsock_Listen).Size = -1
                             Erase Send(GOREsock_Listen).buffer
                             Call GOREsock_RaiseState(GOREsock_Listen, soxListening)
@@ -467,6 +518,8 @@ Private Sub GOREsock_RaiseState(inSox As Long, inState As enmSoxState)
 End Sub
 
 Private Sub GOREsock_SendBuffer(inSox As Long)
+Dim i As Integer
+Dim b() As Byte
 
     'Check for invalid parameter
     If Not (inSox < 0 Or inSox > Portal.Sockets) Then
@@ -478,11 +531,61 @@ Private Sub GOREsock_SendBuffer(inSox As Long)
                 
                 'If we have data, send 'er over, cap'n!
                 If Send(inSox).Size + 1 > 0 Then
-                    If apiSend(Sockets(inSox).Socket, Send(inSox).buffer(0), UBound(Send(inSox).buffer) + 1, 0) <> GOREsock_ERROR Then
-                        'All data send, clear the buffer
-                        Let Send(inSox).Size = -1
-                        Erase Send(inSox).buffer
-                    End If
+                    
+                    With Sockets(inSox)
+                        
+                        '*** Encrypted send ***
+                        If PacketEncTypeServerOut <> PacketEncTypeNone Then
+                            
+                            'Encrypt the packet
+                            Select Case PacketEncTypeServerOut
+                                Case PacketEncTypeXOR
+                                    Encryption_XOR_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                Case PacketEncTypeRC4
+                                    Encryption_RC4_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                            End Select
+                            
+                            'Add the length (this is so we can handle packets that get combined in the network)
+                            i = UBound(Send(inSox).buffer) + 1
+                            ReDim b(0 To i + 2)
+                            apiCopyMemory b(2), Send(inSox).buffer(0), i
+                            apiCopyMemory b(0), i, 2
+                            ReDim Send(inSox).buffer(0 To i + 2)
+                            apiCopyMemory Send(inSox).buffer(0), b(0), UBound(Send(inSox).buffer()) + 1
+                        
+                        End If
+                        
+                        'Send the data
+                        If apiSend(Sockets(inSox).Socket, Send(inSox).buffer(0), UBound(Send(inSox).buffer) + 1, 0) <> GOREsock_ERROR Then
+                            
+                            'All data send, clear the buffer
+                            Let Send(inSox).Size = -1
+                            Erase Send(inSox).buffer
+                            
+                            '*** Encrypted send successfully ***
+                            If PacketEncTypeServerOut <> PacketEncTypeNone Then
+                                'Raise the encryption count
+                                .PacketOutPos = .PacketOutPos + 1
+                                If .PacketOutPos > PacketEncKeys - 1 Then .PacketOutPos = 0
+                            End If
+     
+                        Else
+                            
+                            '*** Encrypted send fail ***
+                            'Send failed, unencrypt the packet so we can encrypt it again later
+                            If PacketEncTypeServerOut <> PacketEncTypeNone Then
+                                Select Case PacketEncTypeServerOut
+                                    Case PacketEncTypeXOR
+                                        Encryption_XOR_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                    Case PacketEncTypeRC4
+                                        Encryption_RC4_EncryptByte Send(inSox).buffer(), PacketKeys(.PacketOutPos)
+                                End Select
+                            End If
+                            
+                        End If
+                        
+                    End With
+                    
                 End If
                 
                 'Change the state of the socket (unless it is closing)
@@ -690,9 +793,9 @@ Public Sub GOREsock_UnHook() ' Once the Control is UnHooked, we will not be able
 
 End Sub
 
-Sub GOREsock_Initialize(ByVal hWnd As Long)
+Sub GOREsock_Initialize(ByVal hwnd As Long)
 
-    WindowhWnd = hWnd
+    WindowhWnd = hwnd
 
     If apiWSAStartup(&H101, WSAData) = GOREsock_ERROR Then
         Call MsgBox("WinSock failed to initialize properly - Error#: " & Err.LastDllError, vbApplicationModal + vbCritical, "Critical Error")  'Creates an 'application instance' and memory space in the WinSock DLL (MUST be cleaned up later)
@@ -731,7 +834,7 @@ Private Function GOREsock_WinSockEvent(ByVal lParam As Long) As Integer 'WSAGETS
 
 End Function
 
-Public Function GOREsock_WndProc(ByVal hWnd As Long, ByVal GOREsock_uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
+Public Function GOREsock_WndProc(ByVal hwnd As Long, ByVal GOREsock_uMsg As Long, ByVal wParam As Long, ByVal lParam As Long) As Long
 
     Select Case GOREsock_uMsg
     Case soxSERVER
@@ -793,7 +896,7 @@ Public Function GOREsock_WndProc(ByVal hWnd As Long, ByVal GOREsock_uMsg As Long
             End If
         End Select
     Case Else
-        Let GOREsock_WndProc = apiCallWindowProc(Portal.GOREsock_WndProc, hWnd, GOREsock_uMsg, wParam, lParam)
+        Let GOREsock_WndProc = apiCallWindowProc(Portal.GOREsock_WndProc, hwnd, GOREsock_uMsg, wParam, lParam)
     End Select
 
 End Function

@@ -21,6 +21,7 @@ Public NumBytesForSkills As Long
 Public NPCTradeItems() As NPCTradeItems
 Public NPCTradeItemArraySize As Byte
 Private SkillPos As Long
+
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
 Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
@@ -590,9 +591,11 @@ Dim i As Integer
     'Init file paths
     InitFilePaths
     
-    'Load the socket
-    GOREsock_Initialize frmMain.hWnd
-    
+    'Load frmMain
+    Load frmMain
+    frmMain.Hide
+    DoEvents
+
     'Check if we need to run the updater
     If ForceUpdateCheck = True Then
     
@@ -613,6 +616,9 @@ Dim i As Integer
         
         End If
     End If
+    
+    'Generate the packet keys
+    GenerateEncryptionKeys
     
     'Number of bytes required to fill the skills
     NumBytesForSkills = Int((NumSkills - 1) / 8) + 1
@@ -675,6 +681,7 @@ Dim i As Integer
 
     'Create the buffer
     Set sndBuf = New DataBuffer
+    sndBuf.Clear
 
     'Set the form starting positions
     DoEvents
@@ -752,8 +759,15 @@ Dim i As Integer
             End If
         End If
 
-        'Send the data buffer
-        If SocketOpen = 1 Then Data_Send
+        If SocketOpen Then
+        
+            'Send the data buffer
+            Data_Send
+
+        End If
+        
+        'Too many failed pings, we disconnect
+        If FailedPings > 2 Then IsUnloading = 1
         
         'Do other events
         DoEvents
@@ -770,6 +784,5 @@ Dim i As Integer
     
     'Close down
     frmMain.ShutdownTimer.Enabled = True
-
 
 End Sub

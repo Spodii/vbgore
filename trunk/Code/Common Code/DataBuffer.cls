@@ -12,6 +12,7 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
+
 'This byte buffer was created for being able to automatically convert variables to byte arrays
 'and to be able to access them by retrieving them in the order stored. The main intentions of this
 'was for creating packets, so you could easily send binary packets (in a byte array) instead of
@@ -33,16 +34,30 @@ Option Explicit
 'and you can only retrieve what you have already stored. I did not add in error checking for
 'recieving past the stored size just for the slightest speed increase (every ms counts!), along
 'with that you shouldn't be even trying to retrieve past what you have stored.
+'
+'NEW: Allocate and Pre-Allocate
+'These routines are put in to prevent having to use ReDim Preserve over and over again, as it is VERY
+'slow to constantly use (especially byte-by-byte). Both of the commands will resize the array by the
+'amount of bytes that you specify. In an optimal situation, you will call PreAllocate once and fill
+'the whole buffer. It is okay to be short some bytes (such as if you know a string will always be
+'longer then 10 bytes, but no idea how long in total) since it will auto-resize as needed if you don't
+'specify enough of a preallocating. Though, it is best to never over-size the array, or else you will
+'be sending extra, empty data.
+'Allocate: Saves the buffer currently existing, then allocates X amount of bytes.
+'PreAllocate: ReDims (no preserve) the buffer, and clears the buffer variables. If you use this, only
+' use it at the start of filling the buffer, and in subsitute of using .Clear.
+
 Private PutBytePos As Long
 Private GetBytePos As Long
 Private ByteBuffer() As Byte
+Private ByteBufferUbound As Long
 
 Private Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 
 Public Sub Overflow()
 
     'Force the buffer to overflow to break the packet reading loop
-    GetBytePos = UBound(ByteBuffer) + 10
+    GetBytePos = ByteBufferUbound + 10
 
 End Sub
 
@@ -59,6 +74,7 @@ Public Sub Clear()
 
     PutBytePos = 0
     GetBytePos = 0
+    ByteBufferUbound = -1
     Erase ByteBuffer
 
 End Sub
@@ -91,8 +107,8 @@ Public Function Get_Byte() As Byte
 'Retrieve a byte from the buffer (1 byte)
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos > UBound(ByteBuffer) Then Exit Function   'Non-log style
+    If GetBytePos > ByteBufferUbound Then GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos > ByteBufferUbound Then Exit Function   'Non-log style
     
     CopyMemory Get_Byte, ByteBuffer(GetBytePos), 1
     GetBytePos = GetBytePos + 1
@@ -110,8 +126,8 @@ Public Function Get_Integer() As Integer
 'Retrieve an integer from the buffer (2 bytes)
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos + 1 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos + 1 > UBound(ByteBuffer) Then Exit Function  'Non-log style
+    If GetBytePos + 1 > ByteBufferUbound Then GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 1 > ByteBufferUbound Then Exit Function  'Non-log style
 
     CopyMemory Get_Integer, ByteBuffer(GetBytePos), 2
     GetBytePos = GetBytePos + 2
@@ -129,8 +145,8 @@ Public Function Get_Long() As Long
 'Retrieve a long from the buffer (4 bytes)
 
     On Error GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos + 3 > UBound(ByteBuffer) Then GoTo ErrOut '//\\LOGLINE//\\
-    If GetBytePos + 3 > UBound(ByteBuffer) Then Exit Function  'Non-log style
+    If GetBytePos + 3 > ByteBufferUbound Then GoTo ErrOut '//\\LOGLINE//\\
+    If GetBytePos + 3 > ByteBufferUbound Then Exit Function  'Non-log style
 
     CopyMemory Get_Long, ByteBuffer(GetBytePos), 4
     GetBytePos = GetBytePos + 4
@@ -170,8 +186,7 @@ Dim ArraySize As Byte
     ArraySize = Get_Byte    'Get the size of the string
 
     'Check for a valid size before sizing the array
-    If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
-    If ArraySize = 0 Then Exit Function   'Non-log style
+    If ArraySize = 0 Then Exit Function
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -202,8 +217,7 @@ Dim ArraySize As Integer
     ArraySize = Get_Integer 'Get the size of the string
 
     'Check for a valid size before sizing the array
-    If ArraySize = 0 Then GoTo ErrOut '//\\LOGLINE//\\
-    If ArraySize = 0 Then Exit Function   'Non-log style
+    If ArraySize = 0 Then Exit Function
 
     'Resize the temp byte array to fit the size of the string
     ReDim tempB(ArraySize - 1)
@@ -225,9 +239,11 @@ End Function
 
 Public Sub Put_Byte(ByVal Value As Byte)
 
-'Store a byte (1 byte)
-
-    ReDim Preserve ByteBuffer(0 To PutBytePos)
+    'Store a byte (1 byte)
+    If ByteBufferUbound < PutBytePos Then
+        ReDim Preserve ByteBuffer(0 To PutBytePos)
+        ByteBufferUbound = PutBytePos
+    End If
     CopyMemory ByteBuffer(PutBytePos), Value, 1
     PutBytePos = PutBytePos + 1
 
@@ -235,9 +251,11 @@ End Sub
 
 Public Sub Put_Integer(ByVal Value As Integer)
 
-'Store an integer (2 bytes)
-
-    ReDim Preserve ByteBuffer(0 To PutBytePos + 1)
+    'Store an integer (2 bytes)
+    If ByteBufferUbound < PutBytePos + 1 Then
+        ReDim Preserve ByteBuffer(0 To PutBytePos + 1)
+        ByteBufferUbound = PutBytePos + 1
+    End If
     CopyMemory ByteBuffer(PutBytePos), Value, 2
     PutBytePos = PutBytePos + 2
 
@@ -245,9 +263,11 @@ End Sub
 
 Public Sub Put_Long(ByVal Value As Long)
 
-'Store a long (4 bytes)
-
-    ReDim Preserve ByteBuffer(0 To PutBytePos + 3)
+    'Store a long (4 bytes)
+    If ByteBufferUbound < PutBytePos + 3 Then
+        ReDim Preserve ByteBuffer(0 To PutBytePos + 3)
+        ByteBufferUbound = PutBytePos + 3
+    End If
     CopyMemory ByteBuffer(PutBytePos), Value, 4
     PutBytePos = PutBytePos + 4
 
@@ -255,55 +275,75 @@ End Sub
 
 Public Sub Put_String(ByRef Value As String)
 Dim tempB() As Byte
+Dim i As Long
 
-'Store a string
+    'Store a string
 
-    'Check for invalid value
-    If Value = vbNullString Then Exit Sub
+    'Check for an empty string
+    If Value = vbNullString Then
+        Put_Byte 0
+        Exit Sub
+    End If
+
+    'Cache the UBound
+    i = Len(Value) - 1
 
     'Convert the string to a byte array
     tempB = StrConv(Value, vbFromUnicode)
     
     'Store a byte-long value that represents the size of the string
-    If UBound(tempB) > 254 Then
+    If i > 254 Then
         Log "Put_String: The following string was too large to pack into the Put_String buffer! " & Value, CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
-    Put_Byte UBound(tempB) + 1
+    Put_Byte i + 1
 
     'Resize the array to fit the string
-    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB))
-
+    If ByteBufferUbound < PutBytePos + i Then
+        ReDim Preserve ByteBuffer(0 To PutBytePos + i)
+        ByteBufferUbound = PutBytePos + i
+    End If
+    
     'Store the byte array of the string into the buffer byte array
-    CopyMemory ByteBuffer(PutBytePos), tempB(0), UBound(tempB) + 1
-    PutBytePos = PutBytePos + UBound(tempB) + 1
+    CopyMemory ByteBuffer(PutBytePos), tempB(0), i + 1
+    PutBytePos = PutBytePos + i + 1
 
 End Sub
 
 Public Sub Put_StringEX(ByRef Value As String)
-
 Dim tempB() As Byte
+Dim i As Long
+
     'Store a very long string
     
-    'Check for invalid value
-    If Value = vbNullString Then Exit Sub
+    'Check for an empty string
+    If Value = vbNullString Then
+        Put_Integer 0
+        Exit Sub
+    End If
+    
+    'Cache the UBound
+    i = Len(Value) - 1
     
     'Convert the string to a byte array
     tempB = StrConv(Value, vbFromUnicode)
 
     'Store a byte-long value that represents the size of the string
-    If UBound(tempB) > 32760 Then
+    If i > 32760 Then
         Log "Put_StringEX: The following string was too large to pack into the Put_StringEX buffer! " & Value, CriticalError '//\\LOGLINE//\\
         Exit Sub
     End If
-    Put_Integer UBound(tempB) + 1
+    Put_Integer i + 1
  
     'Resize the array to fit the string
-    ReDim Preserve ByteBuffer(0 To PutBytePos + UBound(tempB))
-
+    If ByteBufferUbound < PutBytePos + i Then
+        ReDim Preserve ByteBuffer(0 To PutBytePos + i)
+        ByteBufferUbound = PutBytePos + i
+    End If
+    
     'Store the byte array of the string into the buffer byte array
-    CopyMemory ByteBuffer(PutBytePos), tempB(0), UBound(tempB) + 1
-    PutBytePos = PutBytePos + UBound(tempB) + 1
+    CopyMemory ByteBuffer(PutBytePos), tempB(0), i + 1
+    PutBytePos = PutBytePos + i + 1
 
 End Sub
 
@@ -312,11 +352,38 @@ Public Sub Set_Buffer(ByRef Value() As Byte)
     'Clear the values
     Clear
 
+    'Cache the UBound
+    ByteBufferUbound = UBound(Value)
+
     'Set the byte buffer to the size of the array being sent in
-    ReDim ByteBuffer(0 To UBound(Value))
+    ReDim ByteBuffer(0 To ByteBufferUbound)
 
     'Copy to the byte buffer
-    CopyMemory ByteBuffer(0), Value(0), UBound(Value) + 1
+    CopyMemory ByteBuffer(0), Value(0), ByteBufferUbound + 1
 
 End Sub
 
+Public Sub Allocate(ByVal NumBytes As Long)
+
+    'Allocate the memory in bulk
+    ByteBufferUbound = ByteBufferUbound + NumBytes
+    ReDim Preserve ByteBuffer(0 To ByteBufferUbound)
+
+End Sub
+
+Public Sub PreAllocate(ByVal NumBytes As Long)
+
+    'Allocate the memory in bulk without preserving data
+    ByteBufferUbound = NumBytes - 1
+    PutBytePos = 0
+    GetBytePos = 0
+    ReDim ByteBuffer(0 To ByteBufferUbound)
+    
+End Sub
+
+Private Sub Class_Initialize()
+    
+    'Set the buffer UBound
+    ByteBufferUbound = -1
+
+End Sub

@@ -82,7 +82,7 @@ Dim X As Long
             If MapInfo(nPos.Map).Data(nPos.X, nPos.Y).UserIndex > 0 Then
 
                 'Face the NPC to the target and tell everyone in the PC area to show the attack animation
-                ConBuf.Clear
+                ConBuf.PreAllocate 7
                 ConBuf.Put_Byte DataCode.User_Rotate
                 ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
                 ConBuf.Put_Byte HeadingLoop
@@ -118,7 +118,7 @@ Dim X As Long
                     NPCList(NPCIndex).Char.HeadHeading = NewHeading
     
                     'Face the NPC to the target
-                    ConBuf.Clear
+                    ConBuf.PreAllocate 4
                     ConBuf.Put_Byte DataCode.User_Rotate
                     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
                     ConBuf.Put_Byte NewHeading
@@ -575,30 +575,38 @@ Dim Hit As Integer
     NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + NPCDelayFight
     
     'Create the sound effect and make the attack grh
-    ConBuf.Clear
-    ConBuf.Put_Byte DataCode.Server_PlaySound3D
-    ConBuf.Put_Byte SOUND_SWING
-    ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
-    ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
     If NPCList(NPCIndex).AttackGrh > 0 Then
         If NPCList(NPCIndex).AttackRange > 1 Then
+            'Play sound effect and make projectile
+            ConBuf.PreAllocate 14
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
+            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeProjectile
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
             ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
             ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
             ConBuf.Put_Byte NPCList(NPCIndex).ProjectileRotateSpeed
+            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
         Else
+            'Play sound effect and make slash
+            ConBuf.PreAllocate 11
+            ConBuf.Put_Byte DataCode.Server_PlaySound3D
+            ConBuf.Put_Byte SOUND_SWING
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.X
+            ConBuf.Put_Byte NPCList(NPCIndex).Pos.Y
             ConBuf.Put_Byte DataCode.Server_MakeSlash
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
             ConBuf.Put_Long NPCList(NPCIndex).AttackGrh
+            Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
         End If
     End If
-    Data_Send ToPCArea, UserIndex, ConBuf.Get_Buffer
 
     'Calculate if they hit
     If Server_RandomNumber(1, 100) >= ((NPCList(NPCIndex).ModStat(SID.WeaponSkill) + 50) - UserList(UserIndex).Stats.ModStat(SID.Agi)) Then
         Log "NPC_AttackUser: NPC's attack missed", CodeTracker '//\\LOGLINE//\\
-        ConBuf.Clear
+        ConBuf.PreAllocate 5
         ConBuf.Put_Byte DataCode.Server_SetCharDamage
         ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
         ConBuf.Put_Integer -1
@@ -616,7 +624,7 @@ Dim Hit As Integer
     UserList(UserIndex).Stats.BaseStat(SID.MinHP) = UserList(UserIndex).Stats.BaseStat(SID.MinHP) - Hit
 
     'Display damage
-    ConBuf.Clear
+    ConBuf.PreAllocate 5
     ConBuf.Put_Byte DataCode.Server_SetCharDamage
     ConBuf.Put_Integer UserList(UserIndex).Char.CharIndex
     ConBuf.Put_Integer Hit
@@ -627,7 +635,7 @@ Dim Hit As Integer
         Log "NPC_AttackUser: NPC's attack killed user", CodeTracker '//\\LOGLINE//\\
     
         'Kill user
-        ConBuf.Clear
+        ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
         ConBuf.Put_Byte DataCode.Server_Message
         ConBuf.Put_Byte 73
         ConBuf.Put_String NPCList(NPCIndex).name
@@ -644,6 +652,7 @@ Private Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, By
 'Changes a NPC char's head,body and heading
 '*****************************************************************
 Dim ChangeFlags As Byte
+Dim FlagSizes As Byte
 
     Log "Call NPC_ChangeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
 
@@ -662,26 +671,32 @@ Dim ChangeFlags As Byte
         If Body > -1 Then
             If .Body <> Body Then .Body = Body
             ChangeFlags = ChangeFlags Or 1
+            FlagSizes = FlagSizes + 2
         End If
         If Head > -1 Then
             If .Head <> Head Then .Head = Head
             ChangeFlags = ChangeFlags Or 2
+            FlagSizes = FlagSizes + 2
         End If
         If Heading > 0 Then
             If .Heading <> Heading Then .Heading = Heading
             ChangeFlags = ChangeFlags Or 4
+            FlagSizes = FlagSizes + 1
         End If
         If Weapon > -1 Then
             If .Weapon <> Weapon Then .Weapon = Weapon
             ChangeFlags = ChangeFlags Or 8
+            FlagSizes = FlagSizes + 2
         End If
         If Hair > -1 Then
             If .Hair <> Hair Then .Hair = Hair
             ChangeFlags = ChangeFlags Or 16
+            FlagSizes = FlagSizes + 2
         End If
         If Wings > -1 Then
             If .Wings <> Wings Then .Wings = Wings
             ChangeFlags = ChangeFlags Or 32
+            FlagSizes = FlagSizes + 2
         End If
     End With
     
@@ -689,7 +704,7 @@ Dim ChangeFlags As Byte
     If ChangeFlags = 0 Then Exit Sub
     
     'Create the packet
-    ConBuf.Clear
+    ConBuf.PreAllocate 4 + FlagSizes
     ConBuf.Put_Byte DataCode.Server_ChangeChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     ConBuf.Put_Byte ChangeFlags
@@ -778,7 +793,7 @@ Dim HPB As Byte
     If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
         HPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
         If HPA <> HPB Then
-            ConBuf.Clear
+            ConBuf.PreAllocate 4
             ConBuf.Put_Byte DataCode.Server_CharHP
             ConBuf.Put_Byte HPB
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
@@ -828,7 +843,7 @@ Dim i As Integer
     If NPCList(NPCIndex).BaseStat(SID.MinHP) > 0 Then
         HPB = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
         If HPA <> HPB Then
-            ConBuf.Clear
+            ConBuf.PreAllocate 4
             ConBuf.Put_Byte DataCode.Server_CharHP
             ConBuf.Put_Byte HPB
             ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
@@ -838,7 +853,7 @@ Dim i As Integer
 
     'Turn the NPC aggressive-faced
     If NPCList(NPCIndex).Counters.AggressiveCounter <= 0 Then
-        ConBuf.Clear
+        ConBuf.PreAllocate 4
         ConBuf.Put_Byte DataCode.User_AggressiveFace
         ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
         ConBuf.Put_Byte 1
@@ -847,7 +862,7 @@ Dim i As Integer
     NPCList(NPCIndex).Counters.AggressiveCounter = CurrentTime + AGGRESSIVEFACETIME
 
     'Display the damage on the client screen
-    ConBuf.Clear
+    ConBuf.PreAllocate 5
     ConBuf.Put_Byte DataCode.Server_SetCharDamage
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     ConBuf.Put_Integer Damage
@@ -870,7 +885,7 @@ Dim i As Integer
                         'User must kill at least one more of the NPC
                         If UserList(UserIndex).QuestStatus(i).NPCKills < QuestData(UserList(UserIndex).Quest(i)).FinishReqNPCAmount Then
                             UserList(UserIndex).QuestStatus(i).NPCKills = UserList(UserIndex).QuestStatus(i).NPCKills + 1
-                            ConBuf.Clear
+                            ConBuf.PreAllocate 7 + Len(NPCName(QuestData(UserList(UserIndex).Quest(i)).FinishReqNPC))
                             ConBuf.Put_Byte DataCode.Server_Message
                             ConBuf.Put_Byte 74
                             ConBuf.Put_Integer UserList(UserIndex).QuestStatus(i).NPCKills
@@ -889,7 +904,7 @@ Dim i As Integer
             UserList(UserIndex).Stats.BaseStat(SID.Gold) = UserList(UserIndex).Stats.BaseStat(SID.Gold) + NPCList(NPCIndex).GiveGLD
 
             'Display kill message to the user
-            ConBuf.Clear
+            ConBuf.PreAllocate 3 + Len(NPCList(NPCIndex).name)
             ConBuf.Put_Byte DataCode.Server_Message
             ConBuf.Put_Byte 75
             ConBuf.Put_String NPCList(NPCIndex).name
@@ -945,7 +960,7 @@ Private Sub NPC_EraseChar(ByVal NPCIndex As Integer)
     MapInfo(NPCList(NPCIndex).Pos.Map).Data(NPCList(NPCIndex).Pos.X, NPCList(NPCIndex).Pos.Y).NPCIndex = 0
 
     'Send erase command to clients
-    ConBuf.Clear
+    ConBuf.PreAllocate 3
     ConBuf.Put_Byte DataCode.Server_EraseChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
     Data_Send ToMap, 0, ConBuf.Get_Buffer, NPCList(NPCIndex).Pos.Map
@@ -1004,8 +1019,11 @@ Dim SndMP As Byte
     If NPCList(NPCIndex).ModStat(SID.MaxHP) > 0 Then SndHP = CByte((NPCList(NPCIndex).BaseStat(SID.MinHP) / NPCList(NPCIndex).ModStat(SID.MaxHP)) * 100)
     If NPCList(NPCIndex).ModStat(SID.MaxMAN) > 0 Then SndMP = CByte((NPCList(NPCIndex).BaseStat(SID.MinMAN) / NPCList(NPCIndex).ModStat(SID.MaxMAN)) * 100)
 
+    'NPCs wont be created with active spells
+    ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
+
     'Send make character command to clients
-    ConBuf.Clear
+    ConBuf.PreAllocate 21 + Len(NPCList(NPCIndex).name)
     ConBuf.Put_Byte DataCode.Server_MakeChar
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Body
     ConBuf.Put_Integer NPCList(NPCIndex).Char.Head
@@ -1021,9 +1039,6 @@ Dim SndMP As Byte
     ConBuf.Put_Byte SndHP
     ConBuf.Put_Byte SndMP
     ConBuf.Put_Byte NPCList(NPCIndex).ChatID
-
-    'NPCs wont be created with active spells
-    ZeroMemory NPCList(NPCIndex).Skills, Len(NPCList(NPCIndex).Skills)
 
     'Send the NPC
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, Map
@@ -1051,7 +1066,7 @@ Dim nPos As WorldPos
         NPCList(NPCIndex).Counters.ActionDelay = CurrentTime + Server_WalkTimePerTile(NPCList(NPCIndex).ModStat(SID.Speed), 0)
 
         'Send the movement update packet
-        ConBuf.Clear
+        ConBuf.PreAllocate 6
         ConBuf.Put_Byte DataCode.Server_MoveChar
         ConBuf.Put_Integer NPCList(NPCIndex).Char.CharIndex
         ConBuf.Put_Byte nPos.X
