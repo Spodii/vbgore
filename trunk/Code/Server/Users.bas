@@ -1293,6 +1293,7 @@ Dim MsgData As MailData
             '*** Check for NPC banker ***
             If NPCList(TempIndex).AI = 6 Then
                 UserList(UserIndex).Flags.TradeWithNPC = TempIndex
+                ConBuf.PreAllocate 2
                 ConBuf.Put_Byte DataCode.User_Bank_Open
                 For LoopC = 1 To MAX_INVENTORY_SLOTS
                     If UserList(UserIndex).Bank(LoopC).ObjIndex > 0 Then

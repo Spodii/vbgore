@@ -885,7 +885,7 @@ Sub Game_SaveMapData(MapNum As Integer, Optional ByVal IsBackup As Boolean = Fal
 '*****************************************************************
 'Saves all info of a specific map (used for live-editing)
 '*****************************************************************
-
+Dim InBright As Boolean
 Dim FileNumMap As Byte
 Dim FileNumInf As Byte
 Dim ByFlags As Long
@@ -897,8 +897,8 @@ Dim i As Integer
 
     'Check for bright mode
     If BrightChkValue = 1 Then
-        MsgBox "Error! Can not save a map while in Bright Mode!", vbOKOnly
-        Exit Sub
+        BrightPic_Click
+        InBright = True
     End If
     
     'Check for any NPCs on blocked tiles
@@ -1183,6 +1183,45 @@ SkipCheck:
     End If
         
     Engine_CreateTileLayers
+    
+    If InBright Then
+        BrightPic_Click
+    End If
+
+End Sub
+
+Public Sub BrightPic_Click()
+Dim X As Byte
+Dim Y As Byte
+Dim i As Byte
+
+    If BrightChkValue = 1 Then
+        BrightChkValue = 0
+    Else
+        BrightChkValue = 1
+    End If
+
+    'Turn on
+    If BrightChkValue = 1 Then
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
+                For i = 1 To 24
+                    MapData(X, Y).Light(i) = -1
+                Next i
+            Next Y
+        Next X
+    
+    'Turn off
+    ElseIf BrightChkValue = 0 Then
+        For X = 1 To MapInfo.Width
+            For Y = 1 To MapInfo.Height
+                For i = 1 To 24
+                    MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
+                Next i
+            Next Y
+        Next X
+    
+    End If
 
 End Sub
 

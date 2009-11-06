@@ -290,7 +290,7 @@ Begin VB.Form frmMain
          TabIndex        =   5
          Text            =   "32"
          ToolTipText     =   "Height of each grid segment in pixels"
-         Top             =   960
+         Top             =   600
          Width           =   615
       End
       Begin VB.TextBox GridWidthTxt 
@@ -299,7 +299,7 @@ Begin VB.Form frmMain
          TabIndex        =   3
          Text            =   "32"
          ToolTipText     =   "Width of each grid segment in pixels"
-         Top             =   600
+         Top             =   960
          Width           =   615
       End
       Begin VB.Label Label1 

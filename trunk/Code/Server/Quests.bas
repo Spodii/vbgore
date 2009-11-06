@@ -326,7 +326,7 @@ Dim TempNPCName As String
         End If
     Else
         If QuestData(QuestID).FinishReqObj Then
-            MessageID = 11                      'Needs object
+            MessageID = 10                      'Needs object
         Else
             'No object or NPC requirement found! Stupid quests don't deserve to be talked about
             Log "Quest_SendReqString: Error in Quest by ID " & QuestID & " - quest has no requirements!", CriticalError '//\\LOGLINE//\\

@@ -1213,7 +1213,9 @@ Dim FilePath As String
     
     'Check if the texture exists
     If Engine_FileExist(FilePath, vbNormal) = False Then
-        MsgBox "Error! Could not find the following texture file:" & vbNewLine & FilePath, vbOKOnly
+        MsgBox "Error! Could not find the following texture file:" & vbNewLine & FilePath & vbNewLine & vbNewLine & _
+            "A back-up of your map has been made and placed in your \Maps\ and \MapsEX\ folder.", vbOKOnly
+        Game_SaveMapData CurMap, True
         IsUnloading = 1
         Exit Sub
     End If

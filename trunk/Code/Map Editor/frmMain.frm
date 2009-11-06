@@ -660,41 +660,6 @@ Private Sub BlocksPic_Click()
 
 End Sub
 
-Private Sub BrightPic_Click()
-Dim X As Byte
-Dim Y As Byte
-Dim i As Byte
-
-    If BrightChkValue = 1 Then
-        BrightChkValue = 0
-    Else
-        BrightChkValue = 1
-    End If
-
-    'Turn on
-    If BrightChkValue = 1 Then
-        For X = 1 To MapInfo.Width
-            For Y = 1 To MapInfo.Height
-                For i = 1 To 24
-                    MapData(X, Y).Light(i) = -1
-                Next i
-            Next Y
-        Next X
-    
-    'Turn off
-    ElseIf BrightChkValue = 0 Then
-        For X = 1 To MapInfo.Width
-            For Y = 1 To MapInfo.Height
-                For i = 1 To 24
-                    MapData(X, Y).Light(i) = SaveLightBuffer(X, Y).Light(i)
-                Next i
-            Next Y
-        Next X
-    
-    End If
-
-End Sub
-
 Private Sub CharsPic_Click()
 
     If CharsChkValue = 1 Then

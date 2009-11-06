@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "mswinsck.ocx"
 Object = "{00C99381-8913-471F-9EED-4A517B2EB0F9}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
@@ -426,7 +426,7 @@ Dim i As Long
     
     'Hide the server in the system tray
     TrayAdd Me, Server_BuildToolTipString, MouseMove
-    Me.Hide
+    Me.Visible = False
     Me.Refresh
     DoEvents
     

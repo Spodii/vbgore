@@ -1916,152 +1916,167 @@ Sub Input_Mouse_Move()
     'Check if left mouse is pressed
     If MouseLeftDown Then
 
-        'Move QuickBar
-        If SelGameWindow = QuickBarWindow Then
-            With GameWindow.QuickBar.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move ChatWindow
-        ElseIf SelGameWindow = ChatWindow Then
-            With GameWindow.ChatWindow.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-                Engine_UpdateChatArray
-            End With
-            'Move Stat Window
-        ElseIf SelGameWindow = StatWindow Then
-            With GameWindow.StatWindow.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Inventory
-        ElseIf SelGameWindow = InventoryWindow Then
-            With GameWindow.Inventory.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Shop
-        ElseIf SelGameWindow = ShopWindow Then
-            With GameWindow.Shop.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Bank
-        ElseIf SelGameWindow = BankWindow Then
-            With GameWindow.Bank.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Mailbox
-        ElseIf SelGameWindow = MailboxWindow Then
-            With GameWindow.Mailbox.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move View Message
-        ElseIf SelGameWindow = ViewMessageWindow Then
-            With GameWindow.ViewMessage.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move write message
-        ElseIf SelGameWindow = WriteMessageWindow Then
-            With GameWindow.WriteMessage.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Amount
-        ElseIf SelGameWindow = AmountWindow Then
-            With GameWindow.Amount.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move Chat window
-        ElseIf SelGameWindow = NPCChatWindow Then
-            With GameWindow.NPCChat.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-            'Move the trade window
-        ElseIf SelGameWindow = TradeWindow Then
-            With GameWindow.Trade.Screen
-                .X = .X + MousePosAdd.X
-                .Y = .Y + MousePosAdd.Y
-                If WindowsInScreen Then
-                    If .X < 0 Then .X = 0
-                    If .Y < 0 Then .Y = 0
-                    If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
-                    If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
-                End If
-            End With
-        End If
+        Select Case SelGameWindow
+
+                'Move QuickBar
+            Case QuickBarWindow
+                With GameWindow.QuickBar.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move ChatWindow
+            Case ChatWindow
+                With GameWindow.ChatWindow.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                    Engine_UpdateChatArray
+                End With
+                
+                'Move Stat Window
+            Case StatWindow
+                With GameWindow.StatWindow.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Inventory
+            Case InventoryWindow
+                With GameWindow.Inventory.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Shop
+            Case ShopWindow
+                With GameWindow.Shop.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Bank
+            Case BankWindow
+                With GameWindow.Bank.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Mailbox
+            Case MailboxWindow
+                With GameWindow.Mailbox.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move View Message
+            Case ViewMessageWindow
+                With GameWindow.ViewMessage.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move write message
+            Case WriteMessageWindow
+                With GameWindow.WriteMessage.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Amount
+            Case AmountWindow
+                With GameWindow.Amount.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move Chat window
+            Case NPCChatWindow
+                With GameWindow.NPCChat.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+                
+                'Move the trade window
+            Case TradeWindow
+                With GameWindow.Trade.Screen
+                    .X = .X + MousePosAdd.X
+                    .Y = .Y + MousePosAdd.Y
+                    If WindowsInScreen Then
+                        If .X < 0 Then .X = 0
+                        If .Y < 0 Then .Y = 0
+                        If .X > ScreenWidth - .Width Then .X = ScreenWidth - .Width
+                        If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
+                    End If
+                End With
+            
+        End Select
+        
     End If
 
 End Sub
@@ -2184,9 +2199,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = QuickBarWindow
-                        Exit Function
                     End If
                 End With
             End If
@@ -2209,9 +2221,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = InventoryWindow
-                        Exit Function
                     End If
                 End With
             End If
@@ -2236,9 +2245,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = ShopWindow
-                        Exit Function
                     End If
                 End With
             End If
@@ -2259,9 +2265,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = ShopWindow
-                        Exit Function
                     End If
                 End With
             End If
@@ -2280,9 +2283,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = ViewMessageWindow
-                        Exit Function
                     End If
                 End With
             End If
@@ -2301,9 +2301,6 @@ Dim i As Integer
                                 Exit Function
                             End If
                         Next i
-                        'Item was not clicked
-                        SelGameWindow = WriteMessageWindow
-                        Exit Function
                     End If
                 End With
             End If

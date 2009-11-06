@@ -1856,6 +1856,10 @@ Private Function Engine_Init_D3DDevice(D3DCREATEFLAGS As CONST_D3DCREATEFLAGS) A
         D3DWindow.AutoDepthStencilFormat = D3DFMT_D16
     End If
     
+    'Make sure the form is the correct side
+    frmMain.Width = ScreenWidth * Screen.TwipsPerPixelX
+    frmMain.Height = ScreenHeight * Screen.TwipsPerPixelY
+    
     'Set the D3DDevices
     If Not D3DDevice Is Nothing Then Set D3DDevice = Nothing
     Set D3DDevice = D3D.CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, frmMain.hwnd, D3DCREATEFLAGS, D3DWindow)
@@ -5414,7 +5418,7 @@ Dim Layer As Byte
                 'End the rendering (scene)
                 .EndScene
                 
-                'Flip the backbuffer to the scree
+                'Flip the backbuffer to the screen
                 .Present ByVal 0, ByVal 0, 0, ByVal 0
                 
             End With
@@ -5605,8 +5609,8 @@ Dim Layer As Byte
                 
                 'Update the position
                 Angle = DegreeToRadian * Engine_GetAngle(ProjectileList(j).X, ProjectileList(j).Y, ProjectileList(j).tX, ProjectileList(j).tY)
-                ProjectileList(j).X = ProjectileList(j).X + (Sin(Angle) * 10)
-                ProjectileList(j).Y = ProjectileList(j).Y - (Cos(Angle) * 10)
+                ProjectileList(j).X = ProjectileList(j).X + (Sin(Angle) * ElapsedTime * 0.63)
+                ProjectileList(j).Y = ProjectileList(j).Y - (Cos(Angle) * ElapsedTime * 0.63)
                 
                 'Update the rotation
                 If ProjectileList(j).RotateSpeed > 0 Then

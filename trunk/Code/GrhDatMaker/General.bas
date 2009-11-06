@@ -1,6 +1,21 @@
 Attribute VB_Name = "General"
 Option Explicit
 
+Private GrhBuffer() As Long  'Holds all the entered Grh values in order they appear in GrhRaw.txt
+Private GrhBufUBound As Long
+
+Private GrhExist() As Byte   'Holds if the Grh (specified by index) exists or not - created with
+Private GrhExistUBound As Long  'the GrhBuffer() array after the duplication check
+
+Private Type BadPaperdollGrh
+    Grh As Long
+    RetStr As String
+    RetStrNum As Long
+    File As String
+End Type
+Private BadPaperdollGrh() As BadPaperdollGrh
+Private BadPaperdollGrhUBound As Long
+
 Private Powersof2(1 To 14) As Long
 Private Declare Function WritePrivateProfileString Lib "Kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 
@@ -36,6 +51,34 @@ Dim i As Long
 
 End Function
 
+Private Sub CreateGrhExist()
+
+'*****************************************************************
+'Turns GrhBuffer() into GrhExist()
+'GrhBuffer() holds all of the Grh indexes in order they appear
+'GrhExist() holds if a grh exists or not, where the index of GrhExist() is the Grh index
+'*****************************************************************
+Dim i As Long
+
+    'Find the highest index
+    For i = 1 To GrhBufUBound
+        If GrhBuffer(i) > GrhExistUBound Then GrhExistUBound = GrhBuffer(i)
+    Next i
+    
+    'Create the GrhExist() array
+    ReDim GrhExist(1 To GrhExistUBound)
+    
+    'Fill in the values for Grhs that exist
+    For i = 1 To GrhBufUBound
+        GrhExist(GrhBuffer(i)) = 1
+    Next i
+    
+    'Now, every value that wasn't in GrhBuffer() is set to 0 in GrhExist(), and those that are in there are set to 1
+    'Erase the GrhBuffer, we're done with it
+    Erase GrhBuffer
+
+End Sub
+
 Private Sub Main()
 
 '*****************************************************************
@@ -43,7 +86,6 @@ Private Sub Main()
 '*****************************************************************
 Dim ImageSize As CImageInfo
 Dim FileList() As String
-Dim GrhBuffer() As Long  'Holds all the entered Grh values
 Dim TempSplit() As String
 Dim sX As Integer
 Dim sY As Integer
@@ -97,6 +139,7 @@ Dim Lines As Long
     FileNum = 0
     sX = 0
     sY = 0
+    Erase FileList
 
     'Delete any old file
     If FileExist(DataPath & "grh.dat", vbNormal) = True Then Kill DataPath & "grh.dat"
@@ -108,19 +151,30 @@ Dim Lines As Long
     Open Data2Path & "GrhRaw.txt" For Input As #2
 
     '*** Do a loop to check for repeat numbers ***
+    GrhBufUBound = 1000
+    ReDim GrhBuffer(1 To GrhBufUBound)
+    
+    'Grab all the numbers
     While Not EOF(2)
-        DoEvents
         Line Input #2, TempLine
+
         If LCase$(Left$(TempLine, 3)) = "grh" Then
             TempLine = Right$(TempLine, Len(TempLine) - 3)
             If InStr(1, TempLine, "=") <= 0 Then GoTo ErrorHandler
             Grh = CLng(Left$(TempLine, InStr(1, TempLine, "=", vbTextCompare) - 1))
             Lines = Lines + 1
-            ReDim Preserve GrhBuffer(1 To Lines)
+            If Lines > GrhBufUBound Then
+                GrhBufUBound = GrhBufUBound + 250
+                ReDim Preserve GrhBuffer(1 To GrhBufUBound)
+            End If
             GrhBuffer(Lines) = Grh
         End If
-
+        
     Wend
+    
+    'Trim down to the smallest buffer size
+    GrhBufUBound = Lines
+    ReDim Preserve GrhBuffer(1 To GrhBufUBound)
 
     'Check for duplicate entries (slow, but whatever - this tool doesn't need to be fast)
     For sX = 1 To Lines
@@ -138,6 +192,9 @@ Dim Lines As Long
     Next sX
 
     Close #2
+    
+    'Create the GrhExist() array
+    CreateGrhExist
     
     '*** Build Grh.dat ***
 
@@ -228,12 +285,31 @@ Dim Lines As Long
 
     WriteVar DataPath & "grh.ini", "INIT", "NumGrhFiles", CStr(LastFile)
     WriteVar DataPath & "grh.ini", "INIT", "NumGrhs", CStr(LastGrh)
+    
+    'Check if the entries in the paperdolling .dat files
+    CheckPaperdollGrhs DataPath & "Body.dat"
+    CheckPaperdollGrhs DataPath & "Hair.dat"
+    CheckPaperdollGrhs DataPath & "Wing.dat"
+    CheckPaperdollGrhs DataPath & "Head.dat"
+    CheckPaperdollGrhs DataPath & "Weapon.dat"
+
+    'Display bad paperdoll grhs
+    If BadPaperdollGrhUBound > 0 Then
+        If MsgBox(BadPaperdollGrhUBound & " bad Grh entries have been found in your paper-dolling files. Do you wish to view them?", vbYesNo) = vbYes Then
+            For sX = 1 To BadPaperdollGrhUBound
+                With BadPaperdollGrh(BadPaperdollGrhUBound)
+                    MsgBox "File: " & .File & vbNewLine & _
+                        "Line (" & .RetStrNum & "): " & .RetStr & vbNewLine & _
+                        "Grh value used: " & .Grh, vbOKOnly
+                End With
+            Next sX
+        End If
+    End If
 
     'Display finish box
     MsgBox "Finished.", vbOKOnly
 
     'Unload
-    Erase GrhBuffer
     End
     
 Exit Sub
@@ -246,6 +322,105 @@ Dim Loc2 As Long
     Close #2
     Close #1
     MsgBox "Error on Grh" & Grh & "!" & vbNewLine & vbNewLine & "Last GrhRaw.txt line: " & Loc2 & vbNewLine & "Last Grh.Dat line: " & Loc1, vbOKOnly Or vbCritical
+
+End Sub
+
+Private Sub AddBadPaperdollGrh(ByVal GrhIndex As Long, ByVal Line As String, ByVal LineNum As Long, ByVal File As String)
+
+'*****************************************************************
+'Adds an entry to the "Bad Paperdoll Grh" list
+'*****************************************************************
+
+    BadPaperdollGrhUBound = BadPaperdollGrhUBound + 1
+    ReDim Preserve BadPaperdollGrh(1 To BadPaperdollGrhUBound)
+    With BadPaperdollGrh(BadPaperdollGrhUBound)
+        .File = File
+        .RetStr = Line
+        .Grh = GrhIndex
+        .RetStrNum = LineNum
+    End With
+
+End Sub
+
+Private Sub CheckPaperdollGrhs(ByVal FilePath As String)
+
+'*****************************************************************
+'Checks that the Grh values in the paperdolling files are valid
+'*****************************************************************
+Dim FileNum As Byte
+Dim s() As String
+Dim ln As String
+Dim Origln As String
+Dim v As Long
+Dim FileName As String
+
+    'Check the file exists
+    If Dir$(FilePath, vbNormal) = vbNullString Then Exit Sub
+
+    'Get the file name
+    s = Split(FilePath, "\")
+    FileName = UBound(s)
+
+    'Open the file
+    FileNum = FreeFile
+    Open FilePath For Input As #FileNum
+    
+        'Loop through the whole file
+        Do While Not EOF(FileNum)
+        
+            'Grab the line
+            Line Input #FileNum, ln
+            ln = Trim$(ln)
+            Origln = ln
+            
+            'Check for a valid line
+            If ln <> vbNullString Then
+                If Len(ln) > 2 Then
+                    If Left$(ln, 1) <> "'" Then
+                        If Left$(ln, 1) <> "[" Then
+                            ln = UCase$(ln)
+                            If InStr(1, ln, "=") Then
+                                If Left$(ln, 3) <> "NUM" Then
+                                    If Left$(ln, 10) <> "HEADOFFSET" Then
+                                        
+                                        'Split the string by the equal sign
+                                        s() = Split(ln, "=")
+                                        
+                                        'If there is more than 1 = sign, we don't want it
+                                        If UBound(s) <> 1 Then Exit Sub
+                                        
+                                        'Check the value
+                                        s(1) = Trim$(s(1))
+                                        If Not IsNumeric(s(1)) Then Exit Sub
+                                        v = Val(s(1))
+                                        
+                                        'Finally, we can assume we have a Grh value, so check if it is valid
+                                        If v <= 0 Then
+                                            AddBadPaperdollGrh v, Origln, Loc(FileNum), FileName
+                                            GoTo NextLoop
+                                        End If
+                                        If v > GrhExistUBound Then
+                                            AddBadPaperdollGrh v, Origln, Loc(FileNum), FileName
+                                            GoTo NextLoop
+                                        End If
+                                        If GrhExist(v) = 0 Then
+                                            AddBadPaperdollGrh v, Origln, Loc(FileNum), FileName
+                                            GoTo NextLoop
+                                        End If
+                                        
+                                    End If
+                                End If
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+                                            
+NextLoop:
+            
+        Loop
+        
+    Close #FileNum
 
 End Sub
 

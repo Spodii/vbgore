@@ -423,16 +423,6 @@ Type Skills 'Skills casted on a user / NPC (the value holds how powerful it is, 
     Strengthen As Integer
     WarCurse As Integer
 End Type
-Type KnownSkills    'Known skills by the user
-    IronSkin As Byte
-    Bless As Byte
-    Protect As Byte
-    Strengthen As Byte
-    Warcry As Byte
-    Heal As Byte
-    SpikeField As Byte
-    Spike As Byte
-End Type
 Type Cache_Server_MakeChar
     Body As Integer
     Head As Integer
