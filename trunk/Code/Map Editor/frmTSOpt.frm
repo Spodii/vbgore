@@ -358,6 +358,11 @@ Private Sub SaveBtn_Click()
     tsTileHeight = Val(HeightTxt.Text)
     tsTileWidth = Val(WidthTxt.Text)
     tsStart = Val(StartTxt.Text)
+    If tsTileWidth <= 0 Then tsTileWidth = 32
+    If tsTileHeight <= 0 Then tsTileHeight = 32
+    If tsStart <= 0 Then tsStart = 1
+    If tsTileWidth > 1024 Then tsTileWidth = 1024
+    If tsTileHeight > 1024 Then tsTileHeight = 1024
 
     Var_Write Data2Path & "MapEditor.ini", "TSOPT", "W", WidthTxt.Text
     Var_Write Data2Path & "MapEditor.ini", "TSOPT", "H", HeightTxt.Text

@@ -1,5 +1,6 @@
 VERSION 5.00
 Begin VB.Form frmSearchTexture 
+   AutoRedraw      =   -1  'True
    BackColor       =   &H80000005&
    BorderStyle     =   5  'Sizable ToolWindow
    Caption         =   "Texture: 0"

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCK.OCX"
+Object = "{248DD890-BB45-11CF-9ABC-0080C7E7B78D}#1.0#0"; "MSWINSCN.OCX"
 Object = "{57B1A102-EC84-4617-AC39-415819BFEC5F}#1.0#0"; "GOREsockServer.ocx"
 Begin VB.Form frmMain 
    BackColor       =   &H00000000&
@@ -113,6 +113,9 @@ Dim TempSplit() As String
     Me.Width = 5000
     Me.Show
     DoEvents
+    
+    'This MUST be called before any timeGetTime calls
+    InitTimeGetTime
 
     'Set the server priority
     If RunHighPriority Then
@@ -120,9 +123,6 @@ Dim TempSplit() As String
         SetPriorityClass GetCurrentProcess, &H80    ' unless you know what you're doing
     End If
     
-    'Set the timer accuracy
-    timeBeginPeriod 1
-
     'Set the file paths
     InitFilePaths
 
@@ -265,7 +265,7 @@ Dim i As Long
     'This holds an array of indicies for us to use - doing it this way is slow, but user-friendly and its done at runtime anyways
     Const cMessages As String = "2,7,8,12,17,20,24,25,26,29,33,34,36,37,38,48,49," & _
         "51,57,60,61,64,69,70,79,81,82,83,84,85,97,98,99,101,102,109,111,112,113,114," & _
-        "116,119,121,123,125,127,130,131,132"
+        "116,119,121,123,125,127,130,131,132,133"
     
     'Make the server temp path
     MakeSureDirectoryPathExists ServerTempPath

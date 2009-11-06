@@ -681,13 +681,15 @@ Dim j As Long
         If j <= 0 Then GoTo CleanUp
         sndBuf.Put_Byte DataCode.User_Bank_Withdraw
         sndBuf.Put_Long j
-    '-----------------------------------------------------------
     ElseIf Input_GetCommand("/TRADE ") Then
         s = Input_GetBufferArgs
         If s = vbNullString Then GoTo CleanUp
+        If UCase$(s) = UCase$(CharList(UserCharIndex).Name) Then
+            Engine_AddToChatTextBuffer Message(133), FontColor_Info
+            GoTo CleanUp
+        End If
         sndBuf.Put_Byte DataCode.User_Trade_Trade
         sndBuf.Put_String s
-    '-----------------------------------------------------------
     ElseIf Input_GetCommand("/BALAN") Then
         sndBuf.Put_Byte DataCode.User_Bank_Balance
         
@@ -1791,8 +1793,7 @@ Dim tY As Integer
                     If .Y > ScreenHeight - .Height Then .Y = ScreenHeight - .Height
                 End If
             End With
-            '-----------------------------------------------------------
-            'move the trade window
+            'Move the trade window
         ElseIf SelGameWindow = TradeWindow Then
             With GameWindow.Trade.Screen
                 .X = .X + MousePosAdd.X
@@ -1805,7 +1806,6 @@ Dim tY As Integer
                 End If
             End With
         End If
-            '-----------------------------------------------------------
     End If
 
 End Sub

@@ -1066,6 +1066,9 @@ Dim TargetIndex As Integer
 
     TargetName = rBuf.Get_String
     TargetIndex = User_NameToIndex(TargetName)
+    
+    'Don't allow trading with yourself
+    If TargetIndex = UserIndex Then Exit Sub
 
     'See if user online
     If TargetIndex <= 0 Then
@@ -2797,7 +2800,7 @@ Sub Data_User_StartQuest(ByVal UserIndex As Integer)
 
 Dim QuestNPC As Integer
 Dim Slot As Byte
-Dim i As Integer
+Dim i As Long
 Dim s As String
 
     Log "Call Data_User_StartQuest(" & UserIndex & ")", CodeTracker '//\\LOGLINE//\\
@@ -2836,6 +2839,24 @@ Dim s As String
                     ConBuf.Put_Byte 63
                     ConBuf.Put_Integer QuestData(NPCList(QuestNPC).Quest).AcceptReqObjAmount
                     ConBuf.Put_String ObjData.Name(QuestData(NPCList(QuestNPC).Quest).AcceptReqObj)
+                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
+                    UserList(UserIndex).flags.QuestNPC = 0
+                    Exit Sub
+                End If
+            End If
+            If QuestData(NPCList(QuestNPC).Quest).AcceptReqFinishQuest > 0 Then
+                For i = 1 To UserList(UserIndex).NumCompletedQuests
+                    If UserList(UserIndex).CompletedQuests(i) = QuestData(NPCList(QuestNPC).Quest).AcceptReqFinishQuest Then
+                        i = 0   'Lets us know we found the required quest
+                        Exit For
+                    End If
+                Next i
+                If i > 0 Then
+                    ConBuf.PreAllocate 3 + Len(QuestData(QuestData(NPCList(QuestNPC).Quest).AcceptReqFinishQuest).Name)
+                    ConBuf.Put_Byte DataCode.Server_Message
+                    ConBuf.Put_Byte 134
+                    ConBuf.Put_String QuestData(QuestData(NPCList(QuestNPC).Quest).AcceptReqFinishQuest).Name
+                    Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer()
                     UserList(UserIndex).flags.QuestNPC = 0
                     Exit Sub
                 End If

@@ -377,10 +377,7 @@ Public Const GUIColorValue As Long = -1090519041    'ARGB 190/255/255/255
 Public Const AmountWindow As Byte = 1
 Public Const MenuWindow As Byte = 2
 Public Const NPCChatWindow As Byte = 3
-'-----------------------------------------------------------
-'our lovely window
 Public Const TradeWindow As Byte = 4
-'-----------------------------------------------------------
 Public Const WriteMessageWindow As Byte = 5
 Public Const ViewMessageWindow As Byte = 6
 Public Const MailboxWindow As Byte = 7
@@ -416,10 +413,7 @@ Public Const AW_InvToBank As Byte = 3
 Public Const AW_InvToMail As Byte = 4
 Public Const AW_ShopToInv As Byte = 5
 Public Const AW_BankToInv As Byte = 6
-'-----------------------------------------------------------
-'using the amount window for trading
 Public Const AW_InvToTrade As Byte = 7
-'-----------------------------------------------------------
 
 Private Type QuickBarIDData
     Type As Byte    'Type of information in the quick bar (Item, Skill, etc)
@@ -549,7 +543,7 @@ Private Type WindowNPCChat
     Answer() As Rectangle
     SkinGrh As Grh
 End Type
-'-----------------------------------------------------------
+
 'Info about the trade window
 Public Type TradeWindow
     Screen As Rectangle
@@ -564,7 +558,6 @@ Public Type TradeWindow
     Cancel As Rectangle
     SkinGrh As Grh
 End Type
-'-----------------------------------------------------------
 
 Public Type GameWindow          'List of all the different game windows
     QuickBar As WindowQuickBar
@@ -579,10 +572,7 @@ Public Type GameWindow          'List of all the different game windows
     StatWindow As StatWindow
     Bank As WindowInventory
     NPCChat As WindowNPCChat
-    '--------------------
-    'our trade window is a type of game window
     Trade As TradeWindow
-    '--------------------
 End Type
 
 Public GameWindow As GameWindow
@@ -726,8 +716,6 @@ Public ShowMiniMap As Byte
 
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetAsyncKeyState Lib "user32.dll" (ByVal vKey As Long) As Integer
-Public Declare Function timeGetTime Lib "winmm.dll" () As Long
-Private Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
 Private Declare Function IntersectRect Lib "User32" (lpDestRect As RECT, lpSrc1Rect As RECT, lpSrc2Rect As RECT) As Long
 
 Sub Engine_MakeChatBubble(ByVal CharIndex As Integer, ByVal Text As String)
@@ -2356,7 +2344,7 @@ Dim Y As Long
         .Height = Val(Var_Get(s, "NPCCHAT", "ScreenHeight"))
     End With
     Engine_Init_Grh GameWindow.NPCChat.SkinGrh, Val(Var_Get(s, "NPCCHAT", "Grh"))
-    '-----------------------------------------------------------
+    
     'Load the trade window
     With GameWindow.Trade
         .Screen.X = Val(Var_Get(s, "TRADE", "ScreenX"))
@@ -2397,7 +2385,6 @@ Dim Y As Long
         X = 0
         Y = 0
         
-        
         For LoopC = 1 To 9
             .Trade1(LoopC).X = ImageOffsetX + (X * (ImageSpaceX + 32))
             .Trade1(LoopC).Y = ImageOffsetY + (Y * (ImageSpaceX + 32))
@@ -2428,7 +2415,7 @@ Dim Y As Long
     
     End With
     Engine_Init_Grh GameWindow.Trade.SkinGrh, Val(Var_Get(s, "TRADE", "Grh"))
-    '-----------------------------------------------------------
+    
     'Reset text position
     If CurMap > 0 Then Engine_UpdateChatArray
 
@@ -3166,8 +3153,7 @@ Dim t As Long
     FPS = 60
     FramesPerSecCounter = 60
     
-    'Set high resolution timer
-    timeBeginPeriod 1
+    'Set the ending time to now (to prevent the client thinking there was a huge FPS jump)
     EndTime = timeGetTime
 
     'Start the engine
@@ -4843,8 +4829,8 @@ Dim j As Long
                     TempGrh.GrhIndex = TradeTable.Trade1(j).Grh
                     TempGrh2.GrhIndex = TradeTable.Trade2(j).Grh
                 
-                    Engine_Render_Grh TempGrh, .Screen.X + .Trade1(j).X, .Screen.Y + .Trade1(j).Y, 1, 0, False, User1RenderColor, User1RenderColor, User1RenderColor, User1RenderColor
-                    Engine_Render_Grh TempGrh2, .Screen.X + .Trade2(j).X, .Screen.Y + .Trade2(j).Y, 1, 0, False, User2RenderColor, User2RenderColor, User2RenderColor, User2RenderColor
+                    Engine_Render_Grh TempGrh, .Screen.X + .Trade1(j).X, .Screen.Y + .Trade1(j).Y, 0, 0, False, User1RenderColor, User1RenderColor, User1RenderColor, User1RenderColor
+                    Engine_Render_Grh TempGrh2, .Screen.X + .Trade2(j).X, .Screen.Y + .Trade2(j).Y, 0, 0, False, User2RenderColor, User2RenderColor, User2RenderColor, User2RenderColor
                     
                     Engine_Render_Text TradeTable.Gold1, .Screen.X + .Gold1.X, .Screen.Y + .Gold1.Y, User1RenderColor
                     Engine_Render_Text TradeTable.Gold2, .Screen.X + .Gold2.X, .Screen.Y + .Gold2.Y, User2RenderColor
@@ -6885,13 +6871,11 @@ Dim YOffset As Single
                         TempVA(3).X = TempVA(1).X
                         TempVA(3).Y = TempVA(2).Y
                         
-                        'As stupid as this looks, we actually save a bit more time by ignoring the color if its already black
-                        If Color <> -16777216 Then  'ARGB 255/0/0/0
-                            TempVA(0).Color = TempColor
-                            TempVA(1).Color = TempColor
-                            TempVA(2).Color = TempColor
-                            TempVA(3).Color = TempColor
-                        End If
+                        'Set the colors
+                        TempVA(0).Color = TempColor
+                        TempVA(1).Color = TempColor
+                        TempVA(2).Color = TempColor
+                        TempVA(3).Color = TempColor
 
                         'Draw the verticies
                         D3DDevice.DrawPrimitiveUP D3DPT_TRIANGLESTRIP, 2, TempVA(0), FVF_Size

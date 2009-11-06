@@ -36,7 +36,7 @@ Public Const Heal_ClassReq As Integer = -1   'Class requirements - unfortunately
 'Summon bandit
 Private Const SumBandit_Cost As Single = 1       'Magic * SummonBandit_Cost
 Private Const SumBandit_Exhaust As Long = 3000
-Private Const SumBandit_Length As Long = 600000000   'Summoned NPC automatically dispells (dies) after this time goes by
+Private Const SumBandit_Length As Long = 300000  'Summoned NPC automatically dispells (dies) after this time goes by
 
 Public Function Skill_SummonBandit_PC(ByVal CasterIndex As Integer) As Byte
 
@@ -1559,6 +1559,3 @@ Dim WarCursePower As Integer
     Skill_Warcry_PC = 1
 
 End Function
-
-':) Ulli's VB Code Formatter V2.19.5 (2006-Sep-05 23:47)  Decl: 1  Code: 1038  Total: 1039 Lines
-':) CommentOnly: 84 (8.1%)  Commented: 3 (0.3%)  Empty: 135 (13%)  Max Logic Depth: 8

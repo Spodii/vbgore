@@ -1366,8 +1366,8 @@ Dim TargetA As Single   'Angle which the effect will be heading towards the boun
                 .UpdateParticle ElapsedTime
     
                 'Random clear
-                If Int(Rnd * 10000 * ElapsedTime) = 0 Then .sngA = 0
-    
+                'If Int(Rnd * 200 * (10 - ElapsedTime)) = 0 Then .sngA = 0
+                
                 'Check if the particle is ready to die
                 If (.sngY > Effect(EffectIndex).Y + 140) Or (.sngA = 0) Then
     

@@ -963,7 +963,7 @@ Dim Hit As Long
 
 End Function
 
-Private Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Heading As Byte = 0, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
+Private Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal NPCIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
 
 '*****************************************************************
 'Changes a NPC char's head,body and heading
@@ -971,7 +971,7 @@ Private Sub NPC_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, By
 Dim ChangeFlags As Byte
 Dim FlagSizes As Byte
 
-    Log "Call NPC_ChangeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call NPC_ChangeChar(" & sndRoute & "," & sndIndex & "," & NPCIndex & "," & Body & "," & Head & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker  '//\\LOGLINE//\\
 
     'Check for a valid NPC
     If NPCIndex <= 0 Then
@@ -986,34 +986,39 @@ Dim FlagSizes As Byte
     'Check for changed values
     With NPCList(NPCIndex).Char
         If Body > -1 Then
-            If .Body <> Body Then .Body = Body
-            ChangeFlags = ChangeFlags Or 1
-            FlagSizes = FlagSizes + 2
+            If .Body <> Body Then
+                .Body = Body
+                ChangeFlags = ChangeFlags Or 1
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Head > -1 Then
-            If .Head <> Head Then .Head = Head
-            ChangeFlags = ChangeFlags Or 2
-            FlagSizes = FlagSizes + 2
-        End If
-        If Heading > 0 Then
-            If .Heading <> Heading Then .Heading = Heading
-            ChangeFlags = ChangeFlags Or 4
-            FlagSizes = FlagSizes + 1
+            If .Head <> Head Then
+                .Head = Head
+                ChangeFlags = ChangeFlags Or 2
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Weapon > -1 Then
-            If .Weapon <> Weapon Then .Weapon = Weapon
-            ChangeFlags = ChangeFlags Or 8
-            FlagSizes = FlagSizes + 2
+            If .Weapon <> Weapon Then
+                .Weapon = Weapon
+                ChangeFlags = ChangeFlags Or 4
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Hair > -1 Then
-            If .Hair <> Hair Then .Hair = Hair
-            ChangeFlags = ChangeFlags Or 16
-            FlagSizes = FlagSizes + 2
+            If .Hair <> Hair Then
+                .Hair = Hair
+                ChangeFlags = ChangeFlags Or 8
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Wings > -1 Then
-            If .Wings <> Wings Then .Wings = Wings
-            ChangeFlags = ChangeFlags Or 32
-            FlagSizes = FlagSizes + 2
+            If .Wings <> Wings Then
+                .Wings = Wings
+                ChangeFlags = ChangeFlags Or 16
+                FlagSizes = FlagSizes + 2
+            End If
         End If
     End With
     
@@ -1027,7 +1032,6 @@ Dim FlagSizes As Byte
     ConBuf.Put_Byte ChangeFlags
     If ChangeFlags And 1 Then ConBuf.Put_Integer Body
     If ChangeFlags And 2 Then ConBuf.Put_Integer Head
-    If ChangeFlags And 4 Then ConBuf.Put_Byte Heading
     If ChangeFlags And 8 Then ConBuf.Put_Integer Weapon
     If ChangeFlags And 16 Then ConBuf.Put_Integer Hair
     If ChangeFlags And 32 Then ConBuf.Put_Integer Wings

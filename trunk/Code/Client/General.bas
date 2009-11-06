@@ -24,7 +24,14 @@ Private SkillPos As Long
 
 Public FPSCap As Long   'The FPS cap the user defined to use (in milliseconds, not FPS)
 
+'Used for the 64-bit timer
+Private GetSystemTimeOffset As Currency
+Private Declare Sub GetSystemTime Lib "kernel32.dll" Alias "GetSystemTimeAsFileTime" (ByRef lpSystemTimeAsFileTime As Currency)
+
+'Sleep API - used to put a process into "idle" for X milliseconds
 Public Declare Sub Sleep Lib "kernel32.dll" (ByVal dwMilliseconds As Long)
+
+'Like the Shell function, but more powerful - used to call another application to load it
 Private Declare Function ShellExecute Lib "shell32.dll" Alias "ShellExecuteA" (ByVal hWnd As Long, ByVal lpOperation As String, ByVal lpFile As String, ByVal lpParameters As String, ByVal lpDirectory As String, ByVal nShowCmd As Long) As Long
 
 Public Sub Log(ByVal DummyT As String, ByVal DummyB As LogType)
@@ -864,6 +871,9 @@ Dim StartTime As Long
 Dim FileNum As Byte
 Dim i As Integer
 
+    'This MUST be called before any timeGetTime calls
+    InitTimeGetTime
+
     'Init file paths
     InitFilePaths
     
@@ -1176,5 +1186,43 @@ Dim j As Long
         Next i
         
     Next TSLoop
+
+End Function
+
+Public Sub InitTimeGetTime()
+
+'*****************************************************************
+'Gets the offset time for the timer so we can start at 0 instead of
+'the returned system time, allowing us to not have a time roll-over until
+'the program is running for 25 days
+'*****************************************************************
+
+    'Get the initial time
+    GetSystemTime GetSystemTimeOffset
+    
+    'Subtract to the lowest value so we start at -(2^31) instead of 0
+    'Doubles the time we can run the program (50 days instead of 25) before a rollover
+    'This isn't done because of the way vbGORE already handles some timers
+    'Not like it is needed for the client, but some servers may last 25 days without a reset
+    'Maybe if it ever becomes a problem, then some day, someone may fix it... ;)
+    'GetSystemTimeOffset = GetSystemTimeOffset + (2 ^ 31) - 1
+
+End Sub
+
+Public Function timeGetTime() As Long
+Dim CurrentTime As Currency
+
+'*****************************************************************
+'Grabs the time from the 64-bit system timer and returns it in 32-bit
+'after calculating it with the offset - allows us to have the
+'"no roll-over" advantage of 64-bit timers with the RAM usage of 32-bit
+'though we limit things slightly, so the rollover still happens, but after 25 days
+'*****************************************************************
+
+    'Grab the current time (we have to pass a variable ByRef instead of a function return like the other timers)
+    GetSystemTime CurrentTime
+    
+    'Calculate the difference between the 64-bit times, return as a 32-bit time
+    timeGetTime = CurrentTime - GetSystemTimeOffset
 
 End Function

@@ -989,6 +989,7 @@ Public Sub Load_Quests()
             .AcceptReqLvl = Val(DB_RS!accept_req_level)
             .AcceptReqObj = Val(DB_RS!accept_req_obj)
             .AcceptReqObjAmount = Val(DB_RS!accept_req_objamount)
+            .AcceptReqFinishQuest = Val(DB_RS!accept_req_finishquest)
             .AcceptRewExp = Val(DB_RS!accept_reward_exp)
             .AcceptRewGold = Val(DB_RS!accept_reward_gold)
             .AcceptRewObj = Val(DB_RS!accept_reward_obj)
@@ -1601,7 +1602,7 @@ Dim szReturn As String ' This will be the defaul value if the string is not foun
 
     sSpaces = Space$(1000) ' This tells the computer how long the longest string can be. If you want, you can change the number 75 to any number you wish
 
-    getprivateprofilestring Main, Var, szReturn, sSpaces, Len(sSpaces), File
+    GetPrivateProfileString Main, Var, szReturn, sSpaces, Len(sSpaces), File
 
     Var_Get = RTrim$(sSpaces)
     Var_Get = Left$(Var_Get, Len(Var_Get) - 1)
@@ -1618,7 +1619,7 @@ Public Sub Var_Write(ByVal File As String, ByVal Main As String, ByVal Var As St
 
     Log "Call Var_Write(" & File & "," & Main & "," & Var & "," & Value & ")", CodeTracker '//\\LOGLINE//\\
 
-    writeprivateprofilestring Main, Var, Value, File
+    WritePrivateProfileString Main, Var, Value, File
 
 End Sub
 

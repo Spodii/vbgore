@@ -622,6 +622,11 @@ Dim Byt1 As Byte
             Engine_AddToChatTextBuffer Message(130), FontColor_Info
         Case 131
             Engine_AddToChatTextBuffer Message(131), FontColor_Info
+        Case 132
+            Engine_AddToChatTextBuffer Message(132), FontColor_Info
+        Case 134
+            Str1 = rBuf.Get_String
+            Engine_AddToChatTextBuffer Replace$(Message(134), "<name>", Str1), FontColor_Quest
     End Select
 
 End Sub
@@ -846,13 +851,12 @@ Sub Data_Server_ChangeChar(ByRef rBuf As DataBuffer)
 
 '*********************************************
 'Change a character by the character index
-'<CharIndex(I)><Flags(B)>(<Body(I)><Head(I)><Heading(B)><Weapon(I)><Hair(I)><Wings(I)>)
+'<CharIndex(I)><Flags(B)>(<Body(I)><Head(I)><Weapon(I)><Hair(I)><Wings(I)>)
 '*********************************************
 Dim flags As Byte
 Dim CharIndex As Integer
 Dim CharBody As Integer
 Dim CharHead As Integer
-Dim CharHeading As Byte
 Dim CharWeapon As Integer
 Dim CharHair As Integer
 Dim CharWings As Integer
@@ -877,19 +881,14 @@ Dim DontSetData As Byte
         If DontSetData = 0 Then CharList(CharIndex).Head = HeadData(CharHead)
     End If
     If flags And 4 Then
-        CharHeading = rBuf.Get_Byte
-        If DontSetData = 0 Then CharList(CharIndex).Heading = CharHeading
-        If DontSetData = 0 Then CharList(CharIndex).HeadHeading = CharHeading
-    End If
-    If flags And 8 Then
         CharWeapon = rBuf.Get_Integer
         If DontSetData = 0 Then CharList(CharIndex).Weapon = WeaponData(CharWeapon)
     End If
-    If flags And 16 Then
+    If flags And 8 Then
         CharHair = rBuf.Get_Integer
         If DontSetData = 0 Then CharList(CharIndex).Hair = HairData(CharHair)
     End If
-    If flags And 32 Then
+    If flags And 16 Then
         CharWings = rBuf.Get_Integer
         If DontSetData = 0 Then CharList(CharIndex).Wings = WingData(CharWings)
     End If
@@ -1527,6 +1526,13 @@ Dim Angle As Integer
     'Create the damage
     Engine_Damage_Create CharList(TargetIndex).Pos.X, CharList(TargetIndex).Pos.Y, Damage
     
+    'Start the attack animation
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).Started = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).LastCount = timeGetTime
+    CharList(AttackerIndex).Weapon.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).ActionIndex = 2
+    
     'Aggressive face
     If Damage > 0 Then
         CharList(TargetIndex).Aggressive = 1
@@ -1574,6 +1580,13 @@ Dim Damage As Integer
     'Create the blood (if damage)
     If Damage > 0 Then Engine_Blood_Create CharList(TargetIndex).Pos.X, CharList(TargetIndex).Pos.Y
 
+    'Start the attack animation
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).Started = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).LastCount = timeGetTime
+    CharList(AttackerIndex).Weapon.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).ActionIndex = 2
+
     'Create the damage
     Engine_Damage_Create CharList(TargetIndex).Pos.X, CharList(TargetIndex).Pos.Y, Damage
     
@@ -1613,6 +1626,13 @@ Dim NewHeading As Byte
     
     'Play the sound
     Sound_Play3D Sfx, CharList(AttackerIndex).Pos.X, CharList(AttackerIndex).Pos.Y
+    
+    'Start the attack animation
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).Started = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).Body.Attack(CharList(AttackerIndex).Heading).LastCount = timeGetTime
+    CharList(AttackerIndex).Weapon.Attack(CharList(AttackerIndex).Heading).FrameCounter = 1
+    CharList(AttackerIndex).ActionIndex = 2
     
     'Create the blood (if damage)
     If Damage > 0 Then Engine_Blood_Create CharList(TargetIndex).Pos.X, CharList(TargetIndex).Pos.Y

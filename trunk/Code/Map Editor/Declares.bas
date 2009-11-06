@@ -15,6 +15,12 @@ Public NumTextureDesc As Long
 Public DescResults() As Long
 Public NumDescResults As Long
 
+'If the device is still open from Engine_Render_Screen
+Public DrawingGameScreen As Boolean
+
+'Tells the engine to update the grh preview
+Public UpdatePreview As Boolean
+
 'Position displayed in the form's caption
 Public HoverX As Long
 Public HoverY As Long

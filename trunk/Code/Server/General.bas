@@ -40,6 +40,10 @@ Private SendUserBuffer As Byte      'If the user's buffer will be checked to be 
 Private UpdateNPCAI As Byte         'Call the NPC AI routine
 Private UpdateNPCCounters As Byte   'Update the NPC's counters
 
+'Used for the 64-bit timer
+Private GetSystemTimeOffset As Currency
+Private Declare Sub GetSystemTime Lib "kernel32.dll" Alias "GetSystemTimeAsFileTime" (ByRef lpSystemTimeAsFileTime As Currency)
+
 'Sleep API - used to "sleep" the process and free the CPU usage
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 
@@ -59,10 +63,7 @@ Dim FPS As Long                 'Used for DEBUG_MapFPS
 
     'Loop until ServerRunning = 0
     Do While ServerRunning
-    
-        'Make sure that the system's clock didn't reset (check the sub for more details)
-        ValidateTime
-        
+
         'Get the start time so we know how long the loop took
         LoopStartTime = timeGetTime
 
@@ -1255,24 +1256,6 @@ Dim LoopC As Long
 
 End Sub
 
-Public Sub ValidateTime()
-
-'*****************************************************************
-'This will validate that the timer hasn't rolled over
-'If the timer does roll over, everything time-based will go out of
-'wack, so we just turn off the server and let it reset
-'This only happens after the server computer is on for 596.5 hours
-'after turning on, then every 1193 hours after that
-'*****************************************************************
-
-    'Check if there was a roll-over (current time < last check)
-    If timeGetTime < LastTimeGetTime Then UnloadServer = 1
-    
-    'Set the last check to now since we just checked it
-    LastTimeGetTime = timeGetTime
-    
-End Sub
-
 Public Function Server_IPisBanned(ByVal IP As String, ByRef ReturnReason As String) As Boolean
 
 '*****************************************************************
@@ -2228,6 +2211,44 @@ Dim j As Byte
     Save_Mail MailIndex, MailData
     
     Server_WriteMail = 1
+
+End Function
+
+Public Sub InitTimeGetTime()
+
+'*****************************************************************
+'Gets the offset time for the timer so we can start at 0 instead of
+'the returned system time, allowing us to not have a time roll-over until
+'the program is running for 25 days
+'*****************************************************************
+
+    'Get the initial time
+    GetSystemTime GetSystemTimeOffset
+    
+    'Subtract to the lowest value so we start at -(2^31) instead of 0
+    'Doubles the time we can run the program (50 days instead of 25) before a rollover
+    'This isn't done because of the way vbGORE already handles some timers
+    'Not like it is needed for the client, but some servers may last 25 days without a reset
+    'Maybe if it ever becomes a problem, then some day, someone may fix it... ;)
+    'GetSystemTimeOffset = GetSystemTimeOffset + (2 ^ 31) - 1
+
+End Sub
+
+Public Function timeGetTime() As Long
+Dim CurrentTime As Currency
+
+'*****************************************************************
+'Grabs the time from the 64-bit system timer and returns it in 32-bit
+'after calculating it with the offset - allows us to have the
+'"no roll-over" advantage of 64-bit timers with the RAM usage of 32-bit
+'though we limit things slightly, so the rollover still happens, but after 25 days
+'*****************************************************************
+
+    'Grab the current time (we have to pass a variable ByRef instead of a function return like the other timers)
+    GetSystemTime CurrentTime
+    
+    'Calculate the difference between the 64-bit times, return as a 32-bit time
+    timeGetTime = CurrentTime - GetSystemTimeOffset
 
 End Function
 

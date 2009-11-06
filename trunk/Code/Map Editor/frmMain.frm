@@ -547,6 +547,8 @@ Dim i As Long
             
         Next tY
     Next tX
+    
+    Engine_CreateTileLayers
 
 End Sub
 
@@ -591,7 +593,10 @@ Dim NewMapVal As Integer
     If MsgBox("Are you sure you wish to save the current map as a new map?", vbYesNo) = vbNo Then Exit Sub
     
     'Get value
+    On Error Resume Next
     NewMapVal = InputBox("Please enter the map number for the new map.")
+    On Error GoTo 0
+    If NewMapVal <= 0 Then Exit Sub
     
     'Check if the file already exists
     If Engine_FileExist(MapPath & NewMapVal & ".map", vbNormal) Then
@@ -954,91 +959,8 @@ Private Sub Timer1_Timer()
 End Sub
 
 Private Sub Timer2_Timer()
-Static LastThingy As Long   'Yes, I named a variable "thingy", wanna fight about it!? >:|
-Dim i As Long
-Dim R As RECT
-Dim j As Long
 
-    'This timer brought to you by a lazy ass programmer :)
-    'Screw speed, this is a tool!
-
-    If D3DDevice Is Nothing Then Exit Sub
-    If Not Engine_ValidateDevice Then Exit Sub
-    If SearchTextureFileNum > 0 Then
-    
-        If ShownTextureGrhs.NumGrhs > 0 Then
-            
-            D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-            D3DDevice.BeginScene
-            
-            If LastThingy <> SearchTextureFileNum Then
-                frmSearchTexture.Refresh
-                LastThingy = SearchTextureFileNum
-            End If
-            Engine_Render_FullTexture frmSearchTexture.hWnd, SearchTextureFileNum
-            
-            j = D3DColorARGB(150, 255, 255, 255)
-            For i = 1 To ShownTextureGrhs.NumGrhs
-                With ShownTextureGrhs.Grh(i)
-                    Engine_Render_Rectangle .X, .Y, 1, .Height, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X, .Y, .Width, 1, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X + .Width, .Y, 1, .Height, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X, .Y + .Height, .Width, 1, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                End With
-            Next i
-            
-            D3DDevice.EndScene
-            
-            R.Left = 0
-            R.Top = 0
-            R.Right = SurfaceSize(SearchTextureFileNum).X
-            R.bottom = SurfaceSize(SearchTextureFileNum).Y
-            
-            D3DDevice.Present R, R, frmSearchTexture.hWnd, ByVal 0
-        
-        End If
-        
-        If ShownTextureAnims.NumGrhs > 0 Then
-            
-            D3DDevice.Clear 0, ByVal 0, D3DCLEAR_TARGET, 0, 1#, 0
-            D3DDevice.BeginScene
-            
-            If LastThingy <> SearchTextureFileNum Then
-                frmSearchTexture.Refresh
-                LastThingy = SearchTextureFileNum
-            End If
-            
-            For i = 1 To ShownTextureAnims.NumGrhs
-                With ShownTextureAnims.Grh(i)
-                    Engine_Render_Grh .Grh, .X, .Y, 0, 1, True
-                End With
-            Next i
-            
-            j = D3DColorARGB(150, 255, 255, 255)
-            For i = 1 To ShownTextureGrhs.NumGrhs
-                With ShownTextureGrhs.Grh(i)
-                    Engine_Render_Rectangle .X, .Y, 1, .Height, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X, .Y, .Width, 1, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X + .Width, .Y, 1, .Height, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                    Engine_Render_Rectangle .X, .Y + .Height, .Width, 1, 0, 0, 1, 1, 1, 1, 0, 0, j, j, j, j
-                End With
-            Next i
-            
-            D3DDevice.EndScene
-            
-            R.Left = 0
-            R.Top = 0
-            R.Right = STAWidth
-            R.bottom = STAHeight
-            
-            D3DDevice.Present R, R, frmSearchAnim.hWnd, ByVal 0
-            
-        End If
-        
-    End If
-    
-    DrawPreview
-    DrawTileInfoPreview
+    UpdatePreview = True
 
 End Sub
 
@@ -1127,6 +1049,7 @@ Private Sub WeatherPic_Click()
 
     If WeatherChkValue = 1 Then
         WeatherChkValue = 0
+        LastWeather = 0
     Else
         WeatherChkValue = 1
     End If

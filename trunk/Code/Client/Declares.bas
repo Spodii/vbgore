@@ -9,7 +9,7 @@ Attribute VB_Name = "Declares"
 '*******************************************************************************
 '*******************************************************************************
 '************ vbGORE - Visual Basic 6.0 Graphical Online RPG Engine ************
-'************            Official Release: Version 0.5.3            ************
+'************            Official Release: Version 0.5.4            ************
 '************                 http://www.vbgore.com                 ************
 '*******************************************************************************
 '*******************************************************************************
@@ -352,9 +352,9 @@ Public EmoticonDelay As Long
 Public Const AGGRESSIVEFACETIME = 4000
 
 'Maximum variable sizes
-Public Const MAXLONG As Long = 2147483647
-Public Const MAXINT As Integer = 32767
-Public Const MAXBYTE As Byte = 255
+Public Const MAXLONG As Long = (2 ^ 31) - 1
+Public Const MAXINT As Integer = (2 ^ 15) - 1
+Public Const MAXBYTE As Byte = (2 ^ 8) - 1
 
 '********** OUTSIDE FUNCTIONS ***********
 Public Declare Function GetKeyState Lib "User32" (ByVal nVirtKey As Long) As Integer

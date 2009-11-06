@@ -428,12 +428,6 @@ Dim Hit As Long
 
     Log "Call User_AttackUser(" & AttackerIndex & "," & VictimIndex & ")", CodeTracker '//\\LOGLINE//\\
 
-    'Play the attack animation
-    ConBuf.PreAllocate 3
-    ConBuf.Put_Byte DataCode.User_Attack
-    ConBuf.Put_Integer UserList(AttackerIndex).Char.CharIndex
-    Data_Send ToPCArea, AttackerIndex, ConBuf.Get_Buffer
-    
     'Update the hit rate
     HitRate = UserList(AttackerIndex).Stats.ModStat(SID.Agi) + (UserList(AttackerIndex).Stats.ModStat(SID.Str) \ 4) + 50
 
@@ -481,7 +475,7 @@ Public Sub User_AttackUser_ApplyDamage(ByVal AttackerIndex As Integer, ByVal Vic
 
 End Sub
 
-Private Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal UserIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Heading As Byte = 0, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
+Private Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, ByVal UserIndex As Integer, Optional ByVal Body As Integer = -1, Optional ByVal Head As Integer = -1, Optional ByVal Weapon As Integer = -1, Optional ByVal Hair As Integer = -1, Optional ByVal Wings As Integer = -1)
 
 '*****************************************************************
 'Changes a user char's head,body and heading
@@ -489,7 +483,7 @@ Private Sub User_ChangeChar(ByVal sndRoute As Byte, ByVal sndIndex As Integer, B
 Dim ChangeFlags As Byte
 Dim FlagSizes As Byte
 
-    Log "Call User_ChangeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Body & "," & Head & "," & Heading & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker '//\\LOGLINE//\\
+    Log "Call User_ChangeChar(" & sndRoute & "," & sndIndex & "," & UserIndex & "," & Body & "," & Head & "," & Weapon & "," & Hair & "," & Wings & ")", CodeTracker  '//\\LOGLINE//\\
 
     'Check for invalid values
     If UserIndex > MaxUsers Then
@@ -504,34 +498,39 @@ Dim FlagSizes As Byte
     'Check for changed values
     With UserList(UserIndex).Char
         If Body > -1 Then
-            If .Body <> Body Then .Body = Body
-            ChangeFlags = ChangeFlags Or 1
-            FlagSizes = FlagSizes + 2
+            If .Body <> Body Then
+                .Body = Body
+                ChangeFlags = ChangeFlags Or 1
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Head > -1 Then
-            If .Head <> Head Then .Head = Head
-            ChangeFlags = ChangeFlags Or 2
-            FlagSizes = FlagSizes + 2
-        End If
-        If Heading > 0 Then
-            If .Heading <> Heading Then .Heading = Heading
-            ChangeFlags = ChangeFlags Or 4
-            FlagSizes = FlagSizes + 1
+            If .Head <> Head Then
+                .Head = Head
+                ChangeFlags = ChangeFlags Or 2
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Weapon > -1 Then
-            If .Weapon <> Weapon Then .Weapon = Weapon
-            ChangeFlags = ChangeFlags Or 8
-            FlagSizes = FlagSizes + 2
+            If .Weapon <> Weapon Then
+                .Weapon = Weapon
+                ChangeFlags = ChangeFlags Or 4
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Hair > -1 Then
-            If .Hair <> Hair Then .Hair = Hair
-            ChangeFlags = ChangeFlags Or 16
-            FlagSizes = FlagSizes + 2
+            If .Hair <> Hair Then
+                .Hair = Hair
+                ChangeFlags = ChangeFlags Or 8
+                FlagSizes = FlagSizes + 2
+            End If
         End If
         If Wings > -1 Then
-            If .Wings <> Wings Then .Wings = Wings
-            ChangeFlags = ChangeFlags Or 32
-            FlagSizes = FlagSizes + 2
+            If .Wings <> Wings Then
+                .Wings = Wings
+                ChangeFlags = ChangeFlags Or 16
+                FlagSizes = FlagSizes + 2
+            End If
         End If
     End With
 
@@ -545,10 +544,9 @@ Dim FlagSizes As Byte
     ConBuf.Put_Byte ChangeFlags
     If ChangeFlags And 1 Then ConBuf.Put_Integer Body
     If ChangeFlags And 2 Then ConBuf.Put_Integer Head
-    If ChangeFlags And 4 Then ConBuf.Put_Byte Heading
-    If ChangeFlags And 8 Then ConBuf.Put_Integer Weapon
-    If ChangeFlags And 16 Then ConBuf.Put_Integer Hair
-    If ChangeFlags And 32 Then ConBuf.Put_Integer Wings
+    If ChangeFlags And 4 Then ConBuf.Put_Integer Weapon
+    If ChangeFlags And 8 Then ConBuf.Put_Integer Hair
+    If ChangeFlags And 16 Then ConBuf.Put_Integer Wings
     Data_Send sndRoute, sndIndex, ConBuf.Get_Buffer, UserList(UserIndex).Pos.Map, PP_ChangeChar
 
 End Sub
@@ -1666,13 +1664,14 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
                 ConBuf.Put_Byte 0
                 Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
                 
-                'Set the equipted variables
+                'Unequip
                 UserList(UserIndex).Object(Slot).Equipped = 0
                 UserList(UserIndex).WeaponEqpObjIndex = 0
                 UserList(UserIndex).WeaponEqpSlot = 0
-                UserList(UserIndex).Char.Weapon = 0
                 UserList(UserIndex).WeaponType = Hand
-                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+                
+                'Set the paper-dolling
+                User_ChangeChar ToMap, UserIndex, UserIndex, , , 0
             
                 'Update user's stats and inventory
                 If UpdateInv Then User_UpdateInv False, UserIndex, Slot
@@ -1685,12 +1684,13 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
     
             If Slot = UserList(UserIndex).ArmorEqpSlot Then
     
-                'Set the equipted variables
+                'Unequip
                 UserList(UserIndex).Object(Slot).Equipped = 0
                 UserList(UserIndex).ArmorEqpObjIndex = 0
                 UserList(UserIndex).ArmorEqpSlot = 0
-                UserList(UserIndex).Char.Body = 1
-                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+                
+                'Set the paper-dolling
+                User_ChangeChar ToMap, UserIndex, UserIndex, 1
         
                 'Update user's stats and inventory
                 If UpdateInv Then User_UpdateInv False, UserIndex, Slot
@@ -1703,12 +1703,13 @@ Public Sub User_RemoveInvItem(ByVal UserIndex As Integer, ByVal Slot As Byte, Op
         
             If Slot = UserList(UserIndex).WingsEqpSlot Then
             
-                'Set the equipted variables
+                'Unequip
                 UserList(UserIndex).Object(Slot).Equipped = 0
                 UserList(UserIndex).WingsEqpObjIndex = 0
                 UserList(UserIndex).WingsEqpSlot = 0
-                UserList(UserIndex).Char.Wings = 0
-                User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+                
+                'Set the paper-dolling
+                User_ChangeChar ToMap, UserIndex, UserIndex, , , , , 0
         
                 'Update user's stats and inventory
                 If UpdateInv Then User_UpdateInv False, UserIndex, Slot
@@ -2144,11 +2145,7 @@ Dim ObjIndex As Integer
             If UserList(UserIndex).Object(Slot).Amount <= 0 Then UserList(UserIndex).Object(Slot).ObjIndex = 0
             
             'Set the paper-doll
-            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
-            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
-            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
-            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            User_ChangeChar ToMap, UserIndex, UserIndex, ObjData.SpriteBody(ObjIndex), ObjData.SpriteHead(ObjIndex), ObjData.SpriteWeapon(ObjIndex), ObjData.SpriteHair(ObjIndex), ObjData.SpriteWings(ObjIndex)
             
             'Create the graphic effect
             If ObjData.UseGrh(ObjIndex) > 0 Then
@@ -2195,12 +2192,8 @@ Dim ObjIndex As Integer
             Data_Send ToIndex, UserIndex, ConBuf.Get_Buffer
     
             'Set the paper-doll
-            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
-            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
-            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
-            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
-    
+            User_ChangeChar ToMap, UserIndex, UserIndex, ObjData.SpriteBody(ObjIndex), ObjData.SpriteHead(ObjIndex), ObjData.SpriteWeapon(ObjIndex), ObjData.SpriteHair(ObjIndex), ObjData.SpriteWings(ObjIndex)
+
         Case OBJTYPE_ARMOR
             Log "User_UseInvItem: ObjType = OBJTYPE_ARMOR", CodeTracker '//\\LOGLINE//\\
     
@@ -2219,11 +2212,7 @@ Dim ObjIndex As Integer
             UserList(UserIndex).ArmorEqpSlot = Slot
     
             'Set the paper-doll
-            If ObjData.SpriteHair(ObjIndex) <> -1 Then UserList(UserIndex).Char.Hair = ObjData.SpriteHair(ObjIndex)
-            If ObjData.SpriteBody(ObjIndex) <> -1 Then UserList(UserIndex).Char.Body = ObjData.SpriteBody(ObjIndex)
-            If ObjData.SpriteHead(ObjIndex) <> -1 Then UserList(UserIndex).Char.Head = ObjData.SpriteHead(ObjIndex)
-            If ObjData.SpriteWeapon(ObjIndex) <> -1 Then UserList(UserIndex).Char.Weapon = ObjData.SpriteWeapon(ObjIndex)
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            User_ChangeChar ToMap, UserIndex, UserIndex, ObjData.SpriteBody(ObjIndex), ObjData.SpriteHead(ObjIndex), ObjData.SpriteWeapon(ObjIndex), ObjData.SpriteHair(ObjIndex), ObjData.SpriteWings(ObjIndex)
     
         Case OBJTYPE_WINGS
             Log "User_UseInvItem: ObjType = OBJTYPE_WINGS", CodeTracker '//\\LOGLINE//\\
@@ -2243,8 +2232,7 @@ Dim ObjIndex As Integer
             UserList(UserIndex).WingsEqpSlot = Slot
     
             'Set the paper-doll
-            If ObjData.SpriteWings(ObjIndex) <> -1 Then UserList(UserIndex).Char.Wings = ObjData.SpriteWings(ObjIndex)
-            User_ChangeChar ToMap, UserIndex, UserIndex, UserList(UserIndex).Char.Body, UserList(UserIndex).Char.Head, UserList(UserIndex).Char.Heading, UserList(UserIndex).Char.Weapon, UserList(UserIndex).Char.Hair, UserList(UserIndex).Char.Wings
+            User_ChangeChar ToMap, UserIndex, UserIndex, ObjData.SpriteBody(ObjIndex), ObjData.SpriteHead(ObjIndex), ObjData.SpriteWeapon(ObjIndex), ObjData.SpriteHair(ObjIndex), ObjData.SpriteWings(ObjIndex)
     
         Case Else
         

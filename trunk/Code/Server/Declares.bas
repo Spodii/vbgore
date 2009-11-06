@@ -243,7 +243,7 @@ Public Type Obj 'Holds info about a object
     ObjIndex As Integer     'Index of the object
     Amount As Integer       'Amount of the object
 End Type
-'--------------------------------------------
+
 '************ Trading ************
 Public Const TRADESTATE_CLOSED As Byte = 0      'Trading is closed - table not used
 Public Const TRADESTATE_TRADING As Byte = 1     'Objects are still being placed, no confirm yet
@@ -265,8 +265,6 @@ Public Type TradeTable
 End Type
 Public TradeTable() As TradeTable
 Public NumTradeTables As Byte
-'--------------------------------------------
-
 
 '************ Map Tiles/Information ************
 Type NPCLoadData    'Used to load NPCs from the .temp map files
@@ -343,6 +341,7 @@ Public Type Quest
     AcceptReqLvl As Long            'What level the user is required to be to accept
     AcceptReqObj As Integer         'Index of the object the user is required to have to accept
     AcceptReqObjAmount As Integer   'How much of the object the user must have before accepting
+    AcceptReqFinishQuest As Integer 'Quest that must be finished prior to accepting this quest
     AcceptRewExp As Long            'Amount of Exp the user gets for accepting the quest
     AcceptRewGold As Long           'Amount of gold the user gets for accepting the quest
     AcceptRewObj As Integer         'Object the user gets for accepting the quest
@@ -387,10 +386,8 @@ Type UserFlags  'Flags for a user
     QuestNPC As Integer     'The ID of the NPC that the user is talking to about a quest
     InviteGroup As Byte     'The index of the group the user has been invited to
     DoNotSave As Byte       'Used in special cases to define to bypass saving
-    '--------------------------------------------
     TradeTable As Byte      'The trade table the user is in (0 for none)
     TradeWith As Integer    'The user index the user wants to trade with
-    '--------------------------------------------
     CreatedStats As Byte    'If the user's stats object was created
     StepCounter As Byte     'How many steps the user has taken since MoveCounter value was set
 End Type
@@ -657,10 +654,8 @@ Public DebugPacketsIn() As Long
 Public LastTimeGetTime As Long
 
 '********** EXTERNAL FUNCTIONS ***********
-Public Declare Function timeBeginPeriod Lib "winmm.dll" (ByVal uPeriod As Long) As Long
-Public Declare Function timeGetTime Lib "winmm.dll" () As Long
-Public Declare Function getprivateprofilestring Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
-Public Declare Function writeprivateprofilestring Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
+Public Declare Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpdefault As String, ByVal lpreturnedstring As String, ByVal nsize As Long, ByVal lpfilename As String) As Long
+Public Declare Function WritePrivateProfileString Lib "kernel32" Alias "WritePrivateProfileStringA" (ByVal lpApplicationname As String, ByVal lpKeyname As Any, ByVal lpString As String, ByVal lpfilename As String) As Long
 Public Declare Sub CopyMemory Lib "kernel32" Alias "RtlMoveMemory" (Destination As Any, Source As Any, ByVal Length As Long)
 Public Declare Sub ZeroMemory Lib "kernel32.dll" Alias "RtlZeroMemory" (ByRef Destination As Any, ByVal Length As Long)
 Public Declare Sub FillMemory Lib "kernel32.dll" Alias "RtlFillMemory" (ByRef Destination As Any, ByVal Length As Long, ByVal Fill As Byte)
